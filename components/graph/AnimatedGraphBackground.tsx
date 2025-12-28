@@ -7,6 +7,9 @@ type Props = {
   density?: number; // nodos por área
   maxDist?: number;
   speed?: number;
+  variant?: "normal" | "dimmed";
+  mode?: "parent" | "screen"; // posicionamiento y tamaño base
+  edgeMargin?: number; // margen interno para evitar acercarse a bordes
 };
 
 type Node = {
@@ -23,20 +26,23 @@ export default function AnimatedGraphBackground({
   density = 0.00008,
   maxDist = 180,
   speed = 0.22,
+  variant = "normal",
+  mode = "parent",
+  edgeMargin,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const resizeTimer = useRef<number | null>(null);
 
   useEffect(() => {
-    // Captura una vez y regresa si no existe
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const ctx2d = canvas.getContext("2d");
     if (!ctx2d) return;
-    const cvs = canvas as HTMLCanvasElement;
-    const ctx = ctx2d as CanvasRenderingContext2D;
+
+    const cvs = canvas;
+    const ctx = ctx2d;
 
     const prefersReduced =
       typeof window !== "undefined" &&
@@ -48,14 +54,22 @@ export default function AnimatedGraphBackground({
     let dpr = 1;
 
     const nodes: Node[] = [];
-
     const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+
+    const getPad = () => edgeMargin ?? (mode === "screen" ? 120 : 60);
 
     const createNode = (x?: number, y?: number): Node => {
       const isRed = Math.random() < 0.45;
+      const pad = getPad();
+
+      const spawnX =
+        x ?? (w > 2 * pad ? pad + Math.random() * (w - 2 * pad) : Math.random() * w);
+      const spawnY =
+        y ?? (h > 2 * pad ? pad + Math.random() * (h - 2 * pad) : Math.random() * h);
+
       return {
-        x: x ?? Math.random() * w,
-        y: y ?? Math.random() * h,
+        x: spawnX,
+        y: spawnY,
         vx: (Math.random() * 2 - 1) * speed,
         vy: (Math.random() * 2 - 1) * speed,
         r: isRed ? rand(10, 28) : rand(10, 26),
@@ -64,12 +78,19 @@ export default function AnimatedGraphBackground({
     };
 
     function setCanvasSize() {
-      const parent = cvs.parentElement;
-
       dpr = Math.min(window.devicePixelRatio || 1, 2);
 
-      const newW = parent?.clientWidth || window.innerWidth;
-      const newH = parent?.clientHeight || window.innerHeight;
+      let newW = 0;
+      let newH = 0;
+
+      if (mode === "screen") {
+        newW = window.innerWidth;
+        newH = window.innerHeight;
+      } else {
+        const parent = cvs.parentElement;
+        newW = parent?.clientWidth || window.innerWidth;
+        newH = parent?.clientHeight || window.innerHeight;
+      }
 
       if (newW === w && newH === h) return;
 
@@ -96,11 +117,12 @@ export default function AnimatedGraphBackground({
     }
 
     function keepNodesInBoundsAfterResize() {
+      const pad = getPad();
       for (const n of nodes) {
-        if (n.x < -60) n.x = -60;
-        if (n.x > w + 60) n.x = w + 60;
-        if (n.y < -60) n.y = -60;
-        if (n.y > h + 60) n.y = h + 60;
+        if (n.x < -pad) n.x = -pad;
+        if (n.x > w + pad) n.x = w + pad;
+        if (n.y < -pad) n.y = -pad;
+        if (n.y > h + pad) n.y = h + pad;
       }
     }
 
@@ -117,15 +139,16 @@ export default function AnimatedGraphBackground({
     }
 
     function update() {
+      const pad = getPad();
       for (const n of nodes) {
         n.x += n.vx;
         n.y += n.vy;
 
         // wrap infinito
-        if (n.x < -60) n.x = w + 60;
-        if (n.x > w + 60) n.x = -60;
-        if (n.y < -60) n.y = h + 60;
-        if (n.y > h + 60) n.y = -60;
+        if (n.x < -pad) n.x = w + pad;
+        if (n.x > w + pad) n.x = -pad;
+        if (n.y < -pad) n.y = h + pad;
+        if (n.y > h + pad) n.y = -pad;
       }
     }
 
@@ -135,6 +158,9 @@ export default function AnimatedGraphBackground({
       // Aristas
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
+
+      const strokeAlphaBase = variant === "dimmed" ? 0.35 : 0.55;
+      const lineWidthBase = variant === "dimmed" ? 1.6 : 2.2;
 
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
@@ -147,8 +173,8 @@ export default function AnimatedGraphBackground({
 
           const alpha = 1 - dist / maxDist;
 
-          ctx.strokeStyle = `rgba(153, 51, 49, ${0.55 * alpha})`;
-          ctx.lineWidth = 2.2 * alpha;
+          ctx.strokeStyle = `rgba(153, 51, 49, ${strokeAlphaBase * alpha})`;
+          ctx.lineWidth = lineWidthBase * alpha;
 
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
@@ -161,27 +187,39 @@ export default function AnimatedGraphBackground({
       for (const n of nodes) {
         ctx.save();
 
-        ctx.shadowBlur = 18;
+        ctx.shadowBlur = variant === "dimmed" ? 12 : 18;
         ctx.shadowColor =
           n.color === "red"
-            ? "rgba(153,51,49,0.30)"
-            : "rgba(0,0,0,0.10)";
+            ? variant === "dimmed"
+              ? "rgba(153,51,49,0.22)"
+              : "rgba(153,51,49,0.30)"
+            : variant === "dimmed"
+              ? "rgba(0,0,0,0.08)"
+              : "rgba(0,0,0,0.10)";
 
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
 
         ctx.fillStyle =
           n.color === "red"
-            ? "rgba(153, 51, 49, 0.92)"
-            : "rgba(255, 255, 255, 0.98)";
+            ? variant === "dimmed"
+              ? "rgba(153, 51, 49, 0.80)"
+              : "rgba(153, 51, 49, 0.92)"
+            : variant === "dimmed"
+              ? "rgba(255, 255, 255, 0.90)"
+              : "rgba(255, 255, 255, 0.98)";
         ctx.fill();
 
         ctx.shadowBlur = 0;
         ctx.lineWidth = 1;
         ctx.strokeStyle =
           n.color === "red"
-            ? "rgba(153,51,49,0.22)"
-            : "rgba(0,0,0,0.08)";
+            ? variant === "dimmed"
+              ? "rgba(153,51,49,0.18)"
+              : "rgba(153,51,49,0.22)"
+            : variant === "dimmed"
+              ? "rgba(0,0,0,0.06)"
+              : "rgba(0,0,0,0.08)";
         ctx.stroke();
 
         ctx.restore();
@@ -194,9 +232,8 @@ export default function AnimatedGraphBackground({
       rafRef.current = requestAnimationFrame(step);
     }
 
-    // Init
+    // init
     initOrResize();
-
     if (prefersReduced) draw();
     else rafRef.current = requestAnimationFrame(step);
 
@@ -205,16 +242,21 @@ export default function AnimatedGraphBackground({
       resizeTimer.current = window.setTimeout(() => {
         initOrResize();
         resizeTimer.current = null;
-      }, 150);
+      }, 120);
     };
 
-    const parentEl = cvs.parentElement;
     let ro: ResizeObserver | null = null;
 
-    if (typeof ResizeObserver !== "undefined" && parentEl) {
-      ro = new ResizeObserver(() => onResize());
-      ro.observe(parentEl);
+    if (mode === "parent") {
+      const parentEl = cvs.parentElement;
+      if (typeof ResizeObserver !== "undefined" && parentEl) {
+        ro = new ResizeObserver(() => onResize());
+        ro.observe(parentEl);
+      } else {
+        window.addEventListener("resize", onResize);
+      }
     } else {
+      // screen
       window.addEventListener("resize", onResize);
     }
 
@@ -225,14 +267,17 @@ export default function AnimatedGraphBackground({
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (resizeTimer.current) window.clearTimeout(resizeTimer.current);
     };
-  }, [density, maxDist, speed]);
+  }, [density, maxDist, speed, variant, mode, edgeMargin]);
 
   return (
     <canvas
       ref={canvasRef}
-      className={["absolute inset-0 z-0 h-full w-full pointer-events-none", className].join(
-        " "
-      )}
+      className={[
+        mode === "screen"
+          ? "fixed inset-0 z-0 h-screen w-screen pointer-events-none"
+          : "absolute inset-0 z-0 h-full w-full pointer-events-none",
+        className,
+      ].join(" ")}
       aria-hidden="true"
     />
   );

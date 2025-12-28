@@ -28,7 +28,7 @@ type Mode = "login" | "register";
 export default function LoginPage() {
   const router = useRouter();
 
-  // MODO DEL CARD
+  // Modo del card
   const [mode, setMode] = useState<Mode>("login");
 
   // login fields
