@@ -180,7 +180,7 @@ export default function LandingPage() {
     return () => io.disconnect();
   }, []);
 
-  // Hide logo at "como-funciona"
+  // Hide logo
   useEffect(() => {
     let raf = 0;
 
@@ -389,7 +389,7 @@ export default function LandingPage() {
                       </div>
                     )}
 
-                    {/* COMO FUNCIONA */}
+                    {/* FUNCIONES */}
                     {s.id === "como-funciona" && (
                       <div className="mt-2">
                         <div className="mx-auto w-full max-w-5xl">
