@@ -212,8 +212,18 @@ export default function LandingPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const currentHash = window.location.hash.replace("#", "");
-    if (activeId && currentHash !== activeId) {
-      window.history.pushState(null, "", `#${activeId}`);
+    if (!activeId) return;
+
+    if (activeId === "inicio") {
+      if (currentHash) {
+        const urlNoHash = window.location.pathname + window.location.search;
+        window.history.replaceState(null, "", urlNoHash);
+      }
+      return;
+    }
+
+    if (currentHash !== activeId) {
+      window.history.replaceState(null, "", `#${activeId}`);
     }
   }, [activeId]);
 
@@ -544,7 +554,7 @@ export default function LandingPage() {
                       </div>
                     )}
 
-                    {/* ✅ CONTACTO */}
+                    {/* CONTACTO */}
                     {s.id === "contacto" && (
                       <div className="mt-10">
                         <ContactCard />

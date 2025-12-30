@@ -78,6 +78,24 @@ export default function LoginPage() {
     };
   }, []);
 
+  // Asegura que el botón Atrás salga realmente de login
+  // Si el historial cambia a una URL fuera de /auth/login (por ejemplo /#como-funciona), forzamos la navegación real.
+  useEffect(() => {
+    function onPopState() {
+      if (typeof window === "undefined") return;
+      const path = window.location.pathname;
+      // Si ya no estamos en /auth/login, asegura que el navegador cargue esa ruta
+      if (path !== "/auth/login") {
+        // Usa el router de Next para renderizar la página destino
+        const target = path + (window.location.search || "") + (window.location.hash || "");
+        router.replace(target);
+      }
+    }
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   function startSwitch(next: Mode) {
     if (next === mode || switching) return;
 
