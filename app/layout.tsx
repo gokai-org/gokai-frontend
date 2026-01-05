@@ -4,7 +4,9 @@ import "./globals.css";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  variable: "--font-montserrat",
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -12,14 +14,10 @@ export const metadata: Metadata = {
   description: "Plataforma de aprendizaje de japonés con IA y rutas dinámicas.",
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es">
-      <body className={`${montserrat.className} antialiased`}>
+    <html lang="es" className={montserrat.variable}>
+      <body className="h-dvh overflow-hidden">
         {children}
       </body>
     </html>

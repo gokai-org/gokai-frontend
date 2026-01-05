@@ -78,15 +78,11 @@ export default function LoginPage() {
     };
   }, []);
 
-  // Asegura que el botón Atrás salga realmente de login
-  // Si el historial cambia a una URL fuera de /auth/login (por ejemplo /#como-funciona), forzamos la navegación real.
   useEffect(() => {
     function onPopState() {
       if (typeof window === "undefined") return;
       const path = window.location.pathname;
-      // Si ya no estamos en /auth/login, asegura que el navegador cargue esa ruta
       if (path !== "/auth/login") {
-        // Usa el router de Next para renderizar la página destino
         const target = path + (window.location.search || "") + (window.location.hash || "");
         router.replace(target);
       }
@@ -99,7 +95,7 @@ export default function LoginPage() {
   function startSwitch(next: Mode) {
     if (next === mode || switching) return;
 
-    // dirección del slide
+    // Dirección del slide
     setSwitchDir(next === "register" ? "left" : "right");
     setSwitching(true);
 
@@ -128,6 +124,11 @@ export default function LoginPage() {
 
   async function handleLoginSubmit(e: React.FormEvent) {
     e.preventDefault();
+    // Redirección temporal directamente al Home
+    router.push("/dashboard/home");
+    return;
+
+    // -- Lógica original (API) debajo --
     setErrorMsg(null);
     setLoading(true);
 
@@ -394,6 +395,7 @@ export default function LoginPage() {
 
                     <button
                       type="submit"
+                      onClick={() => router.push("/dashboard/home")}
                       disabled={loading}
                       className="w-full rounded-lg bg-[#993331] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
                     >

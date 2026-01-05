@@ -575,7 +575,7 @@ export default function LandingPage() {
                   className="will-change-transform translate-x-16 scale-[1.3] transition-transform duration-75 md:translate-x-28 lg:translate-x-36 xl:translate-x-48 xl:scale-[1.55] 2xl:translate-x-56"
                   aria-hidden="true"
                 >
-                  <Image src="/logos/gokai-big.svg" alt="Gokai" width={980} height={980} priority />
+                  <Image src="/logos/gokai-logo.svg" alt="Gokai" width={980} height={980} priority />
                 </div>
               </div>
             </aside>
