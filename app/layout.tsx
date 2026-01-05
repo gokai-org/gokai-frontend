@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="es" className={montserrat.variable}>
-      <body className="h-dvh overflow-hidden">
+      <body className="min-h-dvh overflow-x-hidden">
         {children}
       </body>
     </html>

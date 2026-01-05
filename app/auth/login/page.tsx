@@ -125,7 +125,7 @@ export default function LoginPage() {
   async function handleLoginSubmit(e: React.FormEvent) {
     e.preventDefault();
     // Redirección temporal directamente al Home
-    router.push("/dashboard/home");
+    router.push("/dashboard/graph");
     return;
 
     // -- Lógica original (API) debajo --
@@ -395,7 +395,7 @@ export default function LoginPage() {
 
                     <button
                       type="submit"
-                      onClick={() => router.push("/dashboard/home")}
+                      onClick={() => router.push("/dashboard/graph")}
                       disabled={loading}
                       className="w-full rounded-lg bg-[#993331] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
                     >

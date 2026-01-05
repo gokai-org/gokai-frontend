@@ -349,13 +349,7 @@ function SidebarItem({
       className="group relative w-full flex items-center gap-4 rounded-2xl h-14 px-4 ring-1 ring-transparent hover:ring-black/5 transition-colors"
       style={{ background: active ? accentBg : "transparent" }}
     >
-      <div
-        className="grid h-11 w-11 place-items-center rounded-2xl"
-        style={{
-          background: active ? "rgba(255,255,255,0.75)" : "rgba(0,0,0,0.02)",
-          border: "1px solid rgba(0,0,0,0.05)",
-        }}
-      >
+      <div className="grid h-11 w-11 place-items-center">
         <img src={iconSrc} alt="" draggable={false} className="h-[24px] w-[24px] object-contain opacity-90 group-hover:opacity-100" />
       </div>
 

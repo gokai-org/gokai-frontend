@@ -227,34 +227,36 @@ export default function LandingPage() {
     }
   }, [activeId]);
 
-  // Hide logo
-  useEffect(() => {
-    let raf = 0;
+// Show logo
+useEffect(() => {
+  let raf = 0;
 
-    const updateShowLogo = () => {
-      if (!howSectionRef.current) return;
+  const update = () => {
+    const el = howSectionRef.current;
+    if (!el) return;
 
-      const headerOffset = 86;
-      const rect = howSectionRef.current.getBoundingClientRect();
-      const shouldShow = rect.top > headerOffset;
-      setShowLogo(shouldShow);
-    };
+    const headerOffset = 86;
+    const rect = el.getBoundingClientRect();
 
-    const onScroll = () => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(updateShowLogo);
-    };
+    const beforeHow = rect.top > headerOffset;
+    setShowLogo(beforeHow);
+  };
 
-    updateShowLogo();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", updateShowLogo);
+  const onScroll = () => {
+    cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(update);
+  };
 
-    return () => {
-      cancelAnimationFrame(raf);
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", updateShowLogo);
-    };
-  }, []);
+  update();
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", update);
+
+  return () => {
+    cancelAnimationFrame(raf);
+    window.removeEventListener("scroll", onScroll);
+    window.removeEventListener("resize", update);
+  };
+}, []);
 
   // Rotate logo
   useEffect(() => {
@@ -291,7 +293,7 @@ export default function LandingPage() {
     activeId === "contacto";
 
   return (
-    <main className="relative min-h-screen bg-[#f3f3f3] text-neutral-900">
+<main className="relative min-h-screen bg-[#f3f3f3] text-neutral-900 overflow-x-hidden">
       {/* GRAFO */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <AnimatedGraphBackground
@@ -569,17 +571,26 @@ export default function LandingPage() {
           {/* RIGHT LOGO */}
           {showLogo && !isCenterMode && (
             <aside className="hidden lg:block">
-              <div className="sticky top-24 flex h-[calc(100vh-120px)] items-center justify-end overflow-visible">
+              <div className="fixed right-6 top-1/2 z-20 -translate-y-1/2 flex items-center justify-end overflow-visible">
                 <div
                   ref={logoWrapRef}
-                  className="will-change-transform translate-x-16 scale-[1.3] transition-transform duration-75 md:translate-x-28 lg:translate-x-36 xl:translate-x-48 xl:scale-[1.55] 2xl:translate-x-56"
                   aria-hidden="true"
+                  className="pointer-events-none will-change-transform"
+                  style={{ width: "clamp(600px, 40vw, 900px)" }}
                 >
-                  <Image src="/logos/gokai-logo.svg" alt="Gokai" width={980} height={980} priority />
+                  <Image
+                    src="/logos/gokai-logo.svg"
+                    alt="Gokai"
+                    width={900}
+                    height={900}
+                    priority
+                    className="h-auto w-full select-none"
+                  />
                 </div>
               </div>
             </aside>
           )}
+
         </div>
       </div>
 

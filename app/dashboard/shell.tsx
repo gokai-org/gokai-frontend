@@ -10,8 +10,8 @@ export default function ContentShell({ children }: { children: React.ReactNode }
   const padMd = expanded ? "md:pl-[360px]" : "md:pl-[120px]";
 
   return (
-    <main className={["h-dvh bg-white", padMd, padDesktop].join(" ")}>
-      <div className="h-full overflow-y-auto px-4 py-6 md:px-6">
+    <main className={["min-h-dvh bg-white px-4 md:px-6 py-6", padMd, padDesktop].join(" ")}>
+      <div>
         {children}
       </div>
     </main>
