@@ -61,10 +61,28 @@ export default function SidebarOnly() {
     return pathname === href || pathname?.startsWith(href + "/");
   };
 
-  const onPick = (href: string) => {
+const [loggingOut, setLoggingOut] = useState(false);
+
+  const onPick = async (item: NavItem) => {
     setMobileOpen(false);
-    if (pathname !== href) router.push(href);
+
+    if (item.key === "logout") {
+      if (loggingOut) return;
+      setLoggingOut(true);
+
+      try {
+        await fetch("/api/auth/logout", { method: "POST" });
+      } finally {
+        router.replace("/auth/login");
+        router.refresh();
+        setLoggingOut(false);
+      }
+      return;
+    }
+
+    if (pathname !== item.href) router.push(item.href);
   };
+
 
   const expanded = hovered;
   
@@ -135,7 +153,7 @@ export default function SidebarOnly() {
                   active={isActive(item.href)}
                   danger={!!item.danger}
                   expanded={expanded}
-                  onClick={() => onPick(item.href)}
+                  onClick={() => onPick(item)}
                 />
               ))}
             </div>
@@ -152,7 +170,7 @@ export default function SidebarOnly() {
                   active={isActive(item.href)}
                   danger={!!item.danger}
                   expanded={expanded}
-                  onClick={() => onPick(item.href)}
+                  onClick={() => onPick(item)}
                 />
               ))}
             </div>
@@ -218,7 +236,7 @@ export default function SidebarOnly() {
                       active={isActive(item.href)}
                       danger={!!item.danger}
                       expanded={true}
-                      onClick={() => onPick(item.href)}
+                      onClick={() => onPick(item)}
                     />
                   ))}
                 </div>
@@ -235,7 +253,7 @@ export default function SidebarOnly() {
                       active={isActive(item.href)}
                       danger={!!item.danger}
                       expanded={true}
-                      onClick={() => onPick(item.href)}
+                      onClick={() => onPick(item)}
                     />
                   ))}
                 </div>
@@ -318,13 +336,13 @@ function SidebarItem({
   active: boolean;
   danger: boolean;
   expanded: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   const accentBg = danger ? "rgba(220,38,38,0.10)" : "rgba(153,51,49,0.10)";
   const hoverBg = danger ? "rgba(220,38,38,0.08)" : "rgba(153,51,49,0.07)";
   const textColor = active ? (danger ? "rgb(220,38,38)" : ACCENT) : MUTED;
   const iconSrc = active ? iconActive : iconInactive;
-
   if (!expanded) {
     return (
       <button

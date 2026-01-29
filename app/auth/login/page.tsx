@@ -39,6 +39,7 @@ export default function LoginPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [regEmail, setRegEmail] = useState("");
+  const [birthdate, setBirthdate] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regPassword2, setRegPassword2] = useState("");
 
@@ -122,90 +123,77 @@ export default function LoginPage() {
     }, 220);
   }
 
-  async function handleLoginSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    // Redirección temporal directamente al Home
+async function handleLoginSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  setErrorMsg(null);
+  setLoading(true);
+
+  try {
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, remember }),
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.error || "No se pudo iniciar sesión.");
+    }
+
     router.push("/dashboard/graph");
+  } catch (err: any) {
+    setErrorMsg(err?.message ?? "Error inesperado.");
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function handleRegisterSubmit(e: React.FormEvent) {
+  e.preventDefault();
+  setErrorMsg(null);
+
+  if (regPassword.length < 8) {
+    setErrorMsg("La contraseña debe tener al menos 8 caracteres.");
     return;
-
-    // -- Lógica original (API) debajo --
-    setErrorMsg(null);
-    setLoading(true);
-
-    try {
-      if (!apiBase) throw new Error("NEXT_PUBLIC_API_BASE_URL en .env.local");
-
-      const res = await fetch(`${apiBase}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, remember }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "No se pudo iniciar sesión. Verifica tus credenciales.");
-      }
-
-      const data = (await res.json()) as LoginResponse;
-
-      if (!data?.token) throw new Error("Respuesta inválida del servidor (token faltante).");
-
-      if (remember) localStorage.setItem("gokai_token", data.token);
-      else sessionStorage.setItem("gokai_token", data.token);
-
-      router.push("/dashboard/graph");
-    } catch (err: any) {
-      setErrorMsg(err?.message ?? "Error inesperado.");
-    } finally {
-      setLoading(false);
-    }
+  }
+  if (regPassword !== regPassword2) {
+    setErrorMsg("Las contraseñas no coinciden.");
+    return;
+  }
+  if (!birthdate) {
+    setErrorMsg("Selecciona tu fecha de nacimiento.");
+    return;
   }
 
-  async function handleRegisterSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    setErrorMsg(null);
+  setLoading(true);
 
-    // Validaciones básicas front
-    if (regPassword.length < 8) {
-      setErrorMsg("La contraseña debe tener al menos 8 caracteres.");
-      return;
+  try {
+    const res = await fetch("/api/auth/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        firstName,
+        lastName,
+        email: regEmail,
+        password: regPassword,
+        birthdate, // "YYYY-MM-DD"
+      }),
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new Error(data?.error || "No se pudo registrar.");
     }
-    if (regPassword !== regPassword2) {
-      setErrorMsg("Las contraseñas no coinciden.");
-      return;
-    }
 
-    setLoading(true);
-
-    try {
-      if (!apiBase) throw new Error("NEXT_PUBLIC_API_BASE_URL en .env.local");
-
-      // Endpoint backend Go
-      const res = await fetch(`${apiBase}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email: regEmail,
-          password: regPassword,
-        }),
-      });
-
-      if (!res.ok) {
-        const text = await res.text();
-        throw new Error(text || "No se pudo registrar. Intenta de nuevo.");
-      }
-
-      //Token backend
-      startSwitch("login");
-      setErrorMsg(null);
-    } catch (err: any) {
-      setErrorMsg(err?.message ?? "Error inesperado.");
-    } finally {
-      setLoading(false);
-    }
+    startSwitch("login");
+  } catch (err: any) {
+    setErrorMsg(err?.message ?? "Error inesperado.");
+  } finally {
+    setLoading(false);
   }
+}
 
   function handleGoogleLogin() {
     setErrorMsg("Google Login no configurado.");
@@ -269,7 +257,7 @@ export default function LoginPage() {
 
           {/* Card */}
           <section className="flex w-full justify-center lg:justify-end lg:self-center lg:mr-15 xl:mr-14">
-            <div className="w-full max-w-sm md:max-w-md lg:max-w-lg rounded-2xl bg-white/95 p-7 md:p-8 lg:p-9 shadow-xl ring-1 ring-black/5 backdrop-blur overflow-hidden">
+            <div className="w-full max-w-sm md:max-w-md lg:max-w-lg rounded-2xl bg-white/95 p-6 md:p-7 lg:p-8 shadow-xl ring-1 ring-black/5 backdrop-blur overflow-hidden">
               <div className={contentClass}>
                 {/* Header */}
                 <div className="flex flex-col items-center text-center">
@@ -285,7 +273,7 @@ export default function LoginPage() {
 
                   {mode === "login" ? (
                     <>
-                      <h2 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900">
+                      <h2 className="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">
                         Iniciar sesión
                       </h2>
                       <p className="mt-1 text-sm font-medium text-neutral-500">
@@ -294,7 +282,7 @@ export default function LoginPage() {
                     </>
                   ) : (
                     <>
-                      <h2 className="mt-4 text-3xl font-semibold tracking-tight text-neutral-900">
+                      <h2 className="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">
                         Registrarse
                       </h2>
                       <p className="mt-1 text-sm font-medium text-neutral-500">
@@ -306,7 +294,7 @@ export default function LoginPage() {
 
                 {/* Login */}
                 {mode === "login" && (
-                  <form className="mt-7 space-y-5" onSubmit={handleLoginSubmit}>
+                  <form className="mt-6 space-y-4" onSubmit={handleLoginSubmit}>
                     <div>
                       <label className="mb-2 block text-sm font-semibold text-neutral-700">
                         Correo
@@ -316,7 +304,7 @@ export default function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         type="email"
                         placeholder="correo@ejemplo.com"
-                        className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
                         required
                         autoComplete="email"
                       />
@@ -332,7 +320,7 @@ export default function LoginPage() {
                           onChange={(e) => setPassword(e.target.value)}
                           type={showPass ? "text" : "password"}
                           placeholder="Contraseña"
-                          className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-3 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                          className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
                           required
                           autoComplete="current-password"
                         />
@@ -395,9 +383,8 @@ export default function LoginPage() {
 
                     <button
                       type="submit"
-                      onClick={() => router.push("/dashboard/graph")}
                       disabled={loading}
-                      className="w-full rounded-lg bg-[#993331] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {loading ? "Iniciando..." : "Iniciar sesión"}
                     </button>
@@ -413,7 +400,7 @@ export default function LoginPage() {
                     <button
                       type="button"
                       onClick={handleGoogleLogin}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-50 focus:outline-none focus:ring-4 focus:ring-neutral-200"
+                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-50 focus:outline-none focus:ring-4 focus:ring-neutral-200"
                     >
                       Iniciar sesión con Google
                       <span aria-hidden="true">
@@ -453,7 +440,7 @@ export default function LoginPage() {
 
                 {/* Register */}
                 {mode === "register" && (
-                  <form className="mt-7 space-y-5" onSubmit={handleRegisterSubmit}>
+                  <form className="mt-6 space-y-4" onSubmit={handleRegisterSubmit}>
                     <div>
                       <label className="mb-2 block text-sm font-semibold text-neutral-700">
                         Nombre
@@ -463,7 +450,7 @@ export default function LoginPage() {
                         onChange={(e) => setFirstName(e.target.value)}
                         type="text"
                         placeholder="Nombre"
-                        className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
                         required
                         autoComplete="given-name"
                       />
@@ -478,7 +465,7 @@ export default function LoginPage() {
                         onChange={(e) => setLastName(e.target.value)}
                         type="text"
                         placeholder="Apellido"
-                        className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
                         required
                         autoComplete="family-name"
                       />
@@ -493,9 +480,20 @@ export default function LoginPage() {
                         onChange={(e) => setRegEmail(e.target.value)}
                         type="email"
                         placeholder="correo@ejemplo.com"
-                        className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
                         required
                         autoComplete="email"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-2 block text-sm font-semibold text-neutral-700">Fecha de nacimiento</label>
+                      <input
+                        value={birthdate}
+                        onChange={(e) => setBirthdate(e.target.value)}
+                        type="date"
+                        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                        required
                       />
                     </div>
 
@@ -509,7 +507,7 @@ export default function LoginPage() {
                           onChange={(e) => setRegPassword(e.target.value)}
                           type={showPass ? "text" : "password"}
                           placeholder="Contraseña"
-                          className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-3 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                          className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
                           required
                           autoComplete="new-password"
                         />
@@ -547,7 +545,7 @@ export default function LoginPage() {
                           onChange={(e) => setRegPassword2(e.target.value)}
                           type={showPass2 ? "text" : "password"}
                           placeholder="Repetir contraseña"
-                          className="w-full rounded-lg border border-neutral-200 bg-white px-4 py-3 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                          className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
                           required
                           autoComplete="new-password"
                         />
@@ -578,7 +576,7 @@ export default function LoginPage() {
                     <button
                       type="submit"
                       disabled={loading}
-                      className="w-full rounded-lg bg-[#993331] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
+                      className="w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
                     >
                       {loading ? "Creando..." : "Iniciar aprendizaje"}
                     </button>
