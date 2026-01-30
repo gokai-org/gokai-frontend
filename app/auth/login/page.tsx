@@ -1,21 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ProgressDots from "../../../components/auth/ProgressDots";
 import ErrorToast from "../../../components/feedback/ErrorToast";
 import AnimatedGraphBackground from "../../../components/graph/AnimatedGraphBackground";
-
-type LoginResponse = {
-  token: string;
-  user?: {
-    id: string;
-    name?: string;
-    email: string;
-    role?: string;
-  };
-};
 
 const HERO_MESSAGES = [
   { jp: "あなたの成長は、あなただけのもの", es: "Tu progreso es único, como tú." },
@@ -59,7 +49,7 @@ export default function LoginPage() {
   const [switching, setSwitching] = useState(false);
   const switchTimeout = useRef<number | null>(null);
 
-  const apiBase = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL || "", []);
+  // const apiBase = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL || "", []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -91,7 +81,7 @@ export default function LoginPage() {
 
     window.addEventListener("popstate", onPopState);
     return () => window.removeEventListener("popstate", onPopState);
-  }, []);
+  }, [router]);
 
   function startSwitch(next: Mode) {
     if (next === mode || switching) return;
@@ -142,8 +132,9 @@ async function handleLoginSubmit(e: React.FormEvent) {
     }
 
     router.push("/dashboard/graph");
-  } catch (err: any) {
-    setErrorMsg(err?.message ?? "Error inesperado.");
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error("Error desconocido");
+    setErrorMsg(error?.message ?? "Error inesperado.");
   } finally {
     setLoading(false);
   }
@@ -188,8 +179,9 @@ async function handleRegisterSubmit(e: React.FormEvent) {
     }
 
     startSwitch("login");
-  } catch (err: any) {
-    setErrorMsg(err?.message ?? "Error inesperado.");
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error("Error desconocido");
+    setErrorMsg(error?.message ?? "Error inesperado.");
   } finally {
     setLoading(false);
   }
@@ -207,11 +199,6 @@ async function handleRegisterSubmit(e: React.FormEvent) {
       ? "translate-x-[-18px] opacity-0"
       : "translate-x-[18px] opacity-0";
 
-  const slideIn =
-    switchDir === "left"
-      ? "translate-x-[18px] opacity-0"
-      : "translate-x-[-18px] opacity-0";
-
   const contentClass = [
     "transition-all duration-300 ease-out",
     switching ? slideOut : "translate-x-0 opacity-100",
@@ -221,7 +208,7 @@ async function handleRegisterSubmit(e: React.FormEvent) {
     <main
     className="relative min-h-screen overflow-hidden bg-neutral-50">
     <AnimatedGraphBackground />
-    <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/10 to-white/30" />
+    <div className="absolute inset-0 bg-linear-to-b from-white/20 via-white/10 to-white/30" />
 
       {errorMsg && <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />}
 

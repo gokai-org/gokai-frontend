@@ -6,7 +6,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Falta GOKAI_USERS_API_BASE" }, { status: 500 });
   }
 
-  let body: any = null;
+  let body: Record<string, unknown> | null = null;
   try {
     body = await req.json();
   } catch {
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
   });
 
   const text = await r.text();
-  let data: any = null;
+  let data: Record<string, unknown> | null = null;
   try {
     data = text ? JSON.parse(text) : null;
   } catch {}

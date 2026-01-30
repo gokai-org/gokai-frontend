@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { AUTH_COOKIE, getCookieConfig } from "@/lib/auth/cookies";
 
 export async function POST(req: Request) {
   const base = process.env.GOKAI_USERS_API_BASE;
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   });
 
   const text = await r.text();
-  let data: any = null;
+  let data: Record<string, unknown> | null = null;
   try { data = text ? JSON.parse(text) : null; } catch {}
 
   if (!r.ok) {
@@ -23,7 +24,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const token = data?.token;
+  const token = data?.token as string;
   if (!token) return NextResponse.json({ error: "Respuesta inválida (token faltante)" }, { status: 500 });
 
   const remember = !!body.remember;
@@ -31,22 +32,16 @@ export async function POST(req: Request) {
 
   const res = NextResponse.json({
     user: {
-      id: data.id,
-      email: data.email,
-      firstName: data.firstName,
-      lastName: data.lastName,
-      profile: data.profile,
-      birthdate: data.birthdate,
+      id: data?.id,
+      email: data?.email,
+      firstName: data?.firstName,
+      lastName: data?.lastName,
+      profile: data?.profile,
+      birthdate: data?.birthdate,
     },
   });
 
-  res.cookies.set("gokai_token", token, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    ...(maxAge ? { maxAge } : {}),
-  });
+  res.cookies.set(AUTH_COOKIE, token, getCookieConfig(maxAge));
 
   return res;
 }
