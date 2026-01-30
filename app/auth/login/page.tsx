@@ -178,7 +178,8 @@ async function handleRegisterSubmit(e: React.FormEvent) {
       throw new Error(data?.error || "No se pudo registrar.");
     }
 
-    startSwitch("login");
+    // Redirigir a selección de intereses después de registro exitoso
+    router.push("/onboarding/interests");
   } catch (err) {
     const error = err instanceof Error ? err : new Error("Error desconocido");
     setErrorMsg(error?.message ?? "Error inesperado.");
@@ -188,7 +189,8 @@ async function handleRegisterSubmit(e: React.FormEvent) {
 }
 
   function handleGoogleLogin() {
-    setErrorMsg("Google Login no configurado.");
+    // Redirigir al flujo de OAuth de Google
+    window.location.href = "/api/auth/google";
   }
 
   const hero = HERO_MESSAGES[heroIndex];
