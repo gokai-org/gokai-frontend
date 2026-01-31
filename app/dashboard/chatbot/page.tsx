@@ -11,48 +11,35 @@ export default function Page() {
     {
       id: '1',
       role: 'bot',
-      content: {
-        type: 'text',
-        text: 'Practiquemos los saludos básicos.\nPrimero.\nRyo (Chico) → Buenos días\n¿Puedes repetirlo? ✏️',
-      },
+      content: 'Practiquemos los saludos básicos.\nPrimero.\nRyo (Chico) → Buenos días\n¿Puedes repetirlo? ✏️',
       timestamp: new Date('2026-01-31T09:25:00'),
     },
     {
       id: '2',
       role: 'user',
-      content: {
-        type: 'audio',
-        audioUrl: '/audio/sample.mp3',
-        audioDuration: '00:02',
-      },
+      content: 'Audio de práctica',
+      audioUrl: '/audio/sample.mp3',
+      audioDuration: '00:02',
       timestamp: new Date('2026-01-31T11:30:00'),
     },
     {
       id: '3',
       role: 'bot',
-      content: {
-        type: 'text',
-        text: 'Muy bien! 👍\nPequeño ajuste: pronuncia como "oya yo" con la "o"\n\nIntenta 2 → (Chica) : Buena una vocal larga: あ → ō\n¿Quieres intentar la versión formal?',
-      },
+      content: 'Muy bien! 👍\nPequeño ajuste: pronuncia como "oya yo" con la "o"\n\nIntenta 2 → (Chica) : Buena una vocal larga: あ → ō\n¿Quieres intentar la versión formal?',
       timestamp: new Date('2026-01-31T12:58:00'),
     },
     {
       id: '4',
       role: 'user',
-      content: {
-        type: 'audio',
-        audioUrl: '/audio/sample.mp3',
-        audioDuration: '00:01',
-      },
+      content: 'Audio de práctica',
+      audioUrl: '/audio/sample.mp3',
+      audioDuration: '00:01',
       timestamp: new Date('2026-01-31T15:30:00'),
     },
     {
       id: '5',
       role: 'bot',
-      content: {
-        type: 'text',
-        text: 'La versión formal es:\n始めまして (Hajimemashite)\nSignifica "Muy buenas días"\n¿Quieres repetir tú? ✏️',
-      },
+      content: 'La versión formal es:\n始めまして (Hajimemashite)\nSignifica "Muy buenas días"\n¿Quieres repetir tú? ✏️',
       timestamp: new Date('2026-01-31T12:58:00'),
     },
   ]);
@@ -72,10 +59,7 @@ export default function Page() {
     const newMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: {
-        type: 'text',
-        text,
-      },
+      content: text,
       timestamp: new Date(),
     };
 
@@ -87,10 +71,7 @@ export default function Page() {
       const botMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'bot',
-        content: {
-          type: 'text',
-          text: '¡Excelente! Sigue practicando. 😊',
-        },
+        content: '¡Excelente! Sigue practicando. 😊',
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
@@ -108,11 +89,9 @@ export default function Page() {
         const audioMessage: ChatMessage = {
           id: Date.now().toString(),
           role: 'user',
-          content: {
-            type: 'audio',
-            audioUrl: '/audio/sample.mp3',
-            audioDuration: '00:03',
-          },
+          content: 'Audio grabado',
+          audioUrl: '/audio/sample.mp3',
+          audioDuration: '00:03',
           timestamp: new Date(),
         };
         setMessages((prev) => [...prev, audioMessage]);

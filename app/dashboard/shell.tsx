@@ -7,12 +7,12 @@ export default function ContentShell({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   
   const isChatbot = pathname === "/dashboard/chatbot";
+  const isLibrary = pathname === "/dashboard/library";
 
-  // Padding fijo para el sidebar colapsado
   const padDesktop = "lg:pl-[140px]";
   const padMd = "md:pl-[120px]";
 
-  if (isChatbot) {
+  if (isChatbot || isLibrary) {
     return (
       <main className={["h-screen bg-white overflow-hidden", padMd, padDesktop].join(" ")}>
         {children}

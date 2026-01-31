@@ -9,6 +9,7 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isBot = message.role === 'bot';
+  const isAudio = message.audioUrl && message.audioDuration;
 
   return (
     <div className={`flex ${isBot ? 'justify-start' : 'justify-end'} mb-4`}>
@@ -26,16 +27,16 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               : 'bg-[#993331] text-white'
           }`}
         >
-          {message.content.type === 'text' ? (
-            <p className="text-sm leading-relaxed whitespace-pre-wrap">
-              {message.content.text}
-            </p>
-          ) : (
+          {isAudio ? (
             <AudioPlayer
-              audioUrl={message.content.audioUrl || ''}
-              duration={message.content.audioDuration || '00:00'}
+              audioUrl={message.audioUrl || ''}
+              duration={message.audioDuration || '00:00'}
               isUserMessage={!isBot}
             />
+          ) : (
+            <p className="text-sm leading-relaxed whitespace-pre-wrap">
+              {message.content}
+            </p>
           )}
           
           <div
