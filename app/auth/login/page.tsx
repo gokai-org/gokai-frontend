@@ -4,8 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import ProgressDots from "../../../components/auth/ProgressDots";
-import ErrorToast from "../../../components/feedback/ErrorToast";
 import AnimatedGraphBackground from "../../../components/graph/AnimatedGraphBackground";
+import { useToast } from "@/components/ui/ToastProvider";
 
 const HERO_MESSAGES = [
   { jp: "あなたの成長は、あなただけのもの", es: "Tu progreso es único, como tú." },
@@ -17,6 +17,7 @@ type Mode = "login" | "register";
 
 export default function LoginPage() {
   const router = useRouter();
+  const toast = useToast();
 
   // Modo del card
   const [mode, setMode] = useState<Mode>("login");
@@ -38,7 +39,6 @@ export default function LoginPage() {
   const [showPass2, setShowPass2] = useState(false);
 
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Hero rotativo
   const [heroIndex, setHeroIndex] = useState(0);
@@ -90,9 +90,6 @@ export default function LoginPage() {
     setSwitchDir(next === "register" ? "left" : "right");
     setSwitching(true);
 
-    // Limpiar error al cambiar
-    setErrorMsg(null);
-
     // inicia salida
     switchTimeout.current = window.setTimeout(() => {
       setMode(next);
@@ -115,7 +112,6 @@ export default function LoginPage() {
 
 async function handleLoginSubmit(e: React.FormEvent) {
   e.preventDefault();
-  setErrorMsg(null);
   setLoading(true);
 
   try {
@@ -131,10 +127,11 @@ async function handleLoginSubmit(e: React.FormEvent) {
       throw new Error(data?.error || "No se pudo iniciar sesión.");
     }
 
+    toast.success("Sesión iniciada correctamente");
     router.push("/dashboard/graph");
   } catch (err) {
     const error = err instanceof Error ? err : new Error("Error desconocido");
-    setErrorMsg(error?.message ?? "Error inesperado.");
+    toast.error(error?.message ?? "Error inesperado.");
   } finally {
     setLoading(false);
   }
@@ -142,18 +139,17 @@ async function handleLoginSubmit(e: React.FormEvent) {
 
 async function handleRegisterSubmit(e: React.FormEvent) {
   e.preventDefault();
-  setErrorMsg(null);
 
   if (regPassword.length < 8) {
-    setErrorMsg("La contraseña debe tener al menos 8 caracteres.");
+    toast.error("La contraseña debe tener al menos 8 caracteres.");
     return;
   }
   if (regPassword !== regPassword2) {
-    setErrorMsg("Las contraseñas no coinciden.");
+    toast.error("Las contraseñas no coinciden.");
     return;
   }
   if (!birthdate) {
-    setErrorMsg("Selecciona tu fecha de nacimiento.");
+    toast.error("Selecciona tu fecha de nacimiento.");
     return;
   }
 
@@ -178,11 +174,12 @@ async function handleRegisterSubmit(e: React.FormEvent) {
       throw new Error(data?.error || "No se pudo registrar.");
     }
 
+    toast.success("¡Cuenta creada exitosamente!");
     // Redirigir a selección de intereses después de registro exitoso
     router.push("/onboarding/interests");
   } catch (err) {
     const error = err instanceof Error ? err : new Error("Error desconocido");
-    setErrorMsg(error?.message ?? "Error inesperado.");
+    toast.error(error?.message ?? "Error inesperado.");
   } finally {
     setLoading(false);
   }
@@ -211,8 +208,6 @@ async function handleRegisterSubmit(e: React.FormEvent) {
     className="relative min-h-screen overflow-hidden bg-neutral-50">
     <AnimatedGraphBackground />
     <div className="absolute inset-0 bg-linear-to-b from-white/20 via-white/10 to-white/30" />
-
-      {errorMsg && <ErrorToast message={errorMsg} onClose={() => setErrorMsg(null)} />}
 
       {/* Texto fijo en esquina inferior izquierda */}
         <section className="hidden xl:block absolute left-6 bottom-10 z-20 pointer-events-none">
