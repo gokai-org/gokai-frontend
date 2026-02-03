@@ -7,11 +7,9 @@ import { useSidebar } from "@/components/navigation/sidebar-context";
 
 type ItemKey =
   | "mapa"
-  | "descubrir"
   | "repaso"
   | "estadisticas"
   | "biblioteca"
-  | "favoritos"
   | "chatbot"
   | "avisos"
   | "ajustes"
@@ -46,11 +44,9 @@ export default function SidebarOnly() {
   const items = useMemo<NavItem[]>(
     () => [
       { key: "mapa", label: "Mapa", section: "menu", iconInactive: "/icons/mapa.svg", iconActive: "/icons/mapa-active.svg", href: "/dashboard/graph" },
-      { key: "descubrir", label: "Descubrir", section: "menu", iconInactive: "/icons/descubrir.svg", iconActive: "/icons/descubrir-active.svg", href: "/dashboard/discover" },
       { key: "repaso", label: "Repaso", section: "menu", iconInactive: "/icons/repaso.svg", iconActive: "/icons/repaso-active.svg", href: "/dashboard/reviews" },
       { key: "estadisticas", label: "Estadísticas", section: "menu", iconInactive: "/icons/estadisticas.svg", iconActive: "/icons/estadisticas-active.svg", href: "/dashboard/statistics" },
       { key: "biblioteca", label: "Biblioteca", section: "menu", iconInactive: "/icons/biblioteca.svg", iconActive: "/icons/biblioteca-active.svg", href: "/dashboard/library" },
-      { key: "favoritos", label: "Favoritos", section: "menu", iconInactive: "/icons/favoritos.svg", iconActive: "/icons/favoritos-active.svg", href: "/dashboard/favorites" },
       { key: "chatbot", label: "Chatbot", section: "menu", iconInactive: "/icons/chatbot_side.svg", iconActive: "/icons/chatbot_side-active.svg", href: "/dashboard/chatbot" },
       { key: "avisos", label: "Avisos", section: "menu", iconInactive: "/icons/avisos.svg", iconActive: "/icons/avisos-active.svg", href: "/dashboard/notices" },
 

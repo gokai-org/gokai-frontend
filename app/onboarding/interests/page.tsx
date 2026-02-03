@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import AnimatedGraphBackground from "@/components/graph/AnimatedGraphBackground";
+import { saveUserInterests, UserInterest } from "@/lib/api/user";
 
 const INTEREST_SECTIONS = [
   {
@@ -119,29 +120,22 @@ export default function InterestsPage() {
     setLoading(true);
     
     try {
-      const interestsList = Object.values(selectedInterests);
-      console.log("Guardando intereses seleccionados:", interestsList);
+      // Convertir selectedInterests al formato esperado por el backend
+      const interests: UserInterest[] = Object.entries(selectedInterests).map(([categoryId, interestId]) => ({
+        categoryId,
+        interestId,
+      }));
+      
+      console.log("Guardando intereses seleccionados:", interests);
 
-      const response = await fetch("/api/user/preferences", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ interests: interestsList }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: "Error desconocido" }));
-        console.error("Error al guardar intereses:", errorData);
-        throw new Error("Error al guardar preferencias");
-      }
-
-      const data = await response.json();
-      console.log("Intereses guardados correctamente:", data);
-
+      // Usar la función API preparada para el backend
+      await saveUserInterests(interests);
+      
+      console.log("Intereses guardados correctamente");
       router.push("/dashboard/graph");
     } catch (error) {
       console.error("Error guardando intereses:", error);
+      // En caso de error, igual continuar (por UX)
       router.push("/dashboard/graph");
     } finally {
       setLoading(false);
