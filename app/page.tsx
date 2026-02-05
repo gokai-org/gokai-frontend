@@ -293,7 +293,7 @@ useEffect(() => {
     activeId === "contacto";
 
   return (
-<main className="relative min-h-screen bg-[#f3f3f3] text-neutral-900 overflow-x-hidden">
+<main className="relative min-h-screen bg-[#f3f3f3] text-neutral-900 overflow-x-hidden pt-[76px]">
       {/* GRAFO */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <AnimatedGraphBackground
@@ -308,7 +308,7 @@ useEffect(() => {
       </div>
 
       {/* NAV */}
-      <header className="sticky top-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
+      <header className="fixed top-0 left-0 right-0 z-50 border-b border-black/10 bg-white/90 backdrop-blur">
         <div className="flex w-full items-center justify-between px-3 py-3 md:px-6">
           <div className="flex items-center gap-3">
             <span className="text-2xl font-bold tracking-wide">GOKAI</span>
@@ -377,7 +377,7 @@ useEffect(() => {
           ].join(" ")}
         >
           {/* LEFT */}
-          <div className={["py-10", isCenterMode ? "lg:ml-0" : "lg:-ml-12 xl:-ml-20 2xl:-ml-28"].join(" ")}>
+          <div className={["py-10", isCenterMode ? "lg:ml-0" : "lg:-ml-16 xl:-ml-24 2xl:-ml-32"].join(" ")}>
             {sections.map((s) => {
               const isActive = activeId === s.id;
               const isCenter = (s.layout ?? "split") === "center";
@@ -398,7 +398,7 @@ useEffect(() => {
                 >
                   <div
                     className={[
-                      isCenter ? "mx-auto w-full max-w-6xl text-center" : "max-w-xl",
+                      isCenter ? "mx-auto w-full max-w-6xl text-center" : "max-w-2xl",
                       "transition-all duration-500",
                       isActive
                         ? "opacity-100 translate-y-0"
@@ -571,7 +571,7 @@ useEffect(() => {
           {/* RIGHT LOGO */}
           {showLogo && !isCenterMode && (
             <aside className="hidden lg:block">
-              <div className="fixed right-6 top-1/2 z-20 -translate-y-1/2 flex items-center justify-end overflow-visible">
+              <div className="fixed right-6 top-[calc(50%+38px)] z-20 -translate-y-1/2 flex items-center justify-end overflow-visible">
                 <div
                   ref={logoWrapRef}
                   aria-hidden="true"
