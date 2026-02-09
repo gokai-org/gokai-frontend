@@ -5,6 +5,9 @@ import { LibraryHeader } from "@/components/library/LibraryHeader";
 import { ContentCard } from "@/components/library/ContentCard";
 import { RecentCard } from "@/components/library/RecentCard";
 import { CategoryFilter } from "@/components/library/CategoryFilter";
+import { KanjiGridCard } from "@/components/kanji/KanjiGridCard";
+import { DashboardShell } from "@/components/layout/DashboardShell";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import { categories, sections } from "@/lib/mock/libraryData";
 import { LibraryItem } from "@/types/library";
 import { listKanjis } from "@/lib/api/content";
@@ -67,10 +70,7 @@ export default function LibraryPage() {
     })();
   }, []);
 
-  const filterItems = (items: LibraryItem[]) => {
-    if (!selectedCategory) return items;
-    return items.filter(item => item.category === selectedCategory);
-  };
+  const allItems = sections.flatMap(s => s.items);
 
   const updatedCategories = [
     { id: 'favoritos', name: 'Favoritos', icon: '', count: getTotalFavorites(), color: 'bg-red-500' },
@@ -81,38 +81,34 @@ export default function LibraryPage() {
   ];
 
   return (
-    <div className="flex flex-col h-screen bg-white">
-      <LibraryHeader />
-
-      <div className="flex-1 overflow-y-auto bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="mb-8">
-            <CategoryFilter
-              categories={updatedCategories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={setSelectedCategory}
-            />
-          </div>
+    <DashboardShell header={<LibraryHeader />}>
+      <div className="mb-8">
+        <CategoryFilter
+          categories={updatedCategories}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+      </div>
 
           {!selectedCategory && (
             <>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
                 <div className="lg:col-span-2 space-y-10">
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-bold text-gray-900">
-                        Lecciones
-                      </h2>
-                      <button 
-                        onClick={() => setSelectedCategory('leccion')}
-                        className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                      >
-                        Ver todo →
-                      </button>
-                    </div>
+                    <SectionHeader
+                      className="mb-4"
+                      title="Lecciones"
+                      action={
+                        <button
+                          onClick={() => setSelectedCategory("leccion")}
+                          className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
+                        >
+                          Ver todo →
+                        </button>
+                      }
+                    />
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                      {sections
-                        .flatMap(s => s.items)
+                      {allItems
                         .filter(item => item.category === 'leccion')
                         .slice(0, 8)
                         .map((item) => (
@@ -130,19 +126,20 @@ export default function LibraryPage() {
 
                 <div className="space-y-6">
                   <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-bold text-gray-900">
-                        Reciente
-                      </h2>
-                      {recentItems.length > 0 && (
-                        <button 
-                          onClick={() => setSelectedCategory('recent')}
-                          className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                        >
-                          Ver todo →
-                        </button>
-                      )}
-                    </div>
+                    <SectionHeader
+                      className="mb-4"
+                      title="Reciente"
+                      action={
+                        recentItems.length > 0 ? (
+                          <button
+                            onClick={() => setSelectedCategory("recent")}
+                            className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
+                          >
+                            Ver todo →
+                          </button>
+                        ) : null
+                      }
+                    />
 
                     {recentItems.length > 0 ? (
                       <div className="space-y-3">
@@ -177,20 +174,20 @@ export default function LibraryPage() {
               </div>
 
               <div className="mb-10">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Gramática
-                  </h2>
-                  <button 
-                    onClick={() => setSelectedCategory('gramatica')}
-                    className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                  >
-                    Ver todo →
-                  </button>
-                </div>
+                <SectionHeader
+                  className="mb-4"
+                  title="Gramática"
+                  action={
+                    <button
+                      onClick={() => setSelectedCategory("gramatica")}
+                      className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
+                    >
+                      Ver todo →
+                    </button>
+                  }
+                />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {sections
-                    .flatMap(s => s.items)
+                  {allItems
                     .filter(item => item.category === 'gramatica')
                     .slice(0, 12)
                     .map((item) => (
@@ -206,20 +203,20 @@ export default function LibraryPage() {
               </div>
 
               <div className="mb-10">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Ejercicios
-                  </h2>
-                  <button 
-                    onClick={() => setSelectedCategory('ejercicio')}
-                    className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                  >
-                    Ver todo →
-                  </button>
-                </div>
+                <SectionHeader
+                  className="mb-4"
+                  title="Ejercicios"
+                  action={
+                    <button
+                      onClick={() => setSelectedCategory("ejercicio")}
+                      className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
+                    >
+                      Ver todo →
+                    </button>
+                  }
+                />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {sections
-                    .flatMap(s => s.items)
+                  {allItems
                     .filter(item => item.category === 'ejercicio')
                     .slice(0, 12)
                     .map((item) => (
@@ -235,20 +232,20 @@ export default function LibraryPage() {
               </div>
 
               <div className="mb-10">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-bold text-gray-900">
-                    Vocabulario
-                  </h2>
-                  <button 
-                    onClick={() => setSelectedCategory('vocabulario')}
-                    className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                  >
-                    Ver todo →
-                  </button>
-                </div>
+                <SectionHeader
+                  className="mb-4"
+                  title="Vocabulario"
+                  action={
+                    <button
+                      onClick={() => setSelectedCategory("vocabulario")}
+                      className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
+                    >
+                      Ver todo →
+                    </button>
+                  }
+                />
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {sections
-                    .flatMap(s => s.items)
+                  {allItems
                     .filter(item => item.category === 'vocabulario')
                     .slice(0, 12)
                     .map((item) => (
@@ -280,8 +277,7 @@ export default function LibraryPage() {
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Contenido</h3>
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {sections
-                      .flatMap(s => s.items)
+                    {allItems
                       .filter(item => favoriteItems.has(item.id))
                       .map((item) => (
                         <ContentCard
@@ -303,43 +299,13 @@ export default function LibraryPage() {
                     {kanjis
                       .filter(kanji => favoriteKanjis.has(kanji.id))
                       .map((kanji) => (
-                        <div key={kanji.id} className="relative">
-                          <div
-                            onClick={() => handleKanjiClick(kanji)}
-                            className="group relative bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#993331] hover:shadow-lg transition-all duration-300 cursor-pointer"
-                          >
-                            <div className="aspect-[3/4] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative">
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent" />
-                              <span className="relative z-10 text-6xl font-bold text-gray-900">
-                                {kanji.symbol}
-                              </span>
-                            </div>
-                            <div className="p-3">
-                              <div className="flex items-start justify-between gap-2 mb-1">
-                                <h3 className="font-bold text-sm text-gray-900 line-clamp-1 group-hover:text-[#993331] transition-colors">
-                                  {kanji.meanings[0] || 'Sin significado'}
-                                </h3>
-                                <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 bg-purple-100 text-purple-700">
-                                  N{kanji.points_to_unlock / 10}
-                                </span>
-                              </div>
-                              <p className="text-xs text-gray-600 line-clamp-1 mb-2">
-                                {kanji.readings.length > 0 && `音: ${kanji.readings[0]}`}
-                              </p>
-                            </div>
-                          </div>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleFavoriteKanji(kanji.id);
-                            }}
-                            className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 hover:bg-white rounded-full shadow-md transition-all duration-200 hover:scale-110"
-                          >
-                            <svg className="w-4 h-4 fill-red-500 text-red-500" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                            </svg>
-                          </button>
-                        </div>
+                        <KanjiGridCard
+                          key={kanji.id}
+                          kanji={kanji}
+                          onClick={() => handleKanjiClick(kanji)}
+                          onFavoriteToggle={toggleFavoriteKanji}
+                          isFavorite={true}
+                        />
                       ))}
                   </div>
                 </div>
@@ -366,8 +332,7 @@ export default function LibraryPage() {
                 </h2>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {sections
-                  .flatMap(s => s.items)
+                {allItems
                   .filter(item => item.category === selectedCategory)
                   .map((item) => (
                     <ContentCard
@@ -397,64 +362,19 @@ export default function LibraryPage() {
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {recentItems.map((item) => (
-                  <div key={item.id} className="relative">
-                    <div
-                      onClick={() => {
-                        if (item.category === 'kanji') {
-                          const kanji = kanjis.find(k => k.id === item.id);
-                          if (kanji) handleKanjiClick(kanji);
-                        } else {
-                          const libraryItem = sections
-                            .flatMap(s => s.items)
-                            .find(i => i.id === item.id);
-                          if (libraryItem) setSelectedItem(libraryItem);
-                        }
-                      }}
-                      className="group relative bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#993331] hover:shadow-lg transition-all duration-300 cursor-pointer flex flex-col h-full"
-                    >
-                      <div className="relative aspect-[3/4] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent" />
-                        <span className="relative z-10 text-6xl font-bold text-gray-900">
-                          {item.thumbnail}
-                        </span>
-                      </div>
-
-                      <div className="p-3 flex-1 flex flex-col min-h-0">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h3 className="font-bold text-sm text-gray-900 line-clamp-1 group-hover:text-[#993331] transition-colors">
-                            {item.title}
-                          </h3>
-                          {item.level && (
-                            <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 bg-purple-100 text-purple-700">
-                              {item.level}
-                            </span>
-                          )}
-                        </div>
-                        
-                        {item.description && (
-                          <p className="text-xs text-gray-600 line-clamp-1 mb-2">
-                            {item.description}
-                          </p>
-                        )}
-
-                        <div className="mt-auto pt-2 min-h-[22px]">
-                          {item.progress !== undefined && (
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full transition-all duration-300 bg-[#993331]"
-                                  style={{ width: `${item.progress}%` }}
-                                />
-                              </div>
-                              <span className="text-xs text-gray-500 shrink-0">
-                                {item.progress}%
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <ContentCard
+                    key={item.id}
+                    item={item}
+                    onClick={() => {
+                      if (item.category === 'kanji') {
+                        const kanji = kanjis.find(k => k.id === item.id);
+                        if (kanji) handleKanjiClick(kanji);
+                      } else {
+                        const libraryItem = allItems.find(i => i.id === item.id);
+                        if (libraryItem) setSelectedItem(libraryItem);
+                      }
+                    }}
+                  />
                 ))}
               </div>
             </div>
@@ -462,75 +382,35 @@ export default function LibraryPage() {
 
           {(!selectedCategory || selectedCategory === 'kanji') && !loadingKanjis && kanjis.length > 0 && (
             <div className="mb-10">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Colección de Kanjis
-                </h2>
-                <button 
-                  onClick={() => setSelectedCategory('kanji')}
-                  className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                >
-                  Ver todo ({kanjis.length}) →
-                </button>
-              </div>
+              <SectionHeader
+                className="mb-4"
+                title="Colección de Kanjis"
+                action={
+                  <button
+                    onClick={() => setSelectedCategory("kanji")}
+                    className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
+                  >
+                    Ver todo ({kanjis.length}) →
+                  </button>
+                }
+              />
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {(selectedCategory === 'kanji' ? kanjis : kanjis.slice(0, 12)).map((kanji) => (
-                  <div key={kanji.id} className="relative">
-                    <div
-                      onClick={() => handleKanjiClick(kanji)}
-                      className="group relative bg-white rounded-xl overflow-hidden border border-gray-200 hover:border-[#993331] hover:shadow-lg transition-all duration-300 cursor-pointer"
-                    >
-                      <div className="aspect-[3/4] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative">
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent" />
-                        <span className="relative z-10 text-6xl font-bold text-gray-900">
-                          {kanji.symbol}
-                        </span>
-                      </div>
-
-                      
-                      <div className="p-3">
-                        <div className="flex items-start justify-between gap-2 mb-1">
-                          <h3 className="font-bold text-sm text-gray-900 line-clamp-1 group-hover:text-[#993331] transition-colors">
-                            {kanji.meanings[0] || 'Sin significado'}
-                          </h3>
-                          <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 bg-purple-100 text-purple-700">
-                            N{kanji.points_to_unlock / 10}
-                          </span>
-                        </div>
-                        
-                        <p className="text-xs text-gray-600 line-clamp-1 mb-2">
-                          {kanji.readings.length > 0 && `音: ${kanji.readings[0]}`}
-                        </p>
-
-                        <div className="flex items-center justify-between text-xs text-gray-500">
-                          <div className="flex items-center gap-1">
-                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                            </svg>
-                            <span>{kanji.meanings.length} significados</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleFavoriteKanji(kanji.id);
-                      }}
-                      className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 hover:bg-white rounded-full shadow-md transition-all duration-200 hover:scale-110"
-                    >
-                      <svg className={`w-4 h-4 ${favoriteKanjis.has(kanji.id) ? 'fill-red-500 text-red-500' : 'text-gray-400'}`} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
-                    </button>
-                  </div>
+                  <KanjiGridCard
+                    key={kanji.id}
+                    kanji={kanji}
+                    onClick={() => handleKanjiClick(kanji)}
+                    onFavoriteToggle={toggleFavoriteKanji}
+                    isFavorite={favoriteKanjis.has(kanji.id)}
+                    showMeaningCount={true}
+                  />
                 ))}
               </div>
             </div>
           )}
 
-          {!selectedCategory && sections.flatMap(s => s.items).length === 0 && kanjis.length === 0 && (
+          {!selectedCategory && allItems.length === 0 && kanjis.length === 0 && (
             <div className="flex flex-col items-center justify-center py-16">
               <h3 className="text-xl font-bold text-gray-900 mb-2">
                 No hay contenido
@@ -540,13 +420,10 @@ export default function LibraryPage() {
               </p>
             </div>
           )}
-        </div>
-      </div>
-
       <KanjiDetailModal
         kanji={selectedKanji}
         onClose={() => setSelectedKanji(null)}
       />
-    </div>
+    </DashboardShell>
   );
 }

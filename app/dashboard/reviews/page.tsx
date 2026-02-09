@@ -1,6 +1,8 @@
 "use client";
 
 import { DashboardHeader } from "@/components/layout/DashboardHeader";
+import { DashboardShell } from "@/components/layout/DashboardShell";
+import { SectionHeader } from "@/components/ui/SectionHeader";
 import { useState } from "react";
 
 type ReviewTopic = {
@@ -47,101 +49,104 @@ export default function Page() {
   });
 
   return (
-    <div className="flex flex-col h-screen bg-white">
-      <DashboardHeader
-        icon={
-          <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        }
-        title="Repaso"
-        japaneseText="復習"
-        subtitle="Refuerza lo que has aprendido con repasos inteligentes"
-      />
-
-      <div className="flex-1 overflow-y-auto bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          {/* Mensaje motivacional */}
-          <div className="mb-8 bg-white rounded-3xl p-16 shadow-sm border border-gray-100">
-          <div className="flex items-start gap-10">
-            <div className="flex-shrink-0 w-32 h-32 rounded-full bg-gradient-to-br from-[#993331] to-[#7a2927] flex items-center justify-center shadow-lg">
-              <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            </div>
-            <div className="flex-1">
-              <div className="inline-block bg-[#993331]/10 px-8 py-5 rounded-full mb-6">
-                <p className="text-2xl font-bold text-[#993331]">
-                  Hace tiempo que no repasas. ¡Vamos paso a paso!
-                </p>
-              </div>
-              <p className="text-lg text-gray-500">
-                少し時間が空きましたね。ゆっくりで大丈夫！
+    <DashboardShell
+      header={
+        <DashboardHeader
+          icon={
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          }
+          title="Repaso"
+          japaneseText="復習"
+          subtitle="Refuerza lo que has aprendido con repasos inteligentes"
+        />
+      }
+    >
+      {/* Mensaje motivacional */}
+      <div className="mb-8 bg-white rounded-3xl p-16 shadow-sm border border-gray-100">
+        <div className="flex items-start gap-10">
+          <div className="flex-shrink-0 w-32 h-32 rounded-full bg-gradient-to-br from-[#993331] to-[#7a2927] flex items-center justify-center shadow-lg">
+            <svg className="w-16 h-16 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <div className="inline-block bg-[#993331]/10 px-8 py-5 rounded-full mb-6">
+              <p className="text-2xl font-bold text-[#993331]">
+                Hace tiempo que no repasas. ¡Vamos paso a paso!
               </p>
             </div>
+            <p className="text-lg text-gray-500">
+              少し時間が空きましたね。ゆっくりで大丈夫！
+            </p>
           </div>
         </div>
-
-        {/* Estadísticas rápidas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <StatCard
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            }
-            label="Sesiones completadas"
-            value={stats.sessionsCompleted}
-            color="text-[#993331]"
-          />
-          <StatCard
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-              </svg>
-            }
-            label="Promedio"
-            value={`${stats.averageScore}%`}
-            color="text-[#993331]"
-          />
-          <StatCard
-            icon={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
-              </svg>
-            }
-            label="Racha"
-            value={`${stats.streak} días`}
-            color="text-[#993331]"
-          />
-        </div>
-
-        {/* Repaso recomendado */}
-        <div className="mb-6">
-          <h2 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-2">
-            Repaso <span className="text-[#993331]">Recomendado</span>
-          </h2>
-          <p className="text-sm text-gray-500">Temas que necesitan refuerzo según tu progreso</p>
-        </div>
-
-        {/* Lista de temas */}
-        <div className="space-y-4">
-          {topics.map((topic) => (
-            <ReviewCard key={topic.id} topic={topic} />
-          ))}
-        </div>
-
-        {/* Call to action */}
-        <div className="mt-8 bg-gradient-to-r from-[#993331] to-[#7a2927] rounded-3xl p-8 text-center text-white shadow-lg">
-          <h3 className="text-2xl font-extrabold mb-2">¿Listo para más?</h3>
-          <p className="text-white/90 mb-6">Continúa practicando otros temas y sigue mejorando</p>
-          <button className="bg-white text-[#993331] px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors shadow-md">
-            Ver todos los temas
-          </button>
-        </div>
-        </div>
       </div>
-    </div>
+
+      {/* Estadísticas rápidas */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <StatCard
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          }
+          label="Sesiones completadas"
+          value={stats.sessionsCompleted}
+          color="text-[#993331]"
+        />
+        <StatCard
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          }
+          label="Promedio"
+          value={`${stats.averageScore}%`}
+          color="text-[#993331]"
+        />
+        <StatCard
+          icon={
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+            </svg>
+          }
+          label="Racha"
+          value={`${stats.streak} días`}
+          color="text-[#993331]"
+        />
+      </div>
+
+      {/* Repaso recomendado */}
+      <SectionHeader
+        className="mb-6"
+        title={
+          <>
+            Repaso <span className="text-[#993331]">Recomendado</span>
+          </>
+        }
+        titleClassName="text-3xl font-extrabold tracking-tight text-gray-900"
+        subtitle="Temas que necesitan refuerzo según tu progreso"
+        subtitleClassName="text-sm text-gray-500"
+      />
+
+      {/* Lista de temas */}
+      <div className="space-y-4">
+        {topics.map((topic) => (
+          <ReviewCard key={topic.id} topic={topic} />
+        ))}
+      </div>
+
+      {/* Call to action */}
+      <div className="mt-8 bg-gradient-to-r from-[#993331] to-[#7a2927] rounded-3xl p-8 text-center text-white shadow-lg">
+        <h3 className="text-2xl font-extrabold mb-2">¿Listo para más?</h3>
+        <p className="text-white/90 mb-6">Continúa practicando otros temas y sigue mejorando</p>
+        <button className="bg-white text-[#993331] px-8 py-3 rounded-full font-bold hover:bg-gray-100 transition-colors shadow-md">
+          Ver todos los temas
+        </button>
+      </div>
+    </DashboardShell>
   );
 }
 

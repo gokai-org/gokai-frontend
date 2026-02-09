@@ -4,11 +4,22 @@ import { useState, useEffect } from "react";
 import { SettingsSidebar } from "@/components/configuration/SettingsSidebar";
 import { SettingsSection } from "@/components/configuration/SettingsSection";
 import { SettingsItem } from "@/components/configuration/SettingsItem";
+import { SettingsSelectItem, SettingsToggleItem, SettingsToggleSelectItem } from "@/components/configuration/SettingsFields";
 import { Toggle } from "@/components/ui/Toggle";
-import { Dropdown } from "@/components/ui/Dropdown";
 import { IntegrationButton } from "@/components/configuration/IntegrationButton";
 import { getCurrentUser, type User } from "@/lib/api/user";
 import { useToast } from "@/components/ui/ToastProvider";
+
+const sectionTitles: Record<string, string> = {
+  general: "Configuración General",
+  notifications: "Notificaciones",
+  appearance: "Apariencia",
+  language: "Idioma y Región",
+  learning: "Preferencias de Estudio",
+  accessibility: "Accesibilidad",
+  privacy: "Privacidad",
+  account: "Cuenta",
+};
 
 export default function ConfigurationPage() {
   const [activeSection, setActiveSection] = useState("general");
@@ -32,14 +43,7 @@ export default function ConfigurationPage() {
         <div className="max-w-4xl mx-auto p-4 md:p-8">
           <div className="mb-6 md:mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-              {activeSection === "general" && "Configuración General"}
-              {activeSection === "notifications" && "Notificaciones"}
-              {activeSection === "appearance" && "Apariencia"}
-              {activeSection === "language" && "Idioma y Región"}
-              {activeSection === "learning" && "Preferencias de Estudio"}
-              {activeSection === "accessibility" && "Accesibilidad"}
-              {activeSection === "privacy" && "Privacidad"}
-              {activeSection === "account" && "Cuenta"}
+              {sectionTitles[activeSection] || "Configuración"}
             </h1>
             <p className="mt-2 text-xs md:text-sm text-gray-600">
               Personaliza tu experiencia de aprendizaje de japonés
@@ -69,48 +73,41 @@ function GeneralSettings() {
         title="Preferencias Generales"
         description="Configura los ajustes básicos de la plataforma"
       >
-        <SettingsItem
+        <SettingsToggleItem
           label="Reproducción automática"
           description="Reproduce automáticamente el siguiente ejercicio"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Mostrar romaji"
           description="Muestra la romanización de los caracteres japoneses"
-        >
-          <Toggle enabled={false} />
-        </SettingsItem>
+          enabled={false}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Confirmación de respuestas"
           description="Requiere confirmación antes de enviar respuestas"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
       </SettingsSection>
 
       <SettingsSection
         title="Sesiones de Estudio"
         description="Personaliza tus sesiones de práctica"
       >
-        <SettingsItem
+        <SettingsSelectItem
           label="Duración de sesión"
           description="Tiempo predeterminado para sesiones de estudio"
-        >
-          <Dropdown 
-            value="30 min"
-            options={["15 min", "30 min", "45 min", "60 min"]}
-          />
-        </SettingsItem>
+          value="30 min"
+          options={["15 min", "30 min", "45 min", "60 min"]}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Recordatorios de descanso"
           description="Te avisaremos cuando sea momento de descansar"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
       </SettingsSection>
     </>
   );
@@ -123,23 +120,19 @@ function NotificationSettings() {
         title="Notificaciones por Email"
         description="Recibe actualizaciones importantes por correo electrónico"
       >
-        <SettingsItem
+        <SettingsToggleSelectItem
           label="Frecuencia de notificaciones"
           description="Con qué frecuencia quieres recibir notificaciones agrupadas"
-        >
-          <Toggle enabled={true} />
-          <Dropdown 
-            value="Diario"
-            options={["Inmediato", "Cada 3 horas", "Diario", "Semanal"]}
-          />
-        </SettingsItem>
+          toggleEnabled={true}
+          value="Diario"
+          options={["Inmediato", "Cada 3 horas", "Diario", "Semanal"]}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Alertas prioritarias"
           description="Notificaciones críticas que te pueden interrumpir"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
       </SettingsSection>
 
       <SettingsSection
@@ -157,26 +150,23 @@ function NotificationSettings() {
         title="Horarios Silenciosos"
         description="No recibirás notificaciones durante tus horas de descanso"
       >
-        <SettingsItem
+        <SettingsToggleItem
           label="Activar horario silencioso"
           description="Define cuándo no quieres ser interrumpido"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
 
         <div className="grid grid-cols-2 gap-4">
-          <SettingsItem label="Días de la semana">
-            <Dropdown 
-              value="Lunes - Viernes"
-              options={["Todos los días", "Lunes - Viernes", "Fines de semana", "Personalizado"]}
-            />
-          </SettingsItem>
-          <SettingsItem label="Horario">
-            <Dropdown 
-              value="22:00 - 08:00"
-              options={["21:00 - 07:00", "22:00 - 08:00", "23:00 - 09:00", "Personalizado"]}
-            />
-          </SettingsItem>
+          <SettingsSelectItem
+            label="Días de la semana"
+            value="Lunes - Viernes"
+            options={["Todos los días", "Lunes - Viernes", "Fines de semana", "Personalizado"]}
+          />
+          <SettingsSelectItem
+            label="Horario"
+            value="22:00 - 08:00"
+            options={["21:00 - 07:00", "22:00 - 08:00", "23:00 - 09:00", "Personalizado"]}
+          />
         </div>
       </SettingsSection>
 
@@ -184,25 +174,19 @@ function NotificationSettings() {
         title="Sonidos y Alertas"
         description="Personaliza los sonidos de notificación"
       >
-        <SettingsItem
+        <SettingsSelectItem
           label="Sonido personalizado"
           description="Elige el sonido que se reproduce con las notificaciones"
-        >
-          <Dropdown 
-            value="Campana"
-            options={["Campana", "Gong japonés", "Suave", "Ninguno"]}
-          />
-        </SettingsItem>
+          value="Campana"
+          options={["Campana", "Gong japonés", "Suave", "Ninguno"]}
+        />
 
-        <SettingsItem
+        <SettingsSelectItem
           label="Estilo de banner"
           description="Cómo se muestran las notificaciones en pantalla"
-        >
-          <Dropdown 
-            value="Predeterminado"
-            options={["Predeterminado", "Minimalista", "Compacto"]}
-          />
-        </SettingsItem>
+          value="Predeterminado"
+          options={["Predeterminado", "Minimalista", "Compacto"]}
+        />
       </SettingsSection>
     </>
   );
@@ -215,47 +199,37 @@ function AppearanceSettings() {
         title="Tema Visual"
         description="Personaliza la apariencia de la interfaz"
       >
-        <SettingsItem
+        <SettingsToggleItem
           label="Modo oscuro"
           description="Activa el tema oscuro para reducir la fatiga visual"
-        >
-          <Toggle enabled={false} />
-        </SettingsItem>
+          enabled={false}
+        />
 
-        <SettingsItem
+        <SettingsSelectItem
           label="Tema de colores"
           description="Selecciona el esquema de colores principal"
-        >
-          <Dropdown 
-            value="Morado (Predeterminado)"
-            options={["Morado (Predeterminado)", "Azul", "Rosa", "Verde", "Naranja"]}
-          />
-        </SettingsItem>
+          value="Morado (Predeterminado)"
+          options={["Morado (Predeterminado)", "Azul", "Rosa", "Verde", "Naranja"]}
+        />
       </SettingsSection>
 
       <SettingsSection
         title="Tipografía"
         description="Ajusta el tamaño y estilo del texto"
       >
-        <SettingsItem
+        <SettingsSelectItem
           label="Tamaño de fuente"
           description="Tamaño del texto en la interfaz"
-        >
-          <Dropdown 
-            value="Mediano"
-            options={["Pequeño", "Mediano", "Grande", "Muy grande"]}
-          />
-        </SettingsItem>
+          value="Mediano"
+          options={["Pequeño", "Mediano", "Grande", "Muy grande"]}
+        />
 
-        <SettingsItem
+        <SettingsSelectItem
           label="Fuente para japonés"
           description="Tipografía para caracteres japoneses"
-        >
-          <Dropdown 
-            value="Noto Sans JP"
-            options={["Noto Sans JP", "Hiragino", "Yu Gothic", "Meiryo"]}
-          />
-        </SettingsItem>
+          value="Noto Sans JP"
+          options={["Noto Sans JP", "Hiragino", "Yu Gothic", "Meiryo"]}
+        />
       </SettingsSection>
     </>
   );
@@ -268,40 +242,31 @@ function LanguageSettings() {
         title="Idioma de la Interfaz"
         description="Selecciona el idioma de la plataforma"
       >
-        <SettingsItem
+        <SettingsSelectItem
           label="Idioma principal"
           description="Idioma en el que se muestra la interfaz"
-        >
-          <Dropdown 
-            value="Español"
-            options={["Español", "English", "日本語", "Português", "Français"]}
-          />
-        </SettingsItem>
+          value="Español"
+          options={["Español", "English", "日本語", "Português", "Français"]}
+        />
       </SettingsSection>
 
       <SettingsSection
         title="Configuración Regional"
         description="Ajusta los formatos según tu región"
       >
-        <SettingsItem
+        <SettingsSelectItem
           label="Zona horaria"
           description="Tu zona horaria local"
-        >
-          <Dropdown 
-            value="GMT-6 (Ciudad de México)"
-            options={["GMT-6 (Ciudad de México)", "GMT-5 (Bogotá)", "GMT-3 (Buenos Aires)", "GMT+9 (Tokio)"]}
-          />
-        </SettingsItem>
+          value="GMT-6 (Ciudad de México)"
+          options={["GMT-6 (Ciudad de México)", "GMT-5 (Bogotá)", "GMT-3 (Buenos Aires)", "GMT+9 (Tokio)"]}
+        />
 
-        <SettingsItem
+        <SettingsSelectItem
           label="Formato de fecha"
           description="Cómo se muestran las fechas"
-        >
-          <Dropdown 
-            value="DD/MM/AAAA"
-            options={["DD/MM/AAAA", "MM/DD/AAAA", "AAAA-MM-DD"]}
-          />
-        </SettingsItem>
+          value="DD/MM/AAAA"
+          options={["DD/MM/AAAA", "MM/DD/AAAA", "AAAA-MM-DD"]}
+        />
       </SettingsSection>
     </>
   );
@@ -314,83 +279,67 @@ function LearningSettings() {
         title="Nivel y Objetivos"
         description="Define tu nivel actual y metas de aprendizaje"
       >
-        <SettingsItem
+        <SettingsSelectItem
           label="Nivel actual"
           description="Tu nivel de japonés actual"
-        >
-          <Dropdown 
-            value="N4 - Intermedio"
-            options={["N5 - Principiante", "N4 - Intermedio", "N3 - Intermedio Alto", "N2 - Avanzado", "N1 - Experto"]}
-          />
-        </SettingsItem>
+          value="N4 - Intermedio"
+          options={["N5 - Principiante", "N4 - Intermedio", "N3 - Intermedio Alto", "N2 - Avanzado", "N1 - Experto"]}
+        />
 
-        <SettingsItem
+        <SettingsSelectItem
           label="Meta diaria"
           description="Tiempo de estudio diario que deseas alcanzar"
-        >
-          <Dropdown 
-            value="30 minutos"
-            options={["15 minutos", "30 minutos", "45 minutos", "60 minutos", "90 minutos"]}
-          />
-        </SettingsItem>
+          value="30 minutos"
+          options={["15 minutos", "30 minutos", "45 minutos", "60 minutos", "90 minutos"]}
+        />
       </SettingsSection>
 
       <SettingsSection
         title="Preferencias de Ejercicios"
         description="Personaliza los tipos de ejercicios"
       >
-        <SettingsItem
+        <SettingsToggleItem
           label="Enfoque en kanji"
           description="Priorizar ejercicios de kanji en tus sesiones"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Ejercicios de audio"
           description="Incluir más ejercicios de comprensión auditiva"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Práctica de conversación"
           description="Activar ejercicios de expresión oral"
-        >
-          <Toggle enabled={false} />
-        </SettingsItem>
+          enabled={false}
+        />
 
-        <SettingsItem
+        <SettingsSelectItem
           label="Dificultad de ejercicios"
           description="Nivel de dificultad de los nuevos ejercicios"
-        >
-          <Dropdown 
-            value="Adaptativo"
-            options={["Fácil", "Medio", "Difícil", "Adaptativo"]}
-          />
-        </SettingsItem>
+          value="Adaptativo"
+          options={["Fácil", "Medio", "Difícil", "Adaptativo"]}
+        />
       </SettingsSection>
 
       <SettingsSection
         title="Sistema de Repaso"
         description="Configura el sistema de repetición espaciada"
       >
-        <SettingsItem
+        <SettingsSelectItem
           label="Repasos diarios"
           description="Cantidad máxima de repasos por día"
-        >
-          <Dropdown 
-            value="50 tarjetas"
-            options={["20 tarjetas", "50 tarjetas", "100 tarjetas", "Ilimitado"]}
-          />
-        </SettingsItem>
+          value="50 tarjetas"
+          options={["20 tarjetas", "50 tarjetas", "100 tarjetas", "Ilimitado"]}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Notificar repasos pendientes"
           description="Recibir recordatorios de contenido por repasar"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
       </SettingsSection>
     </>
   );
@@ -403,67 +352,58 @@ function AccessibilitySettings() {
         title="Ayudas Visuales"
         description="Mejora la legibilidad y navegación"
       >
-        <SettingsItem
+        <SettingsToggleItem
           label="Alto contraste"
           description="Aumenta el contraste para mejor legibilidad"
-        >
-          <Toggle enabled={false} />
-        </SettingsItem>
+          enabled={false}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Resaltar enfoque"
           description="Resalta el elemento activo al navegar con teclado"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Reducir animaciones"
           description="Minimiza animaciones y transiciones"
-        >
-          <Toggle enabled={false} />
-        </SettingsItem>
+          enabled={false}
+        />
       </SettingsSection>
 
       <SettingsSection
         title="Audio y Voz"
         description="Configuración de audio y lectura de pantalla"
       >
-        <SettingsItem
+        <SettingsSelectItem
           label="Velocidad de audio"
           description="Velocidad de reproducción del audio japonés"
-        >
-          <Dropdown 
-            value="Normal"
-            options={["Muy lento", "Lento", "Normal", "Rápido"]}
-          />
-        </SettingsItem>
+          value="Normal"
+          options={["Muy lento", "Lento", "Normal", "Rápido"]}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Lector de pantalla"
           description="Optimizar para lectores de pantalla"
-        >
-          <Toggle enabled={false} />
-        </SettingsItem>
+          enabled={false}
+        />
       </SettingsSection>
 
       <SettingsSection
         title="Navegación"
         description="Personaliza la navegación de la plataforma"
       >
-        <SettingsItem
+        <SettingsToggleItem
           label="Atajos de teclado"
           description="Habilitar atajos de teclado para navegación rápida"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Navegación simplificada"
           description="Interfaz simplificada con menos elementos"
-        >
-          <Toggle enabled={false} />
-        </SettingsItem>
+          enabled={false}
+        />
       </SettingsSection>
     </>
   );
@@ -476,45 +416,40 @@ function PrivacySettings() {
         title="Datos y Privacidad"
         description="Controla tu información personal"
       >
-        <SettingsItem
+        <SettingsToggleItem
           label="Perfil público"
           description="Permite que otros usuarios vean tu perfil"
-        >
-          <Toggle enabled={false} />
-        </SettingsItem>
+          enabled={false}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Mostrar progreso"
           description="Compartir tu progreso en tablas de clasificación"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Recopilación de datos de uso"
           description="Ayúdanos a mejorar compartiendo datos anónimos"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
       </SettingsSection>
 
       <SettingsSection
         title="Compartir Actividad"
         description="Qué actividades pueden ver otros usuarios"
       >
-        <SettingsItem
+        <SettingsToggleItem
           label="Racha de estudio"
           description="Mostrar tu racha actual de días de estudio"
-        >
-          <Toggle enabled={true} />
-        </SettingsItem>
+          enabled={true}
+        />
 
-        <SettingsItem
+        <SettingsToggleItem
           label="Ejercicios completados"
           description="Compartir cuántos ejercicios has completado"
-        >
-          <Toggle enabled={false} />
-        </SettingsItem>
+          enabled={false}
+        />
       </SettingsSection>
     </>
   );
@@ -536,25 +471,34 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  const formatBirthdateForInput = (birthdate?: string | Date | null) => {
+    if (!birthdate) return "";
+    const date = new Date(birthdate);
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatBirthdateForDisplay = (birthdate?: string | Date | null) => {
+    if (!birthdate) return "No especificado";
+    const date = new Date(birthdate);
+    return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()).toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
   // Actualizar profileData cuando cambie el usuario
   useEffect(() => {
     if (user) {
       // Formatear fecha correctamente para evitar problemas de zona horaria
-      let formattedDate = "";
-      if (user.birthdate) {
-        const date = new Date(user.birthdate);
-        // Usar UTC para evitar desfase de días
-        const year = date.getUTCFullYear();
-        const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-        const day = String(date.getUTCDate()).padStart(2, '0');
-        formattedDate = `${year}-${month}-${day}`;
-      }
-      
       setProfileData({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
         email: user.email || "",
-        birthdate: formattedDate,
+        birthdate: formatBirthdateForInput(user.birthdate),
       });
     }
   }, [user]);
@@ -580,22 +524,12 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
         if (data.user) {
           // Actualizar el estado del usuario con los datos normalizados
           setUser(data.user);
-          
-          // Formatear fecha para el input
-          let formattedDate = "";
-          if (data.user.birthdate) {
-            const date = new Date(data.user.birthdate);
-            const year = date.getUTCFullYear();
-            const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-            const day = String(date.getUTCDate()).padStart(2, '0');
-            formattedDate = `${year}-${month}-${day}`;
-          }
-          
+
           setProfileData({
             firstName: data.user.firstName || "",
             lastName: data.user.lastName || "",
             email: data.user.email || "",
-            birthdate: formattedDate,
+            birthdate: formatBirthdateForInput(data.user.birthdate),
           });
           
           setIsEditingProfile(false);
@@ -617,22 +551,12 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
 
   const handleCancelEdit = () => {
     setIsEditingProfile(false);
-    
-    // Formatear fecha correctamente
-    let formattedDate = "";
-    if (user?.birthdate) {
-      const date = new Date(user.birthdate);
-      const year = date.getUTCFullYear();
-      const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-      const day = String(date.getUTCDate()).padStart(2, '0');
-      formattedDate = `${year}-${month}-${day}`;
-    }
-    
+
     setProfileData({
       firstName: user?.firstName || "",
       lastName: user?.lastName || "",
       email: user?.email || "",
-      birthdate: formattedDate,
+      birthdate: formatBirthdateForInput(user?.birthdate),
     });
   };
 
@@ -811,14 +735,7 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
                 </div>
               ) : (
                 <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900">
-                  {user?.birthdate ? (() => {
-                    const date = new Date(user.birthdate);
-                    return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()).toLocaleDateString('es-ES', {
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric'
-                    });
-                  })() : "No especificado"}
+                  {formatBirthdateForDisplay(user?.birthdate)}
                 </div>
               )}
             </div>

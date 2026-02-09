@@ -5,6 +5,7 @@ import { ChatMessage } from '@/types/chatbot';
 import { MessageBubble } from '@/components/chatbot/MessageBubble';
 import { ChatInput } from '@/components/chatbot/ChatInput';
 import { ChatHeader } from '@/components/chatbot/ChatHeader';
+import { DashboardShell } from '@/components/layout/DashboardShell';
 
 export default function Page() {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -100,40 +101,39 @@ export default function Page() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-white">
-      {/* Header */}
-      <ChatHeader />
-      
-      {/* Chat Messages Area */}
-      <div className="flex-1 overflow-y-auto p-6 bg-white">
-        <div className="max-w-4xl mx-auto">
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
-          ))}
-          
-          {isLoading && (
-            <div className="flex justify-start mb-4">
-              <div className="bg-white rounded-2xl px-4 py-3 shadow-sm">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                </div>
+    <DashboardShell
+      header={<ChatHeader />}
+      useContainer={false}
+      contentClassName="p-6"
+      footer={
+        <ChatInput
+          onSendMessage={handleSendMessage}
+          onStartRecording={handleStartRecording}
+          isRecording={isRecording}
+          disabled={isLoading}
+        />
+      }
+    >
+      <div className="max-w-4xl mx-auto">
+        {messages.map((message) => (
+          <MessageBubble key={message.id} message={message} />
+        ))}
+
+        {isLoading && (
+          <div className="flex justify-start mb-4">
+            <div className="bg-white rounded-2xl px-4 py-3 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
               </div>
             </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
+          </div>
+        )}
+
+        <div ref={messagesEndRef} />
       </div>
 
-      {/* Chat Input */}
-      <ChatInput
-        onSendMessage={handleSendMessage}
-        onStartRecording={handleStartRecording}
-        isRecording={isRecording}
-        disabled={isLoading}
-      />
-    </div>
+    </DashboardShell>
   );
 }
