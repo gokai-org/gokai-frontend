@@ -72,9 +72,10 @@ const [loggingOut, setLoggingOut] = useState(false);
 
       try {
         await fetch("/api/auth/logout", { method: "POST" });
-      } finally {
-        router.replace("/auth/login");
-        router.refresh();
+        // Usar window.location.replace para limpiar el historial y evitar volver atrás
+        window.location.replace("/auth/login");
+      } catch (error) {
+        console.error("Error al cerrar sesión:", error);
         setLoggingOut(false);
       }
       return;

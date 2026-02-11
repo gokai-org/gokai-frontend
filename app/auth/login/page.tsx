@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import ProgressDots from "../../../components/auth/ProgressDots";
 import AnimatedGraphBackground from "../../../components/graph/AnimatedGraphBackground";
 import { useToast } from "@/components/ui/ToastProvider";
+import { LoginHistoryHandler } from "@/components/auth/LoginHistoryHandler";
 
 const HERO_MESSAGES = [
   { jp: "あなたの成長は、あなただけのもの", es: "Tu progreso es único, como tú." },
@@ -80,20 +81,6 @@ export default function LoginPage() {
     };
   }, []);
 
-  useEffect(() => {
-    function onPopState() {
-      if (typeof window === "undefined") return;
-      const path = window.location.pathname;
-      if (path !== "/auth/login") {
-        const target = path + (window.location.search || "") + (window.location.hash || "");
-        router.replace(target);
-      }
-    }
-
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [router]);
-
   function startSwitch(next: Mode) {
     if (next === mode || switching) return;
 
@@ -152,7 +139,13 @@ async function handleLoginSubmit(e: React.FormEvent) {
     }
 
     toast.success("Sesión iniciada correctamente");
-    router.push("/dashboard/graph");
+    
+    // Obtener el parámetro 'from' de la URL y redirigir allí
+    const searchParams = new URLSearchParams(window.location.search);
+    const from = searchParams.get("from") || "/dashboard/graph";
+    
+    // Usar replace para evitar que el login quede en el historial
+    window.location.replace(from);
   } catch (err) {
     const error = err instanceof Error ? err : new Error("Error desconocido");
     toast.error(error?.message ?? "Error inesperado.");
@@ -200,7 +193,8 @@ async function handleRegisterSubmit(e: React.FormEvent) {
 
     toast.success("¡Cuenta creada exitosamente!");
     // Redirigir a selección de intereses después de registro exitoso
-    router.push("/onboarding/interests");
+    // Usar replace para evitar que el registro quede en el historial
+    window.location.replace("/onboarding/interests");
   } catch (err) {
     const error = err instanceof Error ? err : new Error("Error desconocido");
     toast.error(error?.message ?? "Error inesperado.");
@@ -283,6 +277,7 @@ async function handleRegisterSubmit(e: React.FormEvent) {
   return (
     <main
     className="relative min-h-screen overflow-hidden bg-neutral-50">
+    <LoginHistoryHandler />
     <AnimatedGraphBackground />
     <div className="absolute inset-0 bg-linear-to-b from-white/20 via-white/10 to-white/30" />
 

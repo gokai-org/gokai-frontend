@@ -6,7 +6,19 @@ export function middleware(req: NextRequest) {
 
   const isProtected =
     req.nextUrl.pathname.startsWith("/dashboard");
+  
+  const isAuthPage = 
+    req.nextUrl.pathname.startsWith("/auth/login") ||
+    req.nextUrl.pathname.startsWith("/auth/register");
 
+  // Si intenta acceder a páginas de auth y ya está autenticado, redirigir al dashboard
+  if (isAuthPage && token) {
+    const url = req.nextUrl.clone();
+    url.pathname = "/dashboard/graph";
+    return NextResponse.redirect(url);
+  }
+
+  // Si intenta acceder a rutas protegidas sin token, redirigir al login
   if (isProtected && !token) {
     const url = req.nextUrl.clone();
     url.pathname = "/auth/login";
@@ -18,5 +30,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*"],
+  matcher: ["/dashboard/:path*", "/auth/:path*"],
 };
