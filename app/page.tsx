@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import AnimatedGraphBackground from "../components/graph/AnimatedGraphBackground";
 
 type Section = {
@@ -268,9 +269,10 @@ useEffect(() => {
 
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
+        if (!logoWrapRef.current) return;
         const y = window.scrollY || 0;
         const deg = y * 0.12;
-        logoWrapRef.current!.style.transform = `rotate(${deg}deg)`;
+        logoWrapRef.current.style.transform = `rotate(${deg}deg)`;
       });
     };
 
@@ -317,12 +319,13 @@ useEffect(() => {
             </span>
           </div>
 
-          <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
-            <NavItem href="#inicio" active={activeId === "inicio"}>
+          <nav className="hidden items-center gap-8 text-sm font-medium md:flex relative">
+            <NavItem id="inicio" href="#inicio" active={activeId === "inicio"}>
               Inicio
             </NavItem>
 
             <NavItem
+              id="caracteristicas"
               href="#caracteristicas"
               active={
                 activeId === "caracteristicas" ||
@@ -336,18 +339,19 @@ useEffect(() => {
             </NavItem>
 
             <NavItem
+              id="funciones"
               href="#como-funciona"
               active={activeId === "como-funciona" || activeId === "experiencia"}
             >
               Funciones
             </NavItem>
 
-            <NavItem href="#planes" active={activeId === "planes"}>
+            <NavItem id="planes" href="#planes" active={activeId === "planes"}>
               Planes
             </NavItem>
 
             {/* Contacto */}
-            <NavItem href="#contacto" active={activeId === "contacto"}>
+            <NavItem id="contacto" href="#contacto" active={activeId === "contacto"}>
               Contacto
             </NavItem>
 
@@ -383,11 +387,15 @@ useEffect(() => {
               const isCenter = (s.layout ?? "split") === "center";
 
               return (
-                <section
+                <motion.section
                   key={s.id}
                   id={s.id}
                   data-section
                   ref={s.id === "como-funciona" ? howSectionRef : undefined}
+                  initial={{ opacity: 0, y: 40 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-100px" }}
+                  transition={{ duration: 0.6, ease: "easeOut" }}
                   className={[
                     "scroll-mt-28",
                     "min-h-[calc(100vh-76px)]",
@@ -472,14 +480,25 @@ useEffect(() => {
                     )}
 
                     {s.cta && !isCenter && (
-                      <div className="mt-8">
-                        <Link
-                          href={s.cta.href}
-                          className="inline-flex rounded-full bg-[#993331] px-8 py-4 text-lg font-semibold text-white shadow-sm hover:bg-[#882d2d] md:px-10 md:py-5 md:text-xl"
+                      <motion.div 
+                        className="mt-8"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        whileInView={{ opacity: 1, scale: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ delay: 0.3, duration: 0.4 }}
+                      >
+                        <motion.div
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
                         >
-                          {s.cta.label}
-                        </Link>
-                      </div>
+                          <Link
+                            href={s.cta.href}
+                            className="inline-flex rounded-full bg-[#993331] px-8 py-4 text-lg font-semibold text-white shadow-sm hover:bg-[#882d2d] md:px-10 md:py-5 md:text-xl"
+                          >
+                            {s.cta.label}
+                          </Link>
+                        </motion.div>
+                      </motion.div>
                     )}
 
                     {s.id === "inicio" && (
@@ -492,46 +511,93 @@ useEffect(() => {
                     {/* FUNCIONES */}
                     {s.id === "como-funciona" && (
                       <div className="mt-2">
-                        <div className="mx-auto w-full max-w-5xl">
-                          <div className="relative aspect-[16/9] w-full">
-                            <Image src={how.img} alt={how.label} fill className="object-contain" />
-                          </div>
-                        </div>
+                        <motion.div 
+                          className="mx-auto w-full max-w-5xl"
+                          initial={{ opacity: 0, scale: 0.95 }}
+                          whileInView={{ opacity: 1, scale: 1 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.2, duration: 0.5 }}
+                        >
+                          <AnimatePresence mode="wait">
+                            <motion.div
+                              key={howTab}
+                              initial={{ opacity: 0, x: 20 }}
+                              animate={{ opacity: 1, x: 0 }}
+                              exit={{ opacity: 0, x: -20 }}
+                              transition={{ duration: 0.3 }}
+                              className="relative aspect-[16/9] w-full"
+                            >
+                              <Image src={how.img} alt={how.label} fill className="object-contain" />
+                            </motion.div>
+                          </AnimatePresence>
+                        </motion.div>
 
-                        <div className="mt-6 flex flex-wrap items-center justify-center gap-5">
-                          {HOW_TABS.map((t) => (
-                            <button
+                        <motion.div 
+                          className="mt-6 flex flex-wrap items-center justify-center gap-5"
+                          initial={{ opacity: 0, y: 20 }}
+                          whileInView={{ opacity: 1, y: 0 }}
+                          viewport={{ once: true }}
+                          transition={{ delay: 0.4, duration: 0.5 }}
+                        >
+                          {HOW_TABS.map((t, idx) => (
+                            <motion.button
                               key={t.id}
                               type="button"
                               onClick={() => setHowTab(t.id)}
+                              initial={{ opacity: 0, y: 20 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              viewport={{ once: true }}
+                              transition={{ delay: 0.5 + idx * 0.1, duration: 0.4 }}
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
                               className={[
-                                "w-56 md:w-64 text-center whitespace-nowrap rounded-full px-7 py-4 text-base md:px-10 md:py-5 md:text-lg font-semibold transition",
+                                "relative w-56 md:w-64 text-center whitespace-nowrap rounded-full px-7 py-4 text-base md:px-10 md:py-5 md:text-lg font-semibold transition",
                                 t.id === howTab
                                   ? "bg-[#993331] text-white shadow-sm"
                                   : "bg-[#993331]/90 text-white/90 hover:bg-[#882d2d] hover:text-white",
                               ].join(" ")}
                             >
                               {t.label}
-                            </button>
+                              {t.id === howTab && (
+                                <motion.div
+                                  layoutId="activeTab"
+                                  className="absolute inset-0 rounded-full bg-[#993331]"
+                                  style={{ zIndex: -1 }}
+                                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                />
+                              )}
+                            </motion.button>
                           ))}
-                        </div>
+                        </motion.div>
                       </div>
                     )}
 
                     {/* EXPERIENCIA */}
                     {s.id === "experiencia" && (
-                      <div className="mt-12">
+                      <motion.div 
+                        className="mt-12"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                      >
                         <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                          {FEATURES.map((f) => (
-                            <FeatureCard key={f.title} {...f} />
+                          {FEATURES.map((f, idx) => (
+                            <FeatureCard key={f.title} {...f} index={idx} />
                           ))}
                         </div>
-                      </div>
+                      </motion.div>
                     )}
 
                     {/* PLANES */}
                     {s.id === "planes" && (
-                      <div className="mt-12">
+                      <motion.div 
+                        className="mt-12"
+                        initial={{ opacity: 0 }}
+                        whileInView={{ opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5 }}
+                      >
                         <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
                           <PlanCard
                             variant="free"
@@ -541,6 +607,7 @@ useEffect(() => {
                             period="MXN / mensual"
                             buttonText="Comenzar gratis"
                             bullets={["Acceso a módulos básicos.", "Grafo limitado.", "Sin chatbot."]}
+                            index={0}
                           />
 
                           <PlanCard
@@ -551,19 +618,26 @@ useEffect(() => {
                             period="MXN / mensual"
                             buttonText="Suscribirme"
                             bullets={["IA completa.", "Chatbot ilimitado.", "Estadísticas avanzadas."]}
+                            index={1}
                           />
                         </div>
-                      </div>
+                      </motion.div>
                     )}
 
                     {/* CONTACTO */}
                     {s.id === "contacto" && (
-                      <div className="mt-10">
+                      <motion.div 
+                        className="mt-10"
+                        initial={{ opacity: 0, y: 30 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.6 }}
+                      >
                         <ContactCard />
-                      </div>
+                      </motion.div>
                     )}
                   </div>
-                </section>
+                </motion.section>
               );
             })}
           </div>
@@ -603,15 +677,26 @@ useEffect(() => {
   );
 }
 
-function FeatureCard({ title, desc, icon }: { title: string; desc: string; icon: string }) {
+function FeatureCard({ title, desc, icon, index }: { title: string; desc: string; icon: string; index: number }) {
   return (
-    <div className="rounded-3xl bg-white/90 p-7 text-left shadow-[0_10px_30px_rgba(0,0,0,0.06)] ring-1 ring-black/5 backdrop-blur">
-      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#993331]">
+    <motion.div 
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ delay: index * 0.1, duration: 0.5, ease: "easeOut" }}
+      whileHover={{ y: -8, transition: { duration: 0.2 } }}
+      className="rounded-3xl bg-white/90 p-7 text-left shadow-[0_10px_30px_rgba(0,0,0,0.06)] ring-1 ring-black/5 backdrop-blur hover:shadow-[0_20px_40px_rgba(0,0,0,0.12)] transition-shadow"
+    >
+      <motion.div 
+        className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#993331]"
+        whileHover={{ rotate: 360, scale: 1.1 }}
+        transition={{ duration: 0.5 }}
+      >
         <Image src={icon} alt="" width={30} height={30} />
-      </div>
+      </motion.div>
       <h3 className="mt-5 text-2xl font-extrabold tracking-tight">{title}</h3>
       <p className="mt-3 text-base leading-relaxed text-neutral-700">{desc}</p>
-    </div>
+    </motion.div>
   );
 }
 
@@ -623,6 +708,7 @@ function PlanCard({
   period,
   buttonText,
   bullets,
+  index,
 }: {
   variant: "free" | "plus";
   title: string;
@@ -631,11 +717,19 @@ function PlanCard({
   period: string;
   buttonText: string;
   bullets: string[];
+  index: number;
 }) {
   const headerBg = "bg-[#b34a45]";
 
   return (
-    <div className="relative overflow-hidden rounded-[28px] bg-white ring-1 ring-black/10 shadow-[0_18px_55px_rgba(0,0,0,0.18)]">
+    <motion.div 
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ delay: index * 0.15, duration: 0.6, ease: "easeOut" }}
+      whileHover={{ y: -12, scale: 1.02, transition: { duration: 0.3 } }}
+      className="relative overflow-hidden rounded-[28px] bg-white ring-1 ring-black/10 shadow-[0_18px_55px_rgba(0,0,0,0.18)] hover:shadow-[0_25px_70px_rgba(0,0,0,0.25)] transition-shadow"
+    >
       <div className="pointer-events-none absolute inset-0 -z-10" />
       <div className="pointer-events-none absolute -left-8 top-1/2 -z-10 h-16 w-16 -translate-y-1/2 rounded-full bg-white ring-1 ring-black/10" />
       <div className="pointer-events-none absolute -right-8 top-1/2 -z-10 h-16 w-16 -translate-y-1/2 rounded-full bg-white ring-1 ring-black/10" />
@@ -658,26 +752,41 @@ function PlanCard({
             </div>
           </div>
 
-          <button
+          <motion.button
             type="button"
-            className="mt-4 w-full rounded-xl bg-[#993331] py-3 text-base font-extrabold text-white shadow-sm hover:bg-[#882d2d]"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="mt-4 w-full rounded-xl bg-[#993331] py-3 text-base font-extrabold text-white shadow-sm hover:bg-[#882d2d] transition-colors"
           >
             {buttonText}
-          </button>
+          </motion.button>
         </div>
 
         <ul className="mt-6 space-y-3 text-left">
-          {bullets.map((b) => (
-            <li key={b} className="flex items-start gap-3 text-sm md:text-base text-neutral-800">
-              <span className="mt-[2px] inline-flex h-6 w-6 items-center justify-center rounded-full bg-white ring-1 ring-black/10">
+          {bullets.map((b, idx) => (
+            <motion.li 
+              key={b} 
+              initial={{ opacity: 0, x: -20 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 + idx * 0.1, duration: 0.4 }}
+              className="flex items-start gap-3 text-sm md:text-base text-neutral-800"
+            >
+              <motion.span 
+                initial={{ scale: 0 }}
+                whileInView={{ scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4 + idx * 0.1, type: "spring", stiffness: 200 }}
+                className="mt-[2px] inline-flex h-6 w-6 items-center justify-center rounded-full bg-white ring-1 ring-black/10"
+              >
                 <span className="text-[#993331] font-black">✓</span>
-              </span>
+              </motion.span>
               <span>{b}</span>
-            </li>
+            </motion.li>
           ))}
         </ul>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -735,17 +844,24 @@ function ContactCard() {
 
 function SocialBadge({ children }: { children: React.ReactNode }) {
   return (
-    <div className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#993331] shadow-sm ring-1 ring-black/10">
+    <motion.div 
+      whileHover={{ scale: 1.15, rotate: 5 }}
+      whileTap={{ scale: 0.9 }}
+      transition={{ type: "spring", stiffness: 300 }}
+      className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#993331] shadow-sm ring-1 ring-black/10 cursor-pointer hover:shadow-lg"
+    >
       <div className="text-white">{children}</div>
-    </div>
+    </motion.div>
   );
 }
 
 function NavItem({
+  id,
   href,
   active,
   children,
 }: {
+  id: string;
   href: string;
   active?: boolean;
   children: React.ReactNode;
@@ -759,12 +875,17 @@ function NavItem({
       ].join(" ")}
     >
       {children}
-      <span
-        className={[
-          "absolute -bottom-2 left-0 h-[2px] w-full rounded-full bg-[#993331] transition-all",
-          active ? "opacity-100" : "opacity-0",
-        ].join(" ")}
-      />
+      <AnimatePresence>
+        {active && (
+          <motion.span
+            initial={{ opacity: 0, scaleX: 0 }}
+            animate={{ opacity: 1, scaleX: 1 }}
+            exit={{ opacity: 0, scaleX: 0 }}
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            className="absolute -bottom-2 left-0 h-[2px] w-full rounded-full bg-[#993331] origin-center"
+          />
+        )}
+      </AnimatePresence>
     </a>
   );
 }
