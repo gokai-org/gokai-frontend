@@ -60,9 +60,6 @@ export default function LoginPage() {
   const [switching, setSwitching] = useState(false);
   const switchTimeout = useRef<number | null>(null);
 
-  //PENDIENTE
-  // const apiBase = useMemo(() => process.env.NEXT_PUBLIC_API_BASE_URL || "", []);
-
   useEffect(() => {
     const interval = setInterval(() => {
       setHeroFading(true);
@@ -203,9 +200,36 @@ async function handleRegisterSubmit(e: React.FormEvent) {
   }
 }
 
-  function handleGoogleLogin() {
-    // Redirigir al flujo de OAuth de Google
-    window.location.href = "/api/auth/google";
+function handleGoogleLogin() {
+  window.location.href = "/api/auth/google";
+}
+
+  async function handleGoogleSuccess(credentialResponse: { credential?: string }) {
+    try {
+      setLoading(true);
+      const payload = { idToken: credentialResponse.credential, remember };
+
+      const res = await fetch("/api/auth/login/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok) {
+        throw new Error(data?.error || "Error al iniciar sesión con Google");
+      }
+
+      toast.success("Sesión iniciada correctamente");
+      router.push("/dashboard/graph");
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("Error desconocido");
+      toast.error(error?.message ?? "Error inesperado.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleForgotPasswordEmail(e: React.FormEvent) {
@@ -503,35 +527,26 @@ async function handleRegisterSubmit(e: React.FormEvent) {
                       <div className="h-px flex-1 bg-neutral-200" />
                     </div>
 
-                    <motion.button
-                      type="button"
-                      onClick={handleGoogleLogin}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex w-full items-center justify-center gap-2 rounded-lg border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-800 shadow-sm transition hover:bg-neutral-50 focus:outline-none focus:ring-4 focus:ring-neutral-200"
-                    >
-                      Iniciar sesión con Google
-                      <span aria-hidden="true">
-                        <svg width="18" height="18" viewBox="0 0 48 48">
-                          <path
-                            fill="#FFC107"
-                            d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.3 4.1 29.4 2 24 2 12.9 2 4 10.9 4 22s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.1-.4-3.5z"
-                          />
-                          <path
-                            fill="#FF3D00"
-                            d="M6.3 14.7l6.6 4.8C14.7 16 19 12 24 12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34.3 4.1 29.4 2 24 2 16.3 2 9.7 6.3 6.3 14.7z"
-                          />
-                          <path
-                            fill="#4CAF50"
-                            d="M24 42c5.2 0 10-2 13.6-5.2l-6.3-5.2C29.3 36 24 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.6 5.1C9.5 39.6 16.2 42 24 42z"
-                          />
-                          <path
-                            fill="#1976D2"
-                            d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.2-3.6 5.7-6.9 6.8l.1.1 6.3 5.2C38 37 44 32 44 22c0-1.3-.1-2.1-.4-3.5z"
-                          />
+                      <button
+                        type="button"
+                        onClick={handleGoogleLogin}
+                        className="group relative w-full flex items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
+                      >
+                        {/* Google Icon */}
+                        <svg
+                          className="h-5 w-5"
+                          viewBox="0 0 48 48"
+                        >
+                          <path fill="#EA4335" d="M24 9.5c3.3 0 6.3 1.2 8.6 3.2l6.4-6.4C34.8 2.5 29.7 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.7 6C12.3 13.6 17.7 9.5 24 9.5z"/>
+                          <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.1 5.3-4.4 6.9l7 5.4c4.1-3.8 7.1-9.4 7.1-16.8z"/>
+                          <path fill="#FBBC05" d="M10.3 28.9c-1-2.9-1-6 0-8.9l-7.7-6C.9 17.4 0 20.6 0 24s.9 6.6 2.6 10l7.7-6z"/>
+                          <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7-5.4c-2 1.4-4.6 2.2-8.8 2.2-6.3 0-11.7-4.1-13.7-9.8l-7.7 6C6.6 42.6 14.6 48 24 48z"/>
                         </svg>
-                      </span>
-                    </motion.button>
+
+                        <span className="transition-colors duration-200 group-hover:text-neutral-900">
+                          Continuar con Google
+                        </span>
+                      </button>
 
                     <p className="pt-1 text-center text-sm font-medium text-neutral-600">
                       ¿Necesitas una cuenta?{" "}
