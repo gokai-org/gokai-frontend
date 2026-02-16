@@ -1,6 +1,6 @@
 import type { LessonResolved } from "../types";
 
-// OJO: keys = nodeId del grafo (writing-1, listening-1, reading-1, speaking-1, etc.)
+// keys = nodeId del grafo (writing-1, listening-1, reading-1, speaking-1, etc.)
 export const mockLessonsByNodeId: Record<string, LessonResolved[]> = {
   "writing-1": [
     {

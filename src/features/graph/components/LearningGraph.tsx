@@ -35,7 +35,6 @@ function LearningGraphInner({ initialNodes, initialEdges }: LearningGraphProps) 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // ✅ si los nodos/edges llegan async (por ejemplo kanjis del backend), sincroniza
   useEffect(() => {
     setNodes(initialNodes);
   }, [initialNodes, setNodes]);
@@ -54,7 +53,6 @@ function LearningGraphInner({ initialNodes, initialEdges }: LearningGraphProps) 
     "kanji" | "subtheme" | "grammar" | null
   >(null);
 
-  // TODO: luego sacar userId real de tu auth/me
   const userId = "user123";
 
   const onConnect = useCallback(
@@ -65,14 +63,11 @@ function LearningGraphInner({ initialNodes, initialEdges }: LearningGraphProps) 
   const onNodeClick = useCallback<NodeMouseHandler>((_event, node) => {
     const nodeType = node.data?.type;
 
-    // Ignorar el home
     if (!nodeType || nodeType === "home") return;
 
-    // Guardar entity info (si existe)
     setSelectedEntityId(node.data?.entityId ?? null);
     setSelectedEntityKind(node.data?.entityKind ?? null);
 
-    // Validación extra (por si llega algo raro)
     const mode: LessonMode =
       nodeType === "writing" ||
       nodeType === "listening" ||
