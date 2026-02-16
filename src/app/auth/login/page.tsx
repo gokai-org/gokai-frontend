@@ -60,6 +60,27 @@ export default function LoginPage() {
   const [switching, setSwitching] = useState(false);
   const switchTimeout = useRef<number | null>(null);
 
+  //Bloquea el email si viene de Google
+  const fromGoogle = typeof window !== "undefined" &&
+  new URLSearchParams(window.location.search).get("google") === "1";
+
+
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    const google = sp.get("google");
+
+    if (google === "1") {
+      const e = sp.get("email") || "";
+      const fn = sp.get("firstName") || "";
+      const ln = sp.get("lastName") || "";
+
+      setMode("register");
+      if (e) setRegEmail(e);
+      if (fn) setFirstName(fn);
+      if (ln) setLastName(ln);
+    }
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setHeroFading(true);
@@ -609,7 +630,9 @@ function handleGoogleLogin() {
                         onChange={(e) => setRegEmail(e.target.value)}
                         type="email"
                         placeholder="correo@ejemplo.com"
-                        className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                        disabled={fromGoogle}
+                        className={`w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition
+                          ${fromGoogle ? "opacity-80 cursor-not-allowed" : ""}`}
                         required
                         autoComplete="email"
                       />

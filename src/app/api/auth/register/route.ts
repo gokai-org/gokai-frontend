@@ -18,12 +18,22 @@ export async function POST(req: Request) {
   const email = String(body?.email || "").trim();
   const password = String(body?.password || "");
   const birthdate = String(body?.birthdate || "").trim(); // "YYYY-MM-DD"
+  const fromGoogle = Boolean(body?.isGoogleUser || false);
 
   if (!firstName || !lastName || !email || !password || !birthdate) {
     return NextResponse.json(
       { error: "firstName, lastName, email, password y birthdate son requeridos." },
       { status: 400 }
     );
+  }
+  
+  if (!fromGoogle) {
+    if (!password || !birthdate) {
+      return NextResponse.json(
+        { error: "password y birthdate son requeridos." },
+        { status: 400 }
+      );
+    }
   }
 
   const r = await fetch(`${base}/users/`, {
@@ -35,7 +45,7 @@ export async function POST(req: Request) {
       email,
       password,
       birthdate,
-      isGoogleUser: false,
+      isGoogleUser: fromGoogle,
     }),
   });
 

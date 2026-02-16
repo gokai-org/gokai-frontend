@@ -87,9 +87,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (!backendData?.registered) {
-      return NextResponse.redirect(
-        new URL("/auth/login?error=google_not_registered&message=Completa tu registro", request.url)
-      );
+      const gd = backendData?.googleData || {};
+      const url = new URL("/auth/login", request.url);
+
+      if (gd.email) url.searchParams.set("email", String(gd.email));
+      if (gd.givenName) url.searchParams.set("firstName", String(gd.givenName));
+      if (gd.familyName) url.searchParams.set("lastName", String(gd.familyName));
+      url.searchParams.set("google", "1");
+
+      return NextResponse.redirect(url);
     }
 
     const token = backendData?.token;
