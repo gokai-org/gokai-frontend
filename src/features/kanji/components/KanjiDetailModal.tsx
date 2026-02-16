@@ -1,4 +1,5 @@
-import type { Kanji } from "@/shared/types/content";
+import type { Kanji } from "@/features/kanji/types";
+import { readingsToArray, meaningsToArray } from "@/features/kanji/utils/kanjiText";
 
 interface KanjiDetailModalProps {
   kanji: Kanji | null;
@@ -7,6 +8,9 @@ interface KanjiDetailModalProps {
 
 export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
   if (!kanji) return null;
+
+  const readings = readingsToArray(kanji.readings);
+  const meanings = meaningsToArray(kanji.meanings);
 
   return (
     <div
@@ -42,7 +46,7 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
             </div>
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#993331]/10 rounded-full">
               <span className="text-sm font-semibold text-[#993331]">
-                {kanji.points_to_unlock} puntos
+                {kanji.pointsToUnlock} puntos
               </span>
             </div>
           </div>
@@ -53,7 +57,7 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
               Lecturas
             </h3>
             <div className="flex flex-wrap gap-2">
-              {kanji.readings.map((reading, idx) => (
+              {readings.map((reading, idx) => (
                 <span
                   key={idx}
                   className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium"
@@ -70,7 +74,7 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
               Significados
             </h3>
             <div className="flex flex-wrap gap-2">
-              {kanji.meanings.map((meaning, idx) => (
+              {meanings.map((meaning, idx) => (
                 <span
                   key={idx}
                   className="px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium"

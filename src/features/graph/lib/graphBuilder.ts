@@ -6,7 +6,12 @@ interface NodeDefinition {
   type: NodeType;
   label: string;
   status: NodeStatus;
+
+  entityKind?: "kanji" | "subtheme" | "grammar";
+  entityId?: string;
+  symbol?: string;
 }
+
 
 /**
  * Calcula qué handle usar basándose en la posición relativa entre dos nodos
@@ -83,6 +88,9 @@ export function createCustomGraph(
         type: node.type,
         status: node.status,
         icon: null,
+        entityKind: node.entityKind,
+        entityId: node.entityId,
+        symbol: node.symbol,
       },
     };
   });

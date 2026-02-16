@@ -5,8 +5,8 @@ import {
   getFavorites, 
   addFavorite as addFavoriteAPI, 
   removeFavorite as removeFavoriteAPI,
-  FavoriteItem 
-} from '@/shared/lib/api/user';
+} from '@/features/library/services/api';
+import type { FavoriteItem } from '@/features/library/types';
 
 const STORAGE_KEY_ITEMS = 'favoriteItems';
 const STORAGE_KEY_KANJIS = 'favoriteKanjis';

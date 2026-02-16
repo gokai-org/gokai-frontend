@@ -9,5 +9,6 @@ export { RecentCard } from "./components/RecentCard";
 export { Thumbnail } from "./components/Thumbnail";
 export { useRecentItems } from "./hooks/useRecentItems";
 export { useFavorites } from "./hooks/useFavorites";
-export { listKanjis, getKanji } from "./services/content";
-export type { LibraryItem, LibraryCategory, LibrarySection } from "./types";
+export { listKanjis, getKanji } from "../kanji/api/kanjiApi";
+export { getFavorites, addFavorite, removeFavorite, getRecentItems, addRecentItem, clearRecentItems } from "./services/api";
+export type { LibraryItem, LibraryCategory, LibrarySection, Word, WordKanji, FavoriteItem, FavoritesResponse, RecentItem, RecentItemsResponse } from "./types";

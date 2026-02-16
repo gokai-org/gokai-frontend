@@ -2,33 +2,30 @@
 
 import { ReactNode } from 'react';
 
-export interface BaseContentItem {
+export interface ContentCardProps {
   id: string;
   title: string;
-  description?: string;
+  subtitle?: string;
   thumbnail: string | ReactNode;
-  level?: string;
+  badge?: string;
   progress?: number;
-  duration?: string;
-  itemCount?: number;
-  category?: string;
-  metadata?: Record<string, any>;
-}
-
-interface ContentCardProps {
-  item: BaseContentItem;
+  meta?: string;
   onClick?: () => void;
   onFavoriteToggle?: (id: string) => void;
   isFavorite?: boolean;
-  renderCustomContent?: (item: BaseContentItem) => ReactNode;
 }
 
-export function ContentCard({ 
-  item, 
-  onClick, 
+export function ContentCard({
+  id,
+  title,
+  subtitle,
+  thumbnail,
+  badge,
+  progress,
+  meta,
+  onClick,
   onFavoriteToggle,
   isFavorite = false,
-  renderCustomContent 
 }: ContentCardProps) {
   return (
     <div className="relative">
@@ -39,89 +36,66 @@ export function ContentCard({
         {/* Thumbnail */}
         <div className="relative aspect-[3/4] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
           <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent" />
-          {typeof item.thumbnail === 'string' ? (
-            <span className="relative z-10 text-6xl font-bold text-gray-900">
-              {item.thumbnail}
+          {typeof thumbnail === 'string' ? (
+            <span className="relative z-10 text-4xl font-bold text-gray-900">
+              {thumbnail}
             </span>
           ) : (
-            item.thumbnail
+            <div className="relative z-10">{thumbnail}</div>
           )}
         </div>
 
         {/* Content */}
         <div className="p-3 flex-1 flex flex-col">
-          {renderCustomContent ? (
-            renderCustomContent(item)
-          ) : (
-            <>
-              <div className="flex items-start justify-between gap-2 mb-1">
-                <h3 className="font-bold text-sm text-gray-900 line-clamp-1 group-hover:text-[#993331] transition-colors">
-                  {item.title}
-                </h3>
-                {item.level && (
-                  <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 bg-purple-100 text-purple-700">
-                    {item.level}
-                  </span>
-                )}
-              </div>
-              
-              {item.description && (
-                <p className="text-xs text-gray-600 line-clamp-1 mb-2">
-                  {item.description}
-                </p>
-              )}
+          <div className="flex items-start justify-between gap-2 mb-1">
+            <h3 className="font-bold text-sm text-gray-900 line-clamp-1 group-hover:text-[#993331] transition-colors">
+              {title}
+            </h3>
+            {badge && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full shrink-0 bg-purple-100 text-purple-700">
+                {badge}
+              </span>
+            )}
+          </div>
 
-              {/* Meta info */}
-              {(item.duration || item.itemCount) && (
-                <div className="flex items-center gap-3 text-xs text-gray-500 mb-2">
-                  {item.duration && (
-                    <div className="flex items-center gap-1">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>{item.duration}</span>
-                    </div>
-                  )}
-                  {item.itemCount && (
-                    <div className="flex items-center gap-1">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                      </svg>
-                      <span>{item.itemCount} items</span>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Progress bar o espacio reservado */}
-              <div className="mt-auto pt-2">
-                {item.progress !== undefined ? (
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className="h-full transition-all duration-300 bg-[#993331]"
-                        style={{ width: `${item.progress}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-500 shrink-0">
-                      {item.progress}%
-                    </span>
-                  </div>
-                ) : (
-                  <div className="h-[22px]" />
-                )}
-              </div>
-            </>
+          {subtitle && (
+            <p className="text-xs text-gray-600 line-clamp-1 mb-2">
+              {subtitle}
+            </p>
           )}
+
+          {meta && (
+            <div className="flex items-center gap-1 text-xs text-gray-500 mb-2">
+              <svg className="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+              <span>{meta}</span>
+            </div>
+          )}
+
+          <div className="mt-auto pt-1">
+            {progress !== undefined && (
+              <div className="flex items-center gap-2">
+                <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-300 bg-[#993331]"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+                <span className="text-xs text-gray-500 shrink-0">
+                  {progress}%
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Botón de favoritos */}
       {onFavoriteToggle && (
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onFavoriteToggle(item.id);
+            onFavoriteToggle(id);
           }}
           className="absolute top-2 right-2 z-10 p-1.5 bg-white/90 hover:bg-white rounded-full shadow-md transition-all duration-200 hover:scale-110"
         >

@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
-import { saveUserInterests, UserInterest } from "@/shared/lib/api/user";
+import { saveUserInterests } from "@/features/auth/services/api";
+import type { UserInterest } from "@/features/auth/types";
 
 const INTEREST_SECTIONS = [
   {

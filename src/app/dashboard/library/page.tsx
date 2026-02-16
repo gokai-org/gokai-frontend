@@ -5,29 +5,35 @@ import { LibraryHeader } from "@/features/library/components/LibraryHeader";
 import { ContentCard } from "@/features/library/components/ContentCard";
 import { RecentCard } from "@/features/library/components/RecentCard";
 import { CategoryFilter } from "@/features/library/components/CategoryFilter";
-import { KanjiGridCard } from "@/features/kanji/components/KanjiGridCard";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { categories, sections } from "@/features/library/mock/libraryData";
-import { LibraryItem } from "@/features/library/types";
-import { listKanjis } from "@/features/library/services/content";
-import type { Kanji } from "@/shared/types/content";
+import type { LibraryItem } from "@/features/library/types";
+import { listKanjis } from "@/features/kanji/api/kanjiApi";
+import type { Kanji } from "@/features/kanji/types";
 import { KanjiDetailModal } from "@/features/kanji/components/KanjiDetailModal";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
+import { getPrimaryMeaning, getPrimaryReading } from "@/features/kanji/utils/kanjiText";
 
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<LibraryItem | null>(null);
+
   const [kanjis, setKanjis] = useState<Kanji[]>([]);
   const [loadingKanjis, setLoadingKanjis] = useState(true);
   const [selectedKanji, setSelectedKanji] = useState<Kanji | null>(null);
-  
+
   const { recentItems, addRecentItem } = useRecentItems();
-  const { favoriteItems, favoriteKanjis, toggleFavoriteItem, toggleFavoriteKanji, getTotalFavorites } = useFavorites();
+  const {
+    favoriteItems,
+    favoriteKanjis,
+    toggleFavoriteItem,
+    toggleFavoriteKanji,
+    getTotalFavorites,
+  } = useFavorites();
 
   const handleItemClick = (item: LibraryItem) => {
-    // Agregar a items recientes
     addRecentItem({
       id: item.id,
       title: item.title,
@@ -37,23 +43,24 @@ export default function LibraryPage() {
       level: item.level,
       category: item.category,
     });
-    
-    // Abrir el item
+
     setSelectedItem(item);
   };
 
+
   const handleKanjiClick = (kanji: Kanji) => {
-    // Agregar a items recientes
+    const primaryMeaning = getPrimaryMeaning(kanji.meanings);
+    const primaryReading = getPrimaryReading(kanji.readings);
+
     addRecentItem({
       id: kanji.id,
-      title: kanji.meanings[0] || kanji.symbol,
-      description: kanji.readings.length > 0 ? `音: ${kanji.readings[0]}` : undefined,
+      title: primaryMeaning || kanji.symbol,
+      description: primaryReading ? `音: ${primaryReading}` : undefined,
       thumbnail: kanji.symbol,
-      level: `N${kanji.points_to_unlock / 10}`,
-      category: 'kanji',
+      level: `N${kanji.pointsToUnlock / 10}`,
+      category: "kanji",
     });
-    
-    // Abrir modal
+
     setSelectedKanji(kanji);
   };
 
@@ -79,6 +86,44 @@ export default function LibraryPage() {
       cat.id === 'kanji' ? { ...cat, count: kanjis.length } : cat
     )
   ];
+
+  const recentAsLibraryItems: LibraryItem[] = recentItems
+  .map((r) => {
+    if (r.category === "kanji") return null;
+
+    const base = allItems.find((i) => i.id === r.id);
+    if (!base) return null;
+
+    return base;
+  })
+  .filter((x): x is LibraryItem => Boolean(x));
+
+  function itemToCard(item: LibraryItem) {
+    const metaParts = [
+      item.duration,
+      item.itemCount ? `${item.itemCount} items` : null,
+    ].filter(Boolean);
+    return {
+      id: item.id,
+      title: item.title,
+      subtitle: item.description,
+      thumbnail: item.thumbnail,
+      badge: item.level,
+      progress: item.progress,
+      meta: metaParts.length > 0 ? metaParts.join(' · ') : undefined,
+    };
+  }
+
+  function kanjiToCard(kanji: Kanji) {
+    return {
+      id: kanji.id,
+      title: getPrimaryMeaning(kanji.meanings) || kanji.symbol,
+      subtitle: getPrimaryReading(kanji.readings) ? `音: ${getPrimaryReading(kanji.readings)}` : undefined,
+      thumbnail: kanji.symbol,
+      badge: `N${kanji.pointsToUnlock / 10}`,
+    };
+  }
+
 
   return (
     <DashboardShell header={<LibraryHeader />}>
@@ -114,7 +159,7 @@ export default function LibraryPage() {
                         .map((item) => (
                           <ContentCard
                             key={item.id}
-                            item={item}
+                            {...itemToCard(item)}
                             onClick={() => handleItemClick(item)}
                             onFavoriteToggle={(id) => toggleFavoriteItem(id, 'lesson')}
                             isFavorite={favoriteItems.has(item.id)}
@@ -193,7 +238,7 @@ export default function LibraryPage() {
                     .map((item) => (
                       <ContentCard
                         key={item.id}
-                        item={item}
+                        {...itemToCard(item)}
                         onClick={() => handleItemClick(item)}
                         onFavoriteToggle={(id) => toggleFavoriteItem(id, 'lesson')}
                         isFavorite={favoriteItems.has(item.id)}
@@ -222,7 +267,7 @@ export default function LibraryPage() {
                     .map((item) => (
                       <ContentCard
                         key={item.id}
-                        item={item}
+                        {...itemToCard(item)}
                         onClick={() => handleItemClick(item)}
                         onFavoriteToggle={(id) => toggleFavoriteItem(id, 'exercise')}
                         isFavorite={favoriteItems.has(item.id)}
@@ -251,7 +296,7 @@ export default function LibraryPage() {
                     .map((item) => (
                       <ContentCard
                         key={item.id}
-                        item={item}
+                        {...itemToCard(item)}
                         onClick={() => handleItemClick(item)}
                         onFavoriteToggle={(id) => toggleFavoriteItem(id, 'lesson')}
                         isFavorite={favoriteItems.has(item.id)}
@@ -282,7 +327,7 @@ export default function LibraryPage() {
                       .map((item) => (
                         <ContentCard
                           key={item.id}
-                          item={item}
+                          {...itemToCard(item)}
                           onClick={() => handleItemClick(item)}
                           onFavoriteToggle={(id) => toggleFavoriteItem(id, 'lesson')}
                           isFavorite={favoriteItems.has(item.id)}
@@ -299,9 +344,9 @@ export default function LibraryPage() {
                     {kanjis
                       .filter(kanji => favoriteKanjis.has(kanji.id))
                       .map((kanji) => (
-                        <KanjiGridCard
+                        <ContentCard
                           key={kanji.id}
-                          kanji={kanji}
+                          {...kanjiToCard(kanji)}
                           onClick={() => handleKanjiClick(kanji)}
                           onFavoriteToggle={toggleFavoriteKanji}
                           isFavorite={true}
@@ -337,7 +382,7 @@ export default function LibraryPage() {
                   .map((item) => (
                     <ContentCard
                       key={item.id}
-                      item={item}
+                      {...itemToCard(item)}
                       onClick={() => {
                         handleItemClick(item);
                         setSelectedItem(item);
@@ -350,37 +395,91 @@ export default function LibraryPage() {
             </div>
           )}
 
-          {selectedCategory === 'recent' && (
+          {selectedCategory === 'kanji' && !loadingKanjis && (
             <div>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-900">
-                  Reciente
+                  Colección de Kanjis
                 </h2>
+                <span className="text-sm text-gray-600">
+                  {kanjis.length} kanjis
+                </span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                {kanjis.map((kanji) => (
+                  <ContentCard
+                    key={kanji.id}
+                    {...kanjiToCard(kanji)}
+                    onClick={() => handleKanjiClick(kanji)}
+                    onFavoriteToggle={toggleFavoriteKanji}
+                    isFavorite={favoriteKanjis.has(kanji.id)}
+                  />
+                ))}
+              </div>
+              {kanjis.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    No hay kanjis disponibles
+                  </h3>
+                  <p className="text-gray-600 text-center max-w-md">
+                    No encontramos kanjis para mostrar.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {selectedCategory === 'recent' && (
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold text-gray-900">Reciente</h2>
                 <span className="text-sm text-gray-600">
                   {recentItems.length} elementos
                 </span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {recentItems.map((item) => (
-                  <ContentCard
-                    key={item.id}
-                    item={item}
-                    onClick={() => {
-                      if (item.category === 'kanji') {
-                        const kanji = kanjis.find(k => k.id === item.id);
-                        if (kanji) handleKanjiClick(kanji);
-                      } else {
-                        const libraryItem = allItems.find(i => i.id === item.id);
-                        if (libraryItem) setSelectedItem(libraryItem);
-                      }
-                    }}
-                  />
-                ))}
-              </div>
+              {recentItems.length > 0 ? (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  {recentItems.map((r) => {
+                    if (r.category === "kanji") {
+                      const kanji = kanjis.find((k) => k.id === r.id);
+                      if (!kanji) return null;
+                      return (
+                        <ContentCard
+                          key={r.id}
+                          {...kanjiToCard(kanji)}
+                          onClick={() => handleKanjiClick(kanji)}
+                          onFavoriteToggle={toggleFavoriteKanji}
+                          isFavorite={favoriteKanjis.has(kanji.id)}
+                        />
+                      );
+                    }
+                    const libraryItem = allItems.find((i) => i.id === r.id);
+                    if (!libraryItem) return null;
+                    return (
+                      <ContentCard
+                        key={r.id}
+                        {...itemToCard(libraryItem)}
+                        onClick={() => handleItemClick(libraryItem)}
+                        onFavoriteToggle={(id) => toggleFavoriteItem(id, "lesson")}
+                        isFavorite={favoriteItems.has(libraryItem.id)}
+                      />
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    No hay elementos recientes
+                  </h3>
+                  <p className="text-gray-600 text-center max-w-md">
+                    Los elementos que visites aparecerán aquí.
+                  </p>
+                </div>
+              )}
             </div>
           )}
 
-          {(!selectedCategory || selectedCategory === 'kanji') && !loadingKanjis && kanjis.length > 0 && (
+          {!selectedCategory && !loadingKanjis && kanjis.length > 0 && (
             <div className="mb-10">
               <SectionHeader
                 className="mb-4"
@@ -396,14 +495,13 @@ export default function LibraryPage() {
               />
 
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                {(selectedCategory === 'kanji' ? kanjis : kanjis.slice(0, 12)).map((kanji) => (
-                  <KanjiGridCard
+                {kanjis.slice(0, 16).map((kanji) => (
+                  <ContentCard
                     key={kanji.id}
-                    kanji={kanji}
+                    {...kanjiToCard(kanji)}
                     onClick={() => handleKanjiClick(kanji)}
                     onFavoriteToggle={toggleFavoriteKanji}
                     isFavorite={favoriteKanjis.has(kanji.id)}
-                    showMeaningCount={true}
                   />
                 ))}
               </div>

@@ -3,12 +3,16 @@ import { Node, Edge } from "reactflow";
 export type NodeType = "home" | "writing" | "listening" | "reading" | "speaking";
 
 export type NodeStatus = "completed" | "available" | "locked";
-
 export interface GraphNodeData {
   label: string;
   type: NodeType;
   status: NodeStatus;
   icon: React.ReactNode;
+
+  entityKind?: "kanji" | "subtheme" | "grammar";
+  entityId?: string;
+  symbol?: string;
+
   description?: string;
   progress?: number;
   userId?: string;

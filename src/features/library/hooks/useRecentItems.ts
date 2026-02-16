@@ -5,8 +5,8 @@ import {
   getRecentItems,
   addRecentItem as addRecentItemAPI,
   clearRecentItems as clearRecentItemsAPI,
-} from '@/shared/lib/api/user';
-import type { RecentItem } from '@/shared/types/user';
+} from '@/features/library/services/api';
+import type { RecentItem } from '@/features/library/types';
 
 export type { RecentItem };
 

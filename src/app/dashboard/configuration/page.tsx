@@ -7,7 +7,8 @@ import { SettingsItem } from "@/features/configuration/components/SettingsItem";
 import { SettingsSelectItem, SettingsToggleItem, SettingsToggleSelectItem } from "@/features/configuration/components/SettingsFields";
 import { Toggle } from "@/shared/ui/Toggle";
 import { IntegrationButton } from "@/features/configuration/components/IntegrationButton";
-import { getCurrentUser, type User } from "@/shared/lib/api/user";
+import { getCurrentUser } from "@/features/auth/services/api";
+import type { User } from "@/features/auth/types";
 import { useToast } from "@/shared/ui/ToastProvider";
 
 const sectionTitles: Record<string, string> = {

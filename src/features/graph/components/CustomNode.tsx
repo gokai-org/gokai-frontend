@@ -145,8 +145,14 @@ function CustomNode({ data, isConnectable }: CustomNodeProps) {
             hover:${styles.shadow}
           `}
         >
-          <Icon size={iconSize} className={styles.icon} strokeWidth={2.5} />
-          
+            {data.type === "writing" && data.symbol ? (
+              <span className="text-4xl font-bold text-white leading-none">
+                {data.symbol}
+              </span>
+            ) : (
+              <Icon size={iconSize} className={styles.icon} strokeWidth={2.5} />
+            )}          
+            
           {/* Indicador de progreso para nodo completado */}
           {data.status === "completed" && (
             <motion.div
