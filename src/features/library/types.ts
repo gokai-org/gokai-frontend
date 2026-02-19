@@ -41,29 +41,52 @@ export type WordKanji = {
   kanji_id: string;
 };
 
-// FAVORITES
-export interface FavoriteItem {
+// FAVORITES (match backend: gokai-content)
+export type FavoriteType = "kanji" | "grammar" | "word";
+
+export interface BackendFavoriteItem {
+  type: FavoriteType;
   id: string;
-  type: "lesson" | "exercise" | "kanji" | "article";
-  addedAt: string;
+  createdAt: string;
+  // Kanji fields
+  symbol?: string | null;
+  readings?: string | null; // stringified JSON from backend
+  // Word fields
+  kanjiWord?: string | null;
+  meanings?: string | null; // stringified JSON from backend
+  hiragana?: string | null;
+  // Grammar lesson fields
+  title?: string | null;
+  description?: string | null;
 }
 
 export interface FavoritesResponse {
-  favorites: FavoriteItem[];
+  kanji: BackendFavoriteItem[];
+  grammar: BackendFavoriteItem[];
+  word: BackendFavoriteItem[];
 }
 
-// RECENT ITEMS
-export interface RecentItem {
+// RECENT ITEMS (match backend: gokai-content)
+export type RecentEntityType = "kanji" | "grammar_lesson" | "grammar" | "word";
+
+export interface BackendRecentItem {
+  type: string;
   id: string;
-  title: string;
-  description?: string;
-  thumbnail: string;
-  progress?: number;
-  level?: string;
-  category?: string;
-  lastAccessed: string;
+  createdAt: string;
+  // Kanji fields
+  symbol?: string | null;
+  readings?: string[] | Record<string, string[]> | null;
+  // Word fields
+  kanjiWord?: string | null;
+  meanings?: string[] | Record<string, string[]> | null;
+  hiragana?: string | null;
+  // Grammar lesson fields
+  title?: string | null;
+  description?: string | null;
 }
 
 export interface RecentItemsResponse {
-  recentItems: RecentItem[];
+  kanji: BackendRecentItem[];
+  grammar_lesson: BackendRecentItem[];
+  word: BackendRecentItem[];
 }

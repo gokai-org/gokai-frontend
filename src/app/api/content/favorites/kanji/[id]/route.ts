@@ -6,21 +6,20 @@ export const dynamic = "force-dynamic";
 
 const BASE = process.env.GOKAI_CONTENT_API_BASE!;
 
-export async function GET(
+/** DELETE /api/content/favorites/kanji/:id → proxy a DELETE /content/favorites/kanji/:id */
+export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const raw = getTokenFromRequest(req);
-  if (!raw) {
-    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
-  }
+  if (!raw) return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
 
-  const token = normalizeBearerToken(raw);
   const { id } = await params;
+  const token = normalizeBearerToken(raw);
 
-  const upstream = await fetch(`${BASE}/content/kanjis/${id}`, {
+  const upstream = await fetch(`${BASE}/content/favorites/kanji/${id}`, {
+    method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
   });
 
   const data = await upstream.json().catch(() => ({}));

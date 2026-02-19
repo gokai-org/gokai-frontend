@@ -1,170 +1,110 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { 
-  getFavorites, 
-  addFavorite as addFavoriteAPI, 
+import { useEffect, useState, useCallback } from 'react';
+import {
+  getFavorites,
+  addFavorite as addFavoriteAPI,
   removeFavorite as removeFavoriteAPI,
 } from '@/features/library/services/api';
-import type { FavoriteItem } from '@/features/library/types';
+import type { FavoriteType, BackendFavoriteItem, FavoritesResponse } from '@/features/library/types';
 
-const STORAGE_KEY_ITEMS = 'favoriteItems';
-const STORAGE_KEY_KANJIS = 'favoriteKanjis';
-
-// Flag para habilitar sincronización con backend
-// TENGO QUE CAMBIARLO A TRUE CUANDO EL BACKEND ESTÉ LISTO
-const USE_BACKEND = false;
+const EMPTY_RESPONSE: FavoritesResponse = { kanji: [], grammar: [], word: [] };
 
 export function useFavorites() {
-  const [favoriteItems, setFavoriteItems] = useState<Set<string>>(new Set());
   const [favoriteKanjis, setFavoriteKanjis] = useState<Set<string>>(new Set());
+  const [favoriteGrammar, setFavoriteGrammar] = useState<Set<string>>(new Set());
+  const [favoriteWords, setFavoriteWords] = useState<Set<string>>(new Set());
+
+  const [favoriteData, setFavoriteData] = useState<FavoritesResponse>(EMPTY_RESPONSE);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const loadFavorites = async () => {
-      try {
-        if (USE_BACKEND) {
-          // Cargar desde backend
-          const response = await getFavorites();
-          const items = new Set<string>();
-          const kanjis = new Set<string>();
-          
-          response.favorites.forEach(fav => {
-            if (fav.type === 'kanji') {
-              kanjis.add(fav.id);
-            } else {
-              items.add(fav.id);
-            }
-          });
-          
-          setFavoriteItems(items);
-          setFavoriteKanjis(kanjis);
-        } else {
-          // Cargar desde localStorage
-          const savedItems = localStorage.getItem(STORAGE_KEY_ITEMS);
-          const savedKanjis = localStorage.getItem(STORAGE_KEY_KANJIS);
-          if (savedItems) setFavoriteItems(new Set(JSON.parse(savedItems)));
-          if (savedKanjis) setFavoriteKanjis(new Set(JSON.parse(savedKanjis)));
-        }
-      } catch (e) {
-        console.error('Error loading favorites:', e);
-        // Fallback a localStorage en caso de error
-        try {
-          const savedItems = localStorage.getItem(STORAGE_KEY_ITEMS);
-          const savedKanjis = localStorage.getItem(STORAGE_KEY_KANJIS);
-          if (savedItems) setFavoriteItems(new Set(JSON.parse(savedItems)));
-          if (savedKanjis) setFavoriteKanjis(new Set(JSON.parse(savedKanjis)));
-        } catch (localError) {
-          console.error('Error loading from localStorage:', localError);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadFavorites();
+  const loadFavorites = useCallback(async () => {
+    try {
+      const response = await getFavorites();
+      const safeResponse: FavoritesResponse = {
+        kanji: response.kanji ?? [],
+        grammar: response.grammar ?? [],
+        word: response.word ?? [],
+      };
+      setFavoriteData(safeResponse);
+      setFavoriteKanjis(new Set(safeResponse.kanji.map(f => f.id)));
+      setFavoriteGrammar(new Set(safeResponse.grammar.map(f => f.id)));
+      setFavoriteWords(new Set(safeResponse.word.map(f => f.id)));
+    } catch (e) {
+      console.error('Error loading favorites:', e);
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const toggleFavoriteItem = async (id: string, type: FavoriteItem['type'] = 'lesson') => {
-    const isFavorite = favoriteItems.has(id);
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
 
-    setFavoriteItems(prev => {
-      const newFavorites = new Set(prev);
-      if (isFavorite) {
-        newFavorites.delete(id);
-      } else {
-        newFavorites.add(id);
-      }
-      
-      // Guardar en localStorage siempre (backup local)
-      try {
-        localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify([...newFavorites]));
-      } catch (e) {
-        console.error('Error saving favorites to localStorage:', e);
-      }
-      
-      return newFavorites;
-    });
+  /** Verifica si un ID está marcado como favorito (en cualquier tipo) */
+  const isFavorite = useCallback(
+    (id: string) =>
+      favoriteKanjis.has(id) || favoriteGrammar.has(id) || favoriteWords.has(id),
+    [favoriteKanjis, favoriteGrammar, favoriteWords],
+  );
 
-    // Sincronizar con backend si está habilitado
-    if (USE_BACKEND) {
+  /** Toggle genérico – requiere indicar el tipo backend */
+  const toggleFavorite = useCallback(
+    async (id: string, type: FavoriteType) => {
+      const setterMap: Record<FavoriteType, React.Dispatch<React.SetStateAction<Set<string>>>> = {
+        kanji: setFavoriteKanjis,
+        grammar: setFavoriteGrammar,
+        word: setFavoriteWords,
+      };
+      const setter = setterMap[type];
+      const wasFavorite = isFavorite(id);
+
+      // Optimistic update
+      setter(prev => {
+        const next = new Set(prev);
+        wasFavorite ? next.delete(id) : next.add(id);
+        return next;
+      });
+
       try {
-        if (isFavorite) {
-          await removeFavoriteAPI(id);
+        if (wasFavorite) {
+          await removeFavoriteAPI(id, type);
         } else {
           await addFavoriteAPI(id, type);
         }
+        // Reload para sincronizar datos completos
+        await loadFavorites();
       } catch (e) {
-        console.error('Error syncing favorite to backend:', e);
-        // Revertir cambio en caso de error
-        setFavoriteItems(prev => {
-          const newFavorites = new Set(prev);
-          if (isFavorite) {
-            newFavorites.add(id);
-          } else {
-            newFavorites.delete(id);
-          }
-          localStorage.setItem(STORAGE_KEY_ITEMS, JSON.stringify([...newFavorites]));
-          return newFavorites;
+        console.error('Error toggling favorite:', e);
+        // Revertir en caso de error
+        setter(prev => {
+          const next = new Set(prev);
+          wasFavorite ? next.add(id) : next.delete(id);
+          return next;
         });
       }
-    }
-  };
+    },
+    [isFavorite, loadFavorites],
+  );
 
-  const toggleFavoriteKanji = async (id: string) => {
-    const isFavorite = favoriteKanjis.has(id);
+  /** Atajo para toggle de kanjis */
+  const toggleFavoriteKanji = useCallback(
+    async (id: string) => toggleFavorite(id, 'kanji'),
+    [toggleFavorite],
+  );
 
-    setFavoriteKanjis(prev => {
-      const newFavorites = new Set(prev);
-      if (isFavorite) {
-        newFavorites.delete(id);
-      } else {
-        newFavorites.add(id);
-      }
-      
-      // Guardar en localStorage siempre (backup local)
-      try {
-        localStorage.setItem(STORAGE_KEY_KANJIS, JSON.stringify([...newFavorites]));
-      } catch (e) {
-        console.error('Error saving kanji favorites to localStorage:', e);
-      }
-      
-      return newFavorites;
-    });
-
-    // Sincronizar con backend si está habilitado
-    if (USE_BACKEND) {
-      try {
-        if (isFavorite) {
-          await removeFavoriteAPI(id);
-        } else {
-          await addFavoriteAPI(id, 'kanji');
-        }
-      } catch (e) {
-        console.error('Error syncing kanji favorite to backend:', e);
-        // Revertir cambio en caso de error
-        setFavoriteKanjis(prev => {
-          const newFavorites = new Set(prev);
-          if (isFavorite) {
-            newFavorites.add(id);
-          } else {
-            newFavorites.delete(id);
-          }
-          localStorage.setItem(STORAGE_KEY_KANJIS, JSON.stringify([...newFavorites]));
-          return newFavorites;
-        });
-      }
-    }
-  };
-
-  const getTotalFavorites = () => {
-    return favoriteItems.size + favoriteKanjis.size;
-  };
+  const getTotalFavorites = useCallback(
+    () => favoriteKanjis.size + favoriteGrammar.size + favoriteWords.size,
+    [favoriteKanjis, favoriteGrammar, favoriteWords],
+  );
 
   return {
-    favoriteItems,
     favoriteKanjis,
-    toggleFavoriteItem,
+    favoriteGrammar,
+    favoriteWords,
+    favoriteData,
+    isFavorite,
+    toggleFavorite,
     toggleFavoriteKanji,
     getTotalFavorites,
     loading,

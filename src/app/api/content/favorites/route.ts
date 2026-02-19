@@ -6,15 +6,13 @@ export const dynamic = "force-dynamic";
 
 const BASE = process.env.GOKAI_CONTENT_API_BASE!;
 
+/** GET  /api/content/favorites  → proxy a GET /content/favorites */
 export async function GET(req: NextRequest) {
   const raw = getTokenFromRequest(req);
-  if (!raw) {
-    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
-  }
+  if (!raw) return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
 
   const token = normalizeBearerToken(raw);
-
-  const upstream = await fetch(`${BASE}/content/kanjis`, {
+  const upstream = await fetch(`${BASE}/content/favorites`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -23,16 +21,17 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(data, { status: upstream.status });
 }
 
+/** POST /api/content/favorites → proxy a POST /content/favorites
+ *  Body: { id: string, type: "kanji" | "grammar" | "word" }
+ */
 export async function POST(req: NextRequest) {
   const raw = getTokenFromRequest(req);
-  if (!raw) {
-    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
-  }
+  if (!raw) return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
 
   const token = normalizeBearerToken(raw);
   const body = await req.json();
 
-  const upstream = await fetch(`${BASE}/content/kanjis`, {
+  const upstream = await fetch(`${BASE}/content/favorites`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

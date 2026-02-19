@@ -1,45 +1,52 @@
 import { apiFetch } from "@/shared/lib/api/client";
-import type { FavoriteItem, FavoritesResponse, RecentItem, RecentItemsResponse } from "@/features/library/types";
+import type { FavoriteType, FavoritesResponse, RecentItemsResponse } from "@/features/library/types";
 
 // ========================================
 // FAVORITOS
 // ========================================
 
+/** GET /api/content/favorites → { kanji: [...], grammar: [...], word: [...] } */
 export async function getFavorites(): Promise<FavoritesResponse> {
-  return apiFetch<FavoritesResponse>("/api/user/favorites");
+  return apiFetch<FavoritesResponse>("/api/content/favorites");
 }
 
+/** POST /api/content/favorites → { id, type: "kanji"|"grammar"|"word" } */
 export async function addFavorite(
   id: string,
-  type: FavoriteItem["type"]
+  type: FavoriteType
 ): Promise<void> {
-  await apiFetch("/api/user/favorites", {
+  await apiFetch("/api/content/favorites", {
     method: "POST",
     body: JSON.stringify({ id, type }),
   });
 }
 
-export async function removeFavorite(id: string): Promise<void> {
-  await apiFetch(`/api/user/favorites/${id}`, { method: "DELETE" });
+/** DELETE /api/content/favorites/:type/:id */
+export async function removeFavorite(id: string, type: FavoriteType): Promise<void> {
+  await apiFetch(`/api/content/favorites/${type}/${id}`, { method: "DELETE" });
 }
 
 // ========================================
 // RECIENTES
 // ========================================
 
+/** GET /api/content/recent → { kanji: [...], grammar_lesson: [...], word: [...] } */
 export async function getRecentItems(): Promise<RecentItemsResponse> {
-  return apiFetch<RecentItemsResponse>("/api/user/recent");
+  return apiFetch<RecentItemsResponse>("/api/content/recent");
 }
 
+/** POST /api/content/recent → { entityType: "kanji"|"grammar"|"word", entityId: string } */
 export async function addRecentItem(
-  item: Omit<RecentItem, "lastAccessed">
+  entityType: string,
+  entityId: string
 ): Promise<void> {
-  await apiFetch("/api/user/recent", {
+  await apiFetch("/api/content/recent", {
     method: "POST",
-    body: JSON.stringify(item),
+    body: JSON.stringify({ entityType, entityId }),
   });
 }
 
+/** DELETE /api/content/recent/all → elimina toda actividad reciente del usuario */
 export async function clearRecentItems(): Promise<void> {
-  await apiFetch("/api/user/recent", { method: "DELETE" });
+  await apiFetch("/api/content/recent/all", { method: "DELETE" });
 }
