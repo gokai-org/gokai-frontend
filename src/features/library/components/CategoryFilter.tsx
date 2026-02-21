@@ -38,15 +38,17 @@ export function CategoryFilter({ categories, selectedCategory, onSelectCategory 
   }, [orderedCategories]);
 
   useEffect(() => {
-    setOrderedCategories(prev => {
-      const orderMap = new Map(prev.map((cat, idx) => [cat.id, idx]));
-      return categories
-        .map(cat => ({
-          ...cat,
-          order: orderMap.get(cat.id) ?? Infinity
-        }))
-        .sort((a, b) => a.order - b.order)
-        .map(({ order, ...cat }) => cat);
+    queueMicrotask(() => {
+      setOrderedCategories(prev => {
+        const orderMap = new Map(prev.map((cat, idx) => [cat.id, idx]));
+        return categories
+          .map(cat => ({
+            ...cat,
+            order: orderMap.get(cat.id) ?? Infinity
+          }))
+          .sort((a, b) => a.order - b.order)
+          .map(({ order, ...cat }) => cat);
+      });
     });
   }, [categories]);
 

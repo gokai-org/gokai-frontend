@@ -53,8 +53,8 @@ export async function GET(request: NextRequest) {
     });
 
     const tokenRaw = await tokenResponse.text();
-    let tokens: any = {};
-    try { tokens = JSON.parse(tokenRaw); } catch {}
+    let tokens: Record<string, unknown> = {};
+    try { tokens = JSON.parse(tokenRaw) as Record<string, unknown>; } catch {}
 
     if (!tokenResponse.ok) {
       console.error("Token exchange failed:", tokenRaw);
@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
     });
 
     const backendRaw = await backendResponse.text();
-    let backendData: any = {};
-    try { backendData = JSON.parse(backendRaw); } catch { backendData = { raw: backendRaw }; }
+    let backendData: Record<string, unknown> = {};
+    try { backendData = JSON.parse(backendRaw) as Record<string, unknown>; } catch { backendData = { raw: backendRaw }; }
 
     if (!backendResponse.ok) {
       console.error("Backend failed:", backendResponse.status, backendData);
@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!backendData?.registered) {
-      const gd = backendData?.googleData || {};
+      const gd = (backendData?.googleData ?? {}) as Record<string, unknown>;
       const url = new URL("/auth/login", request.url);
 
       if (gd.email) url.searchParams.set("email", String(gd.email));
@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    const token = backendData?.token;
+    const token = backendData?.token as string | undefined;
     if (!token) {
       return NextResponse.redirect(new URL("/auth/login?error=no_token", request.url));
     }

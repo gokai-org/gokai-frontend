@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 /*  Types  */
 
@@ -47,7 +47,15 @@ function Ring({
     return () => clearTimeout(t);
   }, []);
 
-  let accumulatedOffset = 0;
+  const segments = useMemo(() => {
+    return categories.map((cat, i) => {
+      const segmentLength = (cat.value / 100) * circumference;
+      const startOffset = categories
+        .slice(0, i)
+        .reduce((sum, c) => sum + (c.value / 100) * circumference, 0);
+      return { cat, segmentLength, startOffset };
+    });
+  }, [categories, circumference]);
 
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
@@ -61,30 +69,24 @@ function Ring({
         strokeWidth={strokeWidth}
       />
       {/* Segments */}
-      {categories.map((cat) => {
-        const segmentLength = (cat.value / 100) * circumference;
-        const offset = accumulatedOffset;
-        accumulatedOffset += segmentLength;
-
-        return (
-          <circle
-            key={cat.label}
-            cx={center}
-            cy={center}
-            r={radius}
-            fill="none"
-            stroke={cat.color}
-            strokeWidth={strokeWidth}
-            strokeDasharray={`${animated ? segmentLength : 0} ${circumference}`}
-            strokeDashoffset={-offset}
-            strokeLinecap="round"
-            transform={`rotate(-90 ${center} ${center})`}
-            style={{
-              transition: "stroke-dasharray 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
-            }}
-          />
-        );
-      })}
+      {segments.map(({ cat, segmentLength, startOffset }) => (
+        <circle
+          key={cat.label}
+          cx={center}
+          cy={center}
+          r={radius}
+          fill="none"
+          stroke={cat.color}
+          strokeWidth={strokeWidth}
+          strokeDasharray={`${animated ? segmentLength : 0} ${circumference}`}
+          strokeDashoffset={-startOffset}
+          strokeLinecap="round"
+          transform={`rotate(-90 ${center} ${center})`}
+          style={{
+            transition: "stroke-dasharray 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
+          }}
+        />
+      ))}
     </svg>
   );
 }

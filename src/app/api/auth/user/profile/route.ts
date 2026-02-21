@@ -37,7 +37,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Email inválido" }, { status: 400 });
     }
 
-    const updateData: any = {};
+    const updateData: Record<string, string> = {};
     if (finalFirstName) {
       updateData.first_name = finalFirstName;
       if (finalLastName) updateData.last_name = finalLastName;

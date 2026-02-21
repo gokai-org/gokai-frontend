@@ -1,6 +1,6 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useMemo } from "react";
 import { Handle, Position } from "reactflow";
 import { motion } from "framer-motion";
 import { Home, Pencil, Headphones, Book, Mic } from "lucide-react";
@@ -22,6 +22,13 @@ const iconMap = {
 function CustomNode({ data, isConnectable }: CustomNodeProps) {
   const Icon = iconMap[data.type];
   const isHome = data.type === "home";
+  const delay = useMemo(() => {
+    const seed = (data.type + (data.label ?? ""))
+      .split("")
+      .reduce((acc, ch, i) => acc + ch.charCodeAt(0) * (i + 1), 0);
+    const x = Math.sin(seed * 127.1) * 43758.5453;
+    return (x - Math.floor(x)) * 0.2;
+  }, [data.type, data.label]);
   
   const getNodeStyles = () => {
     if (data.status === "completed") {
@@ -128,7 +135,7 @@ function CustomNode({ data, isConnectable }: CustomNodeProps) {
           type: "spring", 
           stiffness: 300, 
           damping: 20,
-          delay: Math.random() * 0.2
+          delay,
         }}
         className="relative"
       >

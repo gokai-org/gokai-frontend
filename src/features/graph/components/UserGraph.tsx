@@ -34,7 +34,10 @@ export default function UserGraph({
 
   useEffect(() => {
     let alive = true;
-    setLoading(true);
+
+    queueMicrotask(() => {
+      if (alive) setLoading(true);
+    });
 
     listKanjis()
       .then((data) => {

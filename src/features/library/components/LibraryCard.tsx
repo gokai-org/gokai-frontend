@@ -39,7 +39,7 @@ export function LibraryCard({ item, onClick }: LibraryCardProps) {
           <h3 className="font-bold text-sm text-gray-900 line-clamp-1 group-hover:text-[#993331] transition-colors">
             {item.title}
           </h3>
-          {item.level && <LevelBadge level={item.level as any} />}
+          {item.level && <LevelBadge level={item.level as "N5" | "N4" | "N3" | "N2" | "N1"} />}
         </div>
         
         <p className="text-xs text-gray-600 line-clamp-1 mb-2">

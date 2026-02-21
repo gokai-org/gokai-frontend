@@ -42,8 +42,12 @@ export default function LessonDrawer({
     if (!open || !nodeId) return;
 
     let alive = true;
-    setLoading(true);
-    setActiveIndex(0);
+
+    queueMicrotask(() => {
+      if (!alive) return;
+      setLoading(true);
+      setActiveIndex(0);
+    });
 
     getLessonsForNode({ nodeId, mode, userId, entityId, entityKind })
       .then((data) => {

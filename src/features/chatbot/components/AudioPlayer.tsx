@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -11,6 +11,13 @@ interface AudioPlayerProps {
 export function AudioPlayer({ audioUrl, duration, isUserMessage }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const barHeights = useMemo(
+    () => Array.from({ length: 40 }, (_, i) => {
+      const x = Math.sin(i * 127.1) * 43758.5453;
+      return (x - Math.floor(x)) * 20 + 8;
+    }),
+    [],
+  );
 
   const togglePlay = () => {
     if (audioRef.current) {
@@ -53,14 +60,14 @@ export function AudioPlayer({ audioUrl, duration, isUserMessage }: AudioPlayerPr
       <div className="flex-1">
         <div className="flex items-center gap-2">
           <div className="flex-1 h-8 flex items-center gap-0.5">
-            {[...Array(40)].map((_, i) => (
+            {barHeights.map((h, i) => (
               <div
                 key={i}
                 className={`w-0.5 rounded-full ${
                   isUserMessage ? 'bg-white/60' : 'bg-[#993331]/60'
                 }`}
                 style={{
-                  height: `${Math.random() * 20 + 8}px`,
+                  height: `${h}px`,
                 }}
               />
             ))}
