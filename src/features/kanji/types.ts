@@ -26,3 +26,9 @@ export type KanjiExerciseAnswer = {
   isCorrect?: boolean;
   answeredAt?: string;
 };
+
+export type KanjiStrokeData = {
+  kanjiId: string;
+  viewBox: string;     // e.g. "0 0 109 109"
+  strokes: string[];
+};

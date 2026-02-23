@@ -1,5 +1,7 @@
+import { useState } from "react";
 import type { Kanji } from "@/features/kanji/types";
 import { readingsToArray, meaningsToArray } from "@/features/kanji/utils/kanjiText";
+import { WritingPracticeModal } from "./WritingPracticeModal";
 
 interface KanjiDetailModalProps {
   kanji: Kanji | null;
@@ -7,10 +9,21 @@ interface KanjiDetailModalProps {
 }
 
 export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
+  const [showWritingPractice, setShowWritingPractice] = useState(false);
+
   if (!kanji) return null;
 
   const readings = readingsToArray(kanji.readings);
   const meanings = meaningsToArray(kanji.meanings);
+
+  if (showWritingPractice) {
+    return (
+      <WritingPracticeModal
+        kanji={kanji}
+        onClose={() => setShowWritingPractice(false)}
+      />
+    );
+  }
 
   return (
     <div
@@ -83,6 +96,19 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
                 </span>
               ))}
             </div>
+          </div>
+
+          {/* Practicar escritura */}
+          <div className="pt-2">
+            <button
+              onClick={() => setShowWritingPractice(true)}
+              className="w-full py-3 bg-[#993331] text-white rounded-xl font-semibold hover:bg-[#882d2d] transition shadow-lg shadow-[#993331]/20 flex items-center justify-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+              Practicar trazado
+            </button>
           </div>
         </div>
       </div>
