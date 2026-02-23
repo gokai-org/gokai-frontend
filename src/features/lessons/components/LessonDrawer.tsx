@@ -37,6 +37,7 @@ export default function LessonDrawer({
   const [activeIndex, setActiveIndex] = useState(0);
 
   const active = useMemo(() => lessons[activeIndex] ?? null, [lessons, activeIndex]);
+  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches;
 
   useEffect(() => {
     if (!open || !nodeId) return;
@@ -96,20 +97,25 @@ export default function LessonDrawer({
             exit={{ opacity: 0 }}
           />
 
-          {/* Drawer: desktop right | mobile bottom sheet */}
-          <motion.aside
-            className={[
-              "fixed z-50 bg-white shadow-2xl border-gray-100 flex flex-col",
-              "right-0 top-0 h-screen w-[460px] max-w-[92vw] border-l",
-              "max-sm:left-0 max-sm:right-0 max-sm:top-auto max-sm:bottom-0 max-sm:h-[85vh] max-sm:w-full max-sm:rounded-t-[28px] max-sm:border-l-0 max-sm:border-t",
-            ].join(" ")}
-            initial={{ x: 60, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            exit={{ x: 60, opacity: 0 }}
-            transition={{ type: "spring", stiffness: 260, damping: 26 }}
-          >
+          {/* Drawer: desktop floating right | mobile bottom sheet */}
+            <motion.aside
+              className={[
+                "fixed z-50 bg-white shadow-2xl flex flex-col border border-gray-200/60",
+
+                // Desktop (panel flotante a la derecha)
+                "right-3 top-3 bottom-3 w-[440px] max-w-[90vw] rounded-3xl",
+
+                // Mobile (sheet centrado con margen y FULL rounded)
+                "max-sm:left-6 max-sm:right-4 max-sm:bottom-4 max-sm:top-auto",
+                "max-sm:h-[85dvh] max-sm:w-auto max-sm:rounded-3xl",
+              ].join(" ")}
+              initial={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
+              animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+              exit={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
+              transition={{ type: "spring", stiffness: 260, damping: 26 }}
+            >
             {/* Header sticky */}
-            <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100">
+            <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 rounded-t-3xl">
               <div className="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <div className="text-[13px] font-semibold tracking-wide text-gray-500">

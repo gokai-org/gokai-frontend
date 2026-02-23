@@ -33,7 +33,7 @@ export default function SidebarOnly() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { setExpanded } = useSidebar();
+  const { setExpanded, hidden: sidebarHidden } = useSidebar();
   const [hovered, setHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 16, y: 16 });
@@ -163,7 +163,7 @@ const [loggingOut, setLoggingOut] = useState(false);
   return (
     <>
       {/* Botón móvil*/}
-      {!mobileOpen && (
+      {!mobileOpen && !sidebarHidden && (
         <motion.div 
           className="md:hidden fixed z-[60] touch-none"
           style={{ 
@@ -205,6 +205,7 @@ const [loggingOut, setLoggingOut] = useState(false);
       )}
 
       {/* Desktop sidebar */}
+      {!sidebarHidden && (
       <div className="hidden md:block fixed left-4 top-4 z-50 h-[calc(100dvh-32px)]">
         <motion.aside
           onMouseEnter={() => setHovered(true)}
@@ -297,6 +298,7 @@ const [loggingOut, setLoggingOut] = useState(false);
           <GlobalStyles />
         </motion.aside>
       </div>
+      )}
 
       {/* Drawer móvil */}
       <AnimatePresence>

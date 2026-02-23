@@ -4,7 +4,7 @@ import UserGraph from "@/features/graph/components/UserGraph";
 
 export default function Page() {
   // Ejemplo: Mostrar el progreso del usuario
-  // En producción, obtén estos datos de tu API o estado global
+  // En producción, obtener estos datos de la API o estado global
   const userId = "user123";
   const currentLevel = 1;
   const completedActivities = 6;

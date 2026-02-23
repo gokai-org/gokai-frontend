@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -12,6 +12,8 @@ import ReactFlow, {
   Panel,
   ReactFlowProvider,
   NodeMouseHandler,
+  useReactFlow,
+  type Viewport,
 } from "reactflow";
 import "reactflow/dist/style.css";
 import { motion } from "framer-motion";
@@ -19,6 +21,7 @@ import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import type { GraphNode, GraphEdge } from "@/features/graph/lib/graphTypes";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
+import { useSidebar } from "@/shared/components/SidebarContext";
 
 // Importante: tu NodeType incluye "home"
 type LessonMode = "writing" | "listening" | "reading" | "speaking";
@@ -54,6 +57,15 @@ function LearningGraphInner({ initialNodes, initialEdges }: LearningGraphProps) 
   >(null);
 
   const userId = "user123";
+  const { setHidden: setSidebarHidden } = useSidebar();
+  const { setViewport, getViewport, setCenter } = useReactFlow();
+  const savedViewport = useRef<Viewport | null>(null);
+
+  // Hide sidebar when lesson drawer is open
+  useEffect(() => {
+    setSidebarHidden(lessonOpen);
+    return () => setSidebarHidden(false);
+  }, [lessonOpen, setSidebarHidden]);
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -80,10 +92,16 @@ function LearningGraphInner({ initialNodes, initialEdges }: LearningGraphProps) 
     setSelectedMode(mode);
     setLessonOpen(true);
 
+    // Save current viewport and zoom to the clicked node
+    savedViewport.current = getViewport();
+    const posX = node.position.x + ((node.width ?? 80) / 2);
+    const posY = node.position.y + ((node.height ?? 80) / 2);
+    setCenter(posX, posY, { zoom: 1.3, duration: 500 });
+
     const url = new URL(window.location.href);
     url.searchParams.set("lessonId", node.id);
     window.history.replaceState({}, "", url.toString());
-  }, []);
+  }, [getViewport, setCenter]);
 
   const closeDrawer = useCallback(() => {
     setLessonOpen(false);
@@ -91,10 +109,16 @@ function LearningGraphInner({ initialNodes, initialEdges }: LearningGraphProps) 
     setSelectedEntityId(null);
     setSelectedEntityKind(null);
 
+    // Restore previous viewport with animation
+    if (savedViewport.current) {
+      setViewport(savedViewport.current, { duration: 500 });
+      savedViewport.current = null;
+    }
+
     const url = new URL(window.location.href);
     url.searchParams.delete("lessonId");
     window.history.replaceState({}, "", url.toString());
-  }, []);
+  }, [setViewport]);
 
   return (
     <div className="absolute inset-0 w-full h-full">

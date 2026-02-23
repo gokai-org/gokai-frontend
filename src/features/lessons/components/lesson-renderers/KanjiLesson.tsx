@@ -1,8 +1,10 @@
 "use client";
 
+import { useState } from "react";
 import type { LessonMode, LessonResolved } from "@/features/lessons/types";
 import LessonCTA from "@/features/lessons/components/LessonCTA";
 import { normalizeReadings, normalizeMeanings } from "@/features/kanji/lib/kanjiFormat";
+import { WritingPracticeModal } from "@/features/kanji/components/WritingPracticeModal";
 import { motion } from "framer-motion";
 
 const modeTitle: Record<LessonMode, string> = {
@@ -19,6 +21,7 @@ export default function KanjiLesson({
   data: Extract<LessonResolved, { kind: "kanji" }>;
   mode: LessonMode;
 }) {
+  const [showWritingPractice, setShowWritingPractice] = useState(false);
   const k = data.kanji;
 
   const r = normalizeReadings(k.readings);
@@ -31,7 +34,7 @@ export default function KanjiLesson({
   return (
     <div className="space-y-5">
       {/* Card */}
-      <div className="rounded-[28px] border border-gray-100 bg-gradient-to-b from-white to-[#fff7f7] p-5 shadow-sm">
+      <div className="rounded-[20px] sm:rounded-[28px] border border-gray-100 bg-gradient-to-b from-white to-[#fff7f7] p-4 sm:p-5 shadow-sm">
         {/* Top row */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
@@ -53,7 +56,7 @@ export default function KanjiLesson({
         </p>
 
         {/* Kanji + readings */}
-        <div className="mt-5 flex items-center justify-between gap-4">
+        <div className="mt-5 flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <motion.div
             initial={{ scale: 0.9, opacity: 0, y: 6 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
@@ -61,12 +64,12 @@ export default function KanjiLesson({
             className="relative"
           >
             <div className="absolute -inset-3 rounded-3xl bg-[#993331]/10 blur-2xl" />
-            <div className="relative text-[96px] font-black leading-none text-[#993331] drop-shadow-sm">
+            <div className="relative text-[72px] sm:text-[96px] font-black leading-none text-[#993331] drop-shadow-sm">
               {k.symbol}
             </div>
           </motion.div>
 
-          <div className="min-w-[140px] text-right">
+          <div className="text-center sm:text-right sm:min-w-[140px]">
             <div className="text-xs font-bold text-gray-900">Lecturas</div>
 
             <div className="mt-1 text-sm text-gray-600">
@@ -99,10 +102,24 @@ export default function KanjiLesson({
 
       {/* CTA */}
       <LessonCTA
-        variant="start"
-        label="Comenzar"
-        onClick={() => console.log("start", data.lesson.id, "kanji", k.id)}
+        variant={mode === "writing" ? "start" : "start"}
+        label={mode === "writing" ? "Comenzar escritura" : "Comenzar"}
+        onClick={() => {
+          if (mode === "writing") {
+            setShowWritingPractice(true);
+          } else {
+            console.log("start", data.lesson.id, "kanji", k.id);
+          }
+        }}
       />
+
+      {/* Writing practice modal */}
+      {showWritingPractice && (
+        <WritingPracticeModal
+          kanji={k}
+          onClose={() => setShowWritingPractice(false)}
+        />
+      )}
     </div>
   );
 }

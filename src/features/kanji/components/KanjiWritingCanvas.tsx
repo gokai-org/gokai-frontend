@@ -2,7 +2,6 @@
 
 import {
   useRef,
-  useState,
   useEffect,
   useCallback,
   type PointerEvent as ReactPointerEvent,
@@ -25,11 +24,14 @@ interface KanjiWritingCanvasProps {
   size?: number;
   /** Whether drawing is enabled */
   disabled?: boolean;
+  /** When true, flash red border briefly (feedback for bad stroke) */
+  flashError?: boolean;
 }
 
 /**
  * A drawing canvas overlaid on a faint kanji guide.
  * The user traces strokes with mouse / touch / pen.
+ * Optimized with rAF scheduling and pointer throttling.
  */
 export function KanjiWritingCanvas({
   viewBox,
@@ -38,18 +40,20 @@ export function KanjiWritingCanvas({
   onStrokeDrawn,
   size = 300,
   disabled = false,
+  flashError = false,
 }: KanjiWritingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [isDrawing, setIsDrawing] = useState(false);
+  const isDrawingRef = useRef(false);
   const currentPoints = useRef<{ x: number; y: number }[]>([]);
   const completedStrokes = useRef<DrawnStroke[]>([]);
+  const rafId = useRef(0);
 
-  // Parse viewBox numbers
+  // Parse viewBox numbers (stable across renders)
   const vbParts = viewBox.split(/\s+/).map(Number);
   const vbWidth = vbParts[2] || 109;
   const vbHeight = vbParts[3] || 109;
 
-  // Clear and redraw everything
+  // ── Redraw (memoized) ──
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -63,7 +67,7 @@ export function KanjiWritingCanvas({
 
     ctx.clearRect(0, 0, w, h);
 
-    // ── Grid guides ──
+    // Grid guides
     ctx.save();
     ctx.setLineDash([6, 6]);
     ctx.strokeStyle = "#e5e7eb";
@@ -76,35 +80,33 @@ export function KanjiWritingCanvas({
     ctx.stroke();
     ctx.restore();
 
-    // ── SVG guide strokes (faint) ──
+    // SVG guide strokes (faint)
     ctx.save();
     ctx.setLineDash([]);
-    guideStrokes.forEach((d, i) => {
-      const path = new Path2D();
-      // Scale the SVG path to canvas coordinates
-      const scaledD = scaleSvgPath(d, sx, sy);
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+    const lw = 3 * Math.min(sx, sy);
+    for (let i = 0; i < guideStrokes.length; i++) {
       try {
-        const p2d = new Path2D(scaledD);
+        const p2d = new Path2D(scaleSvgPath(guideStrokes[i], sx, sy));
         ctx.strokeStyle =
           i < activeStrokeIndex
             ? "rgba(26,26,26,0.15)"
             : i === activeStrokeIndex
             ? "rgba(153,51,49,0.25)"
             : "rgba(209,213,219,0.3)";
-        ctx.lineWidth = 3 * Math.min(sx, sy);
-        ctx.lineCap = "round";
-        ctx.lineJoin = "round";
+        ctx.lineWidth = lw;
         ctx.stroke(p2d);
       } catch {
-        // Invalid path — skip
+        /* skip invalid paths */
       }
-    });
+    }
     ctx.restore();
 
-    // ── Already-completed user strokes ──
+    // Completed user strokes
     ctx.save();
     ctx.strokeStyle = "#1a1a1a";
-    ctx.lineWidth = 3 * Math.min(sx, sy);
+    ctx.lineWidth = lw;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     for (const stroke of completedStrokes.current) {
@@ -118,83 +120,103 @@ export function KanjiWritingCanvas({
     }
     ctx.restore();
 
-    // ── Current in-progress stroke ──
-    if (currentPoints.current.length > 1) {
+    // Current in-progress stroke
+    const pts = currentPoints.current;
+    if (pts.length > 1) {
       ctx.save();
       ctx.strokeStyle = "#993331";
       ctx.lineWidth = 3.5 * Math.min(sx, sy);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.beginPath();
-      ctx.moveTo(
-        currentPoints.current[0].x * sx,
-        currentPoints.current[0].y * sy
-      );
-      for (let j = 1; j < currentPoints.current.length; j++) {
-        ctx.lineTo(
-          currentPoints.current[j].x * sx,
-          currentPoints.current[j].y * sy
-        );
+      ctx.moveTo(pts[0].x * sx, pts[0].y * sy);
+      for (let j = 1; j < pts.length; j++) {
+        ctx.lineTo(pts[j].x * sx, pts[j].y * sy);
       }
       ctx.stroke();
       ctx.restore();
     }
   }, [guideStrokes, activeStrokeIndex, vbWidth, vbHeight]);
 
-  // Redraw on index change
+  /** Schedule a redraw on the next animation frame (coalesces calls). */
+  const scheduleRedraw = useCallback(() => {
+    cancelAnimationFrame(rafId.current);
+    rafId.current = requestAnimationFrame(redraw);
+  }, [redraw]);
+
+  // Reset completed strokes when active index changes
   useEffect(() => {
     completedStrokes.current = [];
-    redraw();
-  }, [activeStrokeIndex, redraw]);
+    scheduleRedraw();
+  }, [activeStrokeIndex, scheduleRedraw]);
 
   // Initial draw
   useEffect(() => {
-    redraw();
-  }, [redraw]);
+    scheduleRedraw();
+    return () => cancelAnimationFrame(rafId.current);
+  }, [scheduleRedraw]);
 
-  const getCanvasCoords = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    const canvas = canvasRef.current!;
-    const rect = canvas.getBoundingClientRect();
-    const sx = vbWidth / rect.width;
-    const sy = vbHeight / rect.height;
-    return {
-      x: (e.clientX - rect.left) * sx,
-      y: (e.clientY - rect.top) * sy,
-    };
-  };
-
-  const handlePointerDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (disabled) return;
-    e.preventDefault();
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
-    setIsDrawing(true);
-    currentPoints.current = [getCanvasCoords(e)];
-    redraw();
-  };
-
-  const handlePointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || disabled) return;
-    e.preventDefault();
-    currentPoints.current.push(getCanvasCoords(e));
-    redraw();
-  };
-
-  const handlePointerUp = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawing || disabled) return;
-    e.preventDefault();
-    setIsDrawing(false);
-    if (currentPoints.current.length >= 2) {
-      const drawnStroke: DrawnStroke = {
-        points: [...currentPoints.current],
+  // ── Pointer helpers ──
+  const getCoords = useCallback(
+    (e: ReactPointerEvent<HTMLCanvasElement>) => {
+      const rect = canvasRef.current!.getBoundingClientRect();
+      return {
+        x: (e.clientX - rect.left) * (vbWidth / rect.width),
+        y: (e.clientY - rect.top) * (vbHeight / rect.height),
       };
-      completedStrokes.current.push(drawnStroke);
-      onStrokeDrawn(drawnStroke);
-    }
-    currentPoints.current = [];
-    redraw();
-  };
+    },
+    [vbWidth, vbHeight]
+  );
 
-  // Canvas pixel size (for sharp rendering)
+  const handlePointerDown = useCallback(
+    (e: ReactPointerEvent<HTMLCanvasElement>) => {
+      if (disabled) return;
+      e.preventDefault();
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+      isDrawingRef.current = true;
+      currentPoints.current = [getCoords(e)];
+      scheduleRedraw();
+    },
+    [disabled, getCoords, scheduleRedraw]
+  );
+
+  const handlePointerMove = useCallback(
+    (e: ReactPointerEvent<HTMLCanvasElement>) => {
+      if (!isDrawingRef.current || disabled) return;
+      e.preventDefault();
+      const pt = getCoords(e);
+      // Throttle: skip tiny movements (< 0.5 viewBox units)
+      const last = currentPoints.current[currentPoints.current.length - 1];
+      if (last) {
+        const dx = pt.x - last.x;
+        const dy = pt.y - last.y;
+        if (dx * dx + dy * dy < 0.25) return;
+      }
+      currentPoints.current.push(pt);
+      scheduleRedraw();
+    },
+    [disabled, getCoords, scheduleRedraw]
+  );
+
+  const handlePointerUp = useCallback(
+    (e: ReactPointerEvent<HTMLCanvasElement>) => {
+      if (!isDrawingRef.current || disabled) return;
+      e.preventDefault();
+      isDrawingRef.current = false;
+      if (currentPoints.current.length >= 2) {
+        const drawnStroke: DrawnStroke = {
+          points: [...currentPoints.current],
+        };
+        completedStrokes.current.push(drawnStroke);
+        onStrokeDrawn(drawnStroke);
+      }
+      currentPoints.current = [];
+      scheduleRedraw();
+    },
+    [disabled, onStrokeDrawn, scheduleRedraw]
+  );
+
+  // Canvas pixel size (HiDPI)
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
   const canvasPx = size * dpr;
 
@@ -203,7 +225,9 @@ export function KanjiWritingCanvas({
       ref={canvasRef}
       width={canvasPx}
       height={canvasPx}
-      className="touch-none rounded-xl border-2 border-neutral-200 bg-white"
+      className={`touch-none rounded-xl border-2 bg-white transition-colors duration-200 ${
+        flashError ? "border-red-400" : "border-neutral-200"
+      }`}
       style={{
         width: size,
         height: size,
@@ -225,9 +249,9 @@ export function KanjiWritingCanvas({
  * Works for basic KanjiVG paths (M, L, C, S, Q, T, Z commands).
  */
 function scaleSvgPath(d: string, sx: number, sy: number): string {
-  // For simplicity, since KanjiVG uses absolute coords,
-  // we scale every number pair: odd index → *sx  even index → *sy
-  const tokens = d.match(/[a-zA-Z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g);
+  const tokens = d.match(
+    /[a-zA-Z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g
+  );
   if (!tokens) return d;
 
   let result = "";
@@ -241,13 +265,8 @@ function scaleSvgPath(d: string, sx: number, sy: number): string {
       result += token;
     } else {
       const num = parseFloat(token);
-      // For absolute commands, alternate x/y scaling
-      const isRelative = lastCmd === lastCmd.toLowerCase() && lastCmd !== "z";
-      if (!isRelative) {
-        result += (numIdx % 2 === 0 ? num * sx : num * sy).toFixed(2) + " ";
-      } else {
-        result += (numIdx % 2 === 0 ? num * sx : num * sy).toFixed(2) + " ";
-      }
+      const scale = numIdx % 2 === 0 ? sx : sy;
+      result += (num * scale).toFixed(2) + " ";
       numIdx++;
     }
   }
