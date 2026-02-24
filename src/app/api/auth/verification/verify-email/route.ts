@@ -3,9 +3,6 @@ import { NextResponse } from "next/server";
 /**
  * POST /api/auth/verification/verify-email
  *
- * Confirma la verificación del correo electrónico del usuario
- * enviando el código que recibió por email.
- *
  * Body:
  *   - email: string
  *   - code:  string   — código de 5 dígitos

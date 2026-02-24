@@ -22,6 +22,7 @@ type RegisterStep = "form" | "verify-email";
 export default function LoginPage() {
   const router = useRouter();
   const toast = useToast();
+  const CODE_LEN = 6;
 
   // Modo del card
   const [mode, setMode] = useState<Mode>("login");
@@ -29,14 +30,14 @@ export default function LoginPage() {
   // Forgot password flow
   const [forgotStep, setForgotStep] = useState<ForgotStep>("email");
   const [forgotEmail, setForgotEmail] = useState("");
-  const [verificationCode, setVerificationCode] = useState(["", "", "", "", ""]);
+  const [verificationCode, setVerificationCode] = useState(Array(CODE_LEN).fill(""));
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Register verify email flow (UI)
   const [registerStep, setRegisterStep] = useState<RegisterStep>("form");
-  const [regVerificationCode, setRegVerificationCode] = useState(["", "", "", "", ""]);
+  const [regVerificationCode, setRegVerificationCode] = useState(Array(CODE_LEN).fill(""));  
   const regCodeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // login fields
@@ -123,12 +124,12 @@ export default function LoginPage() {
 
       // Reset register verify UI
       setRegisterStep("form");
-      setRegVerificationCode(["", "", "", "", ""]);
+      setRegVerificationCode(Array(CODE_LEN).fill(""));
 
       // Reset forgot password
       setForgotStep("email");
       setForgotEmail("");
-      setVerificationCode(["", "", "", "", ""]);
+      setVerificationCode(Array(CODE_LEN).fill(""));
       setNewPassword("");
       setConfirmNewPassword("");
 
@@ -199,15 +200,12 @@ export default function LoginPage() {
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || "No se pudo registrar.");
 
-      // ✅ Si viene de Google, NO pedimos verificación
       if (fromGoogle) {
         toast.success("¡Cuenta creada exitosamente!");
         window.location.replace("/onboarding/interests");
         return;
       }
 
-      // ✅ UI: después de registrar -> enviar código de verificación -> intereses
-      // Envía el código de verificación al correo
       const codeRes = await fetch("/api/auth/verification/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -221,7 +219,7 @@ export default function LoginPage() {
 
       toast.success(`Te enviamos un código a ${regEmail}`);
       setRegisterStep("verify-email");
-      setRegVerificationCode(["", "", "", "", ""]);
+      setRegVerificationCode(Array(CODE_LEN).fill(""));
       requestAnimationFrame(() => regCodeInputRefs.current[0]?.focus());
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Error desconocido");
@@ -277,8 +275,8 @@ export default function LoginPage() {
   async function handleVerificationCode(e: React.FormEvent) {
     e.preventDefault();
     const code = verificationCode.join("");
-    if (code.length !== 5) {
-      toast.error("Ingresa el código completo");
+    if (code.length !== CODE_LEN) {
+        toast.error("Ingresa el código completo");
       return;
     }
     setLoading(true);
@@ -338,7 +336,7 @@ export default function LoginPage() {
     newCode[index] = value;
     setVerificationCode(newCode);
 
-    if (value && index < 4) codeInputRefs.current[index + 1]?.focus();
+    if (value && index < CODE_LEN - 1) codeInputRefs.current[index + 1]?.focus();
   }
   function handleCodeKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
@@ -354,7 +352,7 @@ export default function LoginPage() {
     newCode[index] = value;
     setRegVerificationCode(newCode);
 
-    if (value && index < 4) regCodeInputRefs.current[index + 1]?.focus();
+    if (value && index < CODE_LEN - 1) regCodeInputRefs.current[index + 1]?.focus();
   }
   function handleRegCodeKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === "Backspace" && !regVerificationCode[index] && index > 0) {
@@ -365,8 +363,8 @@ export default function LoginPage() {
 async function handleRegisterVerifyCode(e: React.FormEvent) {
   e.preventDefault();
   const code = regVerificationCode.join("");
-  if (code.length !== 5) {
-    toast.error("Ingresa el código completo");
+    if (code.length !== CODE_LEN) {
+      toast.error("Ingresa el código completo");
     return;
   }
 
@@ -385,10 +383,9 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
 
     toast.success("Correo verificado");
 
-    // 2) ✅ Auto-login para que el backend setee la cookie (gokai_token)
+    // 2) Auto-login para que el backend setee la cookie (gokai_token)
     if (!regPassword) {
       toast.success("Ahora inicia sesión para continuar");
-      // opcional: te mando al login con from
       window.location.replace(`/auth/login?from=${encodeURIComponent("/onboarding/interests")}`);
       return;
     }
@@ -406,7 +403,6 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
       return;
     }
 
-    // 3) Redirigir ya con sesión activa
     window.location.replace("/onboarding/interests");
   } catch (err) {
     const error = err instanceof Error ? err : new Error("Error desconocido");
@@ -427,7 +423,7 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || "No se pudo reenviar el código.");
       toast.success(`Código reenviado a ${regEmail}`);
-      setRegVerificationCode(["", "", "", "", ""]);
+      setRegVerificationCode(Array(CODE_LEN).fill(""));
       requestAnimationFrame(() => regCodeInputRefs.current[0]?.focus());
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Error desconocido");
@@ -884,7 +880,7 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                               type="button"
                               onClick={() => {
                                 setRegisterStep("form");
-                                setRegVerificationCode(["", "", "", "", ""]);
+                                setRegVerificationCode(Array(CODE_LEN).fill(""));
                               }}
                               className="w-full text-center text-sm font-medium text-neutral-600 hover:text-neutral-900 transition"
                             >

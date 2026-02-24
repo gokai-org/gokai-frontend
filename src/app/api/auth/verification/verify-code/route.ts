@@ -3,14 +3,15 @@ import { NextResponse } from "next/server";
 /**
  * POST /api/auth/verification/verify-code
  *
- * Verifica que el código enviado al correo sea correcto.
- * Esto es para que el frontend pueda avanzar de pantalla (UI)
- * antes de enviar la nueva contraseña o confirmar verificación.
- *
- * Body:
+ * Body (frontend):
  *   - email: string
- *   - code:  string   — código de 5 dígitos
- *   - type:  "password-recovery" | "email-verification"
+ *   - code: string
+ *   - type: "password-recovery" | "email-verification"
+ *
+ * Body real que espera el backend:
+ *   - email: string
+ *   - code: string
+ *   - type: "password" | "verification"
  *
  * Proxy hacia el backend de usuarios:
  *   POST {GOKAI_USERS_API_BASE}/users/verification/verify-code
@@ -36,7 +37,7 @@ export async function POST(req: Request) {
 
   const email = String(body.email ?? "").trim();
   const code = String(body.code ?? "").trim();
-  const type = String(body.type ?? "").trim();
+  const rawType = String(body.type ?? "").trim();
 
   if (!email || !code) {
     return NextResponse.json(
@@ -45,11 +46,26 @@ export async function POST(req: Request) {
     );
   }
 
-  if (type !== "password-recovery" && type !== "email-verification") {
+  const typeMap: Record<string, string> = {
+    "email-verification": "verification",
+    "password-recovery": "password",
+
+    "verification": "verification",
+    "verify-email": "verification",
+
+    "password": "password",
+    "password-reset": "password",
+    "reset-password": "password",
+  };
+
+  const type = typeMap[rawType];
+
+  if (!type) {
     return NextResponse.json(
       {
         error:
-          "El campo 'type' debe ser 'password-recovery' o 'email-verification'.",
+          "El campo 'type' es inválido. Usa 'email-verification' o 'password-recovery'.",
+        received: rawType,
       },
       { status: 400 },
     );
@@ -71,6 +87,7 @@ export async function POST(req: Request) {
     }
 
     if (!r.ok) {
+      console.error("verify-code backend error:", { status: r.status, text });
       return NextResponse.json(
         { error: data?.error || text || "Código inválido o expirado." },
         { status: r.status },
@@ -79,7 +96,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message: data?.message || "Código verificado correctamente.",
+      message: (data?.message as string) || "Código verificado correctamente.",
     });
   } catch (err) {
     console.error("Error al verificar código:", err);

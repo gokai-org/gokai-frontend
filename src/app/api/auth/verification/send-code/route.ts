@@ -3,11 +3,13 @@ import { NextResponse } from "next/server";
 /**
  * POST /api/auth/verification/send-code
  *
- * Envía un código de verificación al correo del usuario.
- *
- * Body:
- *   - email: string          — correo destino
+ * Body (frontend):
+ *   - email: string
  *   - type: "password-recovery" | "email-verification"
+ *
+ * Body real que espera el backend:
+ *   - email: string
+ *   - type: "password" | "verification"
  *
  * Proxy hacia el backend de usuarios:
  *   POST {GOKAI_USERS_API_BASE}/users/verification/send-code
@@ -32,7 +34,7 @@ export async function POST(req: Request) {
   }
 
   const email = String(body.email ?? "").trim();
-  const type = String(body.type ?? "").trim();
+  const rawType = String(body.type ?? "").trim();
 
   if (!email) {
     return NextResponse.json(
@@ -41,11 +43,28 @@ export async function POST(req: Request) {
     );
   }
 
-  if (type !== "password-recovery" && type !== "email-verification") {
+  const typeMap: Record<string, string> = {
+    "email-verification": "verification",
+    "password-recovery": "password",
+
+    "email_verification": "verification",
+    "verify-email": "verification",
+    "verification": "verification",
+
+    "password_recovery": "password",
+    "password-reset": "password",
+    "reset-password": "password",
+    "password": "password",
+  };
+
+  const type = typeMap[rawType];
+
+  if (!type) {
     return NextResponse.json(
       {
         error:
-          "El campo 'type' debe ser 'password-recovery' o 'email-verification'.",
+          "El campo 'type' es inválido. Usa 'email-verification' o 'password-recovery'.",
+        received: rawType,
       },
       { status: 400 },
     );
@@ -67,6 +86,7 @@ export async function POST(req: Request) {
     }
 
     if (!r.ok) {
+      console.error("send-code backend error:", { status: r.status, text });
       return NextResponse.json(
         { error: data?.error || text || "No se pudo enviar el código." },
         { status: r.status },
@@ -76,8 +96,7 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message:
-        data?.message ||
-        `Código de verificación enviado a ${email}.`,
+        (data?.message as string) || `Código de verificación enviado a ${email}.`,
     });
   } catch (err) {
     console.error("Error al enviar código:", err);
