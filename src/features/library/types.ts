@@ -5,11 +5,11 @@ export interface LibraryItem {
   description: string;
   thumbnail: string;
   category: 'leccion' | 'kanji' | 'gramatica' | 'vocabulario' | 'cultura' | 'ejercicio';
-  level: 'N5' | 'N4' | 'N3' | 'N2' | 'N1';
   progress?: number;
   isFavorite?: boolean;
   duration?: string;
   itemCount?: number;
+  lastAccessed?: string | Date;
 }
 
 export interface LibraryCategory {

@@ -60,14 +60,23 @@ export default function LibraryPage() {
 
   // ── Helpers de mapeo ──────────────────────────────────────
   function kanjiToCard(kanji: Kanji) {
+    const meaning = getPrimaryMeaning(kanji.meanings) || kanji.symbol;
+    const reading = getPrimaryReading(kanji.readings);
+
+    const meaningsCount = Array.isArray(kanji.meanings)
+      ? kanji.meanings.length
+      : (kanji.meanings?.es?.length ?? 0) + (kanji.meanings?.en?.length ?? 0) + (kanji.meanings?.other?.length ?? 0);
+
+    const readingsCount = Array.isArray(kanji.readings)
+      ? kanji.readings.length
+      : (kanji.readings?.on?.length ?? 0) + (kanji.readings?.kun?.length ?? 0) + (kanji.readings?.other?.length ?? 0);
+
     return {
       id: kanji.id,
-      title: getPrimaryMeaning(kanji.meanings) || kanji.symbol,
-      subtitle: getPrimaryReading(kanji.readings)
-        ? `音: ${getPrimaryReading(kanji.readings)}`
-        : undefined,
+      title: meaning,
+      subtitle: reading ? `Lectura: ${reading}` : "Sin lectura",
       thumbnail: kanji.symbol,
-      badge: `N${kanji.pointsToUnlock / 10}`,
+      meta: `${readingsCount || 0} lecturas • ${meaningsCount || 0} significados`,
     };
   }
 
