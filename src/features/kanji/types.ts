@@ -12,6 +12,8 @@ export type Kanji = {
   readings: KanjiReadings;
   meanings: KanjiMeanings;
   pointsToUnlock: number;
+  viewBox?: string;
+  strokes?: string[];
 };
 
 export type KanjiExerciseType = "writing" | "meaning";
