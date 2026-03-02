@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
-import { FeatureCard, PlanCard, ContactCard, LandingNavItem } from "@/features/landing";
+import { FeatureCard, PlanCard, ContactCard, LandingNavItem, MembershipPicker } from "@/features/landing";
 import { SECTIONS, FEATURES, HOW_TABS, type HowTabId } from "@/features/landing/data/landingData";
 
 export default function LandingPage() {
@@ -449,29 +449,7 @@ useEffect(() => {
                         viewport={{ once: true }}
                         transition={{ duration: 0.5 }}
                       >
-                        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 md:grid-cols-2">
-                          <PlanCard
-                            variant="free"
-                            title="GOKAI"
-                            subtitle="Perfecto para comenzar tu viaje en japonés sin compromiso."
-                            price="$ 0"
-                            period="MXN / mensual"
-                            buttonText="Comenzar gratis"
-                            bullets={["Acceso a módulos básicos.", "Grafo limitado.", "Sin chatbot."]}
-                            index={0}
-                          />
-
-                          <PlanCard
-                            variant="plus"
-                            title="GOKAI+"
-                            subtitle="Desbloquea todo el poder de la IA y repasos inteligentes."
-                            price="$ 199"
-                            period="MXN / mensual"
-                            buttonText="Suscribirme"
-                            bullets={["IA completa.", "Chatbot ilimitado.", "Estadísticas avanzadas."]}
-                            index={1}
-                          />
-                        </div>
+                        <MembershipPicker mode="link" />
                       </motion.div>
                     )}
 

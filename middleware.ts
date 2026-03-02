@@ -9,7 +9,8 @@ export function middleware(req: NextRequest) {
   
   const isAuthPage = 
     req.nextUrl.pathname.startsWith("/auth/login") ||
-    req.nextUrl.pathname.startsWith("/auth/register");
+    req.nextUrl.pathname.startsWith("/auth/register") ||
+    req.nextUrl.pathname.startsWith("/auth/membership");
 
   // Si intenta acceder a páginas de auth y ya está autenticado, redirigir al dashboard
   if (isAuthPage && token) {

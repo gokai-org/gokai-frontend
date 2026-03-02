@@ -45,12 +45,12 @@ export function ContentCard({
 
         {/* Contenido principal */}
         <div className="flex-1 flex flex-col justify-end mt-2">
-          <h3 className="font-black text-[28px] leading-none tracking-tight text-gray-900 group-hover:text-[#993331] transition-colors line-clamp-1">
+          <h3 className="font-black text-[28px] leading-tight tracking-tight text-gray-900 group-hover:text-[#993331] transition-colors line-clamp-1">
             {title}
           </h3>
 
           {subtitle && (
-            <p className="mt-2.5 text-[14px] font-medium text-gray-400 line-clamp-1">
+            <p className="mt-1.5 text-[14px] font-medium text-gray-400 line-clamp-1">
               {subtitle}
             </p>
           )}

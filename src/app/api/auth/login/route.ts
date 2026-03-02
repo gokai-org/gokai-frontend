@@ -28,7 +28,7 @@ export async function POST(req: Request) {
   if (!token) return NextResponse.json({ error: "Respuesta inválida (token faltante)" }, { status: 500 });
 
   const remember = !!body.remember;
-  const maxAge = remember ? 60 * 60 * 24 * 30 : undefined;
+  const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7;
 
   const res = NextResponse.json({
     user: {

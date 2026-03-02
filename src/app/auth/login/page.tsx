@@ -8,6 +8,8 @@ import ProgressDots from "@/features/auth/components/ProgressDots";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
 import { useToast } from "@/shared/ui/ToastProvider";
 import { LoginHistoryHandler } from "@/features/auth/components/LoginHistoryHandler";
+import { DatePicker } from "@/shared/ui/DatePicker";
+import { Checkbox } from "@/shared/ui/Checkbox";
 
 const HERO_MESSAGES = [
   { jp: "あなたの成長は、あなただけのもの", es: "Tu progreso es único, como tú." },
@@ -18,6 +20,12 @@ const HERO_MESSAGES = [
 type Mode = "login" | "register" | "forgot-password";
 type ForgotStep = "email" | "code" | "password";
 type RegisterStep = "form" | "verify-email";
+type MembershipIntent = "free" | "premium";
+
+function parseIntent(raw: string | null): MembershipIntent | null {
+  if (raw === "free" || raw === "premium") return raw;
+  return null;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,6 +34,9 @@ export default function LoginPage() {
 
   // Modo del card
   const [mode, setMode] = useState<Mode>("login");
+
+  // Membership intent
+  const [intent, setIntent] = useState<MembershipIntent | null>(null);
 
   // Forgot password flow
   const [forgotStep, setForgotStep] = useState<ForgotStep>("email");
@@ -74,6 +85,21 @@ export default function LoginPage() {
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
     const google = sp.get("google");
+    const urlMode = sp.get("mode");
+    const urlIntent = sp.get("intent");
+
+    // If mode=register is requested with a valid intent, go directly to register
+    if (urlMode === "register") {
+      const parsed = parseIntent(urlIntent);
+      if (parsed) {
+        setIntent(parsed);
+        setMode("register");
+      } else {
+        // No valid intent — redirect to membership picker
+        window.location.replace("/auth/membership");
+        return;
+      }
+    }
 
     if (google === "1") {
       const e = sp.get("email") || "";
@@ -81,6 +107,7 @@ export default function LoginPage() {
       const ln = sp.get("lastName") || "";
 
       setMode("register");
+      if (!intent) setIntent("free"); // default for google users
       if (e) setRegEmail(e);
       if (fn) setFirstName(fn);
       if (ln) setLastName(ln);
@@ -185,7 +212,30 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/register", {
+      if (fromGoogle) {
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            email: regEmail,
+            password: regPassword,
+            birthdate,
+            isGoogleUser: true,
+          }),
+        });
+
+        const data = await res.json().catch(() => null);
+        if (!res.ok) throw new Error(data?.error || "No se pudo registrar.");
+
+        toast.success("¡Cuenta creada exitosamente!");
+        window.location.replace(getPostRegisterDestination());
+        return;
+      }
+
+      // 1) Crear usuario primero (el backend necesita que exista para enviar código)
+      const registerRes = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -196,16 +246,13 @@ export default function LoginPage() {
           birthdate,
         }),
       });
-
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || "No se pudo registrar.");
-
-      if (fromGoogle) {
-        toast.success("¡Cuenta creada exitosamente!");
-        window.location.replace("/onboarding/interests");
+      const registerData = await registerRes.json().catch(() => null);
+      if (!registerRes.ok) {
+        toast.error(registerData?.error || "No se pudo crear la cuenta.");
         return;
       }
 
+      // 2) Enviar código de verificación (ahora el usuario ya existe)
       const codeRes = await fetch("/api/auth/verification/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -371,25 +418,25 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
   setLoading(true);
 
   try {
-    // 1) Verificar correo
-    const res = await fetch("/api/auth/verification/verify-email", {
+    if (!regEmail || !regPassword) {
+      toast.error("Completa tus datos antes de continuar.");
+      setRegisterStep("form");
+      return;
+    }
+
+    // 1) Verificar código de correo
+    const verifyRes = await fetch("/api/auth/verification/verify-code", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: regEmail, code }),
+      body: JSON.stringify({ email: regEmail, code, type: "email-verification" }),
     });
 
-    const data = await res.json().catch(() => null);
-    if (!res.ok) throw new Error(data?.error || "Código inválido o expirado.");
+    const verifyData = await verifyRes.json().catch(() => null);
+    if (!verifyRes.ok) throw new Error(verifyData?.error || "Código inválido o expirado.");
 
     toast.success("Correo verificado");
 
     // 2) Auto-login para que el backend setee la cookie (gokai_token)
-    if (!regPassword) {
-      toast.success("Ahora inicia sesión para continuar");
-      window.location.replace(`/auth/login?from=${encodeURIComponent("/onboarding/interests")}`);
-      return;
-    }
-
     const loginRes = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -399,11 +446,12 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
     const loginData = await loginRes.json().catch(() => null);
     if (!loginRes.ok) {
       toast.error(loginData?.error || "No se pudo iniciar sesión automáticamente.");
-      window.location.replace(`/auth/login?from=${encodeURIComponent("/onboarding/interests")}`);
+      const dest = getPostRegisterDestination();
+      window.location.replace(`/auth/login?from=${encodeURIComponent(dest)}`);
       return;
     }
 
-    window.location.replace("/onboarding/interests");
+    window.location.replace(getPostRegisterDestination());
   } catch (err) {
     const error = err instanceof Error ? err : new Error("Error desconocido");
     toast.error(error.message);
@@ -411,6 +459,11 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
     setLoading(false);
   }
 }
+
+  function getPostRegisterDestination(): string {
+    if (intent === "premium") return "/checkout";
+    return "/onboarding/interests";
+  }
 
   async function handleResendRegisterCode() {
     setLoading(true);
@@ -480,10 +533,11 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
           {/* Card */}
           <section className="flex w-full justify-center lg:justify-end lg:self-center lg:mr-15 xl:mr-14">
             <motion.div
+              layout
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut" }}
-              className="w-full max-w-sm md:max-w-md lg:max-w-lg rounded-2xl bg-white/95 p-6 md:p-7 lg:p-8 shadow-xl ring-1 ring-black/5 backdrop-blur overflow-hidden"
+              transition={{ duration: 0.5, ease: "easeOut", layout: { duration: 0.4, ease: "easeInOut" } }}
+              className="w-full max-w-sm md:max-w-md lg:max-w-lg rounded-2xl bg-white/95 p-6 md:p-7 shadow-xl ring-1 ring-black/5 backdrop-blur overflow-hidden"
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -495,33 +549,91 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                 >
                   {/* Header */}
                   <div className="flex flex-col items-center text-center">
-                    <motion.div
-                      className="flex items-center justify-center"
-                      whileHover={{ rotate: 360, scale: 1.1 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      <Image src="/logos/gokai-logo.svg" alt="Gokai" width={72} height={72} priority />
-                    </motion.div>
+                    <a href="/" className="inline-block">
+                      <motion.div
+                        className="flex items-center justify-center"
+                        whileHover={{ rotate: 360, scale: 1.1 }}
+                        transition={{ duration: 0.5 }}
+                      >
+                        <Image src="/logos/gokai-logo.svg" alt="Gokai" width={60} height={60} priority />
+                      </motion.div>
+                    </a>
 
                     {mode === "login" ? (
                       <>
-                        <h2 className="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">Iniciar sesión</h2>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">Iniciar sesión</h2>
                         <p className="mt-1 text-sm font-medium text-neutral-500">Bienvenido de nuevo, estudiante de japonés.</p>
                       </>
                     ) : mode === "register" ? (
                       <>
-                        <h2 className="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">
-                          {registerStep === "verify-email" ? "Verifica tu correo" : "Registrarse"}
+                        {intent === "premium" && registerStep === "form" && (
+                          <div className="mt-4 w-full max-w-xs mx-auto">
+                            {/* Step label */}
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="text-xs font-bold text-[#993331]">Paso 1 de 3</span>
+                              <span className="text-xs font-medium text-neutral-400">Crear cuenta</span>
+                            </div>
+                            {/* Progress bar */}
+                            <div className="h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
+                              <motion.div
+                                className="h-full rounded-full bg-[#993331]"
+                                initial={{ width: 0 }}
+                                animate={{ width: "33%" }}
+                                transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+                              />
+                            </div>
+                            {/* Step dots */}
+                            <div className="mt-1.5 flex items-center justify-between px-[2px]">
+                              {["Cuenta", "Pago", "Onboarding"].map((label, i) => (
+                                <div key={label} className="flex flex-col items-center gap-1">
+                                  <div
+                                    className={[
+                                      "h-2 w-2 rounded-full transition-colors",
+                                      i === 0 ? "bg-[#993331]" : "bg-neutral-200",
+                                    ].join(" ")}
+                                  />
+                                  <span
+                                    className={[
+                                      "text-[10px] font-medium",
+                                      i === 0 ? "text-[#993331]" : "text-neutral-300",
+                                    ].join(" ")}
+                                  >
+                                    {label}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <h2 className={[
+                          "text-2xl font-semibold tracking-tight text-neutral-900",
+                          intent === "premium" && registerStep === "form" ? "mt-5" : "mt-3",
+                        ].join(" ")}>
+                          {registerStep === "verify-email"
+                            ? "Verifica tu correo"
+                            : intent === "premium"
+                            ? "Desbloquea GOKAI+"
+                            : "Registrarse"}
                         </h2>
                         <p className="mt-1 text-sm font-medium text-neutral-500">
                           {registerStep === "verify-email"
                             ? `Ingresa el código que enviamos a ${regEmail || "tu correo"}.`
+                            : intent === "premium"
+                            ? "Crea tu cuenta para continuar con GOKAI+."
                             : "Crea tu cuenta y descubre un aprendizaje hecho a tu medida."}
                         </p>
+                        {intent === "premium" && registerStep === "form" && (
+                          <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-neutral-400">
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            No se realizará ningún cobro todavía
+                          </p>
+                        )}
                       </>
                     ) : (
                       <>
-                        <h2 className="mt-4 text-2xl font-semibold tracking-tight text-neutral-900">Recuperar contraseña</h2>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">Recuperar contraseña</h2>
                         <p className="mt-1 text-sm font-medium text-neutral-500">
                           {forgotStep === "email" && "Ingresa tu correo para recibir el código."}
                           {forgotStep === "code" && "Ingresa el código de verificación."}
@@ -534,14 +646,14 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                   {/* Login */}
                   {mode === "login" && (
                     <motion.form
-                      className="mt-6 space-y-4"
+                      className="mt-5 space-y-3"
                       onSubmit={handleLoginSubmit}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.1, duration: 0.3 }}
                     >
                       <div>
-                        <label className="mb-2 block text-sm font-semibold text-neutral-700">Correo</label>
+                        <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Correo</label>
                         <input
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
@@ -554,7 +666,7 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                       </div>
 
                       <div>
-                        <label className="mb-2 block text-sm font-semibold text-neutral-700">Contraseña</label>
+                        <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Contraseña</label>
                         <div className="relative">
                           <input
                             value={password}
@@ -589,18 +701,12 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3">
-                        <input
-                          id="remember"
-                          type="checkbox"
-                          checked={remember}
-                          onChange={(e) => setRemember(e.target.checked)}
-                          className="h-4 w-4 rounded border-neutral-300 text-red-700 focus:ring-red-500"
-                        />
-                        <label htmlFor="remember" className="text-sm font-medium text-neutral-700">
-                          Mantener sesión
-                        </label>
-                      </div>
+                      <Checkbox
+                        id="remember"
+                        checked={remember}
+                        onChange={setRemember}
+                        label="Mantener sesión"
+                      />
 
                       <div className="flex items-center justify-end">
                         <button
@@ -631,7 +737,7 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                       <button
                         type="button"
                         onClick={handleGoogleLogin}
-                        className="group relative w-full flex items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-700 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
+                        className="group relative w-full flex items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
                       >
                         <svg className="h-5 w-5" viewBox="0 0 48 48">
                           <path fill="#EA4335" d="M24 9.5c3.3 0 6.3 1.2 8.6 3.2l6.4-6.4C34.8 2.5 29.7 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.7 6C12.3 13.6 17.7 9.5 24 9.5z" />
@@ -644,7 +750,11 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
 
                       <p className="pt-1 text-center text-sm font-medium text-neutral-600">
                         ¿Necesitas una cuenta?{" "}
-                        <button type="button" onClick={() => startSwitch("register")} className="font-semibold text-[#993331] hover:underline">
+                        <button
+                          type="button"
+                          onClick={() => router.replace("/auth/membership")}
+                          className="font-semibold text-[#993331] hover:underline"
+                        >
                           Crear una cuenta
                         </button>
                       </p>
@@ -654,7 +764,7 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                   {/* Register */}
                   {mode === "register" && (
                     <motion.div
-                      className="mt-6"
+                      className="mt-5"
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.1, duration: 0.3 }}
@@ -664,75 +774,79 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                         {registerStep === "form" && (
                           <motion.form
                             key="register-form"
-                            className="space-y-4"
+                            className="space-y-2.5"
                             onSubmit={handleRegisterSubmit}
                             initial={{ opacity: 0, x: 20 }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -20 }}
                             transition={{ duration: 0.3 }}
                           >
-                            <div>
-                              <label className="mb-2 block text-sm font-semibold text-neutral-700">Nombre</label>
-                              <input
-                                value={firstName}
-                                onChange={(e) => setFirstName(e.target.value)}
-                                type="text"
-                                placeholder="Nombre"
-                                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
-                                required
-                                autoComplete="given-name"
-                              />
+                            {/* Name row */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Nombre</label>
+                                <input
+                                  value={firstName}
+                                  onChange={(e) => setFirstName(e.target.value)}
+                                  type="text"
+                                  placeholder="Nombre"
+                                  className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                                  required
+                                  autoComplete="given-name"
+                                />
+                              </div>
+                              <div>
+                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Apellido</label>
+                                <input
+                                  value={lastName}
+                                  onChange={(e) => setLastName(e.target.value)}
+                                  type="text"
+                                  placeholder="Apellido"
+                                  className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                                  required
+                                  autoComplete="family-name"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Email & birthdate row */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Correo</label>
+                                <input
+                                  value={regEmail}
+                                  onChange={(e) => setRegEmail(e.target.value)}
+                                  type="email"
+                                  placeholder="correo@ejemplo.com"
+                                  disabled={fromGoogle}
+                                  className={`w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition ${
+                                    fromGoogle ? "opacity-80 cursor-not-allowed" : ""
+                                  }`}
+                                  required
+                                  autoComplete="email"
+                                />
+                              </div>
+                              <div>
+                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Fecha de nacimiento</label>
+                                <DatePicker
+                                  value={birthdate}
+                                  onChange={setBirthdate}
+                                  placeholder="dd/mm/aaaa"
+                                  required
+                                  maxDate={new Date()}
+                                />
+                              </div>
                             </div>
 
                             <div>
-                              <label className="mb-2 block text-sm font-semibold text-neutral-700">Apellido</label>
-                              <input
-                                value={lastName}
-                                onChange={(e) => setLastName(e.target.value)}
-                                type="text"
-                                placeholder="Apellido"
-                                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
-                                required
-                                autoComplete="family-name"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-sm font-semibold text-neutral-700">Correo</label>
-                              <input
-                                value={regEmail}
-                                onChange={(e) => setRegEmail(e.target.value)}
-                                type="email"
-                                placeholder="correo@ejemplo.com"
-                                disabled={fromGoogle}
-                                className={`w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition ${
-                                  fromGoogle ? "opacity-80 cursor-not-allowed" : ""
-                                }`}
-                                required
-                                autoComplete="email"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-sm font-semibold text-neutral-700">Fecha de nacimiento</label>
-                              <input
-                                value={birthdate}
-                                onChange={(e) => setBirthdate(e.target.value)}
-                                type="date"
-                                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
-                                required
-                              />
-                            </div>
-
-                            <div>
-                              <label className="mb-2 block text-sm font-semibold text-neutral-700">Contraseña</label>
+                              <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Contraseña</label>
                               <div className="relative">
                                 <input
                                   value={regPassword}
                                   onChange={(e) => setRegPassword(e.target.value)}
                                   type={showPass ? "text" : "password"}
                                   placeholder="Contraseña"
-                                  className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                                  className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
                                   required
                                   autoComplete="new-password"
                                 />
@@ -761,14 +875,14 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             </div>
 
                             <div>
-                              <label className="mb-2 block text-sm font-semibold text-neutral-700">Repetir contraseña</label>
+                              <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Repetir contraseña</label>
                               <div className="relative">
                                 <input
                                   value={regPassword2}
                                   onChange={(e) => setRegPassword2(e.target.value)}
                                   type={showPass2 ? "text" : "password"}
                                   placeholder="Repetir contraseña"
-                                  className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                                  className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
                                   required
                                   autoComplete="new-password"
                                 />
@@ -801,12 +915,16 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                               disabled={loading}
                               whileHover={{ scale: loading ? 1 : 1.02 }}
                               whileTap={{ scale: loading ? 1 : 0.98 }}
-                              className="w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
+                              className="mt-1.5 w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
                             >
-                              {loading ? "Creando..." : "Iniciar aprendizaje"}
+                              {loading
+                                ? "Creando..."
+                                : intent === "premium"
+                                ? "Continuar con GOKAI+"
+                                : "Iniciar aprendizaje"}
                             </motion.button>
 
-                            <p className="pt-1 text-center text-sm font-medium text-neutral-600">
+                            <p className="text-center text-xs font-medium text-neutral-600">
                               ¿Ya eres parte de GOKAI?{" "}
                               <button type="button" onClick={() => startSwitch("login")} className="font-semibold text-[#993331] hover:underline">
                                 Inicia sesión.
@@ -1092,7 +1210,7 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                   )}
 
                   {/* Texto en móvil */}
-                  <div className="mt-8 block xl:hidden">
+                  <div className="mt-5 block xl:hidden">
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={heroIndex}

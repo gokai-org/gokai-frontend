@@ -1,3 +1,5 @@
+export { Checkbox } from "./Checkbox";
+export { DatePicker } from "./DatePicker";
 export { Dropdown } from "./Dropdown";
 export { SectionHeader } from "./SectionHeader";
 export { Toast, ToastContainer } from "./Toast";

@@ -8,31 +8,22 @@ import { NextResponse } from "next/server";
  *   - code: string
  *   - type: "password-recovery" | "email-verification"
  *
- * Body real que espera el backend:
+ * Body expected by backend:
  *   - email: string
  *   - code: string
  *   - type: "password" | "verification"
- *
- * Proxy hacia el backend de usuarios:
- *   POST {GOKAI_USERS_API_BASE}/users/verification/verify-code
  */
 export async function POST(req: Request) {
   const base = process.env.GOKAI_USERS_API_BASE;
   if (!base) {
-    return NextResponse.json(
-      { error: "Falta GOKAI_USERS_API_BASE" },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: "Falta GOKAI_USERS_API_BASE" }, { status: 500 });
   }
 
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json(
-      { error: "Body inválido (JSON requerido)" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Body invalido (JSON requerido)" }, { status: 400 });
   }
 
   const email = String(body.email ?? "").trim();
@@ -40,20 +31,15 @@ export async function POST(req: Request) {
   const rawType = String(body.type ?? "").trim();
 
   if (!email || !code) {
-    return NextResponse.json(
-      { error: "Los campos 'email' y 'code' son requeridos." },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Los campos 'email' y 'code' son requeridos." }, { status: 400 });
   }
 
-  const typeMap: Record<string, string> = {
+  const typeMap: Record<string, "verification" | "password"> = {
     "email-verification": "verification",
     "password-recovery": "password",
-
-    "verification": "verification",
+    verification: "verification",
     "verify-email": "verification",
-
-    "password": "password",
+    password: "password",
     "password-reset": "password",
     "reset-password": "password",
   };
@@ -63,11 +49,10 @@ export async function POST(req: Request) {
   if (!type) {
     return NextResponse.json(
       {
-        error:
-          "El campo 'type' es inválido. Usa 'email-verification' o 'password-recovery'.",
+        error: "El campo 'type' es invalido. Usa 'email-verification' o 'password-recovery'.",
         received: rawType,
       },
-      { status: 400 },
+      { status: 400 }
     );
   }
 
@@ -83,26 +68,23 @@ export async function POST(req: Request) {
     try {
       data = text ? JSON.parse(text) : null;
     } catch {
-      /* respuesta no-JSON del backend */
+      // Non-JSON backend response
     }
 
     if (!r.ok) {
       console.error("verify-code backend error:", { status: r.status, text });
       return NextResponse.json(
-        { error: data?.error || text || "Código inválido o expirado." },
-        { status: r.status },
+        { error: data?.error || text || "Codigo invalido o expirado." },
+        { status: r.status }
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: (data?.message as string) || "Código verificado correctamente.",
+      message: (data?.message as string) || "Codigo verificado correctamente.",
     });
   } catch (err) {
-    console.error("Error al verificar código:", err);
-    return NextResponse.json(
-      { error: "Error interno al verificar el código." },
-      { status: 500 },
-    );
+    console.error("Error al verificar codigo:", err);
+    return NextResponse.json({ error: "Error interno al verificar el codigo." }, { status: 500 });
   }
 }
