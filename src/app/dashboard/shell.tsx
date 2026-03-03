@@ -11,13 +11,14 @@ export default function ContentShell({ children }: { children: React.ReactNode }
   const isReviews = pathname === "/dashboard/reviews";
   const isGraph = pathname === "/dashboard/graph";
   const isStatistics = pathname === "/dashboard/statistics";
+  const isHelp = pathname === "/dashboard/help";
 
   const padDesktop = "lg:pl-[140px]";
   const padMd = "md:pl-[120px]";
 
-  if (isChatbot || isLibrary || isReviews || isGraph || isStatistics) {
+  if (isChatbot || isLibrary || isReviews || isGraph || isStatistics || isHelp) {
     return (
-      <main className={isChatbot || isLibrary || isReviews || isStatistics ? ["h-screen bg-white overflow-hidden", padMd, padDesktop].join(" ") : "h-screen bg-white overflow-hidden"}>
+      <main className={isChatbot || isLibrary || isReviews || isStatistics || isHelp ? ["h-screen bg-white overflow-hidden", padMd, padDesktop].join(" ") : "h-screen bg-white overflow-hidden"}>
         {children}
       </main>
     );

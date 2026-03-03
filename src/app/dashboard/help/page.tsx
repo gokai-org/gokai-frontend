@@ -1,3 +1,7 @@
+"use client";
+
+import HelpPage from "@/features/help/components/HelpPage";
+
 export default function Page() {
-  return <div className="p-6">Help</div>;
+  return <HelpPage />;
 }
