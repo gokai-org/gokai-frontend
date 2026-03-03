@@ -1,3 +1,7 @@
+"use client";
+
+import NoticesPage from "@/features/notices/components/NoticesPage";
+
 export default function Page() {
-  return <div className="p-6">Notices</div>;
+  return <NoticesPage />;
 }
