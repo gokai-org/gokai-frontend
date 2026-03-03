@@ -28,11 +28,6 @@ interface KanjiWritingCanvasProps {
   flashError?: boolean;
 }
 
-/**
- * A drawing canvas overlaid on a faint kanji guide.
- * The user traces strokes with mouse / touch / pen.
- * Optimized with rAF scheduling and pointer throttling.
- */
 export function KanjiWritingCanvas({
   viewBox,
   guideStrokes,
@@ -185,7 +180,6 @@ export function KanjiWritingCanvas({
       if (!isDrawingRef.current || disabled) return;
       e.preventDefault();
       const pt = getCoords(e);
-      // Throttle: skip tiny movements (< 0.5 viewBox units)
       const last = currentPoints.current[currentPoints.current.length - 1];
       if (last) {
         const dx = pt.x - last.x;
@@ -244,10 +238,6 @@ export function KanjiWritingCanvas({
 
 // ── Helpers ─────────────────────────────────────────────────
 
-/**
- * Very simple SVG path scaler: multiplies numeric coordinates by sx/sy.
- * Works for basic KanjiVG paths (M, L, C, S, Q, T, Z commands).
- */
 function scaleSvgPath(d: string, sx: number, sy: number): string {
   const tokens = d.match(
     /[a-zA-Z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g
