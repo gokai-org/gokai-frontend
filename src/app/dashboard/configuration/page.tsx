@@ -10,6 +10,8 @@ import { IntegrationButton } from "@/features/configuration/components/Integrati
 import { getCurrentUser } from "@/features/auth/services/api";
 import type { User } from "@/features/auth/types";
 import { useToast } from "@/shared/ui/ToastProvider";
+import { useSettings } from "@/features/configuration/hooks/useSettings";
+import type { UserSettings } from "@/features/configuration/types";
 
 const sectionTitles: Record<string, string> = {
   general: "Configuración General",
@@ -21,10 +23,16 @@ const sectionTitles: Record<string, string> = {
   account: "Cuenta",
 };
 
+type UpdateSectionFn = <K extends keyof UserSettings>(
+  section: K,
+  data: Partial<UserSettings[K]>,
+) => void;
+
 export default function ConfigurationPage() {
   const [activeSection, setActiveSection] = useState("general");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { settings, loading: settingsLoading, saving, error: settingsError, updateSection } = useSettings();
 
   useEffect(() => {
     async function loadUser() {
@@ -42,30 +50,47 @@ export default function ConfigurationPage() {
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-8">
           <div className="mb-6 md:mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
-              {sectionTitles[activeSection] || "Configuración"}
-            </h1>
-            <p className="mt-2 text-xs md:text-sm text-gray-600">
-              Personaliza tu experiencia de aprendizaje de japonés
-            </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                  {sectionTitles[activeSection] || "Configuración"}
+                </h1>
+                <p className="mt-2 text-xs md:text-sm text-gray-600">
+                  Personaliza tu experiencia de aprendizaje de japonés
+                </p>
+              </div>
+              {saving && (
+                <span className="text-xs text-gray-400 animate-pulse">Guardando...</span>
+              )}
+              {settingsError && (
+                <span className="text-xs text-red-500">{settingsError}</span>
+              )}
+            </div>
           </div>
 
-          <div className="space-y-6 md:space-y-8">
-            {activeSection === "general" && <GeneralSettings />}
-            {activeSection === "notifications" && <NotificationSettings />}
-            {activeSection === "appearance" && <AppearanceSettings />}
-            {activeSection === "learning" && <LearningSettings />}
-            {activeSection === "accessibility" && <AccessibilitySettings />}
-            {activeSection === "privacy" && <PrivacySettings />}
-            {activeSection === "account" && <AccountSettings user={user} setUser={setUser} loading={loading} />}
-          </div>
+          {settingsLoading && activeSection !== "account" ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-gray-500">Cargando configuración...</div>
+            </div>
+          ) : (
+            <div className="space-y-6 md:space-y-8">
+              {activeSection === "general" && <GeneralSettings settings={settings} updateSection={updateSection} />}
+              {activeSection === "notifications" && <NotificationSettings settings={settings} updateSection={updateSection} />}
+              {activeSection === "appearance" && <AppearanceSettings settings={settings} updateSection={updateSection} />}
+              {activeSection === "learning" && <LearningSettings settings={settings} updateSection={updateSection} />}
+              {activeSection === "accessibility" && <AccessibilitySettings settings={settings} updateSection={updateSection} />}
+              {activeSection === "privacy" && <PrivacySettings settings={settings} updateSection={updateSection} />}
+              {activeSection === "account" && <AccountSettings user={user} setUser={setUser} loading={loading} />}
+            </div>
+          )}
         </div>
       </main>
     </div>
   );
 }
 
-function GeneralSettings() {
+function GeneralSettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+  const g = settings.general;
   return (
     <>
       <SettingsSection
@@ -76,7 +101,8 @@ function GeneralSettings() {
         <SettingsToggleItem
           label="Confirmación de respuestas"
           description="Requiere confirmación antes de enviar respuestas"
-          enabled={true}
+          enabled={g.confirmAnswers}
+          onChange={(v) => updateSection("general", { confirmAnswers: v })}
         />
       </SettingsSection>
 
@@ -87,21 +113,24 @@ function GeneralSettings() {
         <SettingsSelectItem
           label="Duración de sesión"
           description="Tiempo predeterminado para sesiones de estudio"
-          value="30 min"
+          value={g.sessionDuration}
           options={["15 min", "30 min", "45 min", "60 min"]}
+          onChange={(v) => updateSection("general", { sessionDuration: v })}
         />
 
         <SettingsToggleItem
           label="Recordatorios de descanso"
           description="Te avisaremos cuando sea momento de descansar"
-          enabled={true}
+          enabled={g.breakReminders}
+          onChange={(v) => updateSection("general", { breakReminders: v })}
         />
       </SettingsSection>
     </>
   );
 }
 
-function NotificationSettings() {
+function NotificationSettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+  const n = settings.notifications;
   return (
     <>
       <SettingsSection
@@ -111,15 +140,18 @@ function NotificationSettings() {
         <SettingsToggleSelectItem
           label="Frecuencia de notificaciones"
           description="Con qué frecuencia quieres recibir notificaciones agrupadas"
-          toggleEnabled={true}
-          value="Diario"
+          toggleEnabled={n.emailNotifications}
+          onToggleChange={(v) => updateSection("notifications", { emailNotifications: v })}
+          value={n.notificationFrequency}
           options={["Inmediato", "Cada 3 horas", "Diario", "Semanal"]}
+          onChange={(v) => updateSection("notifications", { notificationFrequency: v })}
         />
 
         <SettingsToggleItem
           label="Alertas prioritarias"
           description="Notificaciones críticas que te pueden interrumpir"
-          enabled={true}
+          enabled={n.priorityAlerts}
+          onChange={(v) => updateSection("notifications", { priorityAlerts: v })}
         />
       </SettingsSection>
 
@@ -130,19 +162,22 @@ function NotificationSettings() {
         <SettingsToggleItem
           label="Activar horario silencioso"
           description="Define cuándo no quieres ser interrumpido"
-          enabled={true}
+          enabled={n.quietHoursEnabled}
+          onChange={(v) => updateSection("notifications", { quietHoursEnabled: v })}
         />
 
         <div className="grid grid-cols-2 gap-4">
           <SettingsSelectItem
             label="Días de la semana"
-            value="Lunes - Viernes"
+            value={n.quietHoursDays}
             options={["Todos los días", "Lunes - Viernes", "Fines de semana", "Personalizado"]}
+            onChange={(v) => updateSection("notifications", { quietHoursDays: v })}
           />
           <SettingsSelectItem
             label="Horario"
-            value="22:00 - 08:00"
+            value={n.quietHoursTime}
             options={["21:00 - 07:00", "22:00 - 08:00", "23:00 - 09:00", "Personalizado"]}
+            onChange={(v) => updateSection("notifications", { quietHoursTime: v })}
           />
         </div>
       </SettingsSection>
@@ -150,7 +185,8 @@ function NotificationSettings() {
   );
 }
 
-function AppearanceSettings() {
+function AppearanceSettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+  const a = settings.appearance;
   return (
     <>
       <SettingsSection
@@ -160,7 +196,8 @@ function AppearanceSettings() {
         <SettingsToggleItem
           label="Modo oscuro"
           description="Activa el tema oscuro para reducir la fatiga visual"
-          enabled={false}
+          enabled={a.darkMode}
+          onChange={(v) => updateSection("appearance", { darkMode: v })}
         />
 
       </SettingsSection>
@@ -172,22 +209,25 @@ function AppearanceSettings() {
         <SettingsSelectItem
           label="Tamaño de fuente"
           description="Tamaño del texto en la interfaz"
-          value="Mediano"
+          value={a.fontSize}
           options={["Pequeño", "Mediano", "Grande", "Muy grande"]}
+          onChange={(v) => updateSection("appearance", { fontSize: v })}
         />
 
         <SettingsSelectItem
           label="Fuente para japonés"
           description="Tipografía para caracteres japoneses"
-          value="Noto Sans JP"
+          value={a.japaneseFont}
           options={["Noto Sans JP", "Hiragino", "Yu Gothic", "Meiryo"]}
+          onChange={(v) => updateSection("appearance", { japaneseFont: v })}
         />
       </SettingsSection>
     </>
   );
 }
 
-function LearningSettings() {
+function LearningSettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+  const l = settings.learning;
   return (
     <>
       <SettingsSection
@@ -198,8 +238,9 @@ function LearningSettings() {
         <SettingsSelectItem
           label="Meta diaria"
           description="Tiempo de estudio diario que deseas alcanzar"
-          value="30 minutos"
+          value={l.dailyGoal}
           options={["15 minutos", "30 minutos", "45 minutos", "60 minutos", "90 minutos"]}
+          onChange={(v) => updateSection("learning", { dailyGoal: v })}
         />
       </SettingsSection>
 
@@ -210,21 +251,24 @@ function LearningSettings() {
         <SettingsSelectItem
           label="Repasos diarios"
           description="Cantidad máxima de repasos por día"
-          value="50 tarjetas"
+          value={l.dailyReviews}
           options={["10 tarjetas", "20 tarjetas", "30 tarjetas", "Ilimitado"]}
+          onChange={(v) => updateSection("learning", { dailyReviews: v })}
         />
 
         <SettingsToggleItem
           label="Notificar repasos pendientes"
           description="Recibir recordatorios de contenido por repasar"
-          enabled={true}
+          enabled={l.notifyPendingReviews}
+          onChange={(v) => updateSection("learning", { notifyPendingReviews: v })}
         />
       </SettingsSection>
     </>
   );
 }
 
-function AccessibilitySettings() {
+function AccessibilitySettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+  const ac = settings.accessibility;
   return (
     <>
       <SettingsSection
@@ -234,13 +278,15 @@ function AccessibilitySettings() {
         <SettingsToggleItem
           label="Alto contraste"
           description="Aumenta el contraste para mejor legibilidad"
-          enabled={false}
+          enabled={ac.highContrast}
+          onChange={(v) => updateSection("accessibility", { highContrast: v })}
         />
 
         <SettingsToggleItem
           label="Reducir animaciones"
           description="Minimiza animaciones y transiciones"
-          enabled={false}
+          enabled={ac.reduceAnimations}
+          onChange={(v) => updateSection("accessibility", { reduceAnimations: v })}
         />
       </SettingsSection>
 
@@ -251,8 +297,9 @@ function AccessibilitySettings() {
         <SettingsSelectItem
           label="Velocidad de audio"
           description="Velocidad de reproducción del audio japonés"
-          value="Normal"
+          value={ac.audioSpeed}
           options={["Muy lento", "Lento", "Normal", "Rápido"]}
+          onChange={(v) => updateSection("accessibility", { audioSpeed: v })}
         />
 
       </SettingsSection>
@@ -260,7 +307,8 @@ function AccessibilitySettings() {
   );
 }
 
-function PrivacySettings() {
+function PrivacySettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+  const p = settings.privacy;
   return (
     <>
       <SettingsSection
@@ -271,7 +319,8 @@ function PrivacySettings() {
         <SettingsToggleItem
           label="Recopilación de datos de uso"
           description="Ayúdanos a mejorar compartiendo datos anónimos"
-          enabled={true}
+          enabled={p.usageDataCollection}
+          onChange={(v) => updateSection("privacy", { usageDataCollection: v })}
         />
       </SettingsSection>
 
