@@ -25,6 +25,8 @@ import {
   PenTool,
 } from "lucide-react";
 import { DashboardShell, DashboardHeader } from "@/features/dashboard";
+import { useGuideTour } from "@/features/help/components/GuideTourProvider";
+import { getTourByIndex } from "@/features/help/components/tourData";
 
 /* ── helpers ── */
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
@@ -41,6 +43,7 @@ interface GuideCard {
   description: string;
   color: string;
   bgColor: string;
+  tourIndex: number;
 }
 
 /* ── data ── */
@@ -94,6 +97,7 @@ const guides: GuideCard[] = [
     description: "Configura tu perfil, elige tu nivel y comienza tu primera lección de japonés.",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
+    tourIndex: 0,
   },
   {
     icon: <Library className="w-6 h-6" />,
@@ -101,6 +105,7 @@ const guides: GuideCard[] = [
     description: "Descubre miles de kanji organizados por nivel de dificultad con ejemplos interactivos.",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
+    tourIndex: 1,
   },
   {
     icon: <Target className="w-6 h-6" />,
@@ -108,6 +113,7 @@ const guides: GuideCard[] = [
     description: "Aprende cómo funciona el SRS y cómo maximizar tu retención de vocabulario.",
     color: "text-emerald-600",
     bgColor: "bg-emerald-50",
+    tourIndex: 2,
   },
   {
     icon: <MessageCircle className="w-6 h-6" />,
@@ -115,6 +121,7 @@ const guides: GuideCard[] = [
     description: "Practica japonés con IA: escenarios reales, correcciones y audio nativo.",
     color: "text-amber-600",
     bgColor: "bg-amber-50",
+    tourIndex: 3,
   },
   {
     icon: <BarChart3 className="w-6 h-6" />,
@@ -122,6 +129,7 @@ const guides: GuideCard[] = [
     description: "Interpreta tus métricas, identifica patrones y optimiza tu rutina de estudio.",
     color: "text-rose-600",
     bgColor: "bg-rose-50",
+    tourIndex: 4,
   },
   {
     icon: <Settings className="w-6 h-6" />,
@@ -129,6 +137,7 @@ const guides: GuideCard[] = [
     description: "Ajusta notificaciones, metas diarias, temas y preferencias de accesibilidad.",
     color: "text-indigo-600",
     bgColor: "bg-indigo-50",
+    tourIndex: 5,
   },
 ];
 
@@ -230,6 +239,12 @@ function FaqAccordion({ item, index }: { item: FaqItem; index: number }) {
 export default function HelpPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"guides" | "faq" | "tips">("guides");
+  const { startTour } = useGuideTour();
+
+  const handleStartGuide = (tourIndex: number) => {
+    const tour = getTourByIndex(tourIndex);
+    if (tour) startTour(tour);
+  };
 
   const filteredFaqs = faqs.filter(
     (faq) =>
@@ -363,6 +378,7 @@ export default function HelpPage() {
                     y: -4,
                     boxShadow: "0 12px 24px -4px rgba(153,51,49,0.12)",
                   }}
+                  onClick={() => handleStartGuide(guide.tourIndex)}
                   className="group bg-white rounded-2xl p-6 border border-gray-100 shadow-sm cursor-pointer transition-colors duration-300 hover:border-[#993331]/20"
                 >
                   <div className="flex items-start gap-4">
@@ -381,7 +397,7 @@ export default function HelpPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1.5 mt-4 text-xs font-bold text-[#993331] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    <span>Leer más</span>
+                    <span>Ver más</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </div>
                 </motion.div>
