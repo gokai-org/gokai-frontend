@@ -29,7 +29,6 @@ const menuItems: SettingsMenuItem[] = [
   { id: "general", label: "General", icon: Settings },
   { id: "notifications", label: "Notificaciones", icon: Bell },
   { id: "appearance", label: "Apariencia", icon: Palette },
-  { id: "language", label: "Idioma y Región", icon: Globe },
   { id: "learning", label: "Preferencias de Estudio", icon: BookOpen },
   { id: "accessibility", label: "Accesibilidad", icon: Accessibility },
   { id: "privacy", label: "Privacidad", icon: Lock },

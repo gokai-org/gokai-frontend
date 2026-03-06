@@ -15,7 +15,6 @@ const sectionTitles: Record<string, string> = {
   general: "Configuración General",
   notifications: "Notificaciones",
   appearance: "Apariencia",
-  language: "Idioma y Región",
   learning: "Preferencias de Estudio",
   accessibility: "Accesibilidad",
   privacy: "Privacidad",
@@ -55,7 +54,6 @@ export default function ConfigurationPage() {
             {activeSection === "general" && <GeneralSettings />}
             {activeSection === "notifications" && <NotificationSettings />}
             {activeSection === "appearance" && <AppearanceSettings />}
-            {activeSection === "language" && <LanguageSettings />}
             {activeSection === "learning" && <LearningSettings />}
             {activeSection === "accessibility" && <AccessibilitySettings />}
             {activeSection === "privacy" && <PrivacySettings />}
@@ -74,17 +72,6 @@ function GeneralSettings() {
         title="Preferencias Generales"
         description="Configura los ajustes básicos de la plataforma"
       >
-        <SettingsToggleItem
-          label="Reproducción automática"
-          description="Reproduce automáticamente el siguiente ejercicio"
-          enabled={true}
-        />
-
-        <SettingsToggleItem
-          label="Mostrar romaji"
-          description="Muestra la romanización de los caracteres japoneses"
-          enabled={false}
-        />
 
         <SettingsToggleItem
           label="Confirmación de respuestas"
@@ -137,17 +124,6 @@ function NotificationSettings() {
       </SettingsSection>
 
       <SettingsSection
-        title="Integraciones"
-        description="Conecta tus aplicaciones favoritas"
-      >
-        <div className="flex flex-wrap gap-3">
-          <IntegrationButton name="Discord" icon="💬" connected={true} />
-          <IntegrationButton name="Telegram" icon="📱" connected={false} />
-          <IntegrationButton name="Slack" icon="💼" connected={false} />
-        </div>
-      </SettingsSection>
-
-      <SettingsSection
         title="Horarios Silenciosos"
         description="No recibirás notificaciones durante tus horas de descanso"
       >
@@ -170,25 +146,6 @@ function NotificationSettings() {
           />
         </div>
       </SettingsSection>
-
-      <SettingsSection
-        title="Sonidos y Alertas"
-        description="Personaliza los sonidos de notificación"
-      >
-        <SettingsSelectItem
-          label="Sonido personalizado"
-          description="Elige el sonido que se reproduce con las notificaciones"
-          value="Campana"
-          options={["Campana", "Gong japonés", "Suave", "Ninguno"]}
-        />
-
-        <SettingsSelectItem
-          label="Estilo de banner"
-          description="Cómo se muestran las notificaciones en pantalla"
-          value="Predeterminado"
-          options={["Predeterminado", "Minimalista", "Compacto"]}
-        />
-      </SettingsSection>
     </>
   );
 }
@@ -206,12 +163,6 @@ function AppearanceSettings() {
           enabled={false}
         />
 
-        <SettingsSelectItem
-          label="Tema de colores"
-          description="Selecciona el esquema de colores principal"
-          value="Morado (Predeterminado)"
-          options={["Morado (Predeterminado)", "Azul", "Rosa", "Verde", "Naranja"]}
-        />
       </SettingsSection>
 
       <SettingsSection
@@ -236,43 +187,6 @@ function AppearanceSettings() {
   );
 }
 
-function LanguageSettings() {
-  return (
-    <>
-      <SettingsSection
-        title="Idioma de la Interfaz"
-        description="Selecciona el idioma de la plataforma"
-      >
-        <SettingsSelectItem
-          label="Idioma principal"
-          description="Idioma en el que se muestra la interfaz"
-          value="Español"
-          options={["Español", "English", "日本語", "Português", "Français"]}
-        />
-      </SettingsSection>
-
-      <SettingsSection
-        title="Configuración Regional"
-        description="Ajusta los formatos según tu región"
-      >
-        <SettingsSelectItem
-          label="Zona horaria"
-          description="Tu zona horaria local"
-          value="GMT-6 (Ciudad de México)"
-          options={["GMT-6 (Ciudad de México)", "GMT-5 (Bogotá)", "GMT-3 (Buenos Aires)", "GMT+9 (Tokio)"]}
-        />
-
-        <SettingsSelectItem
-          label="Formato de fecha"
-          description="Cómo se muestran las fechas"
-          value="DD/MM/AAAA"
-          options={["DD/MM/AAAA", "MM/DD/AAAA", "AAAA-MM-DD"]}
-        />
-      </SettingsSection>
-    </>
-  );
-}
-
 function LearningSettings() {
   return (
     <>
@@ -280,48 +194,12 @@ function LearningSettings() {
         title="Nivel y Objetivos"
         description="Define tu nivel actual y metas de aprendizaje"
       >
-        <SettingsSelectItem
-          label="Nivel actual"
-          description="Tu nivel de japonés actual"
-          value="N4 - Intermedio"
-          options={["N5 - Principiante", "N4 - Intermedio", "N3 - Intermedio Alto", "N2 - Avanzado", "N1 - Experto"]}
-        />
 
         <SettingsSelectItem
           label="Meta diaria"
           description="Tiempo de estudio diario que deseas alcanzar"
           value="30 minutos"
           options={["15 minutos", "30 minutos", "45 minutos", "60 minutos", "90 minutos"]}
-        />
-      </SettingsSection>
-
-      <SettingsSection
-        title="Preferencias de Ejercicios"
-        description="Personaliza los tipos de ejercicios"
-      >
-        <SettingsToggleItem
-          label="Enfoque en kanji"
-          description="Priorizar ejercicios de kanji en tus sesiones"
-          enabled={true}
-        />
-
-        <SettingsToggleItem
-          label="Ejercicios de audio"
-          description="Incluir más ejercicios de comprensión auditiva"
-          enabled={true}
-        />
-
-        <SettingsToggleItem
-          label="Práctica de conversación"
-          description="Activar ejercicios de expresión oral"
-          enabled={false}
-        />
-
-        <SettingsSelectItem
-          label="Dificultad de ejercicios"
-          description="Nivel de dificultad de los nuevos ejercicios"
-          value="Adaptativo"
-          options={["Fácil", "Medio", "Difícil", "Adaptativo"]}
         />
       </SettingsSection>
 
@@ -333,7 +211,7 @@ function LearningSettings() {
           label="Repasos diarios"
           description="Cantidad máxima de repasos por día"
           value="50 tarjetas"
-          options={["20 tarjetas", "50 tarjetas", "100 tarjetas", "Ilimitado"]}
+          options={["10 tarjetas", "20 tarjetas", "30 tarjetas", "Ilimitado"]}
         />
 
         <SettingsToggleItem
@@ -360,12 +238,6 @@ function AccessibilitySettings() {
         />
 
         <SettingsToggleItem
-          label="Resaltar enfoque"
-          description="Resalta el elemento activo al navegar con teclado"
-          enabled={true}
-        />
-
-        <SettingsToggleItem
           label="Reducir animaciones"
           description="Minimiza animaciones y transiciones"
           enabled={false}
@@ -383,28 +255,6 @@ function AccessibilitySettings() {
           options={["Muy lento", "Lento", "Normal", "Rápido"]}
         />
 
-        <SettingsToggleItem
-          label="Lector de pantalla"
-          description="Optimizar para lectores de pantalla"
-          enabled={false}
-        />
-      </SettingsSection>
-
-      <SettingsSection
-        title="Navegación"
-        description="Personaliza la navegación de la plataforma"
-      >
-        <SettingsToggleItem
-          label="Atajos de teclado"
-          description="Habilitar atajos de teclado para navegación rápida"
-          enabled={true}
-        />
-
-        <SettingsToggleItem
-          label="Navegación simplificada"
-          description="Interfaz simplificada con menos elementos"
-          enabled={false}
-        />
       </SettingsSection>
     </>
   );
@@ -417,17 +267,6 @@ function PrivacySettings() {
         title="Datos y Privacidad"
         description="Controla tu información personal"
       >
-        <SettingsToggleItem
-          label="Perfil público"
-          description="Permite que otros usuarios vean tu perfil"
-          enabled={false}
-        />
-
-        <SettingsToggleItem
-          label="Mostrar progreso"
-          description="Compartir tu progreso en tablas de clasificación"
-          enabled={true}
-        />
 
         <SettingsToggleItem
           label="Recopilación de datos de uso"
@@ -436,22 +275,6 @@ function PrivacySettings() {
         />
       </SettingsSection>
 
-      <SettingsSection
-        title="Compartir Actividad"
-        description="Qué actividades pueden ver otros usuarios"
-      >
-        <SettingsToggleItem
-          label="Racha de estudio"
-          description="Mostrar tu racha actual de días de estudio"
-          enabled={true}
-        />
-
-        <SettingsToggleItem
-          label="Ejercicios completados"
-          description="Compartir cuántos ejercicios has completado"
-          enabled={false}
-        />
-      </SettingsSection>
     </>
   );
 }
@@ -491,10 +314,8 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
     });
   };
 
-  // Actualizar profileData cuando cambie el usuario
   useEffect(() => {
     if (user) {
-      // Formatear fecha correctamente para evitar problemas de zona horaria
       setProfileData({
         firstName: user.firstName || "",
         lastName: user.lastName || "",
@@ -507,7 +328,6 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
   const handleSaveProfile = async () => {
     setIsSaving(true);
     try {
-      // Solo enviar firstName y lastName (único que el backend soporta actualizar)
       const updateData = {
         firstName: profileData.firstName,
         lastName: profileData.lastName,
@@ -523,7 +343,6 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
         const data = await response.json();
         
         if (data.user) {
-          // Actualizar el estado del usuario con los datos normalizados
           setUser(data.user);
 
           setProfileData({
@@ -559,25 +378,6 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
       email: user?.email || "",
       birthdate: formatBirthdateForInput(user?.birthdate),
     });
-  };
-
-  const handleExportData = async () => {
-    try {
-      const response = await fetch("/api/auth/user/export");
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `gokai-data-${new Date().toISOString()}.json`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-      toast.success("Datos exportados correctamente");
-    } catch (error) {
-      console.error("Error exporting data:", error);
-      toast.error("Error al exportar datos");
-    }
   };
 
   const handleDeleteAccount = async () => {
@@ -837,17 +637,6 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
         title="Gestión de Cuenta"
         description="Opciones avanzadas de cuenta"
       >
-        <SettingsItem
-          label="Exportar datos"
-          description="Descarga una copia de tus datos personales"
-        >
-          <button 
-            onClick={handleExportData}
-            className="px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-          >
-            Exportar
-          </button>
-        </SettingsItem>
 
         <SettingsItem
           label="Eliminar cuenta"

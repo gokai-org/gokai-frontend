@@ -53,12 +53,12 @@ const faqs: FaqItem[] = [
   {
     question: "¿Qué es el sistema de repaso espaciado (SRS)?",
     answer:
-      "El SRS es un método científico de memorización que programa las revisiones en intervalos óptimos. Gokai utiliza este sistema para que repases kanji y vocabulario justo antes de que los olvides, maximizando tu retención a largo plazo con el mínimo esfuerzo.",
+      "El sistema de repaso espaciado es un método científico de memorización que programa las revisiones en intervalos óptimos. Gokai utiliza este sistema para que repases kanji y vocabulario justo antes de que los olvides, maximizando tu retención a largo plazo con el mínimo esfuerzo.",
   },
   {
     question: "¿Cómo funciona la biblioteca de kanji?",
     answer:
-      "La biblioteca organiza todos los kanji por niveles JLPT (N5 a N1). Puedes explorar cada kanji con sus lecturas, significados, trazos y palabras de ejemplo. Marca tus favoritos y lleva un seguimiento de tu progreso individual.",
+      "La biblioteca organiza todos los kanji por nivel de dificultad. Puedes explorar cada kanji con sus lecturas, significados, trazos y palabras de ejemplo. Marca tus favoritos y lleva un seguimiento de tu progreso individual.",
   },
   {
     question: "¿Puedo usar el chatbot para practicar conversación?",
@@ -78,7 +78,7 @@ const faqs: FaqItem[] = [
   {
     question: "¿Cómo personalizo mi experiencia de aprendizaje?",
     answer:
-      "Ve a Configuración donde puedes ajustar el idioma de la interfaz, las notificaciones, el ritmo de estudio, los temas de interés y las preferencias de accesibilidad. También puedes configurar metas diarias para mantener tu motivación.",
+      "Ve a Configuración donde puedes ajustar el idioma de la interfaz, las notificaciones, apariencia de la plataforma, preferencias de estudio, accesibilidad y privacidad. También puedes configurar metas diarias para mantener tu motivación.",
   },
   {
     question: "¿Mis datos están seguros?",
@@ -98,7 +98,7 @@ const guides: GuideCard[] = [
   {
     icon: <Library className="w-6 h-6" />,
     title: "Explorar la biblioteca",
-    description: "Descubre miles de kanji organizados por nivel JLPT con ejemplos interactivos.",
+    description: "Descubre miles de kanji organizados por nivel de dificultad con ejemplos interactivos.",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
   },
