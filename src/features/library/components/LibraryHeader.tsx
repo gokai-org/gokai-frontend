@@ -2,7 +2,11 @@
 
 import { DashboardHeader } from '@/features/dashboard/components/DashboardHeader';
 
-export function LibraryHeader() {
+interface LibraryHeaderProps {
+  onSearchChange?: (value: string) => void;
+}
+
+export function LibraryHeader({ onSearchChange }: LibraryHeaderProps) {
   return (
     <DashboardHeader
       icon={
@@ -19,8 +23,8 @@ export function LibraryHeader() {
       subtitle="Todo el contenido de aprendizaje en un solo lugar"
       japaneseText="図書館"
       showSearch
-      searchPlaceholder="Buscar"
-      onSearchChange={(value) => console.log('Search:', value)}
+      searchPlaceholder="Buscar en la biblioteca..."
+      onSearchChange={onSearchChange}
     />
   );
 }

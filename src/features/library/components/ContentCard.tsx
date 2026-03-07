@@ -45,7 +45,7 @@ export function ContentCard({
 
         {/* Contenido principal */}
         <div className="flex-1 flex flex-col justify-end mt-2">
-          <h3 className="font-black text-[28px] leading-tight tracking-tight text-gray-900 group-hover:text-[#993331] transition-colors line-clamp-1">
+          <h3 className="font-black text-[20px] leading-tight tracking-tight text-gray-900 group-hover:text-[#993331] transition-colors line-clamp-2 break-words">
             {title}
           </h3>
 
