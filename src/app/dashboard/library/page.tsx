@@ -12,15 +12,13 @@ import type { BackendFavoriteItem, BackendRecentItem, FavoriteType, LibraryCateg
 import { listKanjis } from "@/features/kanji/api/kanjiApi";
 import type { Kanji } from "@/features/kanji/types";
 import { KanjiDetailModal } from "@/features/kanji/components/KanjiDetailModal";
+import { KanaDetailModal } from "@/features/kana/components/KanaDetailModal";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
 import { getPrimaryMeaning, getPrimaryReading } from "@/features/kanji/utils/kanjiText";
-import { listKatakanas } from "@/features/katakana/api/katakanaApi";
-import type { Katakana } from "@/features/katakana/types";
-import { getPrimaryMeaning as getKatakanaMeaning, getPrimaryReading as getKatakanaReading } from "@/features/katakana/utils/katakanaText";
-import { listHiraganas } from "@/features/hiragana/api/hiraganaApi";
-import type { Hiragana } from "@/features/hiragana/types";
-import { getPrimaryMeaning as getHiraganaMeaning, getPrimaryReading as getHiraganaReading } from "@/features/hiragana/utils/hiraganaText";
+import { listKatakanas } from "@/features/kana/api/kanaApi";
+import { listHiraganas } from "@/features/kana/api/kanaApi";
+import type { Kana } from "@/features/kana/types";
 import { LibrarySkeleton, SkeletonSection, SkeletonCard } from "@/shared/ui/Skeleton";
 
 export default function LibraryPage() {
@@ -32,12 +30,15 @@ export default function LibraryPage() {
   const [selectedKanji, setSelectedKanji] = useState<Kanji | null>(null);
 
   // ── Katakana state ────────────────────────────────────────
-  const [katakanas, setKatakanas] = useState<Katakana[]>([]);
+  const [katakanas, setKatakanas] = useState<Kana[]>([]);
   const [loadingKatakanas, setLoadingKatakanas] = useState(true);
 
   // ── Hiragana state ────────────────────────────────────────
-  const [hiraganas, setHiraganas] = useState<Hiragana[]>([]);
+  const [hiraganas, setHiraganas] = useState<Kana[]>([]);
   const [loadingHiraganas, setLoadingHiraganas] = useState(true);
+
+  // ── Kana detail modal ─────────────────────────────────────
+  const [selectedKana, setSelectedKana] = useState<Kana | null>(null);
 
   const { recentItems, addRecentItem } = useRecentItems();
   const {
@@ -52,6 +53,11 @@ export default function LibraryPage() {
   const handleKanjiClick = (kanji: Kanji) => {
     addRecentItem("kanji", kanji.id);
     setSelectedKanji(kanji);
+  };
+
+  const handleKanaClick = (kana: Kana) => {
+    addRecentItem(kana.kanaType === "hiragana" ? "hiragana" : "katakana", kana.id);
+    setSelectedKana(kana);
   };
 
   useEffect(() => {
@@ -108,26 +114,14 @@ export default function LibraryPage() {
   const filteredKatakanas = useMemo(() => {
     if (!normalizedQuery) return katakanas;
     return katakanas.filter((k) => {
-      const meaning = getKatakanaMeaning(k.meanings) || "";
-      const reading = getKatakanaReading(k.readings) || "";
-      return (
-        k.symbol.toLowerCase().includes(normalizedQuery) ||
-        meaning.toLowerCase().includes(normalizedQuery) ||
-        reading.toLowerCase().includes(normalizedQuery)
-      );
+      return k.symbol.toLowerCase().includes(normalizedQuery);
     });
   }, [katakanas, normalizedQuery]);
 
   const filteredHiraganas = useMemo(() => {
     if (!normalizedQuery) return hiraganas;
     return hiraganas.filter((h) => {
-      const meaning = getHiraganaMeaning(h.meanings) || "";
-      const reading = getHiraganaReading(h.readings) || "";
-      return (
-        h.symbol.toLowerCase().includes(normalizedQuery) ||
-        meaning.toLowerCase().includes(normalizedQuery) ||
-        reading.toLowerCase().includes(normalizedQuery)
-      );
+      return h.symbol.toLowerCase().includes(normalizedQuery);
     });
   }, [hiraganas, normalizedQuery]);
 
@@ -162,24 +156,20 @@ export default function LibraryPage() {
     };
   }
 
-  function katakanaToCard(katakana: Katakana) {
-    const meaning = getKatakanaMeaning(katakana.meanings) || katakana.symbol;
-    const reading = getKatakanaReading(katakana.readings);
+  function katakanaToCard(katakana: Kana) {
     return {
       id: katakana.id,
-      title: meaning,
-      subtitle: reading ? `Lectura: ${reading}` : "Sin lectura",
+      title: katakana.symbol,
+      subtitle: `${katakana.pointsToUnlock} pts`,
       thumbnail: katakana.symbol,
     };
   }
 
-  function hiraganaToCard(hiragana: Hiragana) {
-    const meaning = getHiraganaMeaning(hiragana.meanings) || hiragana.symbol;
-    const reading = getHiraganaReading(hiragana.readings);
+  function hiraganaToCard(hiragana: Kana) {
     return {
       id: hiragana.id,
-      title: meaning,
-      subtitle: reading ? `Lectura: ${reading}` : "Sin lectura",
+      title: hiragana.symbol,
+      subtitle: `${hiragana.pointsToUnlock} pts`,
       thumbnail: hiragana.symbol,
     };
   }
@@ -314,7 +304,7 @@ export default function LibraryPage() {
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Katakana</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {filteredKatakanas.map((katakana) => (
-                  <ContentCard key={katakana.id} {...katakanaToCard(katakana)} />
+                  <ContentCard key={katakana.id} {...katakanaToCard(katakana)} onClick={() => handleKanaClick(katakana)} />
                 ))}
               </div>
             </div>
@@ -325,7 +315,7 @@ export default function LibraryPage() {
               <h3 className="text-lg font-semibold text-gray-800 mb-4">Hiragana</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {filteredHiraganas.map((hiragana) => (
-                  <ContentCard key={hiragana.id} {...hiraganaToCard(hiragana)} />
+                  <ContentCard key={hiragana.id} {...hiraganaToCard(hiragana)} onClick={() => handleKanaClick(hiragana)} />
                 ))}
               </div>
             </div>
@@ -445,7 +435,7 @@ export default function LibraryPage() {
               />
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {katakanas.slice(0, 12).map((katakana) => (
-                  <ContentCard key={katakana.id} {...katakanaToCard(katakana)} />
+                  <ContentCard key={katakana.id} {...katakanaToCard(katakana)} onClick={() => handleKanaClick(katakana)} />
                 ))}
               </div>
             </div>
@@ -468,7 +458,7 @@ export default function LibraryPage() {
               />
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {hiraganas.slice(0, 12).map((hiragana) => (
-                  <ContentCard key={hiragana.id} {...hiraganaToCard(hiragana)} />
+                  <ContentCard key={hiragana.id} {...hiraganaToCard(hiragana)} onClick={() => handleKanaClick(hiragana)} />
                 ))}
               </div>
             </div>
@@ -641,7 +631,7 @@ export default function LibraryPage() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {katakanas.map((katakana) => (
-                  <ContentCard key={katakana.id} {...katakanaToCard(katakana)} />
+                  <ContentCard key={katakana.id} {...katakanaToCard(katakana)} onClick={() => handleKanaClick(katakana)} />
                 ))}
               </div>
               {katakanas.length === 0 && (
@@ -674,7 +664,7 @@ export default function LibraryPage() {
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                 {hiraganas.map((hiragana) => (
-                  <ContentCard key={hiragana.id} {...hiraganaToCard(hiragana)} />
+                  <ContentCard key={hiragana.id} {...hiraganaToCard(hiragana)} onClick={() => handleKanaClick(hiragana)} />
                 ))}
               </div>
               {hiraganas.length === 0 && (
@@ -759,6 +749,9 @@ export default function LibraryPage() {
       )}
 
       <KanjiDetailModal kanji={selectedKanji} onClose={() => setSelectedKanji(null)} />
+      {selectedKana && (
+        <KanaDetailModal kana={selectedKana} onClose={() => setSelectedKana(null)} />
+      )}
       </>
       )}
     </DashboardShell>

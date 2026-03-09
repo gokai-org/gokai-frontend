@@ -5,6 +5,11 @@ import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 export const dynamic = "force-dynamic";
 const BASE = process.env.GOKAI_CONTENT_API_BASE!;
 
+/**
+ * GET /api/content/kana/:id/strokes
+ * Obtiene los datos de trazo de un kana desde el backend.
+ * Hace fetch al detalle del kana y extrae viewBox + strokes.
+ */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -17,7 +22,7 @@ export async function GET(
   const token = normalizeBearerToken(raw);
   const { id } = await params;
 
-  const upstream = await fetch(`${BASE}/content/katakanas/${id}`, {
+  const upstream = await fetch(`${BASE}/content/kana/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -37,7 +42,7 @@ export async function GET(
 
   return NextResponse.json(
     {
-      katakanaId: data?.id ?? id,
+      kanaId: data?.id ?? id,
       viewBox,
       strokes,
     },

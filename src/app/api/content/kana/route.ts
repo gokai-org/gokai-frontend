@@ -6,6 +6,10 @@ export const dynamic = "force-dynamic";
 
 const BASE = process.env.GOKAI_CONTENT_API_BASE!;
 
+/**
+ * GET /api/content/kana?kana_type=hiragana|katakana
+ * Proxy al backend unificado: GET {BASE}/content/kana?kana_type=…
+ */
 export async function GET(req: NextRequest) {
   const raw = getTokenFromRequest(req);
   if (!raw) {
@@ -13,8 +17,14 @@ export async function GET(req: NextRequest) {
   }
 
   const token = normalizeBearerToken(raw);
+  const kanaType = req.nextUrl.searchParams.get("kana_type") ?? "";
 
-  const upstream = await fetch(`${BASE}/content/hiraganas`, {
+  const url = new URL(`${BASE}/content/kana`);
+  if (kanaType) {
+    url.searchParams.set("kana_type", kanaType);
+  }
+
+  const upstream = await fetch(url.toString(), {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
@@ -23,6 +33,10 @@ export async function GET(req: NextRequest) {
   return NextResponse.json(data, { status: upstream.status });
 }
 
+/**
+ * POST /api/content/kana
+ * Proxy al backend unificado: POST {BASE}/content/kana
+ */
 export async function POST(req: NextRequest) {
   const raw = getTokenFromRequest(req);
   if (!raw) {
@@ -32,7 +46,7 @@ export async function POST(req: NextRequest) {
   const token = normalizeBearerToken(raw);
   const body = await req.json();
 
-  const upstream = await fetch(`${BASE}/content/hiraganas`, {
+  const upstream = await fetch(`${BASE}/content/kana`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
