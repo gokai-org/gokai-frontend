@@ -25,6 +25,7 @@ import {
   PenTool,
 } from "lucide-react";
 import { DashboardShell, DashboardHeader } from "@/features/dashboard";
+import SupportContactForm from "@/features/support/components/SupportContactForm";
 import { useGuideTour } from "@/features/help/components/GuideTourProvider";
 import { getTourByIndex } from "@/features/help/components/tourData";
 
@@ -239,6 +240,7 @@ function FaqAccordion({ item, index }: { item: FaqItem; index: number }) {
 export default function HelpPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<"guides" | "faq" | "tips">("guides");
+  const [supportOpen, setSupportOpen] = useState(false);
   const { startTour } = useGuideTour();
 
   const handleStartGuide = (tourIndex: number) => {
@@ -510,66 +512,6 @@ export default function HelpPage() {
           )}
         </AnimatePresence>
 
-        {/* ── Shortcuts Section ── */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease, delay: 0.3 }}
-        >
-          <div className="flex items-center gap-2 mb-5">
-            <div className="w-8 h-8 rounded-lg bg-[#993331]/10 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-[#993331]" />
-            </div>
-            <h3 className="font-bold text-gray-900">Accesos rápidos</h3>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              {
-                icon: <Shield className="w-5 h-5" />,
-                label: "Privacidad y seguridad",
-                color: "text-indigo-600",
-                bg: "bg-indigo-50",
-              },
-              {
-                icon: <BookOpen className="w-5 h-5" />,
-                label: "Guía de lecciones",
-                color: "text-emerald-600",
-                bg: "bg-emerald-50",
-              },
-              {
-                icon: <Lightbulb className="w-5 h-5" />,
-                label: "Novedades recientes",
-                color: "text-amber-600",
-                bg: "bg-amber-50",
-              },
-              {
-                icon: <Mail className="w-5 h-5" />,
-                label: "Contactar soporte",
-                color: "text-rose-600",
-                bg: "bg-rose-50",
-              },
-            ].map((shortcut, i) => (
-              <motion.button
-                key={shortcut.label}
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, ease, delay: 0.35 + i * 0.06 }}
-                whileHover={{ y: -3, boxShadow: "0 8px 20px -4px rgba(0,0,0,0.08)" }}
-                whileTap={{ scale: 0.98 }}
-                className="flex flex-col items-center gap-3 p-5 bg-white rounded-2xl border border-gray-100 shadow-sm hover:border-gray-200 transition-colors duration-300"
-              >
-                <div
-                  className={`w-12 h-12 rounded-2xl ${shortcut.bg} ${shortcut.color} flex items-center justify-center`}
-                >
-                  {shortcut.icon}
-                </div>
-                <span className="text-xs font-bold text-gray-700 text-center">
-                  {shortcut.label}
-                </span>
-              </motion.button>
-            ))}
-          </div>
-        </motion.div>
 
         {/* ── Contact CTA ── */}
         <motion.div
@@ -594,6 +536,7 @@ export default function HelpPage() {
             <motion.button
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
+              onClick={() => setSupportOpen(true)}
               className="bg-gradient-to-r from-[#993331] to-[#7a2927] text-white px-8 py-3.5 rounded-full font-bold text-sm shadow-lg shadow-[#993331]/20 hover:shadow-xl hover:shadow-[#993331]/25 transition-shadow duration-300 flex items-center gap-2 flex-shrih-0"
             >
               <Mail className="w-4 h-4" />
@@ -601,6 +544,12 @@ export default function HelpPage() {
             </motion.button>
           </div>
         </motion.div>
+
+        {/* ── Support Contact Form (modal) ── */}
+        <SupportContactForm
+          open={supportOpen}
+          onClose={() => setSupportOpen(false)}
+        />
       </div>
     </DashboardShell>
   );
