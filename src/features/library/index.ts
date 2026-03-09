@@ -1,6 +1,5 @@
 export { CategoryFilter } from "./components/CategoryFilter";
 export { ContentCard } from "./components/ContentCard";
-export { LevelBadge } from "./components/LevelBadge";
 export { LibraryCard } from "./components/LibraryCard";
 export { LibraryHeader } from "./components/LibraryHeader";
 export { MetaInfo } from "./components/MetaInfo";
