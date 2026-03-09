@@ -21,6 +21,7 @@ import { getPrimaryMeaning as getKatakanaMeaning, getPrimaryReading as getKataka
 import { listHiraganas } from "@/features/hiragana/api/hiraganaApi";
 import type { Hiragana } from "@/features/hiragana/types";
 import { getPrimaryMeaning as getHiraganaMeaning, getPrimaryReading as getHiraganaReading } from "@/features/hiragana/utils/hiraganaText";
+import { LibrarySkeleton, SkeletonSection, SkeletonCard } from "@/shared/ui/Skeleton";
 
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -259,9 +260,14 @@ export default function LibraryPage() {
 
   // ── Render ────────────────────────────────────────────────
   const isSearching = normalizedQuery.length > 0;
+  const isGlobalLoading = loadingKanjis && loadingKatakanas && loadingHiraganas;
 
   return (
     <DashboardShell header={<LibraryHeader onSearchChange={setSearchQuery} />}>
+      {isGlobalLoading ? (
+        <LibrarySkeleton />
+      ) : (
+        <>
       {/* Filtro de categorías */}
       <div className="mb-8">
         <CategoryFilter
@@ -356,7 +362,11 @@ export default function LibraryPage() {
                   }
                 />
                 {loadingKanjis ? (
-                  <p className="text-sm text-gray-500">Cargando kanjis…</p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <SkeletonCard key={i} />
+                    ))}
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {kanjis.slice(0, 8).map((kanji) => (
@@ -583,7 +593,11 @@ export default function LibraryPage() {
             <span className="text-sm text-gray-600">{kanjis.length} kanjis</span>
           </div>
           {loadingKanjis ? (
-            <p className="text-sm text-gray-500">Cargando kanjis…</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -618,7 +632,11 @@ export default function LibraryPage() {
             <span className="text-sm text-gray-600">{katakanas.length} katakana</span>
           </div>
           {loadingKatakanas ? (
-            <p className="text-sm text-gray-500">Cargando katakana…</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -647,7 +665,11 @@ export default function LibraryPage() {
             <span className="text-sm text-gray-600">{hiraganas.length} hiragana</span>
           </div>
           {loadingHiraganas ? (
-            <p className="text-sm text-gray-500">Cargando hiragana…</p>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
@@ -737,6 +759,8 @@ export default function LibraryPage() {
       )}
 
       <KanjiDetailModal kanji={selectedKanji} onClose={() => setSelectedKanji(null)} />
+      </>
+      )}
     </DashboardShell>
   );
 }

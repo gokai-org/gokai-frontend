@@ -5,6 +5,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import type { LessonMode, LessonResolved } from "../types";
 import { getLessonsForNode } from "../lib/lessonService";
 import LessonShell from "./LessonShell";
+import { SkeletonDrawerContent } from "@/shared/ui/Skeleton";
 
 const modeTitle: Record<LessonMode, string> = {
   writing: "Escritura",
@@ -177,9 +178,7 @@ export default function LessonDrawer({
             {/* Body */}
             <div className="flex-1 px-6 pb-6 pt-5 overflow-y-auto">
               {loading && (
-                <div className="rounded-3xl border border-gray-100 p-5 text-gray-600">
-                  Cargando lección…
-                </div>
+                <SkeletonDrawerContent />
               )}
 
               {!loading && !active && (

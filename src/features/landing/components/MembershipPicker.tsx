@@ -30,7 +30,7 @@ const PLANS: PlanOption[] = [
     intent: "premium",
     title: "GOKAI+",
     subtitle: "Desbloquea todo el poder de la IA y repasos inteligentes.",
-    price: "$ 199",
+    price: "$ 229",
     period: "MXN / mensual",
     buttonText: "Suscribirme",
     bullets: ["IA completa.", "Chatbot ilimitado.", "Estadísticas avanzadas."],

@@ -13,7 +13,7 @@ import { MonthlyProgressChart } from "@/features/stats/components/MonthlyProgres
 import { RecentActivity } from "@/features/stats/components/RecentActivity";
 import { StudyStreakCalendar } from "@/features/stats/components/StudyStreakCalendar";
 import { useStats } from "@/features/stats/hooks/useStats";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { StatsSkeleton } from "@/shared/ui/Skeleton";
 
 /*  Animation wrappers  */
 
@@ -150,25 +150,6 @@ export default function Page() {
         </div>
       </motion.div>
 
-      {/* Error banner */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-6 flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4"
-        >
-          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
-          <p className="text-sm text-red-700 font-medium flex-1">{error}</p>
-          <button
-            onClick={refresh}
-            className="flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-800 transition-colors"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Reintentar
-          </button>
-        </motion.div>
-      )}
-
       {/* Cards */}
       <motion.div
         custom={1}
@@ -177,7 +158,7 @@ export default function Page() {
         animate="visible"
         className="mb-8"
       >
-        <StatsOverview data={data.overview} loading={loading} />
+        <StatsOverview data={data.overview} loading={loading || !!error} />
       </motion.div>
 
       {/* ── Charts row 1: Weekly + Monthly ─────────────── */}
@@ -199,8 +180,8 @@ export default function Page() {
           subtitle="Tu tiempo de estudio y evolución de rendimiento"
         />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <WeeklyActivityChart data={data.activity?.weekly} loading={loading} />
-          <MonthlyProgressChart data={data.activity?.monthly} loading={loading} />
+          <WeeklyActivityChart data={data.activity?.weekly} loading={loading || !!error} />
+          <MonthlyProgressChart data={data.activity?.monthly} loading={loading || !!error} />
         </div>
       </motion.div>
 
@@ -223,13 +204,13 @@ export default function Page() {
           subtitle="Tu dominio por área y actividad reciente"
         />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <SkillRadarChart data={data.skills?.skills} loading={loading} />
+          <SkillRadarChart data={data.skills?.skills} loading={loading || !!error} />
           <ProgressRing
             total={data.skills?.distribution.total}
             categories={data.skills?.distribution.categories}
-            loading={loading}
+            loading={loading || !!error}
           />
-          <RecentActivity activities={data.recentActivity?.activities} loading={loading} />
+          <RecentActivity activities={data.recentActivity?.activities} loading={loading || !!error} />
         </div>
       </motion.div>
 
@@ -251,7 +232,7 @@ export default function Page() {
           titleClassName="text-2xl font-extrabold tracking-tight text-gray-900"
           subtitle="Tu consistencia a lo largo del tiempo"
         />
-        <StudyStreakCalendar data={data.streakCalendar} loading={loading} />
+        <StudyStreakCalendar data={data.streakCalendar} loading={loading || !!error} />
       </motion.div>
 
       {/* ── CTA ───────────────────────────────────────── */}

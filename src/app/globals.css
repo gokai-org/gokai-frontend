@@ -51,3 +51,12 @@ html {
 .kanji-detail-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(153, 51, 49, 0.4);
 }
+
+/* ── Skeleton shimmer ── */
+@keyframes skeleton-shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+.skeleton-shimmer {
+  animation: skeleton-shimmer 1.8s ease-in-out infinite;
+}
