@@ -12,7 +12,8 @@ import { ProgressRing } from "@/features/stats/components/ProgressRing";
 import { MonthlyProgressChart } from "@/features/stats/components/MonthlyProgressChart";
 import { RecentActivity } from "@/features/stats/components/RecentActivity";
 import { StudyStreakCalendar } from "@/features/stats/components/StudyStreakCalendar";
-import { useState } from "react";
+import { useStats } from "@/features/stats/hooks/useStats";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 /*  Animation wrappers  */
 
@@ -32,7 +33,11 @@ const sectionVariants = {
 /* Page  */
 
 export default function Page() {
-  const [period, setPeriod] = useState<"week" | "month" | "all">("week");
+  const { data, loading, error, period, setPeriod, refresh } = useStats();
+
+  const overview = data.overview;
+  const accuracy = overview?.accuracy ?? 0;
+  const streak = overview?.current_streak ?? 0;
 
   return (
     <DashboardShell
@@ -112,22 +117,57 @@ export default function Page() {
             transition={{ delay: 0.5, duration: 0.5 }}
             className="flex items-center gap-4"
           >
-            <div className="text-center">
-              <p className="text-4xl font-extrabold">87%</p>
-              <p className="text-xs text-white/70 font-medium mt-1">
-                Precisión global
-              </p>
-            </div>
-            <div className="w-px h-12 bg-white/20" />
-            <div className="text-center">
-              <p className="text-4xl font-extrabold">14</p>
-              <p className="text-xs text-white/70 font-medium mt-1">
-                Días de racha
-              </p>
-            </div>
+            {loading ? (
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <div className="h-10 w-16 bg-white/20 rounded-lg animate-pulse mb-1" />
+                  <div className="h-3 w-20 bg-white/10 rounded animate-pulse" />
+                </div>
+                <div className="w-px h-12 bg-white/20" />
+                <div className="text-center">
+                  <div className="h-10 w-12 bg-white/20 rounded-lg animate-pulse mb-1" />
+                  <div className="h-3 w-20 bg-white/10 rounded animate-pulse" />
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="text-center">
+                  <p className="text-4xl font-extrabold">{accuracy}%</p>
+                  <p className="text-xs text-white/70 font-medium mt-1">
+                    Precisión global
+                  </p>
+                </div>
+                <div className="w-px h-12 bg-white/20" />
+                <div className="text-center">
+                  <p className="text-4xl font-extrabold">{streak}</p>
+                  <p className="text-xs text-white/70 font-medium mt-1">
+                    Días de racha
+                  </p>
+                </div>
+              </>
+            )}
           </motion.div>
         </div>
       </motion.div>
+
+      {/* Error banner */}
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 flex items-center gap-3 bg-red-50 border border-red-200 rounded-2xl px-5 py-4"
+        >
+          <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+          <p className="text-sm text-red-700 font-medium flex-1">{error}</p>
+          <button
+            onClick={refresh}
+            className="flex items-center gap-1.5 text-xs font-bold text-red-600 hover:text-red-800 transition-colors"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            Reintentar
+          </button>
+        </motion.div>
+      )}
 
       {/* Cards */}
       <motion.div
@@ -137,7 +177,7 @@ export default function Page() {
         animate="visible"
         className="mb-8"
       >
-        <StatsOverview />
+        <StatsOverview data={data.overview} loading={loading} />
       </motion.div>
 
       {/* ── Charts row 1: Weekly + Monthly ─────────────── */}
@@ -159,8 +199,8 @@ export default function Page() {
           subtitle="Tu tiempo de estudio y evolución de rendimiento"
         />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <WeeklyActivityChart />
-          <MonthlyProgressChart />
+          <WeeklyActivityChart data={data.activity?.weekly} loading={loading} />
+          <MonthlyProgressChart data={data.activity?.monthly} loading={loading} />
         </div>
       </motion.div>
 
@@ -183,9 +223,13 @@ export default function Page() {
           subtitle="Tu dominio por área y actividad reciente"
         />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <SkillRadarChart />
-          <ProgressRing />
-          <RecentActivity />
+          <SkillRadarChart data={data.skills?.skills} loading={loading} />
+          <ProgressRing
+            total={data.skills?.distribution.total}
+            categories={data.skills?.distribution.categories}
+            loading={loading}
+          />
+          <RecentActivity activities={data.recentActivity?.activities} loading={loading} />
         </div>
       </motion.div>
 
@@ -207,7 +251,7 @@ export default function Page() {
           titleClassName="text-2xl font-extrabold tracking-tight text-gray-900"
           subtitle="Tu consistencia a lo largo del tiempo"
         />
-        <StudyStreakCalendar />
+        <StudyStreakCalendar data={data.streakCalendar} loading={loading} />
       </motion.div>
 
       {/* ── CTA ───────────────────────────────────────── */}

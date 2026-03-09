@@ -2,10 +2,11 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
+import type { DistributionCategory } from "@/features/stats/types";
 
 /*  Types  */
 
-export interface ProgressCategory {
+interface ColoredCategory {
   label: string;
   value: number;
   color: string;
@@ -13,18 +14,30 @@ export interface ProgressCategory {
 
 interface ProgressRingProps {
   total?: number;
-  categories?: ProgressCategory[];
+  categories?: DistributionCategory[] | null;
   title?: string;
   subtitle?: string;
+  loading?: boolean;
 }
 
-/*  Defaults  */
+/* ── Color map para categorías ── */
 
-const defaultCategories: ProgressCategory[] = [
-  { label: "Kanji", value: 60, color: "#993331" },
-  { label: "Vocabulario", value: 24, color: "#6b7280" },
-  { label: "Gramática", value: 16, color: "#d1d5db" },
-];
+const CATEGORY_COLORS: Record<string, string> = {
+  Kanji: "#993331",
+  Hiragana: "#b45309",
+  Katakana: "#0369a1",
+  Vocabulario: "#6b7280",
+  "Gramática": "#059669",
+};
+
+const FALLBACK_COLOR = "#d1d5db";
+
+function withColors(cats: DistributionCategory[]): ColoredCategory[] {
+  return cats.map((c) => ({
+    ...c,
+    color: CATEGORY_COLORS[c.label] ?? FALLBACK_COLOR,
+  }));
+}
 
 /*  SVG Ring  */
 
@@ -33,7 +46,7 @@ function Ring({
   size = 180,
   strokeWidth = 20,
 }: {
-  categories: ProgressCategory[];
+  categories: ColoredCategory[];
   size?: number;
   strokeWidth?: number;
 }) {
@@ -94,11 +107,23 @@ function Ring({
 /*  Component  */
 
 export function ProgressRing({
-  total = 384,
-  categories = defaultCategories,
+  total = 0,
+  categories,
   title = "Progreso total",
   subtitle = "Distribución de estudio por categoría",
+  loading,
 }: ProgressRingProps) {
+  if (loading || !categories || categories.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+        <div className="h-5 w-32 bg-gray-200 rounded mb-2" />
+        <div className="h-3 w-48 bg-gray-100 rounded mb-6" />
+        <div className="h-[180px] w-[180px] mx-auto bg-gray-50 rounded-full" />
+      </div>
+    );
+  }
+
+  const colored = withColors(categories);
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -113,7 +138,7 @@ export function ProgressRing({
 
       <div className="flex items-center justify-center">
         <div className="relative">
-          <Ring categories={categories} />
+          <Ring categories={colored} />
           {/* Center label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-xs text-gray-500 font-medium">Total</span>
@@ -132,7 +157,7 @@ export function ProgressRing({
 
       {/* Legend */}
       <div className="mt-5 space-y-2">
-        {categories.map((cat) => (
+        {colored.map((cat) => (
           <div key={cat.label} className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div

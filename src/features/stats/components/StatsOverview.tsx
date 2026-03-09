@@ -8,77 +8,88 @@ import {
   Target,
   Clock,
   TrendingUp,
-  Award,
 } from "lucide-react";
 import type { ReactNode } from "react";
+import type { OverviewStatsResponse } from "@/features/stats/types";
 
 /* ── Types ────────────────────────────────────────────── */
 
-export interface OverviewStat {
+interface StatCard {
   id: string;
   label: string;
   value: number;
   suffix?: string;
   prefix?: string;
   icon: ReactNode;
-  trend?: number; // percentage change
-  accentColor?: string;
+  trend?: number;
 }
 
 interface StatsOverviewProps {
-  stats?: OverviewStat[];
+  data?: OverviewStatsResponse | null;
+  loading?: boolean;
 }
 
-/* ── Defaults ─────────────────────────────────────────── */
+/* ── Mapeo backend → tarjetas ─────────────────────────── */
 
-const defaultStats: OverviewStat[] = [
-  {
-    id: "study-time",
-    label: "Horas de estudio",
-    value: 142,
-    suffix: "h",
-    icon: <Clock className="w-6 h-6" />,
-    trend: 12,
-  },
-  {
-    id: "kanji-learned",
-    label: "Kanji aprendidos",
-    value: 384,
-    icon: <BookOpen className="w-6 h-6" />,
-    trend: 8,
-  },
-  {
-    id: "accuracy",
-    label: "Precisión promedio",
-    value: 87,
-    suffix: "%",
-    icon: <Target className="w-6 h-6" />,
-    trend: 3,
-  },
-  {
-    id: "streak",
-    label: "Racha actual",
-    value: 14,
-    suffix: " días",
-    icon: <Flame className="w-6 h-6" />,
-    trend: 0,
-  },
-  {
-    id: "level",
-    label: "Nivel actual",
-    value: 12,
-    prefix: "N",
-    icon: <Award className="w-6 h-6" />,
-    trend: 1,
-  },
-  {
-    id: "reviews",
-    label: "Repasos completados",
-    value: 1256,
-    icon: <TrendingUp className="w-6 h-6" />,
-    trend: 15,
-  },
-];
+function mapToCards(data: OverviewStatsResponse): StatCard[] {
+  return [
+    {
+      id: "study-time",
+      label: "Horas de estudio",
+      value: data.study_hours,
+      suffix: "h",
+      icon: <Clock className="w-6 h-6" />,
+      trend: data.study_hours_trend,
+    },
+    {
+      id: "kanji-learned",
+      label: "Kanji aprendidos",
+      value: data.kanji_learned,
+      icon: <BookOpen className="w-6 h-6" />,
+      trend: data.kanji_learned_trend,
+    },
+    {
+      id: "hiragana-learned",
+      label: "Hiragana aprendidos",
+      value: data.hiragana_learned,
+      icon: (
+        <span className="text-base font-bold leading-none select-none">あ</span>
+      ),
+      trend: data.hiragana_learned_trend,
+    },
+    {
+      id: "katakana-learned",
+      label: "Katakana aprendidos",
+      value: data.katakana_learned,
+      icon: (
+        <span className="text-base font-bold leading-none select-none">カ</span>
+      ),
+      trend: data.katakana_learned_trend,
+    },
+    {
+      id: "accuracy",
+      label: "Precisión promedio",
+      value: data.accuracy,
+      suffix: "%",
+      icon: <Target className="w-6 h-6" />,
+      trend: data.accuracy_trend,
+    },
+    {
+      id: "streak",
+      label: "Racha actual",
+      value: data.current_streak,
+      suffix: " días",
+      icon: <Flame className="w-6 h-6" />,
+    },
+    {
+      id: "reviews",
+      label: "Repasos completados",
+      value: data.reviews_completed,
+      icon: <TrendingUp className="w-6 h-6" />,
+      trend: data.reviews_completed_trend,
+    },
+  ];
+}
 
 /* ── Animated counter ─────────────────────────────────── */
 
@@ -124,6 +135,21 @@ function AnimatedCounter({
   );
 }
 
+/* ── Skeleton card ────────────────────────────────────── */
+
+function SkeletonCard() {
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-pulse w-full min-w-[150px] max-w-[200px]">
+      <div className="flex items-center justify-between mb-3">
+        <div className="w-11 h-11 rounded-xl bg-gray-200" />
+        <div className="w-12 h-5 rounded-full bg-gray-200" />
+      </div>
+      <div className="h-7 w-20 bg-gray-200 rounded mb-2" />
+      <div className="h-3 w-24 bg-gray-100 rounded" />
+    </div>
+  );
+}
+
 /* ── Card ─────────────────────────────────────────────── */
 
 const cardVariants = {
@@ -144,7 +170,7 @@ function StatOverviewCard({
   stat,
   index,
 }: {
-  stat: OverviewStat;
+  stat: StatCard;
   index: number;
 }) {
   return (
@@ -154,7 +180,7 @@ function StatOverviewCard({
       initial="hidden"
       animate="visible"
       whileHover={{ y: -4, boxShadow: "0 12px 24px -4px rgba(153,51,49,0.12)" }}
-      className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-default select-none"
+      className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-default select-none w-full min-w-[150px] max-w-[200px]"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="w-11 h-11 rounded-xl bg-[#993331]/10 flex items-center justify-center text-[#993331]">
@@ -190,10 +216,22 @@ function StatOverviewCard({
 
 /* ── Main ─────────────────────────────────────────────── */
 
-export function StatsOverview({ stats = defaultStats }: StatsOverviewProps) {
+export function StatsOverview({ data, loading }: StatsOverviewProps) {
+  if (loading || !data) {
+    return (
+      <div className="flex flex-wrap justify-center gap-4">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <SkeletonCard key={i} />
+        ))}
+      </div>
+    );
+  }
+
+  const cards = mapToCards(data);
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-      {stats.map((stat, i) => (
+    <div className="flex flex-wrap justify-center gap-4">
+      {cards.map((stat, i) => (
         <StatOverviewCard key={stat.id} stat={stat} index={i} />
       ))}
     </div>

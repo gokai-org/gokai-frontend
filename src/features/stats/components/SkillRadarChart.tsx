@@ -10,39 +10,36 @@ import {
   ResponsiveContainer,
   Tooltip,
 } from "recharts";
+import type { SkillEntry } from "@/features/stats/types";
 
 /*  Types   */
 
-export interface SkillData {
-  skill: string;
-  value: number;
-  fullMark: number;
-}
-
 interface SkillRadarChartProps {
-  data?: SkillData[];
+  data?: SkillEntry[] | null;
   title?: string;
   subtitle?: string;
+  loading?: boolean;
 }
-
-/*  Defaults   */
-
-const defaultData: SkillData[] = [
-  { skill: "Lectura", value: 82, fullMark: 100 },
-  { skill: "Escritura", value: 68, fullMark: 100 },
-  { skill: "Escucha", value: 74, fullMark: 100 },
-  { skill: "Gramática", value: 90, fullMark: 100 },
-  { skill: "Vocabulario", value: 85, fullMark: 100 },
-  { skill: "Kanji", value: 72, fullMark: 100 },
-];
 
 /*  Component  */
 
 export function SkillRadarChart({
-  data = defaultData,
+  data,
   title = "Habilidades",
   subtitle = "Tu dominio en cada área de estudio",
+  loading,
 }: SkillRadarChartProps) {
+  const chartData = (data ?? []).map((d) => ({ ...d, fullMark: 100 }));
+
+  if (loading || !data || data.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+        <div className="h-5 w-32 bg-gray-200 rounded mb-2" />
+        <div className="h-3 w-48 bg-gray-100 rounded mb-6" />
+        <div className="h-[280px] bg-gray-50 rounded-xl" />
+      </div>
+    );
+  }
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
@@ -57,7 +54,7 @@ export function SkillRadarChart({
 
       <div className="w-full h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
-          <RadarChart cx="50%" cy="50%" outerRadius="75%" data={data}>
+          <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
             <PolarGrid
               stroke="#e5e7eb"
               strokeDasharray="3 3"
@@ -104,7 +101,7 @@ export function SkillRadarChart({
 
       {/* Skill pills */}
       <div className="flex flex-wrap gap-2 mt-2">
-        {data.map((d) => (
+        {chartData.map((d) => (
           <span
             key={d.skill}
             className="text-xs font-bold px-3 py-1 rounded-full bg-[#993331]/8 text-[#993331]"

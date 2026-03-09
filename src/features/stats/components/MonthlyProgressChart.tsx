@@ -2,8 +2,6 @@
 
 import { motion } from "framer-motion";
 import {
-  LineChart,
-  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -12,31 +10,16 @@ import {
   Area,
   AreaChart,
 } from "recharts";
+import type { MonthlyProgressEntry } from "@/features/stats/types";
 
 /*  Types */
 
-export interface MonthlyData {
-  month: string;
-  score: number;
-  reviews: number;
-}
-
 interface MonthlyProgressChartProps {
-  data?: MonthlyData[];
+  data?: MonthlyProgressEntry[] | null;
   title?: string;
   subtitle?: string;
+  loading?: boolean;
 }
-
-/*  Defaults */
-
-const defaultData: MonthlyData[] = [
-  { month: "Sep", score: 62, reviews: 120 },
-  { month: "Oct", score: 68, reviews: 180 },
-  { month: "Nov", score: 71, reviews: 210 },
-  { month: "Dic", score: 75, reviews: 250 },
-  { month: "Ene", score: 82, reviews: 310 },
-  { month: "Feb", score: 87, reviews: 385 },
-];
 
 /*  Custom tooltip  */
 
@@ -65,10 +48,21 @@ function CustomTooltip({
 /* Component */
 
 export function MonthlyProgressChart({
-  data = defaultData,
+  data,
   title = "Progreso mensual",
   subtitle = "Evolución de tu precisión y sesiones",
+  loading,
 }: MonthlyProgressChartProps) {
+  if (loading || !data || data.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+        <div className="h-5 w-40 bg-gray-200 rounded mb-2" />
+        <div className="h-3 w-56 bg-gray-100 rounded mb-6" />
+        <div className="h-[220px] bg-gray-50 rounded-xl" />
+      </div>
+    );
+  }
+
   const growth =
     data.length >= 2
       ? data[data.length - 1].score - data[0].score

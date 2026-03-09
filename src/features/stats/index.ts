@@ -5,4 +5,21 @@ export { ProgressRing } from "./components/ProgressRing";
 export { RecentActivity } from "./components/RecentActivity";
 export { StudyStreakCalendar } from "./components/StudyStreakCalendar";
 export { MonthlyProgressChart } from "./components/MonthlyProgressChart";
-export type { Streak } from "./types";
+export { useStats } from "./hooks/useStats";
+export type {
+  Streak,
+  StatsPeriod,
+  OverviewStatsResponse,
+  WeeklyActivityEntry,
+  MonthlyProgressEntry,
+  ActivityResponse,
+  SkillEntry,
+  DistributionCategory,
+  SkillsResponse,
+  RecentActivityEntry,
+  RecentActivityResponse,
+  StreakCalendarResponse,
+  StatsData,
+  ApiErrorResponse,
+} from "./types";
+export { timeAgo } from "./utils/timeAgo";

@@ -11,32 +11,17 @@ import {
   ResponsiveContainer,
   Cell,
 } from "recharts";
+import type { WeeklyActivityEntry } from "@/features/stats/types";
 
 /*   Types  */
 
-export interface WeeklyData {
-  day: string;
-  minutes: number;
-}
-
 interface WeeklyActivityChartProps {
-  data?: WeeklyData[];
+  data?: WeeklyActivityEntry[] | null;
   title?: string;
   subtitle?: string;
   highlight?: string;
+  loading?: boolean;
 }
-
-/*  Defaults  */
-
-const defaultData: WeeklyData[] = [
-  { day: "Lun", minutes: 45 },
-  { day: "Mar", minutes: 62 },
-  { day: "Mié", minutes: 78 },
-  { day: "Jue", minutes: 55 },
-  { day: "Vie", minutes: 40 },
-  { day: "Sáb", minutes: 90 },
-  { day: "Dom", minutes: 35 },
-];
 
 /*  Custom tooltip   */
 
@@ -63,14 +48,26 @@ function CustomTooltip({
 /*  Component  */
 
 export function WeeklyActivityChart({
-  data = defaultData,
+  data,
   title = "Actividad semanal",
   subtitle = "Minutos de estudio por día",
-  highlight = "Mié",
+  highlight,
+  loading,
 }: WeeklyActivityChartProps) {
+  if (loading || !data || data.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+        <div className="h-5 w-40 bg-gray-200 rounded mb-2" />
+        <div className="h-3 w-56 bg-gray-100 rounded mb-6" />
+        <div className="h-[220px] bg-gray-50 rounded-xl" />
+      </div>
+    );
+  }
+
   const totalMinutes = data.reduce((sum, d) => sum + d.minutes, 0);
   const avgMinutes = Math.round(totalMinutes / data.length);
   const maxDay = data.reduce((max, d) => (d.minutes > max.minutes ? d : max), data[0]);
+  const highlightDay = highlight ?? maxDay.day;
 
   return (
     <motion.div
@@ -133,8 +130,8 @@ export function WeeklyActivityChart({
               {data.map((entry) => (
                 <Cell
                   key={entry.day}
-                  fill={entry.day === highlight ? "#993331" : "#1f2937"}
-                  opacity={entry.day === highlight ? 1 : 0.85}
+                  fill={entry.day === highlightDay ? "#993331" : "#1f2937"}
+                  opacity={entry.day === highlightDay ? 1 : 0.85}
                 />
               ))}
             </Bar>

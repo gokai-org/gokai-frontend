@@ -4,90 +4,44 @@ import { motion } from "framer-motion";
 import {
   BookOpen,
   PenTool,
-  Headphones,
   CheckCircle2,
   Zap,
   type LucideIcon,
 } from "lucide-react";
+import type { RecentActivityEntry } from "@/features/stats/types";
+import { timeAgo } from "@/features/stats/utils/timeAgo";
 
 /*  Types  */
 
-export interface ActivityItem {
-  id: string;
-  type: "kanji" | "vocabulary" | "grammar" | "listening" | "review";
-  title: string;
-  description: string;
-  time: string;
-  score?: number;
-}
-
 interface RecentActivityProps {
-  activities?: ActivityItem[];
+  activities?: RecentActivityEntry[] | null;
   title?: string;
+  loading?: boolean;
 }
 
 /*  Icon map  */
 
-const iconMap: Record<ActivityItem["type"], LucideIcon> = {
+const iconMap: Record<RecentActivityEntry["type"], LucideIcon> = {
   kanji: PenTool,
+  hiragana: BookOpen,
+  katakana: BookOpen,
   vocabulary: BookOpen,
   grammar: CheckCircle2,
-  listening: Headphones,
   review: Zap,
 };
 
-const colorMap: Record<ActivityItem["type"], string> = {
+const colorMap: Record<RecentActivityEntry["type"], string> = {
   kanji: "bg-[#993331]/10 text-[#993331]",
-  vocabulary: "bg-amber-50 text-amber-600",
-  grammar: "bg-emerald-50 text-emerald-600",
-  listening: "bg-blue-50 text-blue-600",
-  review: "bg-purple-50 text-purple-600",
+  hiragana: "bg-amber-50 text-amber-600",
+  katakana: "bg-sky-50 text-sky-600",
+  vocabulary: "bg-emerald-50 text-emerald-600",
+  grammar: "bg-purple-50 text-purple-600",
+  review: "bg-blue-50 text-blue-600",
 };
 
 /*  Defaults  */
 
-const defaultActivities: ActivityItem[] = [
-  {
-    id: "1",
-    type: "kanji",
-    title: "Kanji: 森 · 林 · 木",
-    description: "Completaste una sesión de kanji",
-    time: "Hace 2 min",
-    score: 95,
-  },
-  {
-    id: "2",
-    type: "vocabulary",
-    title: "Vocabulario N4",
-    description: "20 palabras nuevas aprendidas",
-    time: "Hace 15 min",
-    score: 88,
-  },
-  {
-    id: "3",
-    type: "listening",
-    title: "Escucha activa",
-    description: "Diálogo de nivel intermedio",
-    time: "Hace 1h",
-    score: 76,
-  },
-  {
-    id: "4",
-    type: "review",
-    title: "Repaso espaciado",
-    description: "45 tarjetas revisadas",
-    time: "Hace 3h",
-    score: 92,
-  },
-  {
-    id: "5",
-    type: "grammar",
-    title: "Gramática: てform",
-    description: "Ejercicios de conjugación",
-    time: "Hace 5h",
-    score: 84,
-  },
-];
+const defaultActivities: RecentActivityEntry[] = [];
 
 /*  Item row  */
 
@@ -107,7 +61,7 @@ const itemVariants = {
   },
 };
 
-function ActivityRow({ activity }: { activity: ActivityItem }) {
+function ActivityRow({ activity }: { activity: RecentActivityEntry }) {
   const Icon = iconMap[activity.type];
   const colorClass = colorMap[activity.type];
 
@@ -130,7 +84,7 @@ function ActivityRow({ activity }: { activity: ActivityItem }) {
       </div>
 
       <div className="text-right shrink-0">
-        <p className="text-xs text-gray-400">{activity.time}</p>
+        <p className="text-xs text-gray-400">{timeAgo(activity.created_at)}</p>
         {activity.score !== undefined && (
           <p className="text-sm font-extrabold text-[#993331]">
             {activity.score}%
@@ -144,9 +98,44 @@ function ActivityRow({ activity }: { activity: ActivityItem }) {
 /*   Main  */
 
 export function RecentActivity({
-  activities = defaultActivities,
+  activities,
   title = "Actividad reciente",
+  loading,
 }: RecentActivityProps) {
+  const items = activities ?? defaultActivities;
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+        <div className="h-5 w-36 bg-gray-200 rounded mb-4" />
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-4 py-3">
+            <div className="w-10 h-10 rounded-xl bg-gray-200" />
+            <div className="flex-1">
+              <div className="h-4 w-32 bg-gray-200 rounded mb-1" />
+              <div className="h-3 w-48 bg-gray-100 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (items.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      >
+        <h3 className="text-lg font-extrabold text-gray-900 mb-4">{title}</h3>
+        <p className="text-sm text-gray-400 text-center py-8">
+          Sin actividad reciente aún.
+        </p>
+      </motion.div>
+    );
+  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -167,7 +156,7 @@ export function RecentActivity({
         animate="visible"
         className="divide-y divide-gray-50"
       >
-        {activities.map((activity) => (
+        {items.map((activity) => (
           <ActivityRow key={activity.id} activity={activity} />
         ))}
       </motion.div>

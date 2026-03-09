@@ -2,20 +2,21 @@
 
 import { motion } from "framer-motion";
 import { useMemo } from "react";
+import type { StreakCalendarResponse } from "@/features/stats/types";
 
 /*  Types  */
 
 interface StudyStreakCalendarProps {
-  /** Map of ISO date strings → minutes studied (e.g. "2026-02-10": 45) */
-  data?: Record<string, number>;
+  data?: StreakCalendarResponse | null;
   title?: string;
   subtitle?: string;
   weeks?: number;
+  loading?: boolean;
 }
 
 /*  Helpers  */
 
-function generateDefaultData(weeks: number): Record<string, number> {
+function generateEmptyData(weeks: number): Record<string, number> {
   const map: Record<string, number> = {};
   const today = new Date();
   const totalDays = weeks * 7;
@@ -23,13 +24,7 @@ function generateDefaultData(weeks: number): Record<string, number> {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
     const key = d.toISOString().slice(0, 10);
-    // Simulate realistic study data (some zeros)
-    const rand = Math.random();
-    if (rand > 0.25) {
-      map[key] = Math.floor(Math.random() * 90) + 10;
-    } else {
-      map[key] = 0;
-    }
+    map[key] = 0;
   }
   return map;
 }
@@ -51,8 +46,12 @@ export function StudyStreakCalendar({
   title = "Calendario de estudio",
   subtitle = "Tu consistencia en las últimas semanas",
   weeks = 12,
+  loading,
 }: StudyStreakCalendarProps) {
-  const calendarData = useMemo(() => data ?? generateDefaultData(weeks), [data, weeks]);
+  const calendarData = useMemo(
+    () => data?.streak_days ?? generateEmptyData(weeks),
+    [data, weeks],
+  );
 
   const grid = useMemo(() => {
     const today = new Date();
@@ -75,6 +74,16 @@ export function StudyStreakCalendar({
 
   const totalDays = Object.values(calendarData).filter((v) => v > 0).length;
   const totalMinutes = Object.values(calendarData).reduce((a, b) => a + b, 0);
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+        <div className="h-5 w-40 bg-gray-200 rounded mb-2" />
+        <div className="h-3 w-56 bg-gray-100 rounded mb-6" />
+        <div className="h-[120px] bg-gray-50 rounded-xl" />
+      </div>
+    );
+  }
 
   return (
     <motion.div
