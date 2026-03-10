@@ -1,0 +1,33 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
+
+const SUBSCRIPTIONS_API_BASE = process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
+
+export async function POST(req: NextRequest) {
+  try {
+    const token = getTokenFromRequest(req);
+    if (!token) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+    const { priceId, successUrl } = await req.json();
+    const res = await fetch(`${SUBSCRIPTIONS_API_BASE}/subscriptions/subscribe`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${token}`,
+      },
+      body: JSON.stringify({ priceId, successUrl }),
+      credentials: "include",
+    });
+    if (res.redirected) {
+      return NextResponse.redirect(res.url);
+    }
+    const data = await res.json();
+    if (data.url) {
+      return NextResponse.json({ url: data.url });
+    }
+    return NextResponse.json({ error: data.error || "Error al crear sesión de pago" }, { status: 400 });
+  } catch (err) {
+    return NextResponse.json({ error: "Error de red o formato" }, { status: 500 });
+  }
+}

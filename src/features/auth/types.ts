@@ -9,6 +9,7 @@ export interface User {
   avatar?: string | null;
   plan?: "free" | "premium" | "pro";
   createdAt?: string;
+  subscribed?: boolean;
   twoFactorEnabled?: boolean;
 }
 

@@ -344,6 +344,10 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
   });
   const [isSaving, setIsSaving] = useState(false);
 
+  // Estado para la suscripción
+  const [subscription, setSubscription] = useState<any>(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(false);
+
   const formatBirthdateForInput = (birthdate?: string | Date | null) => {
     if (!birthdate) return "";
     const date = new Date(birthdate);
@@ -373,6 +377,29 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
       });
     }
   }, [user]);
+
+  // Cargar detalles de suscripción si el usuario está suscrito
+  useEffect(() => {
+    if (user && user.id) {
+      const loadSubscription = async () => {
+        setSubscriptionLoading(true);
+        try {
+          const response = await fetch(`/api/subscription/${user.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setSubscription(data);
+          } else {
+            console.error("Error loading subscription:", response.statusText);
+          }
+        } catch (error) {
+          console.error("Error loading subscription:", error);
+        } finally {
+          setSubscriptionLoading(false);
+        }
+      };
+      loadSubscription();
+    }
+  }, [user?.id]);
 
   const handleSaveProfile = async () => {
     setIsSaving(true);
@@ -470,8 +497,72 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
     pro: "Plan Pro",
   };
 
+    // Modal Mejorar Plan
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+    const [stripeLoading, setStripeLoading] = useState(false);
+    const [stripeError, setStripeError] = useState<string | null>(null);
+    // Cupón (solo UI, lógica la implementas tú)
+    const [coupon, setCoupon] = useState("");
+    const [couponLoading, setCouponLoading] = useState(false);
+    const [couponError, setCouponError] = useState<string | null>(null);
+
+    // Usa la variable de entorno pública para el priceId
+    const STRIPE_PRICE_ID = process.env.SUBSCRIPTION_PRICE_ID;
+
+    // Stripe: inicia el flujo de pago usando el endpoint proxy
+    const handleStripe = async () => {
+      setStripeLoading(true);
+      setStripeError(null);
+      if (!STRIPE_PRICE_ID) {
+        setStripeError("Error de configuración: falta el priceId de Stripe");
+        setStripeLoading(false);
+        return;
+      }
+      try {
+        const res = await fetch("/api/subscription/subscribe", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ priceId: STRIPE_PRICE_ID, successUrl: window.location.href }),
+        });
+        const data = await res.json();
+        if (data.url) {
+          window.location.href = data.url;
+          return;
+        }
+        setStripeError(data.error || "Error al iniciar pago");
+      } catch (err) {
+        setStripeError("Error de red");
+      } finally {
+        setStripeLoading(false);
+      }
+    };
+
   return (
     <>
+        {/* Modal Mejorar Plan */}
+        {showUpgradeModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative">
+              <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() => setShowUpgradeModal(false)}>&times;</button>
+              <h2 className="text-xl font-bold mb-4 text-[#993331]">Mejorar Plan</h2>
+              {/* Cupón: solo UI, lógica la implementas tú */}
+              <form onSubmit={e => { e.preventDefault(); /* aquí tu lógica de cupón */ }} className="space-y-3">
+                <label className="block text-sm font-medium">¿Tienes un cupón?</label>
+                <div className="flex gap-2">
+                  <input type="text" value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="Código de cupón" className="flex-1 px-3 py-2 border rounded-lg" />
+                  <button type="submit" disabled className="px-4 py-2 bg-[#993331] text-white rounded-lg opacity-50 cursor-not-allowed">Aplicar</button>
+                </div>
+                {/* Aquí puedes mostrar errores de cupón si los manejas */}
+                {couponError && <div className="text-red-600 text-sm">{couponError}</div>}
+              </form>
+              <div className="my-4 text-center text-gray-500">o</div>
+              <button onClick={handleStripe} disabled={stripeLoading} className="w-full px-4 py-2 bg-gradient-to-r from-[#993331] to-[#BA5149] text-white rounded-lg font-semibold disabled:opacity-50">
+                {stripeLoading ? "Redirigiendo a Stripe..." : "Pagar"}
+              </button>
+              {stripeError && <div className="text-red-600 text-sm mt-2">{stripeError}</div>}
+            </div>
+          </div>
+        )}
       <SettingsSection
         title="Información Personal"
         description="Visualiza y edita tu información de perfil"
@@ -670,7 +761,8 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
           description={user?.plan ? planNames[user.plan] : "No disponible"}
         >
           {user?.plan === "free" && (
-            <button className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#993331] to-[#BA5149] rounded-lg hover:shadow-lg transition-all">
+            <button className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#993331] to-[#BA5149] rounded-lg hover:shadow-lg transition-all"
+              onClick={() => setShowUpgradeModal(true)}>
               Mejorar Plan
             </button>
           )}
@@ -680,6 +772,70 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
             </span>
           )}
         </SettingsItem>
+
+        {(user?.subscribed || (subscription && subscription.current_period_end && new Date(subscription.current_period_end) > new Date() && user?.subscribed === false)) && (
+          <>
+            <SettingsItem
+              label="Estado de suscripción"
+              description={subscriptionLoading ? "Cargando..." : (() => {
+                if (user?.subscribed) {
+                  if (subscription?.status === 'active') return 'Activa';
+                  if (subscription?.status === 'canceled') return 'Cancelada';
+                  return subscription?.status || 'Desconocido';
+                }
+                // Si no está suscrito pero tiene vigencia futura
+                if (subscription && subscription.current_period_end && new Date(subscription.current_period_end) > new Date()) {
+                  return `Cancelada (beneficios hasta ${new Date(subscription.current_period_end).toLocaleDateString('es-ES', {
+                    day: 'numeric', month: 'long', year: 'numeric'
+                  })})`;
+                }
+                return 'No disponible';
+              })()}
+            >
+              <span className={`px-4 py-2 text-sm font-medium rounded-lg ${
+                user?.subscribed && subscription?.status === 'active' ? 'text-green-700 bg-green-50' :
+                (!user?.subscribed && subscription && subscription.current_period_end && new Date(subscription.current_period_end) > new Date()) ? 'text-yellow-700 bg-yellow-50' :
+                'text-red-700 bg-red-50'
+              }`}>
+                {(() => {
+                  if (user?.subscribed) {
+                    if (subscription?.status === 'active') return 'Activa';
+                    if (subscription?.status === 'canceled') return 'Cancelada';
+                    return subscription?.status || 'Desconocido';
+                  }
+                  if (subscription && subscription.current_period_end && new Date(subscription.current_period_end) > new Date()) {
+                    return `Cancelada (beneficios hasta ${new Date(subscription.current_period_end).toLocaleDateString('es-ES', {
+                      day: 'numeric', month: 'long', year: 'numeric'
+                    })})`;
+                  }
+                  return 'No disponible';
+                })()}
+              </span>
+            </SettingsItem>
+
+            <SettingsItem
+              children
+              label="Fecha de inicio"
+              description={subscriptionLoading ? "Cargando..." : (subscription?.created_at ? 
+                new Date(subscription.created_at).toLocaleDateString('es-ES', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                }) : "No disponible")}
+            />
+
+            <SettingsItem
+              children
+              label="Vigencia"
+              description={subscriptionLoading ? "Cargando..." : (subscription?.current_period_end ? 
+                new Date(subscription.current_period_end).toLocaleDateString('es-ES', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric'
+                }) : "No disponible")}
+            />
+          </>
+        )}
       </SettingsSection>
 
       <SettingsSection
