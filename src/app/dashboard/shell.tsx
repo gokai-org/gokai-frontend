@@ -13,13 +13,15 @@ export default function ContentShell({ children }: { children: React.ReactNode }
   const isStatistics = pathname === "/dashboard/statistics";
   const isHelp = pathname === "/dashboard/help";
   const isNotices = pathname === "/dashboard/notices";
+  const isConfiguration = pathname === "/dashboard/configuration";
 
   const padDesktop = "lg:pl-[140px]";
   const padMd = "md:pl-[120px]";
 
-  if (isChatbot || isLibrary || isReviews || isGraph || isStatistics || isHelp || isNotices) {
+  // Full-height routes (no outer scroll)
+  if (isChatbot || isLibrary || isReviews || isGraph || isStatistics || isHelp || isNotices || isConfiguration) {
     return (
-      <main className={isChatbot || isLibrary || isReviews || isStatistics || isHelp || isNotices ? ["h-screen bg-white overflow-hidden", padMd, padDesktop].join(" ") : "h-screen bg-white overflow-hidden"}>
+      <main className={["h-screen bg-white overflow-hidden", padMd, padDesktop].join(" ")}>
         {children}
       </main>
     );

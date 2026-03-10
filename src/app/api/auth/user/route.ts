@@ -4,6 +4,7 @@ import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 export const dynamic = "force-dynamic";
 
 const USERS_API_BASE = process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
+const SUBSCRIPTIONS_API_BASE = process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
 
 export async function GET(req: NextRequest) {
   try {
@@ -58,6 +59,27 @@ export async function GET(req: NextRequest) {
 
         const firstName = userData.first_name || "";
         const lastName = userData.last_name || "";
+
+        // Check subscription status from the subscriptions service
+        let plan: "free" | "premium" | "pro" = "free";
+        let subscribed = false;
+        try {
+          const subRes = await fetch(`${SUBSCRIPTIONS_API_BASE}/subscriptions/${userId}`, {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          });
+          if (subRes.ok) {
+            const subData = await subRes.json();
+            if (subData?.status === "active") {
+              plan = "premium";
+              subscribed = true;
+            }
+          }
+        } catch (subErr) {
+          console.error("Error checking subscription:", subErr);
+        }
         
         const user = {
           id: userData.id,
@@ -68,8 +90,9 @@ export async function GET(req: NextRequest) {
           birthdate: userData.birthdate,
           profile: userData.profile,
           avatar: null,
-          plan: "free",
+          plan,
           createdAt: userData.created_at,
+          subscribed,
           twoFactorEnabled: false,
         };
 

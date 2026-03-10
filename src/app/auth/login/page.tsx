@@ -584,7 +584,7 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             </div>
                             {/* Step dots */}
                             <div className="mt-1.5 flex items-center justify-between px-[2px]">
-                              {["Cuenta", "Pago", "Onboarding"].map((label, i) => (
+                              {["Cuenta", "Pago", "Listo"].map((label, i) => (
                                 <div key={label} className="flex flex-col items-center gap-1">
                                   <div
                                     className={[

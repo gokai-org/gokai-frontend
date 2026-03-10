@@ -12,6 +12,8 @@ import type { User } from "@/features/auth/types";
 import { useToast } from "@/shared/ui/ToastProvider";
 import { useSettings } from "@/features/configuration/hooks/useSettings";
 import type { UserSettings } from "@/features/configuration/types";
+import { UpgradePlanModal } from "@/features/configuration/components/UpgradePlanModal";
+import { CancelSubscriptionModal } from "@/features/configuration/components/CancelSubscriptionModal";
 
 const sectionTitles: Record<string, string> = {
   general: "Configuración General",
@@ -348,6 +350,17 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
   const [subscription, setSubscription] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
 
+  // Estados para modales de upgrade y cancelación
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [stripeLoading, setStripeLoading] = useState(false);
+  const [stripeError, setStripeError] = useState<string | null>(null);
+  const [coupon, setCoupon] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
+
   const formatBirthdateForInput = (birthdate?: string | Date | null) => {
     if (!birthdate) return "";
     const date = new Date(birthdate);
@@ -497,72 +510,93 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
     pro: "Plan Pro",
   };
 
-    // Modal Mejorar Plan
-    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
-    const [stripeLoading, setStripeLoading] = useState(false);
-    const [stripeError, setStripeError] = useState<string | null>(null);
-    // Cupón (solo UI, lógica la implementas tú)
-    const [coupon, setCoupon] = useState("");
-    const [couponLoading, setCouponLoading] = useState(false);
-    const [couponError, setCouponError] = useState<string | null>(null);
+  const isSubscriptionActive = user?.subscribed && subscription?.status === "active";
+  const userPlanLabel = isSubscriptionActive ? "Plan GOKAI+" : (user?.plan ? planNames[user.plan] : "Plan Gratuito");
 
-    // Usa la variable de entorno pública para el priceId
-    const STRIPE_PRICE_ID = process.env.SUBSCRIPTION_PRICE_ID;
+  const STRIPE_PRICE_ID = process.env.SUBSCRIPTION_PRICE_ID;
 
-    // Stripe: inicia el flujo de pago usando el endpoint proxy
-    const handleStripe = async () => {
-      setStripeLoading(true);
-      setStripeError(null);
-      if (!STRIPE_PRICE_ID) {
-        setStripeError("Error de configuración: falta el priceId de Stripe");
-        setStripeLoading(false);
+  const handleStripe = async () => {
+    setStripeLoading(true);
+    setStripeError(null);
+    if (!STRIPE_PRICE_ID) {
+      setStripeError("Error de configuración: falta el priceId de Stripe");
+      setStripeLoading(false);
+      return;
+    }
+    try {
+      const res = await fetch("/api/subscription/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ priceId: STRIPE_PRICE_ID, successUrl: window.location.href }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
         return;
       }
-      try {
-        const res = await fetch("/api/subscription/subscribe", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ priceId: STRIPE_PRICE_ID, successUrl: window.location.href }),
-        });
-        const data = await res.json();
-        if (data.url) {
-          window.location.href = data.url;
-          return;
-        }
-        setStripeError(data.error || "Error al iniciar pago");
-      } catch (err) {
-        setStripeError("Error de red");
-      } finally {
-        setStripeLoading(false);
+      setStripeError(data.error || "Error al iniciar pago");
+    } catch {
+      setStripeError("Error de red");
+    } finally {
+      setStripeLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!user?.id) return;
+    setCancelLoading(true);
+    setCancelError(null);
+    try {
+      const res = await fetch(`/api/subscription/${user.id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setCancelError(data.error || "Error al cancelar la suscripción");
+        return;
       }
-    };
+      toast.success("Suscripción cancelada correctamente");
+      setShowCancelModal(false);
+      // Refrescar datos del usuario y suscripción
+      const updatedUser = await getCurrentUser();
+      if (updatedUser) setUser(updatedUser);
+      const subRes = await fetch(`/api/subscription/${user.id}`);
+      if (subRes.ok) {
+        const subData = await subRes.json();
+        setSubscription(subData);
+      }
+    } catch {
+      setCancelError("Error de red al cancelar la suscripción");
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   return (
     <>
         {/* Modal Mejorar Plan */}
-        {showUpgradeModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md relative">
-              <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-600" onClick={() => setShowUpgradeModal(false)}>&times;</button>
-              <h2 className="text-xl font-bold mb-4 text-[#993331]">Mejorar Plan</h2>
-              {/* Cupón: solo UI, lógica la implementas tú */}
-              <form onSubmit={e => { e.preventDefault(); /* aquí tu lógica de cupón */ }} className="space-y-3">
-                <label className="block text-sm font-medium">¿Tienes un cupón?</label>
-                <div className="flex gap-2">
-                  <input type="text" value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="Código de cupón" className="flex-1 px-3 py-2 border rounded-lg" />
-                  <button type="submit" disabled className="px-4 py-2 bg-[#993331] text-white rounded-lg opacity-50 cursor-not-allowed">Aplicar</button>
-                </div>
-                {/* Aquí puedes mostrar errores de cupón si los manejas */}
-                {couponError && <div className="text-red-600 text-sm">{couponError}</div>}
-              </form>
-              <div className="my-4 text-center text-gray-500">o</div>
-              <button onClick={handleStripe} disabled={stripeLoading} className="w-full px-4 py-2 bg-gradient-to-r from-[#993331] to-[#BA5149] text-white rounded-lg font-semibold disabled:opacity-50">
-                {stripeLoading ? "Redirigiendo a Stripe..." : "Pagar"}
-              </button>
-              {stripeError && <div className="text-red-600 text-sm mt-2">{stripeError}</div>}
-            </div>
-          </div>
-        )}
+        <UpgradePlanModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          onUpgrade={handleStripe}
+          loading={stripeLoading}
+          error={stripeError}
+          coupon={coupon}
+          onCouponChange={setCoupon}
+          onApplyCoupon={() => {}}
+          couponLoading={couponLoading}
+          couponError={couponError}
+        />
+
+        {/* Modal Cancelar Suscripción */}
+        <CancelSubscriptionModal
+          isOpen={showCancelModal}
+          onClose={() => { setShowCancelModal(false); setCancelError(null); }}
+          onConfirmCancel={handleCancelSubscription}
+          loading={cancelLoading}
+          error={cancelError}
+        />
+
       <SettingsSection
         title="Información Personal"
         description="Visualiza y edita tu información de perfil"
@@ -687,11 +721,12 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
               </label>
               <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg">
                 <span className={`inline-flex items-center gap-2 text-sm font-medium ${
-                  user?.plan === 'free' ? 'text-gray-600' : 'text-[#993331]'
+                  isSubscriptionActive ? 'text-[#993331]' : 'text-gray-600'
                 }`}>
-                  {user?.plan === 'free' && 'Plan Gratuito'}
-                  {user?.plan === 'premium' && 'Plan Premium'}
-                  {user?.plan === 'pro' && 'Plan Pro'}
+                  {isSubscriptionActive && (
+                    <span className="inline-flex h-2 w-2 rounded-full bg-green-500" />
+                  )}
+                  {userPlanLabel}
                 </span>
               </div>
             </div>
@@ -758,15 +793,15 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
       >
         <SettingsItem
           label="Plan actual"
-          description={user?.plan ? planNames[user.plan] : "No disponible"}
+          description={userPlanLabel}
         >
-          {user?.plan === "free" && (
+          {!isSubscriptionActive && (
             <button className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#993331] to-[#BA5149] rounded-lg hover:shadow-lg transition-all"
               onClick={() => setShowUpgradeModal(true)}>
               Mejorar Plan
             </button>
           )}
-          {user?.plan !== "free" && (
+          {isSubscriptionActive && (
             <span className="px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg">
               Activo
             </span>
@@ -783,7 +818,6 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
                   if (subscription?.status === 'canceled') return 'Cancelada';
                   return subscription?.status || 'Desconocido';
                 }
-                // Si no está suscrito pero tiene vigencia futura
                 if (subscription && subscription.current_period_end && new Date(subscription.current_period_end) > new Date()) {
                   return `Cancelada (beneficios hasta ${new Date(subscription.current_period_end).toLocaleDateString('es-ES', {
                     day: 'numeric', month: 'long', year: 'numeric'
@@ -834,6 +868,21 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
                   year: 'numeric'
                 }) : "No disponible")}
             />
+
+            {/* Botón de cancelar suscripción — solo visible si la suscripción está activa */}
+            {isSubscriptionActive && (
+              <SettingsItem
+                label="Cancelar suscripción"
+                description="Puedes cancelar tu suscripción en cualquier momento"
+              >
+                <button
+                  onClick={() => setShowCancelModal(true)}
+                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                >
+                  Cancelar plan
+                </button>
+              </SettingsItem>
+            )}
           </>
         )}
       </SettingsSection>

@@ -3,6 +3,8 @@ export { SettingsSelectItem, SettingsToggleItem, SettingsToggleSelectItem } from
 export { SettingsItem } from "./components/SettingsItem";
 export { SettingsSection } from "./components/SettingsSection";
 export { SettingsSidebar } from "./components/SettingsSidebar";
+export { UpgradePlanModal } from "./components/UpgradePlanModal";
+export { CancelSubscriptionModal } from "./components/CancelSubscriptionModal";
 export { useSettings } from "./hooks/useSettings";
 export {
   getUserSettings,
