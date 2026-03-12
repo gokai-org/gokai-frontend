@@ -102,7 +102,8 @@ export function RecentActivity({
   title = "Actividad reciente",
   loading,
 }: RecentActivityProps) {
-  const items = activities ?? defaultActivities;
+const MAX_ITEMS = 8;
+const items = (activities ?? defaultActivities).slice(0, MAX_ITEMS);
 
   if (loading) {
     return (
@@ -130,9 +131,15 @@ export function RecentActivity({
         className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
       >
         <h3 className="text-lg font-extrabold text-gray-900 mb-4">{title}</h3>
-        <p className="text-sm text-gray-400 text-center py-8">
-          Sin actividad reciente aún.
-        </p>
+        <div className="flex flex-col items-center py-8 gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-[#993331]/10 flex items-center justify-center">
+            <Zap className="w-7 h-7 text-[#993331]/40" />
+          </div>
+          <p className="text-sm font-semibold text-gray-500">Nada por aquí todavía</p>
+          <p className="text-xs text-gray-400 text-center max-w-[220px]">
+            Tus lecciones de kanji, kana, gramática y repasos aparecerán aquí en tiempo real.
+          </p>
+        </div>
       </motion.div>
     );
   }
@@ -145,9 +152,6 @@ export function RecentActivity({
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-        <button className="text-xs font-bold text-[#993331] hover:underline">
-          Ver todo
-        </button>
       </div>
 
       <motion.div

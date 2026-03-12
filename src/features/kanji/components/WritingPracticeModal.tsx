@@ -15,6 +15,8 @@ import {
   getFeedbackColor,
   type StrokeValidationResult,
 } from "@/features/kanji/lib/strokeValidation";
+import { useSubmitKanjiLesson } from "@/features/kanji/hooks/useSubmitKanjiLesson";
+import type { KanjiLessonAnswerBody } from "@/features/kanji/types";
 
 type PracticeStep = "loading" | "demo" | "practice" | "result";
 
@@ -50,6 +52,10 @@ export function WritingPracticeModal({
   const [strokeData, setStrokeData] = useState<KanjiStrokeData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usingMock, setUsingMock] = useState(false);
+
+  // Submit hook
+  const { submit: submitLesson, loading: submitting } = useSubmitKanjiLesson();
+  const hasSubmitted = useRef(false);
 
   // Responsive canvas sizes
   const demoSize = useCanvasSize(260, 80);
@@ -200,6 +206,7 @@ export function WritingPracticeModal({
     setStrokeResults([]);
     setLastFeedback(null);
     setFlashError(false);
+    hasSubmitted.current = false;
     startTime.current = Date.now();
     setStep("practice");
   }, []);
@@ -231,6 +238,48 @@ export function WritingPracticeModal({
     if (scorePercent >= 50) return { label: "Aceptable", color: "text-amber-600" };
     return { label: "Sigue practicando", color: "text-orange-600" };
   }, [scorePercent]);
+
+  // Submit results to backend when entering result step
+  useEffect(() => {
+    if (step !== "result" || hasSubmitted.current || strokeResults.length === 0) return;
+
+    // Guard: only submit when ALL exercises are actually completed
+    if (strokeResults.length !== totalStrokes) {
+      console.warn(
+        `[SUBMIT] Waiting: answers (${strokeResults.length}) !== totalExercises (${totalStrokes})`,
+      );
+      return;
+    }
+
+    hasSubmitted.current = true;
+
+    const durationSeconds = startTime.current > 0
+      ? Math.round((Date.now() - startTime.current) / 1000)
+      : 0;
+    const correct = strokeResults.filter((r) => r.validation.isCorrect).length;
+
+    const answers: KanjiLessonAnswerBody[] = strokeResults.map((r) => ({
+      exerciseType: "writing" as const,
+      points: Math.max(0, r.pointsDelta),
+      duration: Math.round(durationSeconds / totalStrokes),
+      isCorrect: r.validation.isCorrect,
+    }));
+
+    console.log(
+      `[SUBMIT] Sending: totalExercises=${totalStrokes}, correctExercises=${correct}, answers.length=${answers.length}`,
+    );
+
+    submitLesson({
+      lessonId: crypto.randomUUID(),
+      kanjiId: kanji.id,
+      mode: "writing",
+      score: scorePercent,
+      duration: durationSeconds,
+      totalExercises: totalStrokes,
+      correctExercises: correct,
+      answers,
+    }).catch(() => {});
+  }, [step, strokeResults, kanji.id, totalStrokes, scorePercent, submitLesson]);
 
   /* ── Framer‑motion helpers ── */
   const overlayVariants = {
@@ -282,7 +331,8 @@ export function WritingPracticeModal({
           exit="exit"
           className={[
             "bg-white w-full shadow-2xl ring-1 ring-black/5 flex flex-col",
-            "max-w-lg rounded-3xl max-h-[95dvh]",
+            step === "result" ? "max-w-3xl" : "max-w-lg",
+            "rounded-3xl max-h-[95dvh]",
             "max-sm:max-w-none max-sm:mx-auto max-sm:w-[calc(100vw-2rem)]",
             "max-sm:max-h-[92dvh] max-sm:rounded-3xl",
           ].join(" ")}
@@ -684,203 +734,157 @@ export function WritingPracticeModal({
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4 }}
-                className="flex flex-col items-center gap-5 py-2"
+                className="flex flex-col md:flex-row md:items-start md:gap-8 gap-5 py-2"
               >
-                {/* Score ring */}
-                <motion.div
-                  initial={{ scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.15, type: "spring", stiffness: 200, damping: 15 }}
-                  className="relative"
-                >
-                  <div
-                    className={`absolute inset-[-8px] rounded-full blur-xl ${
-                      scorePercent >= 70
-                        ? "bg-emerald-400/20"
-                        : scorePercent >= 50
-                        ? "bg-amber-400/20"
-                        : "bg-[#993331]/15"
-                    }`}
-                  />
-                  <div className="relative w-28 h-28 rounded-full flex flex-col items-center justify-center">
-                    {/* SVG ring progress */}
-                    <svg className="absolute inset-0 w-28 h-28 -rotate-90" viewBox="0 0 112 112">
-                      <circle
-                        cx="56"
-                        cy="56"
-                        r="50"
-                        fill="none"
-                        stroke="#f3f4f6"
-                        strokeWidth="6"
-                      />
-                      <motion.circle
-                        cx="56"
-                        cy="56"
-                        r="50"
-                        fill="none"
-                        stroke={scorePercent >= 70 ? "#10b981" : scorePercent >= 50 ? "#f59e0b" : "#993331"}
-                        strokeWidth="6"
-                        strokeLinecap="round"
-                        strokeDasharray={`${2 * Math.PI * 50}`}
-                        initial={{ strokeDashoffset: 2 * Math.PI * 50 }}
-                        animate={{
-                          strokeDashoffset:
-                            2 * Math.PI * 50 * (1 - scorePercent / 100),
-                        }}
-                        transition={{ delay: 0.3, duration: 1, ease: [0.22, 1, 0.36, 1] }}
-                      />
-                    </svg>
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.6 }}
-                      className="text-3xl font-extrabold text-neutral-900"
-                    >
-                      {scorePercent}
-                    </motion.span>
-                    <motion.span
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.7 }}
-                      className="text-[10px] text-neutral-400 font-semibold -mt-0.5"
-                    >
-                      / 100
-                    </motion.span>
-                  </div>
-                </motion.div>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-center"
-                >
-                  <h3 className={`text-xl font-extrabold mb-1 ${resultGrade.color}`}>
-                    {resultGrade.label}
-                  </h3>
-                  <p className="text-sm text-neutral-500">
-                    Completaste los {totalStrokes} trazos de{" "}
-                    <span className="font-bold text-neutral-800">
-                      {kanji.symbol}
-                    </span>
-                  </p>
-                </motion.div>
-
-                {/* Stats row */}
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                  className="flex items-center gap-0 bg-neutral-50 rounded-2xl overflow-hidden border border-neutral-100"
-                >
-                  <div className="text-center px-5 py-3">
-                    <p className="text-lg font-extrabold text-neutral-900">
-                      {totalStrokes}
-                    </p>
-                    <p className="text-[10px] text-neutral-400 font-semibold">
-                      Trazos
-                    </p>
-                  </div>
-                  <div className="w-px h-10 bg-neutral-200" />
-                  <div className="text-center px-5 py-3">
-                    <p className="text-lg font-extrabold text-neutral-900">
-                      {durationSec}s
-                    </p>
-                    <p className="text-[10px] text-neutral-400 font-semibold">
-                      Tiempo
-                    </p>
-                  </div>
-                  <div className="w-px h-10 bg-neutral-200" />
-                  <div className="text-center px-5 py-3">
-                    <p className="text-lg font-extrabold text-neutral-900">
-                      {totalScore}
-                    </p>
-                    <p className="text-[10px] text-neutral-400 font-semibold">
-                      Puntos
-                    </p>
-                  </div>
-                </motion.div>
-
-                {/* Per-stroke breakdown */}
-                {strokeResults.length > 0 && (
+                {/* ── Left column: Score + Grade + Stats ── */}
+                <div className="flex flex-col items-center gap-5 md:flex-1 md:min-w-0">
+                  {/* Score ring */}
                   <motion.div
-                    initial={{ opacity: 0, y: 6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.6 }}
-                    className="w-full max-w-[300px]"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.15, type: "spring", stiffness: 200, damping: 15 }}
+                    className="relative"
                   >
-                    <p className="text-xs font-bold text-neutral-400 mb-2.5 text-center uppercase tracking-wide">
-                      Detalle por trazo
-                    </p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                      {strokeResults.map((sr, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.65 + i * 0.04 }}
-                          className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs ${getFeedbackColor(
-                            sr.validation.feedback
-                          )}`}
-                        >
-                          <span className="font-semibold">Trazo {i + 1}</span>
-                          <span className="font-bold">
-                            {getFeedbackLabel(sr.validation.feedback)}
-                          </span>
-                        </motion.div>
-                      ))}
+                    <div
+                      className={`absolute inset-[-8px] rounded-full blur-xl ${
+                        scorePercent >= 70
+                          ? "bg-emerald-400/20"
+                          : scorePercent >= 50
+                          ? "bg-amber-400/20"
+                          : "bg-[#993331]/15"
+                      }`}
+                    />
+                    <div className="relative w-28 h-28 rounded-full flex flex-col items-center justify-center">
+                      <svg className="absolute inset-0 w-28 h-28 -rotate-90" viewBox="0 0 112 112">
+                        <circle cx="56" cy="56" r="50" fill="none" stroke="#f3f4f6" strokeWidth="6" />
+                        <motion.circle
+                          cx="56" cy="56" r="50" fill="none"
+                          stroke={scorePercent >= 70 ? "#10b981" : scorePercent >= 50 ? "#f59e0b" : "#993331"}
+                          strokeWidth="6" strokeLinecap="round"
+                          strokeDasharray={`${2 * Math.PI * 50}`}
+                          initial={{ strokeDashoffset: 2 * Math.PI * 50 }}
+                          animate={{ strokeDashoffset: 2 * Math.PI * 50 * (1 - scorePercent / 100) }}
+                          transition={{ delay: 0.3, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                        />
+                      </svg>
+                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-3xl font-extrabold text-neutral-900">
+                        {scorePercent}
+                      </motion.span>
+                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="text-[10px] text-neutral-400 font-semibold -mt-0.5">
+                        / 100
+                      </motion.span>
                     </div>
                   </motion.div>
-                )}
 
-                {/* Completed kanji preview */}
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.7 }}
-                  className="border border-neutral-100 rounded-2xl p-3 bg-neutral-50/50"
-                >
-                  <KanjiStrokePlayer
-                    viewBox={strokeData.viewBox}
-                    strokes={strokeData.strokes}
-                    activeStrokeIndex={-1}
-                    size={previewSize}
-                  />
-                </motion.div>
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-center">
+                    <h3 className={`text-xl font-extrabold mb-1 ${resultGrade.color}`}>{resultGrade.label}</h3>
+                    <p className="text-sm text-neutral-500">
+                      Completaste los {totalStrokes} trazos de{" "}
+                      <span className="font-bold text-neutral-800">{kanji.symbol}</span>
+                    </p>
+                  </motion.div>
 
-                {/* Actions */}
-                <motion.div
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 }}
-                  className="flex flex-col w-full max-w-[280px] gap-2.5"
-                >
-                  <motion.button
-                    whileHover={{ scale: 1.02, y: -1 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleRetry}
-                    className="w-full py-3.5 bg-gradient-to-r from-[#993331] to-[#BA5149] text-white rounded-2xl font-bold shadow-lg shadow-[#993331]/15 hover:shadow-xl hover:shadow-[#993331]/20 transition-all flex items-center justify-center gap-2"
+                  {/* Stats row */}
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="flex items-center gap-0 bg-neutral-50 rounded-2xl overflow-hidden border border-neutral-100">
+                    <div className="text-center px-5 py-3">
+                      <p className="text-lg font-extrabold text-neutral-900">{totalStrokes}</p>
+                      <p className="text-[10px] text-neutral-400 font-semibold">Trazos</p>
+                    </div>
+                    <div className="w-px h-10 bg-neutral-200" />
+                    <div className="text-center px-5 py-3">
+                      <p className="text-lg font-extrabold text-neutral-900">{durationSec}s</p>
+                      <p className="text-[10px] text-neutral-400 font-semibold">Tiempo</p>
+                    </div>
+                    <div className="w-px h-10 bg-neutral-200" />
+                    <div className="text-center px-5 py-3">
+                      <p className="text-lg font-extrabold text-neutral-900">{totalScore}</p>
+                      <p className="text-[10px] text-neutral-400 font-semibold">Puntos</p>
+                    </div>
+                  </motion.div>
+
+                  {/* Submitting indicator */}
+                  {submitting && (
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-neutral-400 font-medium">
+                      Guardando resultado…
+                    </motion.p>
+                  )}
+
+                  {/* Actions */}
+                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex flex-col w-full max-w-[280px] gap-2.5">
+                    <motion.button
+                      whileHover={{ scale: 1.02, y: -1 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleRetry}
+                      className="w-full py-3.5 bg-gradient-to-r from-[#993331] to-[#BA5149] text-white rounded-2xl font-bold shadow-lg shadow-[#993331]/15 hover:shadow-xl hover:shadow-[#993331]/20 transition-all flex items-center justify-center gap-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Practicar de nuevo
+                    </motion.button>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={handleBackToDemo}
+                      className="w-full py-3 text-sm font-semibold text-neutral-600 bg-neutral-100 hover:bg-neutral-200 rounded-2xl transition"
+                    >
+                      Ver demostración
+                    </motion.button>
+                    <button onClick={onClose} className="w-full py-2.5 text-sm font-medium text-neutral-400 hover:text-neutral-600 transition">
+                      Cerrar
+                    </button>
+                  </motion.div>
+                </div>
+
+                {/* ── Right column: Stroke details + Preview (desktop) ── */}
+                <div className="flex flex-col items-center gap-5 md:flex-1 md:min-w-0">
+                  {/* Completed kanji preview */}
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.5 }}
+                    className="border border-neutral-100 rounded-2xl p-3 bg-neutral-50/50"
                   >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                    </svg>
-                    Practicar de nuevo
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={handleBackToDemo}
-                    className="w-full py-3 text-sm font-semibold text-neutral-600 bg-neutral-100 hover:bg-neutral-200 rounded-2xl transition"
-                  >
-                    Ver demostración
-                  </motion.button>
-                  <button
-                    onClick={onClose}
-                    className="w-full py-2.5 text-sm font-medium text-neutral-400 hover:text-neutral-600 transition"
-                  >
-                    Cerrar
-                  </button>
-                </motion.div>
+                    <KanjiStrokePlayer
+                      viewBox={strokeData.viewBox}
+                      strokes={strokeData.strokes}
+                      activeStrokeIndex={-1}
+                      size={previewSize}
+                    />
+                  </motion.div>
+
+                  {/* Per-stroke breakdown */}
+                  {strokeResults.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.6 }}
+                      className="w-full max-w-[300px]"
+                    >
+                      <p className="text-xs font-bold text-neutral-400 mb-2.5 text-center uppercase tracking-wide">
+                        Detalle por trazo
+                      </p>
+                      <div className="grid grid-cols-2 gap-1.5">
+                        {strokeResults.map((sr, i) => (
+                          <motion.div
+                            key={i}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.65 + i * 0.04 }}
+                            className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs ${getFeedbackColor(
+                              sr.validation.feedback
+                            )}`}
+                          >
+                            <span className="font-semibold">Trazo {i + 1}</span>
+                            <span className="font-bold">
+                              {getFeedbackLabel(sr.validation.feedback)}
+                            </span>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </div>
               </motion.div>
             )}
           </div>

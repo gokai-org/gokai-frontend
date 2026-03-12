@@ -113,13 +113,45 @@ export function ProgressRing({
   subtitle = "Distribución de estudio por categoría",
   loading,
 }: ProgressRingProps) {
-  if (loading || !categories || categories.length === 0) {
+  if (loading) {
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
         <div className="h-5 w-32 bg-gray-200 rounded mb-2" />
         <div className="h-3 w-48 bg-gray-100 rounded mb-6" />
         <div className="h-[180px] w-[180px] mx-auto bg-gray-50 rounded-full" />
       </div>
+    );
+  }
+
+  if (!categories || categories.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      >
+        <div className="mb-4">
+          <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
+          <p className="text-xs text-gray-500">{subtitle}</p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-6 gap-3">
+          <div className="relative w-[140px] h-[140px]">
+            <svg width={140} height={140} viewBox="0 0 140 140">
+              <circle cx="70" cy="70" r="55" fill="none" stroke="#f3f4f6" strokeWidth="16" />
+              <circle cx="70" cy="70" r="55" fill="none" stroke="#e5e7eb" strokeWidth="16" strokeDasharray="12 8" opacity={0.5} />
+            </svg>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-2xl font-extrabold text-gray-300">0</span>
+              <span className="text-xs text-gray-300">items</span>
+            </div>
+          </div>
+          <p className="text-sm font-semibold text-gray-500">Sin distribución aún</p>
+          <p className="text-xs text-gray-400 text-center max-w-[200px]">
+            A medida que estudies, verás aquí cómo se distribuye tu progreso entre categorías.
+          </p>
+        </div>
+      </motion.div>
     );
   }
 

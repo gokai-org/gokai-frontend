@@ -203,6 +203,13 @@ export function KanjiWritingCanvas({
         };
         completedStrokes.current.push(drawnStroke);
         onStrokeDrawn(drawnStroke);
+      } else if (currentPoints.current.length === 1) {
+        // Even a single-point tap counts as a stroke attempt (miss)
+        const drawnStroke: DrawnStroke = {
+          points: [...currentPoints.current, currentPoints.current[0]],
+        };
+        completedStrokes.current.push(drawnStroke);
+        onStrokeDrawn(drawnStroke);
       }
       currentPoints.current = [];
       scheduleRedraw();

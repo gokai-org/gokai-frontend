@@ -31,13 +31,52 @@ export function SkillRadarChart({
 }: SkillRadarChartProps) {
   const chartData = (data ?? []).map((d) => ({ ...d, fullMark: 100 }));
 
-  if (loading || !data || data.length === 0) {
+  if (loading) {
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
         <div className="h-5 w-32 bg-gray-200 rounded mb-2" />
         <div className="h-3 w-48 bg-gray-100 rounded mb-6" />
         <div className="h-[280px] bg-gray-50 rounded-xl" />
       </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      >
+        <div className="mb-4">
+          <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
+          <p className="text-xs text-gray-500">{subtitle}</p>
+        </div>
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <div className="relative w-24 h-24">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              <polygon
+                points="50,10 90,35 80,80 20,80 10,35"
+                fill="none"
+                stroke="#e5e7eb"
+                strokeWidth="1.5"
+                strokeDasharray="4 3"
+              />
+              <polygon
+                points="50,25 75,40 70,70 30,70 25,40"
+                fill="none"
+                stroke="#f3f4f6"
+                strokeWidth="1"
+              />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold text-gray-500">Tus habilidades se mostrarán aquí</p>
+          <p className="text-xs text-gray-400 text-center max-w-[200px]">
+            Practica kanji, kana, vocabulario y gramática para ver tu radar de dominio.
+          </p>
+        </div>
+      </motion.div>
     );
   }
   return (

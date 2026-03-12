@@ -23,6 +23,14 @@ export async function GET(req: NextRequest) {
   if (!raw) return NextResponse.json({ error: "No autenticado" }, { status: 401 });
 
   const token = normalizeBearerToken(raw);
+
+  // Extraer userId del JWT
+  const tokenParts = token.split('.');
+  if (tokenParts.length !== 3) return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+  const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+  const userId = payload.userId || payload.sub || payload.id;
+  if (!userId) return NextResponse.json({ error: "No se encontró ID de usuario" }, { status: 401 });
+
   const weeksParam = req.nextUrl.searchParams.get("weeks") || "12";
   const weeks = Number(weeksParam);
 
@@ -33,7 +41,7 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const upstream = await fetch(`${BASE}/users/stats/streak?weeks=${weeks}`, {
+  const upstream = await fetch(`${BASE}/users/${userId}/stats/streak?weeks=${weeks}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });

@@ -53,13 +53,38 @@ export function MonthlyProgressChart({
   subtitle = "Evolución de tu precisión y sesiones",
   loading,
 }: MonthlyProgressChartProps) {
-  if (loading || !data || data.length === 0) {
+  if (loading) {
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
         <div className="h-5 w-40 bg-gray-200 rounded mb-2" />
         <div className="h-3 w-56 bg-gray-100 rounded mb-6" />
         <div className="h-[220px] bg-gray-50 rounded-xl" />
       </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      >
+        <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
+        <p className="text-xs text-gray-500 mb-6">{subtitle}</p>
+        <div className="flex flex-col items-center justify-center py-10 gap-3">
+          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
+            <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+            </svg>
+          </div>
+          <p className="text-sm font-semibold text-gray-500">Sin datos mensuales aún</p>
+          <p className="text-xs text-gray-400 text-center max-w-[220px]">
+            Tu evolución mes a mes aparecerá aquí conforme vayas estudiando.
+          </p>
+        </div>
+      </motion.div>
     );
   }
 

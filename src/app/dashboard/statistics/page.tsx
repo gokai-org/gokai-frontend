@@ -32,12 +32,45 @@ const sectionVariants = {
 
 /* Page  */
 
+function getBannerMessage(accuracy: number, streak: number, hasData: boolean) {
+  if (!hasData) return { title: "¡Bienvenido a tus estadísticas!", subtitle: "Aquí verás tu progreso a medida que estudies." };
+  if (streak >= 7 && accuracy >= 80) return { title: "¡Racha imparable!", subtitle: "Tu consistencia y precisión son admirables." };
+  if (accuracy >= 90) return { title: "¡Excelente precisión!", subtitle: "Tu dominio del japonés está en otro nivel." };
+  if (accuracy >= 70) return { title: "¡Buen progreso!", subtitle: "Sigue así, vas por buen camino." };
+  if (streak >= 3) return { title: "¡Buena racha!", subtitle: "La constancia es la clave del éxito." };
+  if (accuracy > 0) return { title: "¡Sigue practicando!", subtitle: "Cada sesión te acerca más a la fluidez." };
+  return { title: "¡Tu aventura comienza aquí!", subtitle: "Completa tu primera lección para ver tus estadísticas." };
+}
+
 export default function Page() {
   const { data, loading, error, period, setPeriod, refresh } = useStats();
 
-  const overview = data.overview;
-  const accuracy = overview?.accuracy ?? 0;
-  const streak = overview?.current_streak ?? 0;
+const overview = data.overview;
+const streak = overview?.current_streak ?? 0;
+const accuracy = overview?.accuracy ?? 0;
+
+const scoreEntries =
+  data.recentActivity?.activities?.filter(
+    (a) => typeof a.score === "number",
+  ) ?? [];
+
+const averageScore =
+  scoreEntries.length > 0
+    ? Math.round(
+        scoreEntries.reduce((sum, a) => sum + (a.score ?? 0), 0) /
+          scoreEntries.length,
+      )
+    : 0;
+
+const hasAnyData = !!(overview && (
+  overview.study_hours > 0 ||
+  overview.kanji_learned > 0 ||
+  overview.hiragana_learned > 0 ||
+  overview.katakana_learned > 0 ||
+  overview.reviews_completed > 0
+));
+
+const banner = getBannerMessage(accuracy, streak, hasAnyData);
 
   return (
     <DashboardShell
@@ -95,7 +128,7 @@ export default function Page() {
               transition={{ delay: 0.3, duration: 0.4 }}
               className="text-3xl md:text-4xl font-extrabold tracking-tight"
             >
-              ¡Excelente progreso!
+              {banner.title}
             </motion.h2>
             <motion.p
               initial={{ opacity: 0, y: 8 }}
@@ -103,10 +136,10 @@ export default function Page() {
               transition={{ delay: 0.4, duration: 0.4 }}
               className="text-white/80 mt-2 text-sm max-w-md"
             >
-              統計を確認して、学習の進歩を追跡しましょう。
+              {banner.subtitle}
               <br />
               <span className="text-white/60 text-xs">
-                Revisa tus estadísticas y sigue tu avance de aprendizaje.
+                統計を確認して、学習の進歩を追跡しましょう。
               </span>
             </motion.p>
           </div>
@@ -132,10 +165,10 @@ export default function Page() {
             ) : (
               <>
                 <div className="text-center">
-                  <p className="text-4xl font-extrabold">{accuracy}%</p>
-                  <p className="text-xs text-white/70 font-medium mt-1">
-                    Precisión global
-                  </p>
+                <p className="text-4xl font-extrabold">{averageScore}%</p>
+                <p className="text-xs text-white/70 font-medium mt-1">
+                  Precisión promedio
+                </p>
                 </div>
                 <div className="w-px h-12 bg-white/20" />
                 <div className="text-center">
@@ -158,7 +191,7 @@ export default function Page() {
         animate="visible"
         className="mb-8"
       >
-        <StatsOverview data={data.overview} loading={loading || !!error} />
+        <StatsOverview data={data.overview} loading={loading} />
       </motion.div>
 
       {/* ── Charts row 1: Weekly + Monthly ─────────────── */}
@@ -180,8 +213,8 @@ export default function Page() {
           subtitle="Tu tiempo de estudio y evolución de rendimiento"
         />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <WeeklyActivityChart data={data.activity?.weekly} loading={loading || !!error} />
-          <MonthlyProgressChart data={data.activity?.monthly} loading={loading || !!error} />
+          <WeeklyActivityChart data={data.activity?.weekly} loading={loading} />
+          <MonthlyProgressChart data={data.activity?.monthly} loading={loading} />
         </div>
       </motion.div>
 
@@ -204,13 +237,13 @@ export default function Page() {
           subtitle="Tu dominio por área y actividad reciente"
         />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          <SkillRadarChart data={data.skills?.skills} loading={loading || !!error} />
+          <SkillRadarChart data={data.skills?.skills} loading={loading} />
           <ProgressRing
             total={data.skills?.distribution.total}
             categories={data.skills?.distribution.categories}
-            loading={loading || !!error}
+            loading={loading}
           />
-          <RecentActivity activities={data.recentActivity?.activities} loading={loading || !!error} />
+          <RecentActivity activities={data.recentActivity?.activities} loading={loading} />
         </div>
       </motion.div>
 
@@ -232,7 +265,7 @@ export default function Page() {
           titleClassName="text-2xl font-extrabold tracking-tight text-gray-900"
           subtitle="Tu consistencia a lo largo del tiempo"
         />
-        <StudyStreakCalendar data={data.streakCalendar} loading={loading || !!error} />
+        <StudyStreakCalendar data={data.streakCalendar} loading={loading} />
       </motion.div>
 
       {/* ── CTA ───────────────────────────────────────── */}

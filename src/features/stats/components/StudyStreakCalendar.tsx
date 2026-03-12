@@ -85,6 +85,8 @@ export function StudyStreakCalendar({
     );
   }
 
+  const hasActivity = totalDays > 0;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -154,6 +156,17 @@ export function StudyStreakCalendar({
         )}
         <span className="text-[10px] text-gray-400">Más</span>
       </div>
+
+      {!hasActivity && (
+        <div className="mt-4 text-center border-t border-gray-50 pt-4">
+          <p className="text-sm font-semibold text-gray-500">
+            Tu calendario está esperando por ti
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Cada sesión de estudio iluminará un cuadro. ¡Comienza hoy!
+          </p>
+        </div>
+      )}
     </motion.div>
   );
 }
