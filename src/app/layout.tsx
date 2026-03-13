@@ -14,12 +14,14 @@ export const metadata: Metadata = {
   description: "Plataforma de aprendizaje de japonés con IA y rutas dinámicas.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="es" className={montserrat.variable}>
-      <body className="min-h-dvh overflow-x-hidden">
-        {children}
-      </body>
+      <body className="min-h-dvh overflow-x-hidden">{children}</body>
     </html>
   );
 }

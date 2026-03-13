@@ -44,7 +44,7 @@ export default function NoticeCard({
         "group relative bg-white rounded-2xl border transition-colors duration-200",
         notice.read
           ? "border-gray-100 hover:border-gray-200"
-          : "border-[#993331]/15 shadow-sm shadow-[#993331]/5 hover:shadow-md hover:shadow-[#993331]/8"
+          : "border-[#993331]/15 shadow-sm shadow-[#993331]/5 hover:shadow-md hover:shadow-[#993331]/8",
       )}
     >
       {/* unread accent */}
@@ -59,7 +59,7 @@ export default function NoticeCard({
             className={cls(
               "w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform duration-200 group-hover:scale-105",
               cfg.bg,
-              cfg.color
+              cfg.color,
             )}
           >
             <Icon className="w-5 h-5" />
@@ -74,7 +74,7 @@ export default function NoticeCard({
                   <h3
                     className={cls(
                       "text-sm font-bold leading-snug",
-                      notice.read ? "text-gray-700" : "text-gray-900"
+                      notice.read ? "text-gray-700" : "text-gray-900",
                     )}
                   >
                     {notice.title}
@@ -92,7 +92,7 @@ export default function NoticeCard({
                     className={cls(
                       "text-[10px] font-bold px-2 py-0.5 rounded-full",
                       cfg.bg,
-                      cfg.color
+                      cfg.color,
                     )}
                   >
                     {cfg.label}
@@ -108,17 +108,27 @@ export default function NoticeCard({
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
                 <button
                   onClick={() => onToggleRead(notice.id)}
-                  title={notice.read ? "Marcar como no leída" : "Marcar como leída"}
+                  title={
+                    notice.read ? "Marcar como no leída" : "Marcar como leída"
+                  }
                   className="p-1.5 rounded-lg text-gray-400 hover:text-[#993331] hover:bg-[#993331]/5 transition-colors"
                 >
-                  {notice.read ? <MailOpen className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                  {notice.read ? (
+                    <MailOpen className="w-4 h-4" />
+                  ) : (
+                    <Check className="w-4 h-4" />
+                  )}
                 </button>
                 <button
                   onClick={() => onTogglePin(notice.id)}
                   title={notice.pinned ? "Desfijar" : "Fijar"}
                   className="p-1.5 rounded-lg text-gray-400 hover:text-[#993331] hover:bg-[#993331]/5 transition-colors"
                 >
-                  {notice.pinned ? <PinOff className="w-4 h-4" /> : <Pin className="w-4 h-4" />}
+                  {notice.pinned ? (
+                    <PinOff className="w-4 h-4" />
+                  ) : (
+                    <Pin className="w-4 h-4" />
+                  )}
                 </button>
                 <button
                   onClick={() => onDelete(notice.id)}
@@ -133,12 +143,15 @@ export default function NoticeCard({
             {/* description */}
             <button
               onClick={() => longText && setExpanded((p) => !p)}
-              className={cls("text-left w-full mt-2", !longText && "cursor-default")}
+              className={cls(
+                "text-left w-full mt-2",
+                !longText && "cursor-default",
+              )}
             >
               <p
                 className={cls(
                   "text-xs leading-relaxed",
-                  notice.read ? "text-gray-400" : "text-gray-500"
+                  notice.read ? "text-gray-400" : "text-gray-500",
                 )}
               >
                 {expanded || !longText

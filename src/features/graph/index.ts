@@ -7,4 +7,10 @@ export * from "./lib/graphTypes";
 export * from "./lib/graphConfig";
 export * from "./lib/graphUtils";
 export * from "./lib/graphBuilder";
-export type { Theme, Subtheme, SubthemeWithTheme, Graph, GraphNode } from "./types";
+export type {
+  Theme,
+  Subtheme,
+  SubthemeWithTheme,
+  Graph,
+  GraphNode,
+} from "./types";

@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { LibraryItem } from '@/features/library/types';
-import { Thumbnail } from './Thumbnail';
-import { MetaInfo } from './MetaInfo';
-import { ProgressBar } from './ProgressBar';
+import { LibraryItem } from "@/features/library/types";
+import { Thumbnail } from "./Thumbnail";
+import { MetaInfo } from "./MetaInfo";
+import { ProgressBar } from "./ProgressBar";
 
 export interface ContentItemProps {
   id: string;
@@ -39,7 +39,7 @@ export function LibraryCard({ item, onClick }: LibraryCardProps) {
             {item.title}
           </h3>
         </div>
-        
+
         <p className="text-xs text-gray-600 line-clamp-1 mb-2">
           {item.description}
         </p>

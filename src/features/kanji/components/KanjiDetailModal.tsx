@@ -9,7 +9,6 @@ import {
 import { WritingPracticeModal } from "./WritingPracticeModal";
 import { KanjiStrokePlayer } from "./KanjiStrokePlayer";
 
-/* ── Framer-motion variants (consistent with WritingPracticeModal) ── */
 const overlayVariants = {
   hidden: { opacity: 0 },
   visible: { opacity: 1 },
@@ -104,8 +103,7 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
   const readings = readingsToArray(kanji.readings);
   const meanings = meaningsToArray(kanji.meanings);
   const primaryMeaning = getPrimaryMeaning(kanji.meanings);
-  const hasStrokes =
-    kanji.strokes && kanji.strokes.length > 0 && kanji.viewBox;
+  const hasStrokes = kanji.strokes && kanji.strokes.length > 0 && kanji.viewBox;
 
   if (showWritingPractice) {
     return (
@@ -220,7 +218,7 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
                       className="cursor-pointer group"
                       onClick={() =>
                         setActiveStroke((s) =>
-                          s >= kanji.strokes!.length - 1 ? -1 : s + 1
+                          s >= kanji.strokes!.length - 1 ? -1 : s + 1,
                         )
                       }
                       title="Clic para ver trazos"

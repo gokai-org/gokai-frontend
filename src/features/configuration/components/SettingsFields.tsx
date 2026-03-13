@@ -85,7 +85,11 @@ export function SettingsToggleSelectItem({
 }: SettingsToggleSelectItemProps) {
   return (
     <SettingsItem label={label} description={description} icon={icon}>
-      <Toggle enabled={toggleEnabled} onChange={onToggleChange} disabled={toggleDisabled} />
+      <Toggle
+        enabled={toggleEnabled}
+        onChange={onToggleChange}
+        disabled={toggleDisabled}
+      />
       <Dropdown
         value={value}
         options={options}

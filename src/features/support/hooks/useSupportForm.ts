@@ -71,12 +71,17 @@ export interface UseSupportFormReturn {
   submitting: boolean;
   submitted: boolean;
   ticketId: string | null;
-  setField: <K extends keyof SupportFormState>(key: K, value: SupportFormState[K]) => void;
+  setField: <K extends keyof SupportFormState>(
+    key: K,
+    value: SupportFormState[K],
+  ) => void;
   submit: () => Promise<void>;
   reset: () => void;
 }
 
-export function useSupportForm(opts: UseSupportFormOptions = {}): UseSupportFormReturn {
+export function useSupportForm(
+  opts: UseSupportFormOptions = {},
+): UseSupportFormReturn {
   const initial: SupportFormState = { ...INITIAL_STATE, ...opts.defaults };
 
   const [form, setForm] = useState<SupportFormState>(initial);
@@ -144,14 +149,26 @@ export function useSupportForm(opts: UseSupportFormOptions = {}): UseSupportForm
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { form, errors, submitError, submitting, submitted, ticketId, setField, submit, reset };
+  return {
+    form,
+    errors,
+    submitError,
+    submitting,
+    submitted,
+    ticketId,
+    setField,
+    submit,
+    reset,
+  };
 }
 
 function extractErrorMessage(err: unknown): string {
   if (!(err instanceof Error)) return "Error al enviar el ticket";
 
   const raw = err.message || "";
-  const jsonPart = raw.startsWith("HTTP") ? raw.split(": ").slice(1).join(": ") : "";
+  const jsonPart = raw.startsWith("HTTP")
+    ? raw.split(": ").slice(1).join(": ")
+    : "";
 
   if (jsonPart) {
     try {

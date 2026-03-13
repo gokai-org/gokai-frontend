@@ -9,7 +9,8 @@ const BASE = process.env.GOKAI_CONTENT_API_BASE!;
 /** GET /api/content/recent → proxy a GET /content/recent */
 export async function GET(req: NextRequest) {
   const raw = getTokenFromRequest(req);
-  if (!raw) return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
+  if (!raw)
+    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
 
   const token = normalizeBearerToken(raw);
   const upstream = await fetch(`${BASE}/content/recent`, {
@@ -26,7 +27,8 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   const raw = getTokenFromRequest(req);
-  if (!raw) return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
+  if (!raw)
+    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
 
   const token = normalizeBearerToken(raw);
   const body = await req.json();

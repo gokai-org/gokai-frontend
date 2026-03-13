@@ -11,10 +11,11 @@ const BASE = process.env.GOKAI_CONTENT_API_BASE!;
  */
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const raw = getTokenFromRequest(req);
-  if (!raw) return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
+  if (!raw)
+    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
 
   const { id } = await params;
   const token = normalizeBearerToken(raw);

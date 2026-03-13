@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useCallback, useRef, useState } from "react";
-import { motion, AnimatePresence, useMotionValue, useTransform, animate } from "framer-motion";
+import {
+  motion,
+  AnimatePresence,
+  useMotionValue,
+  useTransform,
+  animate,
+} from "framer-motion";
 import {
   X,
   ChevronLeft,
@@ -18,7 +24,9 @@ function useDirection() {
   const dirRef = useRef<1 | -1>(1);
   return {
     get: () => dirRef.current,
-    set: (d: 1 | -1) => { dirRef.current = d; },
+    set: (d: 1 | -1) => {
+      dirRef.current = d;
+    },
   };
 }
 
@@ -42,8 +50,14 @@ export function GuideTourOverlay() {
     (e: KeyboardEvent) => {
       if (!activeTour) return;
       if (e.key === "Escape") closeTour();
-      if (e.key === "ArrowRight") { direction.set(1); nextStep(); }
-      if (e.key === "ArrowLeft") { direction.set(-1); prevStep(); }
+      if (e.key === "ArrowRight") {
+        direction.set(1);
+        nextStep();
+      }
+      if (e.key === "ArrowLeft") {
+        direction.set(-1);
+        prevStep();
+      }
     },
     [activeTour, closeTour, nextStep, prevStep, direction],
   );
@@ -60,7 +74,9 @@ export function GuideTourOverlay() {
     } else {
       document.body.style.overflow = "";
     }
-    return () => { document.body.style.overflow = ""; };
+    return () => {
+      document.body.style.overflow = "";
+    };
   }, [activeTour]);
 
   if (!activeTour && !visible) return null;
@@ -164,7 +180,11 @@ export function GuideTourOverlay() {
                     <div className="flex items-center gap-2">
                       <motion.div
                         animate={{ rotate: [0, 15, -15, 0] }}
-                        transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+                        transition={{
+                          duration: 2,
+                          repeat: Infinity,
+                          repeatDelay: 3,
+                        }}
                       >
                         <Sparkles className="w-4 h-4 text-white/60" />
                       </motion.div>
@@ -325,7 +345,11 @@ export function GuideTourOverlay() {
                       <motion.div
                         layoutId="active-ring"
                         className="absolute w-6 h-6 rounded-full border-2 border-white/60"
-                        transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 28,
+                        }}
                       />
                     )}
                     {/* Dot */}
@@ -339,7 +363,11 @@ export function GuideTourOverlay() {
                             ? "rgba(255,255,255,0.6)"
                             : "rgba(255,255,255,0.2)",
                       }}
-                      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 500,
+                        damping: 30,
+                      }}
                       className="rounded-full"
                     />
                   </motion.button>

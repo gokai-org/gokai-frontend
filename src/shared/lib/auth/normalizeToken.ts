@@ -1,7 +1,10 @@
 export function normalizeBearerToken(raw: string) {
   let t = raw.trim();
 
-  if ((t.startsWith('"') && t.endsWith('"')) || (t.startsWith("'") && t.endsWith("'"))) {
+  if (
+    (t.startsWith('"') && t.endsWith('"')) ||
+    (t.startsWith("'") && t.endsWith("'"))
+  ) {
     t = t.slice(1, -1).trim();
   }
 

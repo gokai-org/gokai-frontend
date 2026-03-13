@@ -5,7 +5,11 @@ import { motion } from "framer-motion";
 import { SettingsSidebar } from "@/features/configuration/components/SettingsSidebar";
 import { SettingsSection } from "@/features/configuration/components/SettingsSection";
 import { SettingsItem } from "@/features/configuration/components/SettingsItem";
-import { SettingsSelectItem, SettingsToggleItem, SettingsToggleSelectItem } from "@/features/configuration/components/SettingsFields";
+import {
+  SettingsSelectItem,
+  SettingsToggleItem,
+  SettingsToggleSelectItem,
+} from "@/features/configuration/components/SettingsFields";
 import { IntegrationButton } from "@/features/configuration/components/IntegrationButton";
 import { getCurrentUser } from "@/features/auth/services/api";
 import type { User } from "@/features/auth/types";
@@ -34,7 +38,13 @@ export default function ConfigurationPage() {
   const [activeSection, setActiveSection] = useState("general");
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { settings, loading: settingsLoading, saving, error: settingsError, updateSection } = useSettings();
+  const {
+    settings,
+    loading: settingsLoading,
+    saving,
+    error: settingsError,
+    updateSection,
+  } = useSettings();
 
   useEffect(() => {
     async function loadUser() {
@@ -47,8 +57,11 @@ export default function ConfigurationPage() {
 
   return (
     <div className="flex h-full bg-white">
-      <SettingsSidebar activeItem={activeSection} onItemChange={setActiveSection} />
-      
+      <SettingsSidebar
+        activeItem={activeSection}
+        onItemChange={setActiveSection}
+      />
+
       <main className="flex-1 overflow-y-auto">
         <div className="max-w-4xl mx-auto p-4 md:p-8">
           <div className="mb-6 md:mb-8">
@@ -62,7 +75,9 @@ export default function ConfigurationPage() {
                 </p>
               </div>
               {saving && (
-                <span className="text-xs text-gray-400 animate-pulse">Guardando...</span>
+                <span className="text-xs text-gray-400 animate-pulse">
+                  Guardando...
+                </span>
               )}
               {settingsError && (
                 <span className="text-xs text-red-500">{settingsError}</span>
@@ -76,13 +91,49 @@ export default function ConfigurationPage() {
             </div>
           ) : (
             <div className="space-y-6 md:space-y-8">
-              {activeSection === "general" && <GeneralSettings settings={settings} updateSection={updateSection} />}
-              {activeSection === "notifications" && <NotificationSettings settings={settings} updateSection={updateSection} />}
-              {activeSection === "appearance" && <AppearanceSettings settings={settings} updateSection={updateSection} />}
-              {activeSection === "learning" && <LearningSettings settings={settings} updateSection={updateSection} />}
-              {activeSection === "accessibility" && <AccessibilitySettings settings={settings} updateSection={updateSection} />}
-              {activeSection === "privacy" && <PrivacySettings settings={settings} updateSection={updateSection} />}
-              {activeSection === "account" && <AccountSettings user={user} setUser={setUser} loading={loading} />}
+              {activeSection === "general" && (
+                <GeneralSettings
+                  settings={settings}
+                  updateSection={updateSection}
+                />
+              )}
+              {activeSection === "notifications" && (
+                <NotificationSettings
+                  settings={settings}
+                  updateSection={updateSection}
+                />
+              )}
+              {activeSection === "appearance" && (
+                <AppearanceSettings
+                  settings={settings}
+                  updateSection={updateSection}
+                />
+              )}
+              {activeSection === "learning" && (
+                <LearningSettings
+                  settings={settings}
+                  updateSection={updateSection}
+                />
+              )}
+              {activeSection === "accessibility" && (
+                <AccessibilitySettings
+                  settings={settings}
+                  updateSection={updateSection}
+                />
+              )}
+              {activeSection === "privacy" && (
+                <PrivacySettings
+                  settings={settings}
+                  updateSection={updateSection}
+                />
+              )}
+              {activeSection === "account" && (
+                <AccountSettings
+                  user={user}
+                  setUser={setUser}
+                  loading={loading}
+                />
+              )}
             </div>
           )}
         </div>
@@ -91,7 +142,13 @@ export default function ConfigurationPage() {
   );
 }
 
-function GeneralSettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+function GeneralSettings({
+  settings,
+  updateSection,
+}: {
+  settings: UserSettings;
+  updateSection: UpdateSectionFn;
+}) {
   const g = settings.general;
   return (
     <>
@@ -99,7 +156,6 @@ function GeneralSettings({ settings, updateSection }: { settings: UserSettings; 
         title="Preferencias Generales"
         description="Configura los ajustes básicos de la plataforma"
       >
-
         <SettingsToggleItem
           label="Confirmación de respuestas"
           description="Requiere confirmación antes de enviar respuestas"
@@ -131,7 +187,13 @@ function GeneralSettings({ settings, updateSection }: { settings: UserSettings; 
   );
 }
 
-function NotificationSettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+function NotificationSettings({
+  settings,
+  updateSection,
+}: {
+  settings: UserSettings;
+  updateSection: UpdateSectionFn;
+}) {
   const n = settings.notifications;
   return (
     <>
@@ -143,17 +205,23 @@ function NotificationSettings({ settings, updateSection }: { settings: UserSetti
           label="Frecuencia de notificaciones"
           description="Con qué frecuencia quieres recibir notificaciones agrupadas"
           toggleEnabled={n.emailNotifications}
-          onToggleChange={(v) => updateSection("notifications", { emailNotifications: v })}
+          onToggleChange={(v) =>
+            updateSection("notifications", { emailNotifications: v })
+          }
           value={n.notificationFrequency}
           options={["Inmediato", "Cada 3 horas", "Diario", "Semanal"]}
-          onChange={(v) => updateSection("notifications", { notificationFrequency: v })}
+          onChange={(v) =>
+            updateSection("notifications", { notificationFrequency: v })
+          }
         />
 
         <SettingsToggleItem
           label="Alertas prioritarias"
           description="Notificaciones críticas que te pueden interrumpir"
           enabled={n.priorityAlerts}
-          onChange={(v) => updateSection("notifications", { priorityAlerts: v })}
+          onChange={(v) =>
+            updateSection("notifications", { priorityAlerts: v })
+          }
         />
       </SettingsSection>
 
@@ -165,21 +233,37 @@ function NotificationSettings({ settings, updateSection }: { settings: UserSetti
           label="Activar horario silencioso"
           description="Define cuándo no quieres ser interrumpido"
           enabled={n.quietHoursEnabled}
-          onChange={(v) => updateSection("notifications", { quietHoursEnabled: v })}
+          onChange={(v) =>
+            updateSection("notifications", { quietHoursEnabled: v })
+          }
         />
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <SettingsSelectItem
             label="Días de la semana"
             value={n.quietHoursDays}
-            options={["Todos los días", "Lunes - Viernes", "Fines de semana", "Personalizado"]}
-            onChange={(v) => updateSection("notifications", { quietHoursDays: v })}
+            options={[
+              "Todos los días",
+              "Lunes - Viernes",
+              "Fines de semana",
+              "Personalizado",
+            ]}
+            onChange={(v) =>
+              updateSection("notifications", { quietHoursDays: v })
+            }
           />
           <SettingsSelectItem
             label="Horario"
             value={n.quietHoursTime}
-            options={["21:00 - 07:00", "22:00 - 08:00", "23:00 - 09:00", "Personalizado"]}
-            onChange={(v) => updateSection("notifications", { quietHoursTime: v })}
+            options={[
+              "21:00 - 07:00",
+              "22:00 - 08:00",
+              "23:00 - 09:00",
+              "Personalizado",
+            ]}
+            onChange={(v) =>
+              updateSection("notifications", { quietHoursTime: v })
+            }
           />
         </div>
       </SettingsSection>
@@ -187,7 +271,13 @@ function NotificationSettings({ settings, updateSection }: { settings: UserSetti
   );
 }
 
-function AppearanceSettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+function AppearanceSettings({
+  settings,
+  updateSection,
+}: {
+  settings: UserSettings;
+  updateSection: UpdateSectionFn;
+}) {
   const a = settings.appearance;
   return (
     <>
@@ -201,7 +291,6 @@ function AppearanceSettings({ settings, updateSection }: { settings: UserSetting
           enabled={a.darkMode}
           onChange={(v) => updateSection("appearance", { darkMode: v })}
         />
-
       </SettingsSection>
 
       <SettingsSection
@@ -228,7 +317,13 @@ function AppearanceSettings({ settings, updateSection }: { settings: UserSetting
   );
 }
 
-function LearningSettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+function LearningSettings({
+  settings,
+  updateSection,
+}: {
+  settings: UserSettings;
+  updateSection: UpdateSectionFn;
+}) {
   const l = settings.learning;
   return (
     <>
@@ -236,12 +331,17 @@ function LearningSettings({ settings, updateSection }: { settings: UserSettings;
         title="Nivel y Objetivos"
         description="Define tu nivel actual y metas de aprendizaje"
       >
-
         <SettingsSelectItem
           label="Meta diaria"
           description="Tiempo de estudio diario que deseas alcanzar"
           value={l.dailyGoal}
-          options={["15 minutos", "30 minutos", "45 minutos", "60 minutos", "90 minutos"]}
+          options={[
+            "15 minutos",
+            "30 minutos",
+            "45 minutos",
+            "60 minutos",
+            "90 minutos",
+          ]}
           onChange={(v) => updateSection("learning", { dailyGoal: v })}
         />
       </SettingsSection>
@@ -262,14 +362,22 @@ function LearningSettings({ settings, updateSection }: { settings: UserSettings;
           label="Notificar repasos pendientes"
           description="Recibir recordatorios de contenido por repasar"
           enabled={l.notifyPendingReviews}
-          onChange={(v) => updateSection("learning", { notifyPendingReviews: v })}
+          onChange={(v) =>
+            updateSection("learning", { notifyPendingReviews: v })
+          }
         />
       </SettingsSection>
     </>
   );
 }
 
-function AccessibilitySettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+function AccessibilitySettings({
+  settings,
+  updateSection,
+}: {
+  settings: UserSettings;
+  updateSection: UpdateSectionFn;
+}) {
   const ac = settings.accessibility;
   return (
     <>
@@ -288,7 +396,9 @@ function AccessibilitySettings({ settings, updateSection }: { settings: UserSett
           label="Reducir animaciones"
           description="Minimiza animaciones y transiciones"
           enabled={ac.reduceAnimations}
-          onChange={(v) => updateSection("accessibility", { reduceAnimations: v })}
+          onChange={(v) =>
+            updateSection("accessibility", { reduceAnimations: v })
+          }
         />
       </SettingsSection>
 
@@ -303,13 +413,18 @@ function AccessibilitySettings({ settings, updateSection }: { settings: UserSett
           options={["Muy lento", "Lento", "Normal", "Rápido"]}
           onChange={(v) => updateSection("accessibility", { audioSpeed: v })}
         />
-
       </SettingsSection>
     </>
   );
 }
 
-function PrivacySettings({ settings, updateSection }: { settings: UserSettings; updateSection: UpdateSectionFn }) {
+function PrivacySettings({
+  settings,
+  updateSection,
+}: {
+  settings: UserSettings;
+  updateSection: UpdateSectionFn;
+}) {
   const p = settings.privacy;
   return (
     <>
@@ -317,7 +432,6 @@ function PrivacySettings({ settings, updateSection }: { settings: UserSettings; 
         title="Datos y Privacidad"
         description="Controla tu información personal"
       >
-
         <SettingsToggleItem
           label="Recopilación de datos de uso"
           description="Ayúdanos a mejorar compartiendo datos anónimos"
@@ -325,16 +439,23 @@ function PrivacySettings({ settings, updateSection }: { settings: UserSettings; 
           onChange={(v) => updateSection("privacy", { usageDataCollection: v })}
         />
       </SettingsSection>
-
     </>
   );
 }
 
-function AccountSettings({ user, setUser, loading }: { user: User | null; setUser: (user: User | null) => void; loading: boolean }) {
+function AccountSettings({
+  user,
+  setUser,
+  loading,
+}: {
+  user: User | null;
+  setUser: (user: User | null) => void;
+  loading: boolean;
+}) {
   const toast = useToast();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  
+
   // Estados para edición de perfil
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -372,7 +493,11 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
   const formatBirthdateForDisplay = (birthdate?: string | Date | null) => {
     if (!birthdate) return "No especificado";
     const date = new Date(birthdate);
-    return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()).toLocaleDateString("es-ES", {
+    return new Date(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate(),
+    ).toLocaleDateString("es-ES", {
       day: "numeric",
       month: "long",
       year: "numeric",
@@ -428,7 +553,7 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
 
       if (response.ok) {
         const data = await response.json();
-        
+
         if (data.user) {
           setUser(data.user);
 
@@ -438,7 +563,7 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
             email: data.user.email || "",
             birthdate: formatBirthdateForInput(data.user.birthdate),
           });
-          
+
           setIsEditingProfile(false);
           toast.success("Perfil actualizado correctamente");
         }
@@ -482,7 +607,9 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-gray-500 animate-pulse">Cargando tu información...</div>
+        <div className="text-gray-500 animate-pulse">
+          Cargando tu información...
+        </div>
       </div>
     );
   }
@@ -509,24 +636,35 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
     });
   };
 
-  const subscriptionStartDate = parseDate(subscription?.created_at ?? subscription?.start_date);
+  const subscriptionStartDate = parseDate(
+    subscription?.created_at ?? subscription?.start_date,
+  );
   const subscriptionEndDate = parseDate(
-    subscription?.current_period_end
-      ?? subscription?.expires_at
-      ?? subscription?.expiry_date
-      ?? subscription?.vigency,
+    subscription?.current_period_end ??
+      subscription?.expires_at ??
+      subscription?.expiry_date ??
+      subscription?.vigency,
   );
   const hasRecurringPayment = subscription?.has_recurring_payment !== false;
-  const hasActiveWindow = !!(subscriptionEndDate && subscriptionEndDate > new Date());
+  const hasActiveWindow = !!(
+    subscriptionEndDate && subscriptionEndDate > new Date()
+  );
 
   const isSubscriptionActive = !!(
-    (user?.subscribed && subscription?.status === "active")
-    || (subscription?.status === "active")
-    || (user?.subscribed && hasActiveWindow)
+    (user?.subscribed && subscription?.status === "active") ||
+    subscription?.status === "active" ||
+    (user?.subscribed && hasActiveWindow)
   );
-  const isCouponBasedSubscription = isSubscriptionActive && !hasRecurringPayment;
-  const userPlanLabel = isSubscriptionActive ? "Plan GOKAI+" : (user?.plan ? planNames[user.plan] : "Plan Gratuito");
-  const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_ID ?? process.env.SUBSCRIPTION_PRICE_ID;
+  const isCouponBasedSubscription =
+    isSubscriptionActive && !hasRecurringPayment;
+  const userPlanLabel = isSubscriptionActive
+    ? "Plan GOKAI+"
+    : user?.plan
+      ? planNames[user.plan]
+      : "Plan Gratuito";
+  const STRIPE_PRICE_ID =
+    process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_ID ??
+    process.env.SUBSCRIPTION_PRICE_ID;
 
   const refreshUserAndSubscription = async () => {
     const updatedUser = await getCurrentUser();
@@ -540,7 +678,9 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
     }
   };
 
-  const claimCoupon = async (code: string): Promise<{ success: boolean; error?: string }> => {
+  const claimCoupon = async (
+    code: string,
+  ): Promise<{ success: boolean; error?: string }> => {
     try {
       const res = await fetch("/api/subscription/claim", {
         method: "POST",
@@ -550,7 +690,10 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok || data.success === false) {
-        return { success: false, error: data.error || "No se pudo aplicar el cupón" };
+        return {
+          success: false,
+          error: data.error || "No se pudo aplicar el cupón",
+        };
       }
 
       return { success: true };
@@ -578,7 +721,9 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
     setCoupon("");
     setShowUpgradeModal(false);
     setCouponLoading(false);
-    toast.success("Cupón aplicado correctamente. Tu suscripción ya está activa.");
+    toast.success(
+      "Cupón aplicado correctamente. Tu suscripción ya está activa.",
+    );
   };
 
   const handleStripe = async () => {
@@ -598,7 +743,9 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
       setCoupon("");
       setShowUpgradeModal(false);
       setStripeLoading(false);
-      toast.success("Cupón aplicado correctamente. Tu suscripción ya está activa.");
+      toast.success(
+        "Cupón aplicado correctamente. Tu suscripción ya está activa.",
+      );
       return;
     }
 
@@ -611,7 +758,10 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
       const res = await fetch("/api/subscription/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: STRIPE_PRICE_ID, successUrl: window.location.href }),
+        body: JSON.stringify({
+          priceId: STRIPE_PRICE_ID,
+          successUrl: window.location.href,
+        }),
       });
       const data = await res.json();
       if (data.url) {
@@ -690,15 +840,21 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
         >
           <div className="bg-gradient-to-r from-gray-50 to-white p-6 border-b border-gray-100 flex flex-col sm:flex-row items-center sm:items-start gap-5">
             <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#993331] to-[#BA5149] flex items-center justify-center text-white text-3xl font-bold shadow-md">
-              {user?.firstName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
+              {user?.firstName?.charAt(0).toUpperCase() ||
+                user?.email?.charAt(0).toUpperCase() ||
+                "U"}
             </div>
             <div className="flex-1 text-center sm:text-left mt-2 sm:mt-0">
               <h3 className="text-lg font-semibold text-gray-900">
-                {user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Tu cuenta"}
+                {user?.firstName
+                  ? `${user.firstName} ${user.lastName || ""}`
+                  : "Tu cuenta"}
               </h3>
               <p className="text-sm text-gray-500">{user?.email}</p>
               <div className="mt-3 inline-flex items-center rounded-full bg-[#993331]/10 px-3 py-1 text-xs font-medium text-[#993331]">
-                {user?.createdAt ? `Miembro desde ${formatDateEs(user.createdAt)}` : "Perfil activo"}
+                {user?.createdAt
+                  ? `Miembro desde ${formatDateEs(user.createdAt)}`
+                  : "Perfil activo"}
               </div>
             </div>
             {!isEditingProfile && (
@@ -714,12 +870,19 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
           <form onSubmit={handleSaveProfile} className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre
+                </label>
                 {isEditingProfile ? (
                   <input
                     type="text"
                     value={profileData.firstName}
-                    onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        firstName: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#993331] focus:border-[#993331] outline-none transition-all"
                     placeholder="Tu nombre"
                     autoFocus
@@ -730,12 +893,19 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Apellido
+                </label>
                 {isEditingProfile ? (
                   <input
                     type="text"
                     value={profileData.lastName}
-                    onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                    onChange={(e) =>
+                      setProfileData({
+                        ...profileData,
+                        lastName: e.target.value,
+                      })
+                    }
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#993331] focus:border-[#993331] outline-none transition-all"
                     placeholder="Tu apellido"
                   />
@@ -747,7 +917,11 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                   Correo electrónico
-                  {isEditingProfile && <span className="text-xs text-gray-400 font-normal">(No editable)</span>}
+                  {isEditingProfile && (
+                    <span className="text-xs text-gray-400 font-normal">
+                      (No editable)
+                    </span>
+                  )}
                 </label>
                 {isEditingProfile ? (
                   <input
@@ -764,7 +938,11 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
                   Fecha de nacimiento
-                  {isEditingProfile && <span className="text-xs text-gray-400 font-normal">(No editable)</span>}
+                  {isEditingProfile && (
+                    <span className="text-xs text-gray-400 font-normal">
+                      (No editable)
+                    </span>
+                  )}
                 </label>
                 {isEditingProfile ? (
                   <input
@@ -774,7 +952,9 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
                     className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2">{formatBirthdateForDisplay(user?.birthdate)}</p>
+                  <p className="text-gray-900 py-2">
+                    {formatBirthdateForDisplay(user?.birthdate)}
+                  </p>
                 )}
               </div>
             </div>
@@ -829,7 +1009,9 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
                 )}
               </h4>
               <p className="text-sm text-gray-500 mt-1">
-                {isCouponBasedSubscription ? "Suscripción activa mediante cupón promocional." : "Obtén acceso total a todas las herramientas de estudio."}
+                {isCouponBasedSubscription
+                  ? "Suscripción activa mediante cupón promocional."
+                  : "Obtén acceso total a todas las herramientas de estudio."}
               </p>
             </div>
 
@@ -846,15 +1028,25 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
           {(isSubscriptionActive || hasActiveWindow || subscriptionLoading) && (
             <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <span className="block text-xs text-gray-500 mb-1">Fecha de inicio</span>
+                <span className="block text-xs text-gray-500 mb-1">
+                  Fecha de inicio
+                </span>
                 <span className="text-sm font-medium text-gray-900">
-                  {subscriptionLoading ? "Cargando..." : formatDateEs(subscriptionStartDate)}
+                  {subscriptionLoading
+                    ? "Cargando..."
+                    : formatDateEs(subscriptionStartDate)}
                 </span>
               </div>
               <div>
-                <span className="block text-xs text-gray-500 mb-1">{isCouponBasedSubscription ? "Expira el" : "Próxima renovación"}</span>
+                <span className="block text-xs text-gray-500 mb-1">
+                  {isCouponBasedSubscription
+                    ? "Expira el"
+                    : "Próxima renovación"}
+                </span>
                 <span className="text-sm font-medium text-gray-900">
-                  {subscriptionLoading ? "Cargando..." : formatDateEs(subscriptionEndDate)}
+                  {subscriptionLoading
+                    ? "Cargando..."
+                    : formatDateEs(subscriptionEndDate)}
                 </span>
               </div>
             </div>
@@ -881,7 +1073,9 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
           <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
             <div>
               <p className="font-medium text-gray-900">Contraseña</p>
-              <p className="text-sm text-gray-500">Mantén tu cuenta segura actualizando tu contraseña regularmente.</p>
+              <p className="text-sm text-gray-500">
+                Mantén tu cuenta segura actualizando tu contraseña regularmente.
+              </p>
             </div>
             <button
               onClick={() => setShowPasswordModal(true)}
@@ -892,13 +1086,20 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
           </div>
 
           <div className="p-5 mt-8 border border-red-200 bg-red-50/50 rounded-xl">
-            <h4 className="text-base font-semibold text-red-700">Zona de peligro</h4>
+            <h4 className="text-base font-semibold text-red-700">
+              Zona de peligro
+            </h4>
             <p className="text-sm text-red-600/80 mt-1 mb-4">
-              Una vez que elimines tu cuenta, no hay vuelta atrás. Por favor, asegúrate de estar seguro.
+              Una vez que elimines tu cuenta, no hay vuelta atrás. Por favor,
+              asegúrate de estar seguro.
             </p>
 
             {showDeleteConfirm ? (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col sm:flex-row gap-3">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex flex-col sm:flex-row gap-3"
+              >
                 <button
                   onClick={handleDeleteAccount}
                   className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"

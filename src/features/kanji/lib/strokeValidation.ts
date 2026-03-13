@@ -38,7 +38,7 @@ const POINT_PENALTIES = {
 export function sampleSvgPath(
   pathD: string,
   viewBox: string,
-  numSamples = 20
+  numSamples = 20,
 ): StrokePoint[] {
   if (typeof document === "undefined") return [];
 
@@ -76,7 +76,7 @@ export function sampleSvgPath(
  */
 export function simplifyStroke(
   points: StrokePoint[],
-  targetCount = 20
+  targetCount = 20,
 ): StrokePoint[] {
   if (points.length <= targetCount) return points;
 
@@ -93,10 +93,7 @@ export function simplifyStroke(
  * Compute average distance between two ordered point arrays (DTW-lite).
  * Returns a value in viewBox units.
  */
-function averagePointDistance(
-  a: StrokePoint[],
-  b: StrokePoint[]
-): number {
+function averagePointDistance(a: StrokePoint[], b: StrokePoint[]): number {
   if (a.length === 0 || b.length === 0) return Infinity;
 
   let totalDist = 0;
@@ -116,10 +113,7 @@ function averagePointDistance(
 /**
  * Check if the general stroke direction matches (start→end vector).
  */
-function directionScore(
-  ref: StrokePoint[],
-  drawn: StrokePoint[]
-): number {
+function directionScore(ref: StrokePoint[], drawn: StrokePoint[]): number {
   if (ref.length < 2 || drawn.length < 2) return 0;
 
   const refDx = ref[ref.length - 1].x - ref[0].x;
@@ -142,7 +136,7 @@ function directionScore(
 export function validateStroke(
   drawnPoints: StrokePoint[],
   refPathD: string,
-  viewBox: string
+  viewBox: string,
 ): StrokeValidationResult {
   const refPoints = sampleSvgPath(refPathD, viewBox, 24);
   const simplified = simplifyStroke(drawnPoints, 24);
@@ -153,9 +147,7 @@ export function validateStroke(
 
   // viewBox diagonal for normalization
   const vb = viewBox.split(/\s+/).map(Number);
-  const diagonal = Math.sqrt(
-    (vb[2] || 109) ** 2 + (vb[3] || 109) ** 2
-  );
+  const diagonal = Math.sqrt((vb[2] || 109) ** 2 + (vb[3] || 109) ** 2);
 
   // Distance score: lower average distance = better
   const avgDist = averagePointDistance(refPoints, simplified);
@@ -187,7 +179,7 @@ export function validateStroke(
  */
 export function getPointsForFeedback(
   feedback: StrokeValidationResult["feedback"],
-  basePoints: number
+  basePoints: number,
 ): number {
   switch (feedback) {
     case "perfect":
@@ -207,7 +199,7 @@ export function getPointsForFeedback(
  * Get a human-readable label for the feedback.
  */
 export function getFeedbackLabel(
-  feedback: StrokeValidationResult["feedback"]
+  feedback: StrokeValidationResult["feedback"],
 ): string {
   switch (feedback) {
     case "perfect":
@@ -227,7 +219,7 @@ export function getFeedbackLabel(
  * Get a color for the feedback badge.
  */
 export function getFeedbackColor(
-  feedback: StrokeValidationResult["feedback"]
+  feedback: StrokeValidationResult["feedback"],
 ): string {
   switch (feedback) {
     case "perfect":

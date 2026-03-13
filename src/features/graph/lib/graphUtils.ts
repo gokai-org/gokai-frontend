@@ -6,17 +6,17 @@ import { GRAPH_CONFIG } from "./graphConfig";
  */
 function getOptimalHandles(
   sourceNode: GraphNode,
-  targetNode: GraphNode
+  targetNode: GraphNode,
 ): { sourceHandle: string; targetHandle: string } {
   const dx = targetNode.position.x - sourceNode.position.x;
   const dy = targetNode.position.y - sourceNode.position.y;
-  
+
   // Calcular ángulo en radianes (-PI a PI)
   const angle = Math.atan2(dy, dx);
-  
+
   // Convertir a grados (0-360)
   const degrees = ((angle * 180) / Math.PI + 360) % 360;
-  
+
   // Determinar dirección principal del source (hacia dónde sale la arista)
   let sourceHandle: string;
   if (degrees >= 45 && degrees < 135) {
@@ -28,7 +28,7 @@ function getOptimalHandles(
   } else {
     sourceHandle = "source-right"; // hacia la derecha
   }
-  
+
   // El target handle es el opuesto (desde dónde entra la arista al nodo destino)
   let targetHandle: string;
   const oppositeDegrees = (degrees + 180) % 360;
@@ -41,7 +41,7 @@ function getOptimalHandles(
   } else {
     targetHandle = "target-right";
   }
-  
+
   return { sourceHandle, targetHandle };
 }
 
@@ -51,12 +51,12 @@ function getOptimalHandles(
 export function updateNodeStatus(
   nodes: GraphNode[],
   nodeId: string,
-  newStatus: NodeStatus
+  newStatus: NodeStatus,
 ): GraphNode[] {
   return nodes.map((node) =>
     node.id === nodeId
       ? { ...node, data: { ...node.data, status: newStatus } }
-      : node
+      : node,
   );
 }
 
@@ -66,7 +66,7 @@ export function updateNodeStatus(
 export function calculateProgress(nodes: GraphNode[]): number {
   const total = nodes.length - 1; // Excluir nodo home
   const completed = nodes.filter(
-    (node) => node.data.status === "completed" && node.id !== "home"
+    (node) => node.data.status === "completed" && node.id !== "home",
   ).length;
   return (completed / total) * 100;
 }

@@ -3,8 +3,10 @@ import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 
 export const dynamic = "force-dynamic";
 
-const USERS_API_BASE = process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
-const SUBSCRIPTIONS_API_BASE = process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
+const USERS_API_BASE =
+  process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
+const SUBSCRIPTIONS_API_BASE =
+  process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
 
 export async function GET(req: NextRequest) {
   try {
@@ -17,22 +19,24 @@ export async function GET(req: NextRequest) {
     console.log("Decoding token to get user info");
 
     try {
-      const tokenParts = token.split('.');
+      const tokenParts = token.split(".");
       if (tokenParts.length === 3) {
-        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+        const payload = JSON.parse(
+          Buffer.from(tokenParts[1], "base64").toString(),
+        );
         console.log("Token payload:", payload);
-        
+
         const userId = payload.userId || payload.sub || payload.id;
-        
+
         if (!userId) {
           console.error("No user ID found in token");
           return NextResponse.json({ user: null }, { status: 401 });
         }
 
         const response = await fetch(`${USERS_API_BASE}/users/${userId}`, {
-          headers: { 
+          headers: {
             Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
           },
         });
 
@@ -40,17 +44,23 @@ export async function GET(req: NextRequest) {
 
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("Error fetching user from backend:", response.status, errorText);
-          
+          console.error(
+            "Error fetching user from backend:",
+            response.status,
+            errorText,
+          );
+
           const user = {
             id: userId,
             email: payload.email || "",
             name: payload.email || "Usuario",
             plan: "free",
-            createdAt: payload.iat ? new Date(payload.iat * 1000).toISOString() : undefined,
+            createdAt: payload.iat
+              ? new Date(payload.iat * 1000).toISOString()
+              : undefined,
             twoFactorEnabled: false,
           };
-          
+
           return NextResponse.json({ user });
         }
 
@@ -64,12 +74,15 @@ export async function GET(req: NextRequest) {
         let plan: "free" | "premium" | "pro" = "free";
         let subscribed = false;
         try {
-          const subRes = await fetch(`${SUBSCRIPTIONS_API_BASE}/subscriptions/${userId}`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
+          const subRes = await fetch(
+            `${SUBSCRIPTIONS_API_BASE}/subscriptions/${userId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
             },
-          });
+          );
           if (subRes.ok) {
             const subData = await subRes.json();
             if (subData?.status === "active") {
@@ -80,13 +93,16 @@ export async function GET(req: NextRequest) {
         } catch (subErr) {
           console.error("Error checking subscription:", subErr);
         }
-        
+
         const user = {
           id: userData.id,
           email: userData.email,
           firstName: firstName,
           lastName: lastName,
-          name: firstName && lastName ? `${firstName} ${lastName}` : firstName || userData.email,
+          name:
+            firstName && lastName
+              ? `${firstName} ${lastName}`
+              : firstName || userData.email,
           birthdate: userData.birthdate,
           profile: userData.profile,
           avatar: null,
@@ -102,18 +118,21 @@ export async function GET(req: NextRequest) {
       console.error("Error parsing token:", tokenError);
       return NextResponse.json({ user: null }, { status: 401 });
     }
-    
+
     return NextResponse.json({ user: null }, { status: 500 });
   } catch (error) {
     console.error("Error getting user:", error);
-    return NextResponse.json({ user: null, error: "Error al obtener usuario" }, { status: 500 });
+    return NextResponse.json(
+      { user: null, error: "Error al obtener usuario" },
+      { status: 500 },
+    );
   }
 }
 
 export async function PATCH(request: NextRequest) {
   try {
     console.log("PATCH /api/auth/user called");
-    
+
     const token = getTokenFromRequest(request);
     if (!token) {
       console.log("No token found");
@@ -123,18 +142,20 @@ export async function PATCH(request: NextRequest) {
     const body = await request.json();
     console.log("Request body:", body);
 
-    const tokenParts = token.split('.');
+    const tokenParts = token.split(".");
     if (tokenParts.length !== 3) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
-    const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
+    const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
     const userId = payload.userId || payload.sub || payload.id;
-    
-    if (!userId) {
-      return NextResponse.json({ error: "No se pudo obtener el ID del usuario" }, { status: 401 });
-    }
 
+    if (!userId) {
+      return NextResponse.json(
+        { error: "No se pudo obtener el ID del usuario" },
+        { status: 401 },
+      );
+    }
 
     const updateData: {
       firstName?: string;
@@ -149,10 +170,10 @@ export async function PATCH(request: NextRequest) {
     }
 
     if (body.name && !body.firstName && !body.lastName) {
-      const nameParts = body.name.trim().split(' ');
+      const nameParts = body.name.trim().split(" ");
       updateData.firstName = nameParts[0];
       if (nameParts.length > 1) {
-        updateData.lastName = nameParts.slice(1).join(' ');
+        updateData.lastName = nameParts.slice(1).join(" ");
       }
     }
 
@@ -173,9 +194,9 @@ export async function PATCH(request: NextRequest) {
 
     const response = await fetch(`${USERS_API_BASE}/users/${userId}`, {
       method: "PUT",
-      headers: { 
+      headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(updateData),
     });
@@ -186,8 +207,8 @@ export async function PATCH(request: NextRequest) {
       const errorText = await response.text();
       console.error("Error updating user:", response.status, errorText);
       return NextResponse.json(
-        { error: "Error al actualizar perfil" }, 
-        { status: response.status }
+        { error: "Error al actualizar perfil" },
+        { status: response.status },
       );
     }
 
@@ -196,13 +217,16 @@ export async function PATCH(request: NextRequest) {
 
     const firstName = userData.firstName || userData.first_name || "";
     const lastName = userData.lastName || userData.last_name || "";
-    
+
     const user = {
       id: userData.id,
       email: userData.email,
       firstName: firstName,
       lastName: lastName,
-      name: firstName && lastName ? `${firstName} ${lastName}` : firstName || userData.email,
+      name:
+        firstName && lastName
+          ? `${firstName} ${lastName}`
+          : firstName || userData.email,
       birthdate: userData.birthdate,
       profile: userData.profile,
       avatar: null,
@@ -215,7 +239,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ user });
   } catch (error) {
     console.error("Error updating profile:", error);
-    return NextResponse.json({ error: "Error al actualizar perfil" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error al actualizar perfil" },
+      { status: 500 },
+    );
   }
 }
 
@@ -234,6 +261,9 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Error deleting account:", error);
-    return NextResponse.json({ error: "Error al eliminar cuenta" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error al eliminar cuenta" },
+      { status: 500 },
+    );
   }
 }

@@ -38,7 +38,9 @@ function CustomTooltip({
       <p className="text-xs text-gray-500 font-medium mb-1">{label}</p>
       {payload.map((p) => (
         <p key={p.dataKey} className="text-sm font-bold text-gray-900">
-          {p.dataKey === "score" ? `Precisión: ${p.value}%` : `Repasos: ${p.value}`}
+          {p.dataKey === "score"
+            ? `Precisión: ${p.value}%`
+            : `Repasos: ${p.value}`}
         </p>
       ))}
     </div>
@@ -75,11 +77,23 @@ export function MonthlyProgressChart({
         <p className="text-xs text-gray-500 mb-6">{subtitle}</p>
         <div className="flex flex-col items-center justify-center py-10 gap-3">
           <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
-            <svg className="w-7 h-7 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941" />
+            <svg
+              className="w-7 h-7 text-gray-300"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.5}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M2.25 18L9 11.25l4.306 4.307a11.95 11.95 0 015.814-5.519l2.74-1.22m0 0l-5.94-2.28m5.94 2.28l-2.28 5.941"
+              />
             </svg>
           </div>
-          <p className="text-sm font-semibold text-gray-500">Sin datos mensuales aún</p>
+          <p className="text-sm font-semibold text-gray-500">
+            Sin datos mensuales aún
+          </p>
           <p className="text-xs text-gray-400 text-center max-w-[220px]">
             Tu evolución mes a mes aparecerá aquí conforme vayas estudiando.
           </p>
@@ -89,9 +103,7 @@ export function MonthlyProgressChart({
   }
 
   const growth =
-    data.length >= 2
-      ? data[data.length - 1].score - data[0].score
-      : 0;
+    data.length >= 2 ? data[data.length - 1].score - data[0].score : 0;
 
   return (
     <motion.div
@@ -106,8 +118,18 @@ export function MonthlyProgressChart({
           <p className="text-xs text-gray-500">{subtitle}</p>
         </div>
         <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-50">
-          <svg className="w-3.5 h-3.5 text-green-600" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+          <svg
+            className="w-3.5 h-3.5 text-green-600"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2.5}
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
+            />
           </svg>
           <span className="text-xs font-bold text-green-600">+{growth}%</span>
         </div>
@@ -122,7 +144,11 @@ export function MonthlyProgressChart({
                 <stop offset="100%" stopColor="#993331" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+            <CartesianGrid
+              strokeDasharray="3 3"
+              vertical={false}
+              stroke="#f3f4f6"
+            />
             <XAxis
               dataKey="month"
               axisLine={false}
@@ -145,7 +171,12 @@ export function MonthlyProgressChart({
               strokeWidth={2.5}
               fill="url(#scoreGradient)"
               dot={{ r: 4, fill: "#993331", strokeWidth: 0 }}
-              activeDot={{ r: 6, fill: "#993331", stroke: "#fff", strokeWidth: 2 }}
+              activeDot={{
+                r: 6,
+                fill: "#993331",
+                stroke: "#fff",
+                strokeWidth: 2,
+              }}
               animationDuration={1200}
               animationEasing="ease-out"
             />

@@ -33,7 +33,10 @@ export async function getAuthToken() {
 
 /** Read token directly from the incoming request – always reliable. */
 export function getTokenFromRequest(req: NextRequest | Request): string | null {
-  if ("cookies" in req && typeof (req as NextRequest).cookies?.get === "function") {
+  if (
+    "cookies" in req &&
+    typeof (req as NextRequest).cookies?.get === "function"
+  ) {
     return (req as NextRequest).cookies.get(AUTH_COOKIE)?.value ?? null;
   }
   const header = req.headers.get("cookie") ?? "";

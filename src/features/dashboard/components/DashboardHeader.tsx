@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { ReactNode } from 'react';
+import { ReactNode } from "react";
 
 interface DashboardHeaderProps {
   icon: ReactNode;
@@ -21,7 +21,7 @@ export function DashboardHeader({
   japaneseText,
   statusBadge,
   showSearch = false,
-  searchPlaceholder = 'Buscar...',
+  searchPlaceholder = "Buscar...",
   onSearchChange,
   rightContent,
 }: DashboardHeaderProps) {
@@ -43,13 +43,13 @@ export function DashboardHeader({
                 {title}
               </h1>
               {japaneseText && (
-                <span 
-                  className="text-sm font-bold text-[#993331]" 
-                  style={{ 
-                    writingMode: 'vertical-rl', 
-                    textOrientation: 'upright',
-                    letterSpacing: '0.25em',
-                    lineHeight: '1'
+                <span
+                  className="text-sm font-bold text-[#993331]"
+                  style={{
+                    writingMode: "vertical-rl",
+                    textOrientation: "upright",
+                    letterSpacing: "0.25em",
+                    lineHeight: "1",
                   }}
                 >
                   {japaneseText}
@@ -63,13 +63,23 @@ export function DashboardHeader({
           </div>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-2">
         {/* Buscador */}
         {showSearch && (
           <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full border border-gray-200">
-            <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            <svg
+              className="w-4 h-4 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
             </svg>
             <input
               type="text"
@@ -99,9 +109,12 @@ export function DashboardHeader({
           </button>
         )}
       </div>
-      
+
       {/* Línea */}
-      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200" style={{ marginLeft: '-200px', width: 'calc(100% + 200px)' }} />
+      <div
+        className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200"
+        style={{ marginLeft: "-200px", width: "calc(100% + 200px)" }}
+      />
     </header>
   );
 }

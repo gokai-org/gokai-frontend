@@ -12,9 +12,9 @@ export function HistoryProtection() {
 
     const handlePopState = () => {
       if (isProcessing) return;
-      
+
       const currentPath = window.location.pathname;
-      
+
       // Si está en el dashboard y presiona atrás, mantenerlo ahí
       if (currentPath.startsWith("/dashboard")) {
         isProcessing = true;

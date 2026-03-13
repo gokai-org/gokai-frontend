@@ -88,8 +88,8 @@ export function KanjiWritingCanvas({
           i < activeStrokeIndex
             ? "rgba(26,26,26,0.15)"
             : i === activeStrokeIndex
-            ? "rgba(153,51,49,0.25)"
-            : "rgba(209,213,219,0.3)";
+              ? "rgba(153,51,49,0.25)"
+              : "rgba(209,213,219,0.3)";
         ctx.lineWidth = lw;
         ctx.stroke(p2d);
       } catch {
@@ -160,7 +160,7 @@ export function KanjiWritingCanvas({
         y: (e.clientY - rect.top) * (vbHeight / rect.height),
       };
     },
-    [vbWidth, vbHeight]
+    [vbWidth, vbHeight],
   );
 
   const handlePointerDown = useCallback(
@@ -172,7 +172,7 @@ export function KanjiWritingCanvas({
       currentPoints.current = [getCoords(e)];
       scheduleRedraw();
     },
-    [disabled, getCoords, scheduleRedraw]
+    [disabled, getCoords, scheduleRedraw],
   );
 
   const handlePointerMove = useCallback(
@@ -189,7 +189,7 @@ export function KanjiWritingCanvas({
       currentPoints.current.push(pt);
       scheduleRedraw();
     },
-    [disabled, getCoords, scheduleRedraw]
+    [disabled, getCoords, scheduleRedraw],
   );
 
   const handlePointerUp = useCallback(
@@ -214,7 +214,7 @@ export function KanjiWritingCanvas({
       currentPoints.current = [];
       scheduleRedraw();
     },
-    [disabled, onStrokeDrawn, scheduleRedraw]
+    [disabled, onStrokeDrawn, scheduleRedraw],
   );
 
   // Canvas pixel size (HiDPI)
@@ -246,9 +246,7 @@ export function KanjiWritingCanvas({
 // ── Helpers ─────────────────────────────────────────────────
 
 function scaleSvgPath(d: string, sx: number, sy: number): string {
-  const tokens = d.match(
-    /[a-zA-Z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g
-  );
+  const tokens = d.match(/[a-zA-Z]|[-+]?(?:\d+\.?\d*|\.\d+)(?:[eE][-+]?\d+)?/g);
   if (!tokens) return d;
 
   let result = "";

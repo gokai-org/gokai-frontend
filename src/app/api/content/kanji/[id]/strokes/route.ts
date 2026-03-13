@@ -7,7 +7,7 @@ const BASE = process.env.GOKAI_CONTENT_API_BASE!;
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const raw = getTokenFromRequest(req);
   if (!raw) {
@@ -41,6 +41,6 @@ export async function GET(
       viewBox,
       strokes,
     },
-    { status: 200 }
+    { status: 200 },
   );
 }

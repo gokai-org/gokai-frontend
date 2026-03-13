@@ -206,34 +206,37 @@ const MOCK_ス: Omit<KanaStrokeData, "kanaId"> = {
 
 const MOCK_STROKES_BY_SYMBOL: Record<string, Omit<KanaStrokeData, "kanaId">> = {
   // Hiragana
-  "あ": MOCK_あ,
-  "い": MOCK_い,
-  "う": MOCK_う,
-  "え": MOCK_え,
-  "お": MOCK_お,
-  "か": MOCK_か,
-  "き": MOCK_き,
-  "さ": MOCK_さ,
-  "し": MOCK_し,
-  "す": MOCK_す,
+  あ: MOCK_あ,
+  い: MOCK_い,
+  う: MOCK_う,
+  え: MOCK_え,
+  お: MOCK_お,
+  か: MOCK_か,
+  き: MOCK_き,
+  さ: MOCK_さ,
+  し: MOCK_し,
+  す: MOCK_す,
   // Katakana
-  "ア": MOCK_ア,
-  "イ": MOCK_イ,
-  "ウ": MOCK_ウ,
-  "エ": MOCK_エ,
-  "オ": MOCK_オ,
-  "カ": MOCK_カ,
-  "キ": MOCK_キ,
-  "サ": MOCK_サ,
-  "シ": MOCK_シ,
-  "ス": MOCK_ス,
+  ア: MOCK_ア,
+  イ: MOCK_イ,
+  ウ: MOCK_ウ,
+  エ: MOCK_エ,
+  オ: MOCK_オ,
+  カ: MOCK_カ,
+  キ: MOCK_キ,
+  サ: MOCK_サ,
+  シ: MOCK_シ,
+  ス: MOCK_ス,
 };
 
 /**
  * Returns mock KanaStrokeData for a given kana id and symbol.
  * Returns null if no mock data available.
  */
-export function getMockKanaStrokes(kanaId: string, symbol?: string): KanaStrokeData | null {
+export function getMockKanaStrokes(
+  kanaId: string,
+  symbol?: string,
+): KanaStrokeData | null {
   const data = symbol ? MOCK_STROKES_BY_SYMBOL[symbol] : null;
   if (data) return { kanaId, ...data };
   return null;

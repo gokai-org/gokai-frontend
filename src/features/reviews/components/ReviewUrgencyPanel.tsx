@@ -7,7 +7,11 @@ import { getPrimaryMeaning } from "@/features/kanji/utils/kanjiText";
 /* ── Urgency helpers ──────────────────────────────────── */
 
 function getUrgency(lastPracticed: string): "high" | "medium" | "low" {
-  if (lastPracticed.includes("48h") || lastPracticed.includes("3d") || lastPracticed.includes("sem"))
+  if (
+    lastPracticed.includes("48h") ||
+    lastPracticed.includes("3d") ||
+    lastPracticed.includes("sem")
+  )
     return "high";
   if (lastPracticed.includes("24h") || lastPracticed.includes("2d"))
     return "medium";

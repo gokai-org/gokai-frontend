@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo } from "react";
 
 interface AudioPlayerProps {
   audioUrl: string;
@@ -8,14 +8,19 @@ interface AudioPlayerProps {
   isUserMessage?: boolean;
 }
 
-export function AudioPlayer({ audioUrl, duration, isUserMessage }: AudioPlayerProps) {
+export function AudioPlayer({
+  audioUrl,
+  duration,
+  isUserMessage,
+}: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
   const barHeights = useMemo(
-    () => Array.from({ length: 40 }, (_, i) => {
-      const x = Math.sin(i * 127.1) * 43758.5453;
-      return (x - Math.floor(x)) * 20 + 8;
-    }),
+    () =>
+      Array.from({ length: 40 }, (_, i) => {
+        const x = Math.sin(i * 127.1) * 43758.5453;
+        return (x - Math.floor(x)) * 20 + 8;
+      }),
     [],
   );
 
@@ -35,12 +40,14 @@ export function AudioPlayer({ audioUrl, duration, isUserMessage }: AudioPlayerPr
       <button
         onClick={togglePlay}
         className={`w-8 h-8 rounded-full flex items-center justify-center ${
-          isUserMessage ? 'bg-white/20 hover:bg-white/30' : 'bg-[#993331] hover:bg-[#882d2d]'
+          isUserMessage
+            ? "bg-white/20 hover:bg-white/30"
+            : "bg-[#993331] hover:bg-[#882d2d]"
         } transition-colors`}
       >
         {isPlaying ? (
           <svg
-            className={`w-4 h-4 ${isUserMessage ? 'text-white' : 'text-white'}`}
+            className={`w-4 h-4 ${isUserMessage ? "text-white" : "text-white"}`}
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -48,7 +55,7 @@ export function AudioPlayer({ audioUrl, duration, isUserMessage }: AudioPlayerPr
           </svg>
         ) : (
           <svg
-            className={`w-4 h-4 ${isUserMessage ? 'text-white' : 'text-white'} ml-0.5`}
+            className={`w-4 h-4 ${isUserMessage ? "text-white" : "text-white"} ml-0.5`}
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -64,7 +71,7 @@ export function AudioPlayer({ audioUrl, duration, isUserMessage }: AudioPlayerPr
               <div
                 key={i}
                 className={`w-0.5 rounded-full ${
-                  isUserMessage ? 'bg-white/60' : 'bg-[#993331]/60'
+                  isUserMessage ? "bg-white/60" : "bg-[#993331]/60"
                 }`}
                 style={{
                   height: `${h}px`,
@@ -75,11 +82,17 @@ export function AudioPlayer({ audioUrl, duration, isUserMessage }: AudioPlayerPr
         </div>
       </div>
 
-      <span className={`text-xs ${isUserMessage ? 'text-white/80' : 'text-gray-500'}`}>
+      <span
+        className={`text-xs ${isUserMessage ? "text-white/80" : "text-gray-500"}`}
+      >
         {duration}
       </span>
 
-      <audio ref={audioRef} src={audioUrl} onEnded={() => setIsPlaying(false)} />
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        onEnded={() => setIsPlaying(false)}
+      />
     </div>
   );
 }

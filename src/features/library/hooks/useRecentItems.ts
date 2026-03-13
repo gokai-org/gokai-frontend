@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from "react";
 import {
   getRecentItems,
   addRecentItem as addRecentItemAPI,
   clearRecentItems as clearRecentItemsAPI,
-} from '@/features/library/services/api';
-import type { BackendRecentItem } from '@/features/library/types';
+} from "@/features/library/services/api";
+import type { BackendRecentItem } from "@/features/library/types";
 
 export function useRecentItems() {
   const [recentItems, setRecentItems] = useState<BackendRecentItem[]>([]);
@@ -27,7 +27,7 @@ export function useRecentItems() {
       );
       setRecentItems(all);
     } catch (e) {
-      console.error('Error loading recent items:', e);
+      console.error("Error loading recent items:", e);
     } finally {
       setLoading(false);
     }
@@ -49,7 +49,7 @@ export function useRecentItems() {
         // Recargar para obtener la lista actualizada con datos enriquecidos
         await loadRecentItems();
       } catch (e) {
-        console.error('Error adding recent item:', e);
+        console.error("Error adding recent item:", e);
       }
     },
     [loadRecentItems],
@@ -61,7 +61,7 @@ export function useRecentItems() {
       await clearRecentItemsAPI();
       setRecentItems([]);
     } catch (e) {
-      console.error('Error clearing recent items:', e);
+      console.error("Error clearing recent items:", e);
     }
   }, []);
 

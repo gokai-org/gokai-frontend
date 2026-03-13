@@ -3,7 +3,8 @@ import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 
 export const dynamic = "force-dynamic";
 
-const USERS_API_BASE = process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
+const USERS_API_BASE =
+  process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,14 +34,16 @@ export async function POST(request: NextRequest) {
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: "Error al guardar preferencias" }));
+      const errorData = await response
+        .json()
+        .catch(() => ({ error: "Error al guardar preferencias" }));
       console.error("Backend respondió con error:", {
         status: response.status,
         error: errorData,
       });
       return NextResponse.json(
         { error: errorData.error || "Error al guardar preferencias" },
-        { status: response.status }
+        { status: response.status },
       );
     }
 
@@ -51,7 +54,7 @@ export async function POST(request: NextRequest) {
     console.error("Error en el endpoint de preferencias:", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

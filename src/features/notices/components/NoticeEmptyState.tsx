@@ -29,15 +29,15 @@ export default function NoticeEmptyState({
         {searchQuery
           ? "Sin resultados"
           : showUnreadOnly
-          ? "¡Todo al día!"
-          : "Sin notificaciones"}
+            ? "¡Todo al día!"
+            : "Sin notificaciones"}
       </h3>
       <p className="text-sm text-gray-500 text-center max-w-sm">
         {searchQuery
           ? "No encontramos notificaciones que coincidan con tu búsqueda. Intenta con otros términos."
           : showUnreadOnly
-          ? "No tienes notificaciones pendientes por leer. ¡Excelente!"
-          : "Cuando haya novedades en tu aprendizaje, aparecerán aquí."}
+            ? "No tienes notificaciones pendientes por leer. ¡Excelente!"
+            : "Cuando haya novedades en tu aprendizaje, aparecerán aquí."}
       </p>
       {(searchQuery || showUnreadOnly) && (
         <button

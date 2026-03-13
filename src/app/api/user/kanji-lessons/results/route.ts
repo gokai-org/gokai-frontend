@@ -45,9 +45,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }
 
-  const payload = JSON.parse(
-    Buffer.from(tokenParts[1], "base64").toString(),
-  );
+  const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
   const userId = payload.userId || payload.sub || payload.id;
 
   console.log("[API ROUTE] token payload:", payload);
@@ -71,10 +69,7 @@ export async function POST(req: NextRequest) {
 
   if (!body) {
     console.error("[API ROUTE] Body JSON inválido");
-    return NextResponse.json(
-      { error: "Body JSON inválido" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Body JSON inválido" }, { status: 400 });
   }
 
   const backendBody = {
@@ -149,9 +144,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }
 
-  const payload = JSON.parse(
-    Buffer.from(tokenParts[1], "base64").toString(),
-  );
+  const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
   const userId = payload.userId || payload.sub || payload.id;
 
   console.log("[API ROUTE GET] token payload:", payload);

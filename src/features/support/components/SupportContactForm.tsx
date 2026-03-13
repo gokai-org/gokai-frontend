@@ -33,12 +33,36 @@ const CATEGORY_META: Record<
   SupportCategory,
   { icon: ReactNode; color: string; bg: string }
 > = {
-  technical_issue: { icon: <Wrench className="h-4 w-4" />, color: "text-orange-600", bg: "bg-orange-50" },
-  billing: { icon: <CreditCard className="h-4 w-4" />, color: "text-emerald-600", bg: "bg-emerald-50" },
-  account_access: { icon: <KeyRound className="h-4 w-4" />, color: "text-blue-600", bg: "bg-blue-50" },
-  bug_report: { icon: <Bug className="h-4 w-4" />, color: "text-red-600", bg: "bg-red-50" },
-  feature_request: { icon: <Lightbulb className="h-4 w-4" />, color: "text-purple-600", bg: "bg-purple-50" },
-  other: { icon: <MoreHorizontal className="h-4 w-4" />, color: "text-gray-600", bg: "bg-gray-50" },
+  technical_issue: {
+    icon: <Wrench className="h-4 w-4" />,
+    color: "text-orange-600",
+    bg: "bg-orange-50",
+  },
+  billing: {
+    icon: <CreditCard className="h-4 w-4" />,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+  },
+  account_access: {
+    icon: <KeyRound className="h-4 w-4" />,
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+  },
+  bug_report: {
+    icon: <Bug className="h-4 w-4" />,
+    color: "text-red-600",
+    bg: "bg-red-50",
+  },
+  feature_request: {
+    icon: <Lightbulb className="h-4 w-4" />,
+    color: "text-purple-600",
+    bg: "bg-purple-50",
+  },
+  other: {
+    icon: <MoreHorizontal className="h-4 w-4" />,
+    color: "text-gray-600",
+    bg: "bg-gray-50",
+  },
 };
 
 const CATEGORIES = Object.keys(SUPPORT_CATEGORY_LABELS) as SupportCategory[];
@@ -114,7 +138,8 @@ function CategoryDropdown({
   useEffect(() => {
     if (!open) return;
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -269,8 +294,17 @@ export default function SupportContactForm({
   onSuccess,
   onError,
 }: SupportContactFormProps) {
-  const { form, errors, submitError, submitting, submitted, ticketId, setField, submit, reset } =
-    useSupportForm({ defaults, onSuccess, onError });
+  const {
+    form,
+    errors,
+    submitError,
+    submitting,
+    submitted,
+    ticketId,
+    setField,
+    submit,
+    reset,
+  } = useSupportForm({ defaults, onSuccess, onError });
 
   const handleClose = () => {
     onClose();

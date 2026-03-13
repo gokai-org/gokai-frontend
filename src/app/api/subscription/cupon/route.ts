@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 
-const SUBSCRIPTIONS_API_BASE = process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
+const SUBSCRIPTIONS_API_BASE =
+  process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
 
 export async function GET(req: NextRequest) {
   try {
@@ -15,18 +16,24 @@ export async function GET(req: NextRequest) {
     const valid = req.nextUrl.searchParams.get("valid");
     const query = valid !== null ? `?valid=${encodeURIComponent(valid)}` : "";
 
-    const response = await fetch(`${SUBSCRIPTIONS_API_BASE}/subscriptions/cupon${query}`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${SUBSCRIPTIONS_API_BASE}/subscriptions/cupon${query}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
-    const data = await response.json().catch(() => ([]));
+    const data = await response.json().catch(() => []);
     return NextResponse.json(data, { status: response.status });
   } catch (error) {
     console.error("Error fetching coupons:", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 },
+    );
   }
 }

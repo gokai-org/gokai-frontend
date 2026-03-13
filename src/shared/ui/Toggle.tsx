@@ -6,7 +6,11 @@ interface ToggleProps {
   disabled?: boolean;
 }
 
-export function Toggle({ enabled = false, onChange, disabled = false }: ToggleProps) {
+export function Toggle({
+  enabled = false,
+  onChange,
+  disabled = false,
+}: ToggleProps) {
   const handleToggle = () => {
     if (disabled) return;
     const newValue = !enabled;
@@ -22,14 +26,14 @@ export function Toggle({ enabled = false, onChange, disabled = false }: TogglePr
       onClick={handleToggle}
       className={`
         relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 ease-in-out
-        ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
-        ${enabled ? 'bg-gradient-to-r from-[#993331] to-[#BA5149]' : 'bg-gray-300'}
+        ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
+        ${enabled ? "bg-gradient-to-r from-[#993331] to-[#BA5149]" : "bg-gray-300"}
       `}
     >
       <span
         className={`
           inline-block h-4 w-4 transform rounded-full bg-white shadow-lg transition-transform duration-200 ease-in-out
-          ${enabled ? 'translate-x-6' : 'translate-x-1'}
+          ${enabled ? "translate-x-6" : "translate-x-1"}
         `}
       />
     </button>

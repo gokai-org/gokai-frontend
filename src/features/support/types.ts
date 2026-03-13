@@ -32,7 +32,7 @@ export interface SupportContactRequest {
 
 /**
  * El backend crea un ticket y devuelve su ID + estado inicial.
- * El ticket se gestiona luego desde el panel de admin, y las 
+ * El ticket se gestiona luego desde el panel de admin, y las
  * respuestas llegan al email del usuario como hilo de Gmail.
  */
 export interface SupportTicketResponse {

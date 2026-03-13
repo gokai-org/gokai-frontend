@@ -5,20 +5,21 @@ interface IntegrationButtonProps {
   onClick?: () => void;
 }
 
-export function IntegrationButton({ 
-  name, 
-  icon, 
-  connected = false, 
-  onClick 
+export function IntegrationButton({
+  name,
+  icon,
+  connected = false,
+  onClick,
 }: IntegrationButtonProps) {
   return (
     <button
       onClick={onClick}
       className={`
         flex items-center gap-2 px-4 py-2 rounded-lg border transition-all
-        ${connected 
-          ? 'bg-[#993331]/10 border-[#993331]/20 text-[#993331]' 
-          : 'bg-white border-gray-200 text-gray-700 hover:border-gray-300'
+        ${
+          connected
+            ? "bg-[#993331]/10 border-[#993331]/20 text-[#993331]"
+            : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
         }
       `}
     >

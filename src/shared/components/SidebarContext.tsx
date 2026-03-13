@@ -15,7 +15,10 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [expanded, setExpanded] = useState(false);
   const [hidden, setHidden] = useState(false);
 
-  const value = useMemo(() => ({ expanded, setExpanded, hidden, setHidden }), [expanded, hidden]);
+  const value = useMemo(
+    () => ({ expanded, setExpanded, hidden, setHidden }),
+    [expanded, hidden],
+  );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

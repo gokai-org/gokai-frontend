@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 
-const SUBSCRIPTIONS_API_BASE = process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
+const SUBSCRIPTIONS_API_BASE =
+  process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
 
 export async function POST(req: NextRequest) {
   try {
@@ -12,15 +13,18 @@ export async function POST(req: NextRequest) {
     }
     const token = normalizeBearerToken(rawToken);
     const { priceId, successUrl } = await req.json();
-    const res = await fetch(`${SUBSCRIPTIONS_API_BASE}/subscriptions/subscribe`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`,
+    const res = await fetch(
+      `${SUBSCRIPTIONS_API_BASE}/subscriptions/subscribe`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ priceId, successUrl }),
+        credentials: "include",
       },
-      body: JSON.stringify({ priceId, successUrl }),
-      credentials: "include",
-    });
+    );
     if (res.redirected) {
       return NextResponse.redirect(res.url);
     }
@@ -28,8 +32,14 @@ export async function POST(req: NextRequest) {
     if (data.url) {
       return NextResponse.json({ url: data.url });
     }
-    return NextResponse.json({ error: data.error || "Error al crear sesión de pago" }, { status: 400 });
+    return NextResponse.json(
+      { error: data.error || "Error al crear sesión de pago" },
+      { status: 400 },
+    );
   } catch (err) {
-    return NextResponse.json({ error: "Error de red o formato" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error de red o formato" },
+      { status: 500 },
+    );
   }
 }

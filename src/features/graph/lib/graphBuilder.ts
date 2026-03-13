@@ -1,4 +1,10 @@
-import { GraphNode, GraphEdge, NodeType, NodeStatus, GraphLayoutConfig } from "./graphTypes";
+import {
+  GraphNode,
+  GraphEdge,
+  NodeType,
+  NodeStatus,
+  GraphLayoutConfig,
+} from "./graphTypes";
 import { GRAPH_CONFIG } from "./graphConfig";
 
 interface NodeDefinition {
@@ -12,20 +18,19 @@ interface NodeDefinition {
   symbol?: string;
 }
 
-
 /**
  * Calcula qué handle usar basándose en la posición relativa entre dos nodos
  */
 function getOptimalHandles(
   sourceNode: GraphNode,
-  targetNode: GraphNode
+  targetNode: GraphNode,
 ): { sourceHandle: string; targetHandle: string } {
   const dx = targetNode.position.x - sourceNode.position.x;
   const dy = targetNode.position.y - sourceNode.position.y;
-  
+
   const angle = Math.atan2(dy, dx);
   const degrees = ((angle * 180) / Math.PI + 360) % 360;
-  
+
   let sourceHandle: string;
   if (degrees >= 45 && degrees < 135) {
     sourceHandle = "source-bottom";
@@ -36,7 +41,7 @@ function getOptimalHandles(
   } else {
     sourceHandle = "source-right";
   }
-  
+
   let targetHandle: string;
   const oppositeDegrees = (degrees + 180) % 360;
   if (oppositeDegrees >= 45 && oppositeDegrees < 135) {
@@ -48,7 +53,7 @@ function getOptimalHandles(
   } else {
     targetHandle = "target-right";
   }
-  
+
   return { sourceHandle, targetHandle };
 }
 
@@ -58,7 +63,7 @@ function getOptimalHandles(
 export function createCustomGraph(
   nodes: NodeDefinition[],
   connections: Array<{ from: string; to: string; completed?: boolean }>,
-  layoutConfig?: Partial<GraphLayoutConfig>
+  layoutConfig?: Partial<GraphLayoutConfig>,
 ): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const config = {
     ...GRAPH_CONFIG.layout,
@@ -74,7 +79,8 @@ export function createCustomGraph(
       x = config.centerX;
       y = config.centerY;
     } else {
-      const angle = ((index - 1) / (nodes.length - 1)) * 2 * Math.PI - Math.PI / 2;
+      const angle =
+        ((index - 1) / (nodes.length - 1)) * 2 * Math.PI - Math.PI / 2;
       x = config.centerX + config.radius * Math.cos(angle);
       y = config.centerY + config.radius * Math.sin(angle);
     }
@@ -102,13 +108,16 @@ export function createCustomGraph(
   const graphEdges: GraphEdge[] = connections.map((conn) => {
     const sourceNode = nodeMap.get(conn.from);
     const targetNode = nodeMap.get(conn.to);
-    
+
     if (!sourceNode || !targetNode) {
       throw new Error(`Nodo no encontrado: ${conn.from} o ${conn.to}`);
     }
-    
-    const { sourceHandle, targetHandle } = getOptimalHandles(sourceNode, targetNode);
-    
+
+    const { sourceHandle, targetHandle } = getOptimalHandles(
+      sourceNode,
+      targetNode,
+    );
+
     return {
       id: `${conn.from}-${conn.to}`,
       source: conn.from,
@@ -130,7 +139,7 @@ export function createCustomGraph(
  */
 export function generateLevelNodes(
   level: number,
-  completedCount: number
+  completedCount: number,
 ): NodeDefinition[] {
   const nodeTypes: NodeType[] = ["writing", "listening", "reading", "speaking"];
   const nodes: NodeDefinition[] = [
@@ -149,8 +158,8 @@ export function generateLevelNodes(
       i < completedCount
         ? "completed"
         : i === completedCount
-        ? "available"
-        : "locked";
+          ? "available"
+          : "locked";
 
     nodes.push({
       id: `${nodeTypes[typeIndex]}-${Math.floor(i / nodeTypes.length) + 1}`,
@@ -167,12 +176,13 @@ export function generateLevelNodes(
  * Genera conexiones automáticas para un grafo
  */
 export function generateConnections(
-  nodes: NodeDefinition[]
+  nodes: NodeDefinition[],
 ): Array<{ from: string; to: string; completed?: boolean }> {
   const homeNode = nodes.find((n) => n.type === "home");
   if (!homeNode) return [];
 
-  const connections: Array<{ from: string; to: string; completed?: boolean }> = [];
+  const connections: Array<{ from: string; to: string; completed?: boolean }> =
+    [];
 
   // Conectar home con todos
   nodes.forEach((node) => {
@@ -191,7 +201,9 @@ export function generateConnections(
       connections.push({
         from: nodes[i].id,
         to: nodes[i + 1].id,
-        completed: nodes[i].status === "completed" && nodes[i + 1].status === "completed",
+        completed:
+          nodes[i].status === "completed" &&
+          nodes[i + 1].status === "completed",
       });
     }
   }

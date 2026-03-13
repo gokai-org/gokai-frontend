@@ -1,13 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import {
-  BookOpen,
-  PenTool,
-  BookText,
-  Headphones,
-  Mic,
-} from "lucide-react";
+import { BookOpen, PenTool, BookText, Headphones, Mic } from "lucide-react";
 import type {
   ReviewItem,
   ReviewKanji,
@@ -111,9 +105,7 @@ function KanjiCard({
         <BadgeRow type="kanji" lastPracticed={item.lastPracticed} />
         <h3 className="text-lg font-extrabold text-gray-900 truncate">
           {item.kanji.symbol}{" "}
-          <span className="text-gray-500 font-bold text-base">
-            ({reading})
-          </span>
+          <span className="text-gray-500 font-bold text-base">({reading})</span>
           <span className="text-[#993331] ml-2 text-base">— {meaning}</span>
         </h3>
         <p className="text-xs text-gray-500 mt-1">
@@ -199,9 +191,7 @@ function ListeningCard({
         <p className="text-xs text-gray-500 mt-1 line-clamp-1">
           {item.description}
         </p>
-        <p className="text-sm font-bold text-[#C4863B] mt-0.5">
-          {item.kana}
-        </p>
+        <p className="text-sm font-bold text-[#C4863B] mt-0.5">{item.kana}</p>
       </div>
 
       <ActionButton
@@ -399,21 +389,15 @@ export function ReviewItemList({ items, onStart }: ReviewItemListProps) {
       {items.map((item) => {
         switch (item.type) {
           case "kanji":
-            return (
-              <KanjiCard key={item.id} item={item} onStart={onStart} />
-            );
+            return <KanjiCard key={item.id} item={item} onStart={onStart} />;
           case "grammar":
-            return (
-              <GrammarCard key={item.id} item={item} onStart={onStart} />
-            );
+            return <GrammarCard key={item.id} item={item} onStart={onStart} />;
           case "listening":
             return (
               <ListeningCard key={item.id} item={item} onStart={onStart} />
             );
           case "speaking":
-            return (
-              <SpeakingCard key={item.id} item={item} onStart={onStart} />
-            );
+            return <SpeakingCard key={item.id} item={item} onStart={onStart} />;
         }
       })}
     </motion.div>

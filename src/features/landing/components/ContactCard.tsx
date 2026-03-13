@@ -1,7 +1,14 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { IconPhone, IconMail, IconTwitter, IconInstagram, IconFacebook, IconWhatsApp } from "./SocialIcons";
+import {
+  IconPhone,
+  IconMail,
+  IconTwitter,
+  IconInstagram,
+  IconFacebook,
+  IconWhatsApp,
+} from "./SocialIcons";
 
 function SocialBadge({ children }: { children: React.ReactNode }) {
   return (
@@ -30,7 +37,8 @@ export default function ContactCard() {
             Escríbenos
           </h4>
           <p className="mt-4 max-w-2xl text-base md:text-lg leading-relaxed text-neutral-700">
-            Tu aprendizaje es nuestra prioridad. Si tienes alguna pregunta o sugerencia, estamos aquí para ayudarte.
+            Tu aprendizaje es nuestra prioridad. Si tienes alguna pregunta o
+            sugerencia, estamos aquí para ayudarte.
           </p>
         </div>
 
@@ -38,7 +46,9 @@ export default function ContactCard() {
           <div className="flex items-start gap-4">
             <IconPhone />
             <div className="text-left">
-              <p className="text-lg font-extrabold text-neutral-900">Teléfono</p>
+              <p className="text-lg font-extrabold text-neutral-900">
+                Teléfono
+              </p>
               <p className="text-neutral-600">+52 33-2380-5480</p>
             </div>
           </div>
@@ -53,12 +63,22 @@ export default function ContactCard() {
         </div>
 
         <div className="mt-8 text-left">
-          <p className="text-xl font-extrabold text-neutral-900">Redes sociales</p>
+          <p className="text-xl font-extrabold text-neutral-900">
+            Redes sociales
+          </p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <SocialBadge><IconTwitter /></SocialBadge>
-            <SocialBadge><IconInstagram /></SocialBadge>
-            <SocialBadge><IconFacebook /></SocialBadge>
-            <SocialBadge><IconWhatsApp /></SocialBadge>
+            <SocialBadge>
+              <IconTwitter />
+            </SocialBadge>
+            <SocialBadge>
+              <IconInstagram />
+            </SocialBadge>
+            <SocialBadge>
+              <IconFacebook />
+            </SocialBadge>
+            <SocialBadge>
+              <IconWhatsApp />
+            </SocialBadge>
           </div>
         </div>
       </div>

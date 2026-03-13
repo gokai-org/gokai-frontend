@@ -21,11 +21,11 @@ interface RecentCardProps {
 export function RecentCard({ item, onClick }: RecentCardProps) {
   const formatTime = (timeInfo?: string | Date) => {
     if (!timeInfo) return "Hace un momento";
-    
+
     try {
       const date = new Date(timeInfo);
       if (isNaN(date.getTime())) return "Reciente";
-      
+
       const now = new Date();
       const diffMs = now.getTime() - date.getTime();
       const diffMins = Math.floor(diffMs / 60000);
@@ -36,8 +36,11 @@ export function RecentCard({ item, onClick }: RecentCardProps) {
       if (diffMins < 60) return `Hace ${diffMins} min`;
       if (diffHrs < 24) return `Hace ${diffHrs} h`;
       if (diffDays === 1) return "Ayer";
-      
-      return new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' }).format(date);
+
+      return new Intl.DateTimeFormat("es-ES", {
+        day: "numeric",
+        month: "short",
+      }).format(date);
     } catch (e) {
       return "Reciente";
     }
@@ -62,7 +65,7 @@ export function RecentCard({ item, onClick }: RecentCardProps) {
         <h3 className="font-black text-[15px] text-gray-900 truncate group-hover:text-[#993331] transition-colors">
           {item.title}
         </h3>
-        
+
         {item.description ? (
           <p className="text-[13px] font-medium text-gray-400 truncate mt-1">
             {item.description}
@@ -79,15 +82,13 @@ export function RecentCard({ item, onClick }: RecentCardProps) {
         <span className="text-[12px] font-medium text-gray-400 mb-1">
           {formatTime(item.lastAccessed)}
         </span>
-        
+
         {item.progress !== undefined ? (
           <span className="text-[15px] font-black text-[#993331]">
             {item.progress}%
           </span>
         ) : (
-          <span className="text-[15px] font-black text-gray-300">
-            --
-          </span>
+          <span className="text-[15px] font-black text-gray-300">--</span>
         )}
       </div>
     </div>

@@ -2,7 +2,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import LearningGraph from "@/features/graph/components/LearningGraph";
-import { createCustomGraph, generateConnections } from "@/features/graph/lib/graphBuilder";
+import {
+  createCustomGraph,
+  generateConnections,
+} from "@/features/graph/lib/graphBuilder";
 import type { NodeType, NodeStatus } from "@/features/graph/lib/graphTypes";
 import { listKanjis } from "@/features/kanji/api/kanjiApi";
 import type { Kanji } from "@/features/kanji/types";
@@ -103,12 +106,12 @@ export default function UserGraph({
 
   const connections = useMemo(
     () => generateConnections(nodeDefinitions),
-    [nodeDefinitions]
+    [nodeDefinitions],
   );
 
   const { nodes, edges } = useMemo(
     () => createCustomGraph(nodeDefinitions, connections),
-    [nodeDefinitions, connections]
+    [nodeDefinitions, connections],
   );
 
   if (loading) {

@@ -4,7 +4,13 @@ export interface LibraryItem {
   title: string;
   description: string;
   thumbnail: string;
-  category: 'leccion' | 'kanji' | 'gramatica' | 'vocabulario' | 'cultura' | 'ejercicio';
+  category:
+    | "leccion"
+    | "kanji"
+    | "gramatica"
+    | "vocabulario"
+    | "cultura"
+    | "ejercicio";
   progress?: number;
   isFavorite?: boolean;
   duration?: string;

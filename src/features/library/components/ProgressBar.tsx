@@ -3,7 +3,7 @@ interface ProgressBarProps {
   color?: string;
 }
 
-export function ProgressBar({ progress, color = '#993331' }: ProgressBarProps) {
+export function ProgressBar({ progress, color = "#993331" }: ProgressBarProps) {
   return (
     <div className="flex items-center gap-2">
       <div className="flex-1 h-1.5 bg-gray-200 rounded-full overflow-hidden">
@@ -12,9 +12,7 @@ export function ProgressBar({ progress, color = '#993331' }: ProgressBarProps) {
           style={{ width: `${progress}%`, backgroundColor: color }}
         />
       </div>
-      <span className="text-xs text-gray-500 shrink-0">
-        {progress}%
-      </span>
+      <span className="text-xs text-gray-500 shrink-0">{progress}%</span>
     </div>
   );
 }

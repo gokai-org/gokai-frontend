@@ -20,12 +20,19 @@ export default function SubthemeLesson({
             SUBTHEME • {mode.toUpperCase()}
           </div>
           <div className="text-xs text-gray-500">
-            Tema: <span className="font-semibold text-gray-800">{s.theme.meaning ?? "—"}</span>
+            Tema:{" "}
+            <span className="font-semibold text-gray-800">
+              {s.theme.meaning ?? "—"}
+            </span>
           </div>
         </div>
 
-        <div className="mt-2 text-lg font-semibold text-gray-900">{s.meaning}</div>
-        <div className="mt-1 text-sm text-gray-600">{data.lesson.description}</div>
+        <div className="mt-2 text-lg font-semibold text-gray-900">
+          {s.meaning}
+        </div>
+        <div className="mt-1 text-sm text-gray-600">
+          {data.lesson.description}
+        </div>
 
         <div className="mt-4 flex items-center justify-between gap-4">
           <div className="text-5xl font-bold text-[#993331]">{s.kanji}</div>
@@ -36,7 +43,9 @@ export default function SubthemeLesson({
         </div>
 
         <div className="mt-4 rounded-2xl border border-gray-100 p-3">
-          <div className="text-xs font-semibold text-gray-900">Qué incluirá</div>
+          <div className="text-xs font-semibold text-gray-900">
+            Qué incluirá
+          </div>
           <ul className="mt-2 text-sm text-gray-600 list-disc pl-5 space-y-1">
             <li>Vocabulario del subtema</li>
             <li>Ejercicios según el modo</li>

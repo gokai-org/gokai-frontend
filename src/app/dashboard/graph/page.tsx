@@ -11,10 +11,10 @@ export default function Page() {
 
   return (
     <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-white z-0">
-      <UserGraph 
-        userId={userId} 
-        level={currentLevel} 
-        completedActivities={completedActivities} 
+      <UserGraph
+        userId={userId}
+        level={currentLevel}
+        completedActivities={completedActivities}
       />
     </div>
   );

@@ -33,10 +33,11 @@ export function KanjiStrokePlayer({
     (index: number) => (el: SVGPathElement | null) => {
       pathRefs.current[index] = el;
     },
-    []
+    [],
   );
 
-  const showAll = activeStrokeIndex === -1 || activeStrokeIndex >= strokes.length;
+  const showAll =
+    activeStrokeIndex === -1 || activeStrokeIndex >= strokes.length;
 
   function shouldShowNumber(i: number) {
     if (!showNumbers) return false;

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { DashboardHeader } from '@/features/dashboard/components/DashboardHeader';
+import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 
 export function ChatHeader() {
   return (

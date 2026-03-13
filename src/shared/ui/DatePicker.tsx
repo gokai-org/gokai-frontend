@@ -6,8 +6,18 @@ import { motion, AnimatePresence } from "framer-motion";
 
 /* ─── helpers ─── */
 const MONTHS = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 const DAYS = ["Lu", "Ma", "Mi", "Ju", "Vi", "Sa", "Do"];
 
@@ -60,14 +70,21 @@ export function DatePicker({
 
   const [open, setOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("days");
-  const [viewYear, setViewYear] = useState(parsed?.getFullYear() ?? today.getFullYear());
-  const [viewMonth, setViewMonth] = useState(parsed?.getMonth() ?? today.getMonth());
+  const [viewYear, setViewYear] = useState(
+    parsed?.getFullYear() ?? today.getFullYear(),
+  );
+  const [viewMonth, setViewMonth] = useState(
+    parsed?.getMonth() ?? today.getMonth(),
+  );
   const [yearsPage, setYearsPage] = useState(0); // for paging through years
 
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [dropdownPos, setDropdownPos] = useState<{ top: number; left: number } | null>(null);
+  const [dropdownPos, setDropdownPos] = useState<{
+    top: number;
+    left: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!open || !triggerRef.current) return;
@@ -76,8 +93,12 @@ export function DatePicker({
       const dropW = 280;
       let left = rect.left + rect.width / 2 - dropW / 2;
       if (left < 8) left = 8;
-      if (left + dropW > window.innerWidth - 8) left = window.innerWidth - 8 - dropW;
-      setDropdownPos({ top: rect.bottom + 8 + window.scrollY, left: left + window.scrollX });
+      if (left + dropW > window.innerWidth - 8)
+        left = window.innerWidth - 8 - dropW;
+      setDropdownPos({
+        top: rect.bottom + 8 + window.scrollY,
+        left: left + window.scrollX,
+      });
     }
     updatePos();
     window.addEventListener("scroll", updatePos, true);
@@ -176,7 +197,10 @@ export function DatePicker({
   /* ── years grid ── */
   const YEARS_PER_PAGE = 12;
   const baseYear = today.getFullYear() - 100 + yearsPage * YEARS_PER_PAGE;
-  const yearsGrid = Array.from({ length: YEARS_PER_PAGE }, (_, i) => baseYear + i);
+  const yearsGrid = Array.from(
+    { length: YEARS_PER_PAGE },
+    (_, i) => baseYear + i,
+  );
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
@@ -192,7 +216,8 @@ export function DatePicker({
             setViewMode("days");
             setYearsPage(
               Math.floor(
-                ((parsed?.getFullYear() ?? today.getFullYear()) - (today.getFullYear() - 100)) /
+                ((parsed?.getFullYear() ?? today.getFullYear()) -
+                  (today.getFullYear() - 100)) /
                   YEARS_PER_PAGE,
               ),
             );
@@ -251,202 +276,249 @@ export function DatePicker({
                 className="fixed z-[9999] w-[280px] rounded-xl border border-neutral-100 bg-white p-3 shadow-lg shadow-neutral-900/10 ring-1 ring-black/5"
                 style={{ top: dropdownPos.top, left: dropdownPos.left }}
               >
-            <AnimatePresence mode="wait">
-              {/* ─── DAYS VIEW ─── */}
-              {viewMode === "days" && (
-                <motion.div
-                  key="days"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  {/* Header: nav + month/year label */}
-                  <div className="mb-2 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={prevMonth}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                <AnimatePresence mode="wait">
+                  {/* ─── DAYS VIEW ─── */}
+                  {viewMode === "days" && (
+                    <motion.div
+                      key="days"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
+                      {/* Header: nav + month/year label */}
+                      <div className="mb-2 flex items-center justify-between">
+                        <button
+                          type="button"
+                          onClick={prevMonth}
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15 19l-7-7 7-7"
+                            />
+                          </svg>
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={() => setViewMode("months")}
-                      className="rounded-md px-2 py-1 text-sm font-semibold text-neutral-800 transition hover:bg-[#993331]/10 hover:text-[#993331]"
-                    >
-                      {MONTHS[viewMonth]} {viewYear}
-                    </button>
+                        <button
+                          type="button"
+                          onClick={() => setViewMode("months")}
+                          className="rounded-md px-2 py-1 text-sm font-semibold text-neutral-800 transition hover:bg-[#993331]/10 hover:text-[#993331]"
+                        >
+                          {MONTHS[viewMonth]} {viewYear}
+                        </button>
 
-                    <button
-                      type="button"
-                      onClick={nextMonth}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-
-                  {/* Day names */}
-                  <div className="mb-1 grid grid-cols-7 gap-0">
-                    {DAYS.map((d) => (
-                      <div key={d} className="py-1 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-400">
-                        {d}
+                        <button
+                          type="button"
+                          onClick={nextMonth}
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </button>
                       </div>
-                    ))}
-                  </div>
 
-                  {/* Day cells */}
-                  <div className="grid grid-cols-7 gap-0">
-                    {cells.map((day, i) => {
-                      if (day === null) return <div key={`empty-${i}`} />;
-                      const selected = isSelected(day);
-                      const todayMark = isToday(day);
-                      const disabled = isDayDisabled(day);
-                      return (
+                      {/* Day names */}
+                      <div className="mb-1 grid grid-cols-7 gap-0">
+                        {DAYS.map((d) => (
+                          <div
+                            key={d}
+                            className="py-1 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-400"
+                          >
+                            {d}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Day cells */}
+                      <div className="grid grid-cols-7 gap-0">
+                        {cells.map((day, i) => {
+                          if (day === null) return <div key={`empty-${i}`} />;
+                          const selected = isSelected(day);
+                          const todayMark = isToday(day);
+                          const disabled = isDayDisabled(day);
+                          return (
+                            <button
+                              key={day}
+                              type="button"
+                              disabled={disabled}
+                              onClick={() => handleSelect(day)}
+                              className={[
+                                "relative mx-auto flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all duration-150",
+                                disabled
+                                  ? "cursor-not-allowed text-neutral-200"
+                                  : selected
+                                    ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/30"
+                                    : todayMark
+                                      ? "bg-[#993331]/10 text-[#993331] font-bold"
+                                      : "text-neutral-700 hover:bg-[#993331]/8 hover:text-[#993331]",
+                              ].join(" ")}
+                            >
+                              {day}
+                              {todayMark && !selected && (
+                                <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#993331]" />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {/* Today shortcut */}
+                      <div className="mt-2 flex justify-center">
                         <button
-                          key={day}
                           type="button"
-                          disabled={disabled}
-                          onClick={() => handleSelect(day)}
-                          className={[
-                            "relative mx-auto flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all duration-150",
-                            disabled
-                              ? "cursor-not-allowed text-neutral-200"
-                              : selected
-                              ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/30"
-                              : todayMark
-                              ? "bg-[#993331]/10 text-[#993331] font-bold"
-                              : "text-neutral-700 hover:bg-[#993331]/8 hover:text-[#993331]",
-                          ].join(" ")}
+                          onClick={() => {
+                            setViewYear(today.getFullYear());
+                            setViewMonth(today.getMonth());
+                            handleSelect(today.getDate());
+                          }}
+                          className="rounded-md px-3 py-1 text-xs font-semibold text-[#993331] transition hover:bg-[#993331]/10"
                         >
-                          {day}
-                          {todayMark && !selected && (
-                            <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#993331]" />
-                          )}
+                          Hoy
                         </button>
-                      );
-                    })}
-                  </div>
+                      </div>
+                    </motion.div>
+                  )}
 
-                  {/* Today shortcut */}
-                  <div className="mt-2 flex justify-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setViewYear(today.getFullYear());
-                        setViewMonth(today.getMonth());
-                        handleSelect(today.getDate());
-                      }}
-                      className="rounded-md px-3 py-1 text-xs font-semibold text-[#993331] transition hover:bg-[#993331]/10"
+                  {/* ─── MONTHS VIEW ─── */}
+                  {viewMode === "months" && (
+                    <motion.div
+                      key="months"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
                     >
-                      Hoy
-                    </button>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* ─── MONTHS VIEW ─── */}
-              {viewMode === "months" && (
-                <motion.div
-                  key="months"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <div className="mb-3 flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => setViewMode("years")}
-                      className="rounded-md px-3 py-1 text-sm font-semibold text-neutral-800 transition hover:bg-[#993331]/10 hover:text-[#993331]"
-                    >
-                      {viewYear}
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {MONTHS.map((m, i) => {
-                      const isCurrent = i === viewMonth && viewYear === (parsed?.getFullYear() ?? -1);
-                      return (
+                      <div className="mb-3 flex items-center justify-center">
                         <button
-                          key={m}
                           type="button"
-                          onClick={() => handleMonthSelect(i)}
-                          className={[
-                            "rounded-lg py-2 text-sm font-medium transition-all duration-150",
-                            isCurrent
-                              ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/25"
-                              : "text-neutral-600 hover:bg-[#993331]/8 hover:text-[#993331]",
-                          ].join(" ")}
+                          onClick={() => setViewMode("years")}
+                          className="rounded-md px-3 py-1 text-sm font-semibold text-neutral-800 transition hover:bg-[#993331]/10 hover:text-[#993331]"
                         >
-                          {m.slice(0, 3)}
+                          {viewYear}
                         </button>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {MONTHS.map((m, i) => {
+                          const isCurrent =
+                            i === viewMonth &&
+                            viewYear === (parsed?.getFullYear() ?? -1);
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => handleMonthSelect(i)}
+                              className={[
+                                "rounded-lg py-2 text-sm font-medium transition-all duration-150",
+                                isCurrent
+                                  ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/25"
+                                  : "text-neutral-600 hover:bg-[#993331]/8 hover:text-[#993331]",
+                              ].join(" ")}
+                            >
+                              {m.slice(0, 3)}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
 
-              {/* ─── YEARS VIEW ─── */}
-              {viewMode === "years" && (
-                <motion.div
-                  key="years"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.15 }}
-                >
-                  <div className="mb-3 flex items-center justify-between">
-                    <button
-                      type="button"
-                      onClick={() => setYearsPage((p) => Math.max(0, p - 1))}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100"
+                  {/* ─── YEARS VIEW ─── */}
+                  {viewMode === "years" && (
+                    <motion.div
+                      key="years"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={{ duration: 0.15 }}
                     >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span className="text-sm font-semibold text-neutral-700">
-                      {yearsGrid[0]} – {yearsGrid[yearsGrid.length - 1]}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => setYearsPage((p) => p + 1)}
-                      className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2">
-                    {yearsGrid.map((y) => {
-                      const isCurrent = y === viewYear;
-                      return (
+                      <div className="mb-3 flex items-center justify-between">
                         <button
-                          key={y}
                           type="button"
-                          onClick={() => handleYearSelect(y)}
-                          className={[
-                            "rounded-lg py-2 text-sm font-medium transition-all duration-150",
-                            isCurrent
-                              ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/25"
-                              : "text-neutral-600 hover:bg-[#993331]/8 hover:text-[#993331]",
-                          ].join(" ")}
+                          onClick={() =>
+                            setYearsPage((p) => Math.max(0, p - 1))
+                          }
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100"
                         >
-                          {y}
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M15 19l-7-7 7-7"
+                            />
+                          </svg>
                         </button>
-                      );
-                    })}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+                        <span className="text-sm font-semibold text-neutral-700">
+                          {yearsGrid[0]} – {yearsGrid[yearsGrid.length - 1]}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setYearsPage((p) => p + 1)}
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100"
+                        >
+                          <svg
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2.5}
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M9 5l7 7-7 7"
+                            />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {yearsGrid.map((y) => {
+                          const isCurrent = y === viewYear;
+                          return (
+                            <button
+                              key={y}
+                              type="button"
+                              onClick={() => handleYearSelect(y)}
+                              className={[
+                                "rounded-lg py-2 text-sm font-medium transition-all duration-150",
+                                isCurrent
+                                  ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/25"
+                                  : "text-neutral-600 hover:bg-[#993331]/8 hover:text-[#993331]",
+                              ].join(" ")}
+                            >
+                              {y}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </motion.div>
             )}
           </AnimatePresence>,

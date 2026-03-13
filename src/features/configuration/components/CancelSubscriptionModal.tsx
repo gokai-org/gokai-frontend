@@ -178,7 +178,9 @@ export function CancelSubscriptionModal({
                     <motion.button
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      onClick={() => goTo(step === "final" ? "losing" : "confirm")}
+                      onClick={() =>
+                        goTo(step === "final" ? "losing" : "confirm")
+                      }
                       className="mb-4 flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors"
                     >
                       <ArrowLeft size={14} /> Volver
@@ -198,13 +200,21 @@ export function CancelSubscriptionModal({
                           className={`flex h-12 w-12 items-center justify-center rounded-xl ${cfg.iconBg} backdrop-blur-sm`}
                           initial={{ scale: 0.5, rotate: -20 }}
                           animate={{ scale: 1, rotate: 0 }}
-                          transition={{ type: "spring" as const, damping: 15, stiffness: 250 }}
+                          transition={{
+                            type: "spring" as const,
+                            damping: 15,
+                            stiffness: 250,
+                          }}
                         >
                           <cfg.icon size={24} className={cfg.iconColor} />
                         </motion.div>
                         <div>
-                          <h2 className="text-xl font-extrabold tracking-tight">{cfg.title}</h2>
-                          <p className="text-sm text-white/75">{cfg.subtitle}</p>
+                          <h2 className="text-xl font-extrabold tracking-tight">
+                            {cfg.title}
+                          </h2>
+                          <p className="text-sm text-white/75">
+                            {cfg.subtitle}
+                          </p>
                         </div>
                       </div>
                     </motion.div>
@@ -295,7 +305,9 @@ export function CancelSubscriptionModal({
                           transition={{ delay: 0.15, duration: 0.35 }}
                         >
                           <p className="text-sm text-amber-800 font-medium leading-relaxed">
-                            Tu suscripción GOKAI+ seguirá activa hasta el final de tu período de facturación actual. Después de eso, perderás acceso a todas las funciones premium.
+                            Tu suscripción GOKAI+ seguirá activa hasta el final
+                            de tu período de facturación actual. Después de eso,
+                            perderás acceso a todas las funciones premium.
                           </p>
                         </motion.div>
 
@@ -305,7 +317,8 @@ export function CancelSubscriptionModal({
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.25 }}
                         >
-                          ¿Estás seguro de que deseas continuar con la cancelación?
+                          ¿Estás seguro de que deseas continuar con la
+                          cancelación?
                         </motion.p>
 
                         {/* Quick summary of what you have */}
@@ -324,11 +337,19 @@ export function CancelSubscriptionModal({
                                 key={f.label}
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
-                                transition={{ delay: 0.35 + idx * 0.05, duration: 0.25 }}
+                                transition={{
+                                  delay: 0.35 + idx * 0.05,
+                                  duration: 0.25,
+                                }}
                                 className="flex items-center gap-1.5 text-xs text-gray-600"
                               >
-                                <CheckCircle2 size={12} className="text-[#993331] flex-shrink-0" />
-                                <span className="truncate">{f.label.split(" ").slice(0, 2).join(" ")}</span>
+                                <CheckCircle2
+                                  size={12}
+                                  className="text-[#993331] flex-shrink-0"
+                                />
+                                <span className="truncate">
+                                  {f.label.split(" ").slice(0, 2).join(" ")}
+                                </span>
                               </motion.div>
                             ))}
                           </div>
@@ -392,7 +413,11 @@ export function CancelSubscriptionModal({
                               <motion.div
                                 initial={{ scale: 0 }}
                                 animate={{ scale: 1 }}
-                                transition={{ delay: 0.3 + idx * 0.07, type: "spring" as const, stiffness: 400 }}
+                                transition={{
+                                  delay: 0.3 + idx * 0.07,
+                                  type: "spring" as const,
+                                  stiffness: 400,
+                                }}
                               >
                                 <XCircle size={16} className="text-red-300" />
                               </motion.div>
@@ -407,7 +432,10 @@ export function CancelSubscriptionModal({
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.5 }}
                         >
-                          <Crown size={18} className="mx-auto mb-1.5 text-[#993331]" />
+                          <Crown
+                            size={18}
+                            className="mx-auto mb-1.5 text-[#993331]"
+                          />
                           <p className="text-xs font-semibold text-gray-900">
                             Tu progreso de aprendizaje se verá afectado
                           </p>
@@ -453,7 +481,9 @@ export function CancelSubscriptionModal({
                           transition={{ delay: 0.1, duration: 0.35 }}
                         >
                           <p className="text-sm text-red-800 font-medium leading-relaxed">
-                            Al confirmar, tu suscripción se cancelará al final del período actual. Regresarás al plan gratuito con funciones limitadas.
+                            Al confirmar, tu suscripción se cancelará al final
+                            del período actual. Regresarás al plan gratuito con
+                            funciones limitadas.
                           </p>
                         </motion.div>
 
@@ -468,22 +498,43 @@ export function CancelSubscriptionModal({
                           </p>
                           <ul className="space-y-1.5">
                             {[
-                              { ok: false, text: "Se cancelará la renovación automática" },
-                              { ok: false, text: "Perderás acceso a funciones premium" },
-                              { ok: true, text: "Tu progreso de aprendizaje se conservará" },
-                              { ok: true, text: "Puedes volver a suscribirte cuando quieras" },
+                              {
+                                ok: false,
+                                text: "Se cancelará la renovación automática",
+                              },
+                              {
+                                ok: false,
+                                text: "Perderás acceso a funciones premium",
+                              },
+                              {
+                                ok: true,
+                                text: "Tu progreso de aprendizaje se conservará",
+                              },
+                              {
+                                ok: true,
+                                text: "Puedes volver a suscribirte cuando quieras",
+                              },
                             ].map((item, idx) => (
                               <motion.li
                                 key={idx}
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.3 + idx * 0.06, duration: 0.25 }}
+                                transition={{
+                                  delay: 0.3 + idx * 0.06,
+                                  duration: 0.25,
+                                }}
                                 className="flex items-center gap-2 text-xs text-gray-600"
                               >
                                 {item.ok ? (
-                                  <CheckCircle2 size={14} className="text-green-500 flex-shrink-0" />
+                                  <CheckCircle2
+                                    size={14}
+                                    className="text-green-500 flex-shrink-0"
+                                  />
                                 ) : (
-                                  <XCircle size={14} className="text-red-400 flex-shrink-0" />
+                                  <XCircle
+                                    size={14}
+                                    className="text-red-400 flex-shrink-0"
+                                  />
                                 )}
                                 {item.text}
                               </motion.li>
@@ -492,7 +543,9 @@ export function CancelSubscriptionModal({
                         </motion.div>
 
                         {error && (
-                          <p className="text-center text-xs text-red-600">{error}</p>
+                          <p className="text-center text-xs text-red-600">
+                            {error}
+                          </p>
                         )}
                       </div>
 
@@ -514,9 +567,24 @@ export function CancelSubscriptionModal({
                         >
                           {loading ? (
                             <span className="flex items-center justify-center gap-2">
-                              <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                              <svg
+                                className="h-4 w-4 animate-spin"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                />
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                                />
                               </svg>
                               Cancelando suscripción...
                             </span>

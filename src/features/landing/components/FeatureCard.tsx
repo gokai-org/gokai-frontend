@@ -10,7 +10,12 @@ interface FeatureCardProps {
   index: number;
 }
 
-export default function FeatureCard({ title, desc, icon, index }: FeatureCardProps) {
+export default function FeatureCard({
+  title,
+  desc,
+  icon,
+  index,
+}: FeatureCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}

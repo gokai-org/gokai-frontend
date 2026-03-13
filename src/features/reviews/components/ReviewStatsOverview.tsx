@@ -2,12 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import {
-  CheckCircle2,
-  Flame,
-  Target,
-  TrendingUp,
-} from "lucide-react";
+import { CheckCircle2, Flame, Target, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
 import type { ReviewStats } from "../types";
 

@@ -9,7 +9,12 @@ interface LandingNavItemProps {
   children: React.ReactNode;
 }
 
-export default function LandingNavItem({ id, href, active, children }: LandingNavItemProps) {
+export default function LandingNavItem({
+  id,
+  href,
+  active,
+  children,
+}: LandingNavItemProps) {
   return (
     <a
       href={href}

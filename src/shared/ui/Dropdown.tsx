@@ -9,7 +9,12 @@ interface DropdownProps {
   className?: string;
 }
 
-export function Dropdown({ value, options, onChange, className = "" }: DropdownProps) {
+export function Dropdown({
+  value,
+  options,
+  onChange,
+  className = "",
+}: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState(value);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -20,7 +25,10 @@ export function Dropdown({ value, options, onChange, className = "" }: DropdownP
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -44,12 +52,17 @@ export function Dropdown({ value, options, onChange, className = "" }: DropdownP
       >
         <span className="text-gray-700 truncate pr-2">{selectedValue}</span>
         <svg
-          className={`w-4 h-4 ml-2 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`w-4 h-4 ml-2 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M19 9l-7 7-7-7"
+          />
         </svg>
       </button>
 
@@ -61,7 +74,9 @@ export function Dropdown({ value, options, onChange, className = "" }: DropdownP
               type="button"
               onClick={() => handleSelect(option)}
               className={`w-full px-3 py-2 text-sm text-left hover:bg-gray-100 transition-colors ${
-                selectedValue === option ? 'bg-[#993331]/10 text-[#993331] font-medium' : 'text-gray-700'
+                selectedValue === option
+                  ? "bg-[#993331]/10 text-[#993331] font-medium"
+                  : "text-gray-700"
               }`}
             >
               {option}

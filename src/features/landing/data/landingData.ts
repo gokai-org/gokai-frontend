@@ -25,7 +25,11 @@ export type Feature = {
 };
 
 export const HOW_TABS: readonly HowTab[] = [
-  { id: "explora", label: "Explora tus intereses", img: "/mockups/explora.png" },
+  {
+    id: "explora",
+    label: "Explora tus intereses",
+    img: "/mockups/explora.png",
+  },
   { id: "recompensas", label: "Recompensas", img: "/mockups/recompensas.png" },
   { id: "repaso", label: "Repasa con IA", img: "/mockups/repaso.png" },
 ] as const;

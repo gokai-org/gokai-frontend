@@ -67,22 +67,47 @@ export function Toast({ id, type, message, onClose }: ToastProps) {
       className="relative overflow-hidden"
     >
       {/* Borde decorativo japonés */}
-      <div className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${color.accent}`} />
-      
-      <div className={`
+      <div
+        className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${color.accent}`}
+      />
+
+      <div
+        className={`
         relative bg-gradient-to-br ${color.bg} 
         border ${color.border} 
         rounded-lg shadow-lg backdrop-blur-sm
         p-4
         min-w-[320px] max-w-md
-      `}>
+      `}
+      >
         {/* Patrón japonés sutil de fondo */}
         <div className="absolute inset-0 opacity-5">
           <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
             <defs>
-              <pattern id="seigaiha" x="0" y="0" width="40" height="20" patternUnits="userSpaceOnUse">
-                <circle cx="10" cy="20" r="10" fill="none" stroke="currentColor" strokeWidth="1"/>
-                <circle cx="30" cy="20" r="10" fill="none" stroke="currentColor" strokeWidth="1"/>
+              <pattern
+                id="seigaiha"
+                x="0"
+                y="0"
+                width="40"
+                height="20"
+                patternUnits="userSpaceOnUse"
+              >
+                <circle
+                  cx="10"
+                  cy="20"
+                  r="10"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                />
+                <circle
+                  cx="30"
+                  cy="20"
+                  r="10"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1"
+                />
               </pattern>
             </defs>
             <rect width="100%" height="100%" fill="url(#seigaiha)" />
@@ -104,7 +129,8 @@ export function Toast({ id, type, message, onClose }: ToastProps) {
           <X className="w-4 h-4" />
         </motion.button>
 
-        <div className="relative flex items-start gap-3 pr-8">{/* Agregado pr-8 para dar espacio al botón cerrar */}
+        <div className="relative flex items-start gap-3 pr-8">
+          {/* Agregado pr-8 para dar espacio al botón cerrar */}
           {/* Icono animado */}
           <motion.div
             initial={{ scale: 0, rotate: -180 }}

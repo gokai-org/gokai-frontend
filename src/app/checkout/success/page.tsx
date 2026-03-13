@@ -37,7 +37,7 @@ function FloatingParticles() {
         duration: 8 + (i % 5) * 2,
         delay: i * 0.35,
       })),
-    []
+    [],
   );
 
   return (
@@ -291,7 +291,9 @@ export default function CheckoutSuccessPage() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.95, duration: 1.4, ease: "easeOut" }}
               >
-                Estamos activando tu experiencia premium, preparando herramientas avanzadas y sincronizando tus beneficios exclusivos.
+                Estamos activando tu experiencia premium, preparando
+                herramientas avanzadas y sincronizando tus beneficios
+                exclusivos.
               </motion.p>
 
               <motion.div
@@ -373,7 +375,8 @@ export default function CheckoutSuccessPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.75, duration: 1.5 }}
               >
-                Estas son las funciones premium que acabas de desbloquear en tu cuenta:
+                Estas son las funciones premium que acabas de desbloquear en tu
+                cuenta:
               </motion.p>
 
               <div className="mt-8 w-full space-y-3">
@@ -536,7 +539,8 @@ export default function CheckoutSuccessPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.1, duration: 1.3 }}
               >
-                Tu suscripción GOKAI+ está activa y todas las funciones premium ya fueron desbloqueadas para tu aprendizaje.
+                Tu suscripción GOKAI+ está activa y todas las funciones premium
+                ya fueron desbloqueadas para tu aprendizaje.
               </motion.p>
 
               <motion.button

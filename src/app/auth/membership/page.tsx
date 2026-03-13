@@ -25,7 +25,13 @@ export default function MembershipPage() {
               whileHover={{ rotate: 360, scale: 1.1 }}
               transition={{ duration: 0.5 }}
             >
-              <Image src="/logos/gokai-logo.svg" alt="Gokai" width={72} height={72} priority />
+              <Image
+                src="/logos/gokai-logo.svg"
+                alt="Gokai"
+                width={72}
+                height={72}
+                priority
+              />
             </motion.div>
           </a>
 
@@ -36,7 +42,8 @@ export default function MembershipPage() {
             Comienza tu camino en japonés
           </h1>
           <p className="mx-auto mt-4 max-w-2xl text-base md:text-lg leading-relaxed text-neutral-600">
-            Selecciona cómo quieres aprender. Siempre puedes mejorar tu plan después.
+            Selecciona cómo quieres aprender. Siempre puedes mejorar tu plan
+            después.
           </p>
         </motion.div>
 

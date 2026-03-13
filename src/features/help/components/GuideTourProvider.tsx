@@ -9,7 +9,14 @@ export interface TourStep {
   description: string;
   icon?: React.ReactNode;
   /** Posición del spotlight: "center" | "top" | "bottom" | "left" | "right" */
-  position?: "center" | "top" | "top-left" | "top-right" | "bottom" | "bottom-left" | "bottom-right";
+  position?:
+    | "center"
+    | "top"
+    | "top-left"
+    | "top-right"
+    | "bottom"
+    | "bottom-left"
+    | "bottom-right";
 }
 
 export interface TourDefinition {
@@ -41,7 +48,8 @@ const GuideTourContext = createContext<GuideTourContextValue | null>(null);
 
 export function useGuideTour() {
   const ctx = useContext(GuideTourContext);
-  if (!ctx) throw new Error("useGuideTour debe usarse dentro de <GuideTourProvider>");
+  if (!ctx)
+    throw new Error("useGuideTour debe usarse dentro de <GuideTourProvider>");
   return ctx;
 }
 
@@ -91,7 +99,15 @@ export function GuideTourProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <GuideTourContext.Provider
-      value={{ activeTour, currentStep, startTour, nextStep, prevStep, closeTour, goToStep }}
+      value={{
+        activeTour,
+        currentStep,
+        startTour,
+        nextStep,
+        prevStep,
+        closeTour,
+        goToStep,
+      }}
     >
       {children}
     </GuideTourContext.Provider>

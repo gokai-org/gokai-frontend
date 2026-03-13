@@ -13,6 +13,11 @@ export type {
   KanjiLessonResultBody,
   KanjiLessonAnswerBody,
 } from "./types";
-export { getPrimaryMeaning, getPrimaryReading, meaningsToArray, readingsToArray } from "./utils/kanjiText";
+export {
+  getPrimaryMeaning,
+  getPrimaryReading,
+  meaningsToArray,
+  readingsToArray,
+} from "./utils/kanjiText";
 export { submitKanjiLessonResult, getKanjiLessonResults } from "./api/kanjiApi";
 export { useSubmitKanjiLesson } from "./hooks/useSubmitKanjiLesson";

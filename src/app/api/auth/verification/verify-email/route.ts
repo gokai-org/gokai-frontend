@@ -57,10 +57,7 @@ export async function POST(req: Request) {
     if (!r.ok) {
       return NextResponse.json(
         {
-          error:
-            data?.error ||
-            text ||
-            "No se pudo verificar el correo.",
+          error: data?.error || text || "No se pudo verificar el correo.",
         },
         { status: r.status },
       );
@@ -68,8 +65,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message:
-        data?.message || "Correo verificado exitosamente.",
+      message: data?.message || "Correo verificado exitosamente.",
     });
   } catch (err) {
     console.error("Error al verificar correo:", err);

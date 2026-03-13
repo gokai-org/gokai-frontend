@@ -8,7 +8,11 @@ type Props = {
   label?: string;
 };
 
-export default function LessonCTA({ variant = "start", onClick, label }: Props) {
+export default function LessonCTA({
+  variant = "start",
+  onClick,
+  label,
+}: Props) {
   const config =
     variant === "complete"
       ? {
@@ -18,17 +22,17 @@ export default function LessonCTA({ variant = "start", onClick, label }: Props) 
           disabled: false,
         }
       : variant === "disabled"
-      ? {
-          text: label ?? "Bloqueado",
-          className: "bg-gray-200 text-gray-400 shadow-none",
-          disabled: true,
-        }
-      : {
-          text: label ?? "Comenzar",
-          className:
-            "bg-gradient-to-r from-[#993331] to-[#7a2826] shadow-[#993331]/30",
-          disabled: false,
-        };
+        ? {
+            text: label ?? "Bloqueado",
+            className: "bg-gray-200 text-gray-400 shadow-none",
+            disabled: true,
+          }
+        : {
+            text: label ?? "Comenzar",
+            className:
+              "bg-gradient-to-r from-[#993331] to-[#7a2826] shadow-[#993331]/30",
+            disabled: false,
+          };
 
   return (
     <motion.button

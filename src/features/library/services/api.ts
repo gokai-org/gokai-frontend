@@ -1,5 +1,9 @@
 import { apiFetch } from "@/shared/lib/api/client";
-import type { FavoriteType, FavoritesResponse, RecentItemsResponse } from "@/features/library/types";
+import type {
+  FavoriteType,
+  FavoritesResponse,
+  RecentItemsResponse,
+} from "@/features/library/types";
 
 // ========================================
 // FAVORITOS
@@ -13,7 +17,7 @@ export async function getFavorites(): Promise<FavoritesResponse> {
 /** POST /api/content/favorites → { id, type: "kanji"|"grammar"|"word" } */
 export async function addFavorite(
   id: string,
-  type: FavoriteType
+  type: FavoriteType,
 ): Promise<void> {
   await apiFetch("/api/content/favorites", {
     method: "POST",
@@ -22,7 +26,10 @@ export async function addFavorite(
 }
 
 /** DELETE /api/content/favorites/:type/:id */
-export async function removeFavorite(id: string, type: FavoriteType): Promise<void> {
+export async function removeFavorite(
+  id: string,
+  type: FavoriteType,
+): Promise<void> {
   await apiFetch(`/api/content/favorites/${type}/${id}`, { method: "DELETE" });
 }
 
@@ -38,7 +45,7 @@ export async function getRecentItems(): Promise<RecentItemsResponse> {
 /** POST /api/content/recent → { entityType: "kanji"|"grammar"|"word", entityId: string } */
 export async function addRecentItem(
   entityType: string,
-  entityId: string
+  entityId: string,
 ): Promise<void> {
   await apiFetch("/api/content/recent", {
     method: "POST",

@@ -27,7 +27,9 @@ export default function GrammarLesson({
           </div>
         </div>
 
-        <div className="mt-2 text-lg font-semibold text-gray-900">{g.title}</div>
+        <div className="mt-2 text-lg font-semibold text-gray-900">
+          {g.title}
+        </div>
         <div className="mt-1 text-sm text-gray-600">
           {g.description ?? data.lesson.description}
         </div>

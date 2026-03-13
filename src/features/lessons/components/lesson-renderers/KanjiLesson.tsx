@@ -3,7 +3,10 @@
 import { useState } from "react";
 import type { LessonMode, LessonResolved } from "@/features/lessons/types";
 import LessonCTA from "@/features/lessons/components/LessonCTA";
-import { normalizeReadings, normalizeMeanings } from "@/features/kanji/lib/kanjiFormat";
+import {
+  normalizeReadings,
+  normalizeMeanings,
+} from "@/features/kanji/lib/kanjiFormat";
 import { WritingPracticeModal } from "@/features/kanji/components/WritingPracticeModal";
 import { motion } from "framer-motion";
 

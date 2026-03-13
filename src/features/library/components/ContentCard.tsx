@@ -86,11 +86,15 @@ export function ContentCard({
             "hover:scale-110 active:scale-95",
             isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100",
           ].join(" ")}
-          aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+          aria-label={
+            isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+          }
         >
           <svg
             className={`w-4.5 h-4.5 transition-colors ${
-              isFavorite ? "fill-[#F5D076] text-[#F5D076]" : "text-gray-300 hover:text-[#BA5149]"
+              isFavorite
+                ? "fill-[#F5D076] text-[#F5D076]"
+                : "text-gray-300 hover:text-[#BA5149]"
             }`}
             viewBox="0 0 24 24"
             stroke="currentColor"

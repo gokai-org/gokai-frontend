@@ -17,9 +17,7 @@ export function SkeletonBox({
   rounded = "rounded-lg",
 }: SkeletonBoxProps) {
   return (
-    <div
-      className={`animate-pulse bg-gray-200/70 ${rounded} ${className}`}
-    />
+    <div className={`animate-pulse bg-gray-200/70 ${rounded} ${className}`} />
   );
 }
 
@@ -88,7 +86,9 @@ export function SkeletonChart({
     >
       <div className="h-5 w-40 bg-gray-200/70 rounded mb-2" />
       <div className="h-3 w-56 bg-gray-100 rounded mb-6" />
-      <div className={`${height} bg-gray-50 rounded-xl relative overflow-hidden`}>
+      <div
+        className={`${height} bg-gray-50 rounded-xl relative overflow-hidden`}
+      >
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/40 to-transparent skeleton-shimmer" />
       </div>
     </div>
@@ -189,7 +189,10 @@ const itemVariants = {
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    transition: {
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    },
   },
 };
 
@@ -282,7 +285,10 @@ export function LibrarySkeleton() {
       className="space-y-10"
     >
       {/* Category filter pills */}
-      <motion.div variants={itemVariants} className="flex gap-3 overflow-hidden">
+      <motion.div
+        variants={itemVariants}
+        className="flex gap-3 overflow-hidden"
+      >
         {Array.from({ length: 5 }).map((_, i) => (
           <div
             key={i}
@@ -293,7 +299,10 @@ export function LibrarySkeleton() {
       </motion.div>
 
       {/* Main grid + sidebar */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <motion.div
+        variants={itemVariants}
+        className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+      >
         {/* Content area */}
         <div className="lg:col-span-2 space-y-10">
           <div>
@@ -351,7 +360,10 @@ export function StatsSkeleton() {
       className="space-y-8"
     >
       {/* Stat cards row */}
-      <motion.div variants={itemVariants} className="flex flex-wrap justify-center gap-4">
+      <motion.div
+        variants={itemVariants}
+        className="flex flex-wrap justify-center gap-4"
+      >
         {Array.from({ length: 7 }).map((_, i) => (
           <SkeletonStatCard key={i} />
         ))}

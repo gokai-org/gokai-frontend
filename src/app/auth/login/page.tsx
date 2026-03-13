@@ -12,7 +12,10 @@ import { DatePicker } from "@/shared/ui/DatePicker";
 import { Checkbox } from "@/shared/ui/Checkbox";
 
 const HERO_MESSAGES = [
-  { jp: "あなたの成長は、あなただけのもの", es: "Tu progreso es único, como tú." },
+  {
+    jp: "あなたの成長は、あなただけのもの",
+    es: "Tu progreso es único, como tú.",
+  },
   { jp: "継続は流暢さを生む", es: "La constancia crea fluidez." },
   { jp: "日本語を日常の一部に", es: "Haz del japonés parte de tu día." },
 ] as const;
@@ -41,14 +44,18 @@ export default function LoginPage() {
   // Forgot password flow
   const [forgotStep, setForgotStep] = useState<ForgotStep>("email");
   const [forgotEmail, setForgotEmail] = useState("");
-  const [verificationCode, setVerificationCode] = useState(Array(CODE_LEN).fill(""));
+  const [verificationCode, setVerificationCode] = useState(
+    Array(CODE_LEN).fill(""),
+  );
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Register verify email flow (UI)
   const [registerStep, setRegisterStep] = useState<RegisterStep>("form");
-  const [regVerificationCode, setRegVerificationCode] = useState(Array(CODE_LEN).fill(""));  
+  const [regVerificationCode, setRegVerificationCode] = useState(
+    Array(CODE_LEN).fill(""),
+  );
   const regCodeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // login fields
@@ -260,7 +267,9 @@ export default function LoginPage() {
       });
       const codeData = await codeRes.json().catch(() => null);
       if (!codeRes.ok) {
-        toast.error(codeData?.error || "No se pudo enviar el código de verificación.");
+        toast.error(
+          codeData?.error || "No se pudo enviar el código de verificación.",
+        );
         return;
       }
 
@@ -280,7 +289,9 @@ export default function LoginPage() {
     window.location.href = "/api/auth/google";
   }
 
-  async function handleGoogleSuccess(_credentialResponse: { credential?: string }) {
+  async function handleGoogleSuccess(_credentialResponse: {
+    credential?: string;
+  }) {
     try {
       setLoading(true);
       toast.success("Sesión iniciada correctamente");
@@ -307,7 +318,8 @@ export default function LoginPage() {
         body: JSON.stringify({ email: forgotEmail, type: "password-recovery" }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || "No se pudo enviar el código.");
+      if (!res.ok)
+        throw new Error(data?.error || "No se pudo enviar el código.");
       toast.success(`Código enviado a ${forgotEmail}`);
       setForgotStep("code");
       requestAnimationFrame(() => codeInputRefs.current[0]?.focus());
@@ -323,7 +335,7 @@ export default function LoginPage() {
     e.preventDefault();
     const code = verificationCode.join("");
     if (code.length !== CODE_LEN) {
-        toast.error("Ingresa el código completo");
+      toast.error("Ingresa el código completo");
       return;
     }
     setLoading(true);
@@ -331,10 +343,15 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/verification/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail, code, type: "password-recovery" }),
+        body: JSON.stringify({
+          email: forgotEmail,
+          code,
+          type: "password-recovery",
+        }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || "Código inválido o expirado.");
+      if (!res.ok)
+        throw new Error(data?.error || "Código inválido o expirado.");
       toast.success("Código verificado");
       setForgotStep("password");
     } catch (err) {
@@ -364,7 +381,8 @@ export default function LoginPage() {
         body: JSON.stringify({ email: forgotEmail, code, newPassword }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || "No se pudo restablecer la contraseña.");
+      if (!res.ok)
+        throw new Error(data?.error || "No se pudo restablecer la contraseña.");
       toast.success("¡Contraseña actualizada exitosamente!");
       startSwitch("login");
     } catch (err) {
@@ -383,9 +401,13 @@ export default function LoginPage() {
     newCode[index] = value;
     setVerificationCode(newCode);
 
-    if (value && index < CODE_LEN - 1) codeInputRefs.current[index + 1]?.focus();
+    if (value && index < CODE_LEN - 1)
+      codeInputRefs.current[index + 1]?.focus();
   }
-  function handleCodeKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleCodeKeyDown(
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) {
     if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
       codeInputRefs.current[index - 1]?.focus();
     }
@@ -399,66 +421,81 @@ export default function LoginPage() {
     newCode[index] = value;
     setRegVerificationCode(newCode);
 
-    if (value && index < CODE_LEN - 1) regCodeInputRefs.current[index + 1]?.focus();
+    if (value && index < CODE_LEN - 1)
+      regCodeInputRefs.current[index + 1]?.focus();
   }
-  function handleRegCodeKeyDown(index: number, e: React.KeyboardEvent<HTMLInputElement>) {
+  function handleRegCodeKeyDown(
+    index: number,
+    e: React.KeyboardEvent<HTMLInputElement>,
+  ) {
     if (e.key === "Backspace" && !regVerificationCode[index] && index > 0) {
       regCodeInputRefs.current[index - 1]?.focus();
     }
   }
 
-async function handleRegisterVerifyCode(e: React.FormEvent) {
-  e.preventDefault();
-  const code = regVerificationCode.join("");
+  async function handleRegisterVerifyCode(e: React.FormEvent) {
+    e.preventDefault();
+    const code = regVerificationCode.join("");
     if (code.length !== CODE_LEN) {
       toast.error("Ingresa el código completo");
-    return;
-  }
-
-  setLoading(true);
-
-  try {
-    if (!regEmail || !regPassword) {
-      toast.error("Completa tus datos antes de continuar.");
-      setRegisterStep("form");
       return;
     }
 
-    // 1) Verificar código de correo
-    const verifyRes = await fetch("/api/auth/verification/verify-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: regEmail, code, type: "email-verification" }),
-    });
+    setLoading(true);
 
-    const verifyData = await verifyRes.json().catch(() => null);
-    if (!verifyRes.ok) throw new Error(verifyData?.error || "Código inválido o expirado.");
+    try {
+      if (!regEmail || !regPassword) {
+        toast.error("Completa tus datos antes de continuar.");
+        setRegisterStep("form");
+        return;
+      }
 
-    toast.success("Correo verificado");
+      // 1) Verificar código de correo
+      const verifyRes = await fetch("/api/auth/verification/verify-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: regEmail,
+          code,
+          type: "email-verification",
+        }),
+      });
 
-    // 2) Auto-login para que el backend setee la cookie (gokai_token)
-    const loginRes = await fetch("/api/auth/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: regEmail, password: regPassword, remember: true }),
-    });
+      const verifyData = await verifyRes.json().catch(() => null);
+      if (!verifyRes.ok)
+        throw new Error(verifyData?.error || "Código inválido o expirado.");
 
-    const loginData = await loginRes.json().catch(() => null);
-    if (!loginRes.ok) {
-      toast.error(loginData?.error || "No se pudo iniciar sesión automáticamente.");
-      const dest = getPostRegisterDestination();
-      window.location.replace(`/auth/login?from=${encodeURIComponent(dest)}`);
-      return;
+      toast.success("Correo verificado");
+
+      // 2) Auto-login para que el backend setee la cookie (gokai_token)
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: regEmail,
+          password: regPassword,
+          remember: true,
+        }),
+      });
+
+      const loginData = await loginRes.json().catch(() => null);
+      if (!loginRes.ok) {
+        toast.error(
+          loginData?.error || "No se pudo iniciar sesión automáticamente.",
+        );
+        const dest = getPostRegisterDestination();
+        window.location.replace(`/auth/login?from=${encodeURIComponent(dest)}`);
+        return;
+      }
+
+      window.location.replace(getPostRegisterDestination());
+    } catch (err) {
+      const error = err instanceof Error ? err : new Error("Error desconocido");
+      toast.error(error.message);
+    } finally {
+      setLoading(false);
     }
-
-    window.location.replace(getPostRegisterDestination());
-  } catch (err) {
-    const error = err instanceof Error ? err : new Error("Error desconocido");
-    toast.error(error.message);
-  } finally {
-    setLoading(false);
   }
-}
 
   function getPostRegisterDestination(): string {
     if (intent === "premium") return "/checkout";
@@ -474,7 +511,8 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
         body: JSON.stringify({ email: regEmail, type: "email-verification" }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || "No se pudo reenviar el código.");
+      if (!res.ok)
+        throw new Error(data?.error || "No se pudo reenviar el código.");
       toast.success(`Código reenviado a ${regEmail}`);
       setRegVerificationCode(Array(CODE_LEN).fill(""));
       requestAnimationFrame(() => regCodeInputRefs.current[0]?.focus());
@@ -489,11 +527,14 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
   const hero = HERO_MESSAGES[heroIndex];
 
   const slideOut =
-    switchDir === "left" ? "translate-x-[-18px] opacity-0" : "translate-x-[18px] opacity-0";
+    switchDir === "left"
+      ? "translate-x-[-18px] opacity-0"
+      : "translate-x-[18px] opacity-0";
 
-  const contentClass = ["transition-all duration-300 ease-out", switching ? slideOut : "translate-x-0 opacity-100"].join(
-    " "
-  );
+  const contentClass = [
+    "transition-all duration-300 ease-out",
+    switching ? slideOut : "translate-x-0 opacity-100",
+  ].join(" ");
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-neutral-50">
@@ -517,8 +558,12 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
             >
-              <p className="text-2xl font-medium tracking-wide text-neutral-900">{hero.jp}</p>
-              <h1 className="mt-2 text-4xl font-semibold leading-tight tracking-tight text-neutral-900">{hero.es}</h1>
+              <p className="text-2xl font-medium tracking-wide text-neutral-900">
+                {hero.jp}
+              </p>
+              <h1 className="mt-2 text-4xl font-semibold leading-tight tracking-tight text-neutral-900">
+                {hero.es}
+              </h1>
             </motion.div>
           </AnimatePresence>
 
@@ -536,7 +581,11 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
               layout
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ duration: 0.5, ease: "easeOut", layout: { duration: 0.4, ease: "easeInOut" } }}
+              transition={{
+                duration: 0.5,
+                ease: "easeOut",
+                layout: { duration: 0.4, ease: "easeInOut" },
+              }}
               className="w-full max-w-sm md:max-w-md lg:max-w-lg rounded-2xl bg-white/95 p-6 md:p-7 shadow-xl ring-1 ring-black/5 backdrop-blur overflow-hidden"
             >
               <AnimatePresence mode="wait">
@@ -555,14 +604,24 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                         whileHover={{ rotate: 360, scale: 1.1 }}
                         transition={{ duration: 0.5 }}
                       >
-                        <Image src="/logos/gokai-logo.svg" alt="Gokai" width={60} height={60} priority />
+                        <Image
+                          src="/logos/gokai-logo.svg"
+                          alt="Gokai"
+                          width={60}
+                          height={60}
+                          priority
+                        />
                       </motion.div>
                     </a>
 
                     {mode === "login" ? (
                       <>
-                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">Iniciar sesión</h2>
-                        <p className="mt-1 text-sm font-medium text-neutral-500">Bienvenido de nuevo, estudiante de japonés.</p>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
+                          Iniciar sesión
+                        </h2>
+                        <p className="mt-1 text-sm font-medium text-neutral-500">
+                          Bienvenido de nuevo, estudiante de japonés.
+                        </p>
                       </>
                     ) : mode === "register" ? (
                       <>
@@ -570,8 +629,12 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                           <div className="mt-4 w-full max-w-xs mx-auto">
                             {/* Step label */}
                             <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-xs font-bold text-[#993331]">Paso 1 de 3</span>
-                              <span className="text-xs font-medium text-neutral-400">Crear cuenta</span>
+                              <span className="text-xs font-bold text-[#993331]">
+                                Paso 1 de 3
+                              </span>
+                              <span className="text-xs font-medium text-neutral-400">
+                                Crear cuenta
+                              </span>
                             </div>
                             {/* Progress bar */}
                             <div className="h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
@@ -579,23 +642,34 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                 className="h-full rounded-full bg-[#993331]"
                                 initial={{ width: 0 }}
                                 animate={{ width: "33%" }}
-                                transition={{ duration: 0.8, ease: "easeOut", delay: 0.3 }}
+                                transition={{
+                                  duration: 0.8,
+                                  ease: "easeOut",
+                                  delay: 0.3,
+                                }}
                               />
                             </div>
                             {/* Step dots */}
                             <div className="mt-1.5 flex items-center justify-between px-[2px]">
                               {["Cuenta", "Pago", "Listo"].map((label, i) => (
-                                <div key={label} className="flex flex-col items-center gap-1">
+                                <div
+                                  key={label}
+                                  className="flex flex-col items-center gap-1"
+                                >
                                   <div
                                     className={[
                                       "h-2 w-2 rounded-full transition-colors",
-                                      i === 0 ? "bg-[#993331]" : "bg-neutral-200",
+                                      i === 0
+                                        ? "bg-[#993331]"
+                                        : "bg-neutral-200",
                                     ].join(" ")}
                                   />
                                   <span
                                     className={[
                                       "text-[10px] font-medium",
-                                      i === 0 ? "text-[#993331]" : "text-neutral-300",
+                                      i === 0
+                                        ? "text-[#993331]"
+                                        : "text-neutral-300",
                                     ].join(" ")}
                                   >
                                     {label}
@@ -605,27 +679,41 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             </div>
                           </div>
                         )}
-                        <h2 className={[
-                          "text-2xl font-semibold tracking-tight text-neutral-900",
-                          intent === "premium" && registerStep === "form" ? "mt-5" : "mt-3",
-                        ].join(" ")}>
+                        <h2
+                          className={[
+                            "text-2xl font-semibold tracking-tight text-neutral-900",
+                            intent === "premium" && registerStep === "form"
+                              ? "mt-5"
+                              : "mt-3",
+                          ].join(" ")}
+                        >
                           {registerStep === "verify-email"
                             ? "Verifica tu correo"
                             : intent === "premium"
-                            ? "Desbloquea GOKAI+"
-                            : "Registrarse"}
+                              ? "Desbloquea GOKAI+"
+                              : "Registrarse"}
                         </h2>
                         <p className="mt-1 text-sm font-medium text-neutral-500">
                           {registerStep === "verify-email"
                             ? `Ingresa el código que enviamos a ${regEmail || "tu correo"}.`
                             : intent === "premium"
-                            ? "Crea tu cuenta para continuar con GOKAI+."
-                            : "Crea tu cuenta y descubre un aprendizaje hecho a tu medida."}
+                              ? "Crea tu cuenta para continuar con GOKAI+."
+                              : "Crea tu cuenta y descubre un aprendizaje hecho a tu medida."}
                         </p>
                         {intent === "premium" && registerStep === "form" && (
                           <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-neutral-400">
-                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            <svg
+                              className="h-3.5 w-3.5"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                              />
                             </svg>
                             No se realizará ningún cobro todavía
                           </p>
@@ -633,11 +721,16 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                       </>
                     ) : (
                       <>
-                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">Recuperar contraseña</h2>
+                        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
+                          Recuperar contraseña
+                        </h2>
                         <p className="mt-1 text-sm font-medium text-neutral-500">
-                          {forgotStep === "email" && "Ingresa tu correo para recibir el código."}
-                          {forgotStep === "code" && "Ingresa el código de verificación."}
-                          {forgotStep === "password" && "Crea tu nueva contraseña."}
+                          {forgotStep === "email" &&
+                            "Ingresa tu correo para recibir el código."}
+                          {forgotStep === "code" &&
+                            "Ingresa el código de verificación."}
+                          {forgotStep === "password" &&
+                            "Crea tu nueva contraseña."}
                         </p>
                       </>
                     )}
@@ -653,7 +746,9 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                       transition={{ delay: 0.1, duration: 0.3 }}
                     >
                       <div>
-                        <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Correo</label>
+                        <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+                          Correo
+                        </label>
                         <input
                           value={email}
                           onChange={(e) => setEmail(e.target.value)}
@@ -666,7 +761,9 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                       </div>
 
                       <div>
-                        <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Contraseña</label>
+                        <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+                          Contraseña
+                        </label>
                         <div className="relative">
                           <input
                             value={password}
@@ -681,16 +778,40 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             type="button"
                             onClick={() => setShowPass((s) => !s)}
                             className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-2 text-neutral-500 transition hover:bg-neutral-100"
-                            aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                            aria-label={
+                              showPass
+                                ? "Ocultar contraseña"
+                                : "Mostrar contraseña"
+                            }
                             title={showPass ? "Ocultar" : "Mostrar"}
                           >
                             {showPass ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
                                 <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                                 <circle cx="12" cy="12" r="3" />
                               </svg>
                             ) : (
-                              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="18"
+                                height="18"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
                                 <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
                                 <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c6.5 0 10 8 10 8a18.4 18.4 0 0 1-2.7 4.1" />
                                 <path d="M6.61 6.61A18.4 18.4 0 0 0 2 12s3.5 8 10 8a10.94 10.94 0 0 0 5.39-1.39" />
@@ -730,7 +851,9 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
 
                       <div className="flex items-center gap-3">
                         <div className="h-px flex-1 bg-neutral-200" />
-                        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">or</span>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+                          or
+                        </span>
                         <div className="h-px flex-1 bg-neutral-200" />
                       </div>
 
@@ -740,12 +863,26 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                         className="group relative w-full flex items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
                       >
                         <svg className="h-5 w-5" viewBox="0 0 48 48">
-                          <path fill="#EA4335" d="M24 9.5c3.3 0 6.3 1.2 8.6 3.2l6.4-6.4C34.8 2.5 29.7 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.7 6C12.3 13.6 17.7 9.5 24 9.5z" />
-                          <path fill="#4285F4" d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.1 5.3-4.4 6.9l7 5.4c4.1-3.8 7.1-9.4 7.1-16.8z" />
-                          <path fill="#FBBC05" d="M10.3 28.9c-1-2.9-1-6 0-8.9l-7.7-6C.9 17.4 0 20.6 0 24s.9 6.6 2.6 10l7.7-6z" />
-                          <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7-5.4c-2 1.4-4.6 2.2-8.8 2.2-6.3 0-11.7-4.1-13.7-9.8l-7.7 6C6.6 42.6 14.6 48 24 48z" />
+                          <path
+                            fill="#EA4335"
+                            d="M24 9.5c3.3 0 6.3 1.2 8.6 3.2l6.4-6.4C34.8 2.5 29.7 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.7 6C12.3 13.6 17.7 9.5 24 9.5z"
+                          />
+                          <path
+                            fill="#4285F4"
+                            d="M46.1 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.4c-.5 2.9-2.1 5.3-4.4 6.9l7 5.4c4.1-3.8 7.1-9.4 7.1-16.8z"
+                          />
+                          <path
+                            fill="#FBBC05"
+                            d="M10.3 28.9c-1-2.9-1-6 0-8.9l-7.7-6C.9 17.4 0 20.6 0 24s.9 6.6 2.6 10l7.7-6z"
+                          />
+                          <path
+                            fill="#34A853"
+                            d="M24 48c6.5 0 11.9-2.1 15.8-5.8l-7-5.4c-2 1.4-4.6 2.2-8.8 2.2-6.3 0-11.7-4.1-13.7-9.8l-7.7 6C6.6 42.6 14.6 48 24 48z"
+                          />
                         </svg>
-                        <span className="transition-colors duration-200 group-hover:text-neutral-900">Continuar con Google</span>
+                        <span className="transition-colors duration-200 group-hover:text-neutral-900">
+                          Continuar con Google
+                        </span>
                       </button>
 
                       <p className="pt-1 text-center text-sm font-medium text-neutral-600">
@@ -784,7 +921,9 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             {/* Name row */}
                             <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Nombre</label>
+                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+                                  Nombre
+                                </label>
                                 <input
                                   value={firstName}
                                   onChange={(e) => setFirstName(e.target.value)}
@@ -796,7 +935,9 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                 />
                               </div>
                               <div>
-                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Apellido</label>
+                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+                                  Apellido
+                                </label>
                                 <input
                                   value={lastName}
                                   onChange={(e) => setLastName(e.target.value)}
@@ -812,7 +953,9 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             {/* Email & birthdate row */}
                             <div className="grid grid-cols-2 gap-3">
                               <div>
-                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Correo</label>
+                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+                                  Correo
+                                </label>
                                 <input
                                   value={regEmail}
                                   onChange={(e) => setRegEmail(e.target.value)}
@@ -820,14 +963,18 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                   placeholder="correo@ejemplo.com"
                                   disabled={fromGoogle}
                                   className={`w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition ${
-                                    fromGoogle ? "opacity-80 cursor-not-allowed" : ""
+                                    fromGoogle
+                                      ? "opacity-80 cursor-not-allowed"
+                                      : ""
                                   }`}
                                   required
                                   autoComplete="email"
                                 />
                               </div>
                               <div>
-                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Fecha de nacimiento</label>
+                                <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+                                  Fecha de nacimiento
+                                </label>
                                 <DatePicker
                                   value={birthdate}
                                   onChange={setBirthdate}
@@ -839,11 +986,15 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             </div>
 
                             <div>
-                              <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Contraseña</label>
+                              <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+                                Contraseña
+                              </label>
                               <div className="relative">
                                 <input
                                   value={regPassword}
-                                  onChange={(e) => setRegPassword(e.target.value)}
+                                  onChange={(e) =>
+                                    setRegPassword(e.target.value)
+                                  }
                                   type={showPass ? "text" : "password"}
                                   placeholder="Contraseña"
                                   className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
@@ -854,16 +1005,40 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                   type="button"
                                   onClick={() => setShowPass((s) => !s)}
                                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-2 text-neutral-500 transition hover:bg-neutral-100"
-                                  aria-label={showPass ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                  aria-label={
+                                    showPass
+                                      ? "Ocultar contraseña"
+                                      : "Mostrar contraseña"
+                                  }
                                   title={showPass ? "Ocultar" : "Mostrar"}
                                 >
                                   {showPass ? (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
                                       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                                       <circle cx="12" cy="12" r="3" />
                                     </svg>
                                   ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
                                       <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
                                       <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c6.5 0 10 8 10 8a18.4 18.4 0 0 1-2.7 4.1" />
                                       <path d="M6.61 6.61A18.4 18.4 0 0 0 2 12s3.5 8 10 8a10.94 10.94 0 0 0 5.39-1.39" />
@@ -875,11 +1050,15 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             </div>
 
                             <div>
-                              <label className="mb-1.5 block text-sm font-semibold text-neutral-700">Repetir contraseña</label>
+                              <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+                                Repetir contraseña
+                              </label>
                               <div className="relative">
                                 <input
                                   value={regPassword2}
-                                  onChange={(e) => setRegPassword2(e.target.value)}
+                                  onChange={(e) =>
+                                    setRegPassword2(e.target.value)
+                                  }
                                   type={showPass2 ? "text" : "password"}
                                   placeholder="Repetir contraseña"
                                   className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
@@ -890,16 +1069,40 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                   type="button"
                                   onClick={() => setShowPass2((s) => !s)}
                                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-2 text-neutral-500 transition hover:bg-neutral-100"
-                                  aria-label={showPass2 ? "Ocultar contraseña" : "Mostrar contraseña"}
+                                  aria-label={
+                                    showPass2
+                                      ? "Ocultar contraseña"
+                                      : "Mostrar contraseña"
+                                  }
                                   title={showPass2 ? "Ocultar" : "Mostrar"}
                                 >
                                   {showPass2 ? (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
                                       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                                       <circle cx="12" cy="12" r="3" />
                                     </svg>
                                   ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
                                       <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
                                       <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c6.5 0 10 8 10 8a18.4 18.4 0 0 1-2.7 4.1" />
                                       <path d="M6.61 6.61A18.4 18.4 0 0 0 2 12s3.5 8 10 8a10.94 10.94 0 0 0 5.39-1.39" />
@@ -920,13 +1123,17 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                               {loading
                                 ? "Creando..."
                                 : intent === "premium"
-                                ? "Continuar con GOKAI+"
-                                : "Iniciar aprendizaje"}
+                                  ? "Continuar con GOKAI+"
+                                  : "Iniciar aprendizaje"}
                             </motion.button>
 
                             <p className="text-center text-xs font-medium text-neutral-600">
                               ¿Ya eres parte de GOKAI?{" "}
-                              <button type="button" onClick={() => startSwitch("login")} className="font-semibold text-[#993331] hover:underline">
+                              <button
+                                type="button"
+                                onClick={() => startSwitch("login")}
+                                className="font-semibold text-[#993331] hover:underline"
+                              >
                                 Inicia sesión.
                               </button>
                             </p>
@@ -960,18 +1167,28 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                     inputMode="numeric"
                                     maxLength={1}
                                     value={digit}
-                                    onChange={(e) => handleRegCodeInput(index, e.target.value)}
-                                    onKeyDown={(e) => handleRegCodeKeyDown(index, e)}
+                                    onChange={(e) =>
+                                      handleRegCodeInput(index, e.target.value)
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleRegCodeKeyDown(index, e)
+                                    }
                                     initial={{ opacity: 0, scale: 0.8, y: -20 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    transition={{ delay: index * 0.08, duration: 0.28 }}
+                                    transition={{
+                                      delay: index * 0.08,
+                                      duration: 0.28,
+                                    }}
                                     className="w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-bold rounded-lg border-2 border-neutral-200 bg-white text-neutral-900 outline-none transition focus:border-red-300 focus:ring-4 focus:ring-red-100"
                                   />
                                 ))}
                               </div>
 
                               <p className="mt-4 text-center text-xs font-medium text-neutral-500">
-                                Enviado a <span className="font-semibold text-neutral-800">{regEmail || "tu correo"}</span>
+                                Enviado a{" "}
+                                <span className="font-semibold text-neutral-800">
+                                  {regEmail || "tu correo"}
+                                </span>
                               </p>
                             </div>
 
@@ -981,7 +1198,8 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                 onClick={handleResendRegisterCode}
                                 className="text-sm font-medium text-neutral-600 hover:text-[#993331] transition"
                               >
-                                ¿No recibiste el código? <span className="font-semibold">Reenviar</span>
+                                ¿No recibiste el código?{" "}
+                                <span className="font-semibold">Reenviar</span>
                               </button>
                             </div>
 
@@ -998,7 +1216,9 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                               type="button"
                               onClick={() => {
                                 setRegisterStep("form");
-                                setRegVerificationCode(Array(CODE_LEN).fill(""));
+                                setRegVerificationCode(
+                                  Array(CODE_LEN).fill(""),
+                                );
                               }}
                               className="w-full text-center text-sm font-medium text-neutral-600 hover:text-neutral-900 transition"
                             >
@@ -1012,7 +1232,12 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
 
                   {/* Forgot Password */}
                   {mode === "forgot-password" && (
-                    <motion.div className="mt-6" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1, duration: 0.3 }}>
+                    <motion.div
+                      className="mt-6"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.1, duration: 0.3 }}
+                    >
                       <AnimatePresence mode="wait">
                         {forgotStep === "email" && (
                           <motion.form
@@ -1025,7 +1250,9 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             className="space-y-4"
                           >
                             <div>
-                              <label className="mb-2 block text-sm font-semibold text-neutral-700">Correo electrónico</label>
+                              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+                                Correo electrónico
+                              </label>
                               <input
                                 value={forgotEmail}
                                 onChange={(e) => setForgotEmail(e.target.value)}
@@ -1081,11 +1308,18 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                     inputMode="numeric"
                                     maxLength={1}
                                     value={digit}
-                                    onChange={(e) => handleCodeInput(index, e.target.value)}
-                                    onKeyDown={(e) => handleCodeKeyDown(index, e)}
+                                    onChange={(e) =>
+                                      handleCodeInput(index, e.target.value)
+                                    }
+                                    onKeyDown={(e) =>
+                                      handleCodeKeyDown(index, e)
+                                    }
                                     initial={{ opacity: 0, scale: 0.8, y: -20 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
-                                    transition={{ delay: index * 0.1, duration: 0.3 }}
+                                    transition={{
+                                      delay: index * 0.1,
+                                      duration: 0.3,
+                                    }}
                                     className="w-12 h-14 md:w-14 md:h-16 text-center text-2xl font-bold rounded-lg border-2 border-neutral-200 bg-white text-neutral-900 outline-none transition focus:border-red-300 focus:ring-4 focus:ring-red-100"
                                   />
                                 ))}
@@ -1093,8 +1327,12 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             </div>
 
                             <div className="text-center">
-                              <button type="button" className="text-sm font-medium text-neutral-600 hover:text-[#993331] transition">
-                                ¿No recibiste el código? <span className="font-semibold">Reenviar</span>
+                              <button
+                                type="button"
+                                className="text-sm font-medium text-neutral-600 hover:text-[#993331] transition"
+                              >
+                                ¿No recibiste el código?{" "}
+                                <span className="font-semibold">Reenviar</span>
                               </button>
                             </div>
 
@@ -1128,11 +1366,15 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             className="space-y-4"
                           >
                             <div>
-                              <label className="mb-2 block text-sm font-semibold text-neutral-700">Nueva contraseña</label>
+                              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+                                Nueva contraseña
+                              </label>
                               <div className="relative">
                                 <input
                                   value={newPassword}
-                                  onChange={(e) => setNewPassword(e.target.value)}
+                                  onChange={(e) =>
+                                    setNewPassword(e.target.value)
+                                  }
                                   type={showPass ? "text" : "password"}
                                   placeholder="Nueva contraseña"
                                   className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
@@ -1145,12 +1387,32 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-2 text-neutral-500 transition hover:bg-neutral-100"
                                 >
                                   {showPass ? (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
                                       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                                       <circle cx="12" cy="12" r="3" />
                                     </svg>
                                   ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
                                       <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
                                       <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c6.5 0 10 8 10 8a18.4 18.4 0 0 1-2.7 4.1" />
                                       <path d="M6.61 6.61A18.4 18.4 0 0 0 2 12s3.5 8 10 8a10.94 10.94 0 0 0 5.39-1.39" />
@@ -1162,11 +1424,15 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                             </div>
 
                             <div>
-                              <label className="mb-2 block text-sm font-semibold text-neutral-700">Confirmar contraseña</label>
+                              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+                                Confirmar contraseña
+                              </label>
                               <div className="relative">
                                 <input
                                   value={confirmNewPassword}
-                                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                                  onChange={(e) =>
+                                    setConfirmNewPassword(e.target.value)
+                                  }
                                   type={showPass2 ? "text" : "password"}
                                   placeholder="Confirmar contraseña"
                                   className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
@@ -1179,12 +1445,32 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-2 text-neutral-500 transition hover:bg-neutral-100"
                                 >
                                   {showPass2 ? (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
                                       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
                                       <circle cx="12" cy="12" r="3" />
                                     </svg>
                                   ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <svg
+                                      xmlns="http://www.w3.org/2000/svg"
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
                                       <path d="M10.58 10.58a2 2 0 0 0 2.83 2.83" />
                                       <path d="M9.88 4.24A10.94 10.94 0 0 1 12 4c6.5 0 10 8 10 8a18.4 18.4 0 0 1-2.7 4.1" />
                                       <path d="M6.61 6.61A18.4 18.4 0 0 0 2 12s3.5 8 10 8a10.94 10.94 0 0 0 5.39-1.39" />
@@ -1219,8 +1505,12 @@ async function handleRegisterVerifyCode(e: React.FormEvent) {
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.4 }}
                       >
-                        <p className="text-lg font-medium tracking-wide text-neutral-900">{hero.jp}</p>
-                        <p className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900">{hero.es}</p>
+                        <p className="text-lg font-medium tracking-wide text-neutral-900">
+                          {hero.jp}
+                        </p>
+                        <p className="mt-1 text-2xl font-semibold tracking-tight text-neutral-900">
+                          {hero.es}
+                        </p>
                       </motion.div>
                     </AnimatePresence>
                     <div className="mt-4">

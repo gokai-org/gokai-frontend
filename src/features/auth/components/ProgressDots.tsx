@@ -10,9 +10,7 @@ export default function ProgressDots({ activeIndex = 0 }: Props) {
           key={d}
           className={[
             "h-1.5 rounded-full transition-all duration-300",
-            d === activeIndex
-              ? "w-12 bg-red-800"
-              : "w-8 bg-red-800/30",
+            d === activeIndex ? "w-12 bg-red-800" : "w-8 bg-red-800/30",
           ].join(" ")}
         />
       ))}

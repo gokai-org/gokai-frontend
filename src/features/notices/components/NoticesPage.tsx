@@ -26,12 +26,12 @@ export default function NoticesPage() {
   /* ── computed ── */
   const unreadCount = useMemo(
     () => notices.filter((n) => !n.read).length,
-    [notices]
+    [notices],
   );
 
   const pinnedCount = useMemo(
     () => notices.filter((n) => n.pinned).length,
-    [notices]
+    [notices],
   );
 
   const categoryCounts = useMemo(() => {
@@ -46,12 +46,15 @@ export default function NoticesPage() {
       if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-    if (activeFilter !== "all") result = result.filter((n) => n.category === activeFilter);
+    if (activeFilter !== "all")
+      result = result.filter((n) => n.category === activeFilter);
     if (showUnreadOnly) result = result.filter((n) => !n.read);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(
-        (n) => n.title.toLowerCase().includes(q) || n.description.toLowerCase().includes(q)
+        (n) =>
+          n.title.toLowerCase().includes(q) ||
+          n.description.toLowerCase().includes(q),
       );
     }
     return result;
@@ -59,24 +62,30 @@ export default function NoticesPage() {
 
   /* ── actions ── */
   const toggleRead = useCallback(
-    (id: string) => setNotices((p) => p.map((n) => (n.id === id ? { ...n, read: !n.read } : n))),
-    []
+    (id: string) =>
+      setNotices((p) =>
+        p.map((n) => (n.id === id ? { ...n, read: !n.read } : n)),
+      ),
+    [],
   );
   const togglePin = useCallback(
-    (id: string) => setNotices((p) => p.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n))),
-    []
+    (id: string) =>
+      setNotices((p) =>
+        p.map((n) => (n.id === id ? { ...n, pinned: !n.pinned } : n)),
+      ),
+    [],
   );
   const deleteNotice = useCallback(
     (id: string) => setNotices((p) => p.filter((n) => n.id !== id)),
-    []
+    [],
   );
   const markAllRead = useCallback(
     () => setNotices((p) => p.map((n) => ({ ...n, read: true }))),
-    []
+    [],
   );
   const clearAllRead = useCallback(
     () => setNotices((p) => p.filter((n) => !n.read)),
-    []
+    [],
   );
   const resetFilters = useCallback(() => {
     setSearchQuery("");

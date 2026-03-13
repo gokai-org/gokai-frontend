@@ -42,17 +42,21 @@ export async function replaceAllSettings(
 export const updateGeneralSettings = (data: Partial<UserSettings["general"]>) =>
   updateSettingsSection("general", data);
 
-export const updateNotificationSettings = (data: Partial<UserSettings["notifications"]>) =>
-  updateSettingsSection("notifications", data);
+export const updateNotificationSettings = (
+  data: Partial<UserSettings["notifications"]>,
+) => updateSettingsSection("notifications", data);
 
-export const updateAppearanceSettings = (data: Partial<UserSettings["appearance"]>) =>
-  updateSettingsSection("appearance", data);
+export const updateAppearanceSettings = (
+  data: Partial<UserSettings["appearance"]>,
+) => updateSettingsSection("appearance", data);
 
-export const updateLearningSettings = (data: Partial<UserSettings["learning"]>) =>
-  updateSettingsSection("learning", data);
+export const updateLearningSettings = (
+  data: Partial<UserSettings["learning"]>,
+) => updateSettingsSection("learning", data);
 
-export const updateAccessibilitySettings = (data: Partial<UserSettings["accessibility"]>) =>
-  updateSettingsSection("accessibility", data);
+export const updateAccessibilitySettings = (
+  data: Partial<UserSettings["accessibility"]>,
+) => updateSettingsSection("accessibility", data);
 
 export const updatePrivacySettings = (data: Partial<UserSettings["privacy"]>) =>
   updateSettingsSection("privacy", data);

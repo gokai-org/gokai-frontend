@@ -37,7 +37,7 @@ export async function getLessonsForNode(params: {
   try {
     const res = await fetch(
       `/api/content/lessons?nodeId=${encodeURIComponent(nodeId)}&mode=${mode}`,
-      { cache: "no-store" }
+      { cache: "no-store" },
     );
     if (res.ok) {
       return (await res.json()) as LessonResolved[];

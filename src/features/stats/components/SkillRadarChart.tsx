@@ -71,9 +71,12 @@ export function SkillRadarChart({
               />
             </svg>
           </div>
-          <p className="text-sm font-semibold text-gray-500">Tus habilidades se mostrarán aquí</p>
+          <p className="text-sm font-semibold text-gray-500">
+            Tus habilidades se mostrarán aquí
+          </p>
           <p className="text-xs text-gray-400 text-center max-w-[200px]">
-            Practica kanji, kana, vocabulario y gramática para ver tu radar de dominio.
+            Practica kanji, kana, vocabulario y gramática para ver tu radar de
+            dominio.
           </p>
         </div>
       </motion.div>
@@ -94,10 +97,7 @@ export function SkillRadarChart({
       <div className="w-full h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
-            <PolarGrid
-              stroke="#e5e7eb"
-              strokeDasharray="3 3"
-            />
+            <PolarGrid stroke="#e5e7eb" strokeDasharray="3 3" />
             <PolarAngleAxis
               dataKey="skill"
               tick={{ fontSize: 11, fill: "#6b7280", fontWeight: 600 }}

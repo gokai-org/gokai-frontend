@@ -68,7 +68,7 @@ export function NoticeToolbar({
           "flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold border transition-all duration-200",
           showUnreadOnly
             ? "bg-[#993331]/10 text-[#993331] border-[#993331]/20"
-            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300"
+            : "bg-gray-50 text-gray-500 border-gray-200 hover:border-gray-300",
         )}
       >
         <Filter className="w-4 h-4" />
@@ -111,9 +111,7 @@ export function NoticeCategoryPills({
         const count = counts[opt.key] || 0;
         const active = activeFilter === opt.key;
         const cfg =
-          opt.key !== "all"
-            ? categoryConfig[opt.key as NoticeCategory]
-            : null;
+          opt.key !== "all" ? categoryConfig[opt.key as NoticeCategory] : null;
 
         return (
           <button
@@ -123,7 +121,7 @@ export function NoticeCategoryPills({
               "flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 whitespace-nowrap",
               active
                 ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/20"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                : "bg-gray-100 text-gray-600 hover:bg-gray-200",
             )}
           >
             {cfg && <cfg.icon className="w-3.5 h-3.5" />}
@@ -131,7 +129,7 @@ export function NoticeCategoryPills({
             <span
               className={cls(
                 "text-[10px] px-1.5 py-0.5 rounded-full ml-0.5",
-                active ? "bg-white/20" : "bg-gray-200 text-gray-500"
+                active ? "bg-white/20" : "bg-gray-200 text-gray-500",
               )}
             >
               {count}

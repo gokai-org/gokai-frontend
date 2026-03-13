@@ -47,14 +47,14 @@ export async function POST(req: Request) {
     "email-verification": "verification",
     "password-recovery": "password",
 
-    "email_verification": "verification",
+    email_verification: "verification",
     "verify-email": "verification",
-    "verification": "verification",
+    verification: "verification",
 
-    "password_recovery": "password",
+    password_recovery: "password",
     "password-reset": "password",
     "reset-password": "password",
-    "password": "password",
+    password: "password",
   };
 
   const type = typeMap[rawType];
@@ -96,7 +96,8 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       message:
-        (data?.message as string) || `Código de verificación enviado a ${email}.`,
+        (data?.message as string) ||
+        `Código de verificación enviado a ${email}.`,
     });
   } catch (err) {
     console.error("Error al enviar código:", err);

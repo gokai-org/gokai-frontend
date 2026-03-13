@@ -33,44 +33,72 @@ const sectionVariants = {
 /* Page  */
 
 function getBannerMessage(accuracy: number, streak: number, hasData: boolean) {
-  if (!hasData) return { title: "¡Bienvenido a tus estadísticas!", subtitle: "Aquí verás tu progreso a medida que estudies." };
-  if (streak >= 7 && accuracy >= 80) return { title: "¡Racha imparable!", subtitle: "Tu consistencia y precisión son admirables." };
-  if (accuracy >= 90) return { title: "¡Excelente precisión!", subtitle: "Tu dominio del japonés está en otro nivel." };
-  if (accuracy >= 70) return { title: "¡Buen progreso!", subtitle: "Sigue así, vas por buen camino." };
-  if (streak >= 3) return { title: "¡Buena racha!", subtitle: "La constancia es la clave del éxito." };
-  if (accuracy > 0) return { title: "¡Sigue practicando!", subtitle: "Cada sesión te acerca más a la fluidez." };
-  return { title: "¡Tu aventura comienza aquí!", subtitle: "Completa tu primera lección para ver tus estadísticas." };
+  if (!hasData)
+    return {
+      title: "¡Bienvenido a tus estadísticas!",
+      subtitle: "Aquí verás tu progreso a medida que estudies.",
+    };
+  if (streak >= 7 && accuracy >= 80)
+    return {
+      title: "¡Racha imparable!",
+      subtitle: "Tu consistencia y precisión son admirables.",
+    };
+  if (accuracy >= 90)
+    return {
+      title: "¡Excelente precisión!",
+      subtitle: "Tu dominio del japonés está en otro nivel.",
+    };
+  if (accuracy >= 70)
+    return {
+      title: "¡Buen progreso!",
+      subtitle: "Sigue así, vas por buen camino.",
+    };
+  if (streak >= 3)
+    return {
+      title: "¡Buena racha!",
+      subtitle: "La constancia es la clave del éxito.",
+    };
+  if (accuracy > 0)
+    return {
+      title: "¡Sigue practicando!",
+      subtitle: "Cada sesión te acerca más a la fluidez.",
+    };
+  return {
+    title: "¡Tu aventura comienza aquí!",
+    subtitle: "Completa tu primera lección para ver tus estadísticas.",
+  };
 }
 
 export default function Page() {
   const { data, loading, error, period, setPeriod, refresh } = useStats();
 
-const overview = data.overview;
-const streak = overview?.current_streak ?? 0;
-const accuracy = overview?.accuracy ?? 0;
+  const overview = data.overview;
+  const streak = overview?.current_streak ?? 0;
+  const accuracy = overview?.accuracy ?? 0;
 
-const scoreEntries =
-  data.recentActivity?.activities?.filter(
-    (a) => typeof a.score === "number",
-  ) ?? [];
+  const scoreEntries =
+    data.recentActivity?.activities?.filter(
+      (a) => typeof a.score === "number",
+    ) ?? [];
 
-const averageScore =
-  scoreEntries.length > 0
-    ? Math.round(
-        scoreEntries.reduce((sum, a) => sum + (a.score ?? 0), 0) /
-          scoreEntries.length,
-      )
-    : 0;
+  const averageScore =
+    scoreEntries.length > 0
+      ? Math.round(
+          scoreEntries.reduce((sum, a) => sum + (a.score ?? 0), 0) /
+            scoreEntries.length,
+        )
+      : 0;
 
-const hasAnyData = !!(overview && (
-  overview.study_hours > 0 ||
-  overview.kanji_learned > 0 ||
-  overview.hiragana_learned > 0 ||
-  overview.katakana_learned > 0 ||
-  overview.reviews_completed > 0
-));
+  const hasAnyData = !!(
+    overview &&
+    (overview.study_hours > 0 ||
+      overview.kanji_learned > 0 ||
+      overview.hiragana_learned > 0 ||
+      overview.katakana_learned > 0 ||
+      overview.reviews_completed > 0)
+  );
 
-const banner = getBannerMessage(accuracy, streak, hasAnyData);
+  const banner = getBannerMessage(accuracy, streak, hasAnyData);
 
   return (
     <DashboardShell
@@ -165,10 +193,10 @@ const banner = getBannerMessage(accuracy, streak, hasAnyData);
             ) : (
               <>
                 <div className="text-center">
-                <p className="text-4xl font-extrabold">{averageScore}%</p>
-                <p className="text-xs text-white/70 font-medium mt-1">
-                  Precisión promedio
-                </p>
+                  <p className="text-4xl font-extrabold">{averageScore}%</p>
+                  <p className="text-xs text-white/70 font-medium mt-1">
+                    Precisión promedio
+                  </p>
                 </div>
                 <div className="w-px h-12 bg-white/20" />
                 <div className="text-center">
@@ -214,7 +242,10 @@ const banner = getBannerMessage(accuracy, streak, hasAnyData);
         />
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           <WeeklyActivityChart data={data.activity?.weekly} loading={loading} />
-          <MonthlyProgressChart data={data.activity?.monthly} loading={loading} />
+          <MonthlyProgressChart
+            data={data.activity?.monthly}
+            loading={loading}
+          />
         </div>
       </motion.div>
 
@@ -243,7 +274,10 @@ const banner = getBannerMessage(accuracy, streak, hasAnyData);
             categories={data.skills?.distribution.categories}
             loading={loading}
           />
-          <RecentActivity activities={data.recentActivity?.activities} loading={loading} />
+          <RecentActivity
+            activities={data.recentActivity?.activities}
+            loading={loading}
+          />
         </div>
       </motion.div>
 
@@ -282,8 +316,7 @@ const banner = getBannerMessage(accuracy, streak, hasAnyData);
           </p>
         </div>
         <p className="text-gray-500 text-sm mb-6">
-          El esfuerzo de cada día se convierte en grandes logros.
-          ¡Sigue así!
+          El esfuerzo de cada día se convierte en grandes logros. ¡Sigue así!
         </p>
         <button className="bg-gradient-to-r from-[#993331] to-[#7a2927] text-white px-8 py-3 rounded-full font-bold hover:shadow-lg transition-all shadow-md">
           Comenzar sesión de estudio

@@ -51,7 +51,9 @@ export function Checkbox({
         {/* Checkmark */}
         <motion.svg
           initial={false}
-          animate={checked ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }}
+          animate={
+            checked ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }
+          }
           transition={{ duration: 0.15, ease: "easeOut" }}
           className="h-3 w-3 text-white"
           fill="none"
@@ -59,7 +61,11 @@ export function Checkbox({
           stroke="currentColor"
           strokeWidth={3.5}
         >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5 13l4 4L19 7"
+          />
         </motion.svg>
 
         {/* Ripple on check */}

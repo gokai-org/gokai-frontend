@@ -40,7 +40,9 @@ export function useSettings(): UseSettingsReturn {
   // Guardamos la versión previa para rollback en caso de error
   const prevRef = useRef<UserSettings>(DEFAULT_SETTINGS);
   // Timers de debounce por sección
-  const timers = useRef<Partial<Record<keyof UserSettings, ReturnType<typeof setTimeout>>>>({});
+  const timers = useRef<
+    Partial<Record<keyof UserSettings, ReturnType<typeof setTimeout>>>
+  >({});
 
   // ── Carga inicial ──────────────────────────────────────────────
   const fetchSettings = useCallback(async () => {
@@ -72,7 +74,10 @@ export function useSettings(): UseSettingsReturn {
 
   // ── Actualización optimista con debounce ───────────────────────
   const updateSection = useCallback(
-    <K extends keyof UserSettings>(section: K, data: Partial<UserSettings[K]>) => {
+    <K extends keyof UserSettings>(
+      section: K,
+      data: Partial<UserSettings[K]>,
+    ) => {
       // Actualización local inmediata (optimistic)
       setSettings((prev) => {
         const next = {
@@ -109,7 +114,14 @@ export function useSettings(): UseSettingsReturn {
     [],
   );
 
-  return { settings, loading, error, updateSection, refresh: fetchSettings, saving };
+  return {
+    settings,
+    loading,
+    error,
+    updateSection,
+    refresh: fetchSettings,
+    saving,
+  };
 }
 
 // ─── Utilidades ──────────────────────────────────────────────────
@@ -118,10 +130,16 @@ export function useSettings(): UseSettingsReturn {
 function mergeWithDefaults(remote: UserSettings): UserSettings {
   return {
     general: { ...DEFAULT_SETTINGS.general, ...remote.general },
-    notifications: { ...DEFAULT_SETTINGS.notifications, ...remote.notifications },
+    notifications: {
+      ...DEFAULT_SETTINGS.notifications,
+      ...remote.notifications,
+    },
     appearance: { ...DEFAULT_SETTINGS.appearance, ...remote.appearance },
     learning: { ...DEFAULT_SETTINGS.learning, ...remote.learning },
-    accessibility: { ...DEFAULT_SETTINGS.accessibility, ...remote.accessibility },
+    accessibility: {
+      ...DEFAULT_SETTINGS.accessibility,
+      ...remote.accessibility,
+    },
     privacy: { ...DEFAULT_SETTINGS.privacy, ...remote.privacy },
   };
 }

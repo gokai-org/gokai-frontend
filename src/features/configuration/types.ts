@@ -3,7 +3,7 @@
 /** General settings */
 export interface GeneralSettings {
   confirmAnswers: boolean;
-  sessionDuration: string;       // "15 min" | "30 min" | "45 min" | "60 min"
+  sessionDuration: string; // "15 min" | "30 min" | "45 min" | "60 min"
   breakReminders: boolean;
 }
 
@@ -13,21 +13,21 @@ export interface NotificationSettings {
   notificationFrequency: string; // "Inmediato" | "Cada 3 horas" | "Diario" | "Semanal"
   priorityAlerts: boolean;
   quietHoursEnabled: boolean;
-  quietHoursDays: string;        // "Todos los días" | "Lunes - Viernes" | "Fines de semana" | "Personalizado"
-  quietHoursTime: string;        // "21:00 - 07:00" | "22:00 - 08:00" | "23:00 - 09:00" | "Personalizado"
+  quietHoursDays: string; // "Todos los días" | "Lunes - Viernes" | "Fines de semana" | "Personalizado"
+  quietHoursTime: string; // "21:00 - 07:00" | "22:00 - 08:00" | "23:00 - 09:00" | "Personalizado"
 }
 
 /** Appearance settings */
 export interface AppearanceSettings {
   darkMode: boolean;
-  fontSize: string;              // "Pequeño" | "Mediano" | "Grande" | "Muy grande"
-  japaneseFont: string;          // "Noto Sans JP" | "Hiragino" | "Yu Gothic" | "Meiryo"
+  fontSize: string; // "Pequeño" | "Mediano" | "Grande" | "Muy grande"
+  japaneseFont: string; // "Noto Sans JP" | "Hiragino" | "Yu Gothic" | "Meiryo"
 }
 
 /** Learning preferences */
 export interface LearningSettings {
-  dailyGoal: string;             // "15 minutos" | "30 minutos" | "45 minutos" | "60 minutos" | "90 minutos"
-  dailyReviews: string;          // "10 tarjetas" | "20 tarjetas" | "30 tarjetas" | "Ilimitado"
+  dailyGoal: string; // "15 minutos" | "30 minutos" | "45 minutos" | "60 minutos" | "90 minutos"
+  dailyReviews: string; // "10 tarjetas" | "20 tarjetas" | "30 tarjetas" | "Ilimitado"
   notifyPendingReviews: boolean;
 }
 
@@ -35,7 +35,7 @@ export interface LearningSettings {
 export interface AccessibilitySettings {
   highContrast: boolean;
   reduceAnimations: boolean;
-  audioSpeed: string;            // "Muy lento" | "Lento" | "Normal" | "Rápido"
+  audioSpeed: string; // "Muy lento" | "Lento" | "Normal" | "Rápido"
 }
 
 /** Privacy settings */

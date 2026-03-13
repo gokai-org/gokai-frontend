@@ -11,10 +11,7 @@ import { listKanjis } from "@/features/kanji/api/kanjiApi";
 import type { Kanji } from "@/features/kanji/types";
 import { WritingPracticeModal } from "@/features/kanji/components/WritingPracticeModal";
 
-import {
-  ReviewStatsOverview,
-  ReviewItemList,
-} from "@/features/reviews";
+import { ReviewStatsOverview, ReviewItemList } from "@/features/reviews";
 import type { ReviewItem } from "@/features/reviews";
 
 /* ── Animation variants ────── */
@@ -114,16 +111,14 @@ export default function Page() {
       const found = kanjis.find((k) => k.id === itemId);
       if (found) setPracticeKanji(found);
     },
-    [kanjis]
+    [kanjis],
   );
 
   return (
     <DashboardShell
       header={
         <DashboardHeader
-          icon={
-            <RefreshCw className="w-7 h-7 text-white" strokeWidth={2.5} />
-          }
+          icon={<RefreshCw className="w-7 h-7 text-white" strokeWidth={2.5} />}
           title="Repaso"
           japaneseText="復習"
           subtitle="Refuerza lo que has aprendido con repasos inteligentes"

@@ -54,7 +54,8 @@ export default function AnimatedGraphBackground({
     let dpr = 1;
 
     const nodes: Node[] = [];
-    const rand = (min: number, max: number) => Math.random() * (max - min) + min;
+    const rand = (min: number, max: number) =>
+      Math.random() * (max - min) + min;
 
     const getPad = () => edgeMargin ?? (mode === "screen" ? 120 : 60);
 
@@ -63,9 +64,11 @@ export default function AnimatedGraphBackground({
       const pad = getPad();
 
       const spawnX =
-        x ?? (w > 2 * pad ? pad + Math.random() * (w - 2 * pad) : Math.random() * w);
+        x ??
+        (w > 2 * pad ? pad + Math.random() * (w - 2 * pad) : Math.random() * w);
       const spawnY =
-        y ?? (h > 2 * pad ? pad + Math.random() * (h - 2 * pad) : Math.random() * h);
+        y ??
+        (h > 2 * pad ? pad + Math.random() * (h - 2 * pad) : Math.random() * h);
 
       return {
         x: spawnX,

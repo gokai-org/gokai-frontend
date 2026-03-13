@@ -39,7 +39,9 @@ export default function PlanCard({
       <div className="pointer-events-none absolute -right-8 top-1/2 -z-10 h-16 w-16 -translate-y-1/2 rounded-full bg-white ring-1 ring-black/10" />
 
       <div className={[headerBg, "px-8 pt-7 pb-6"].join(" ")}>
-        <h3 className="text-3xl font-extrabold tracking-wide text-white">{title}</h3>
+        <h3 className="text-3xl font-extrabold tracking-wide text-white">
+          {title}
+        </h3>
         <p className="mt-2 text-sm md:text-base text-white/90">{subtitle}</p>
       </div>
 
@@ -51,7 +53,9 @@ export default function PlanCard({
               <span className="text-5xl font-extrabold tracking-tight text-neutral-900">
                 {price.replace("$", "").trim()}
               </span>
-              <span className="text-xs md:text-sm text-neutral-400">{period}</span>
+              <span className="text-xs md:text-sm text-neutral-400">
+                {period}
+              </span>
             </div>
           </div>
 
@@ -79,7 +83,11 @@ export default function PlanCard({
                 initial={{ scale: 0 }}
                 whileInView={{ scale: 1 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.4 + idx * 0.1, type: "spring", stiffness: 200 }}
+                transition={{
+                  delay: 0.4 + idx * 0.1,
+                  type: "spring",
+                  stiffness: 200,
+                }}
                 className="mt-[2px] inline-flex h-6 w-6 items-center justify-center rounded-full bg-white ring-1 ring-black/10"
               >
                 <span className="text-[#993331] font-black">✓</span>

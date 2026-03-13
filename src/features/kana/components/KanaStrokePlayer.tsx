@@ -33,10 +33,11 @@ export function KanaStrokePlayer({
     (index: number) => (el: SVGPathElement | null) => {
       pathRefs.current[index] = el;
     },
-    []
+    [],
   );
 
-  const showAll = activeStrokeIndex === -1 || activeStrokeIndex >= strokes.length;
+  const showAll =
+    activeStrokeIndex === -1 || activeStrokeIndex >= strokes.length;
 
   function shouldShowNumber(i: number) {
     if (!showNumbers) return false;
@@ -55,8 +56,24 @@ export function KanaStrokePlayer({
       style={{ maxWidth: "100%", height: "auto" }}
     >
       {/* Grid guide lines */}
-      <line x1="54.5" y1="0" x2="54.5" y2="109" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3 3" />
-      <line x1="0" y1="54.5" x2="109" y2="54.5" stroke="#e5e7eb" strokeWidth="0.5" strokeDasharray="3 3" />
+      <line
+        x1="54.5"
+        y1="0"
+        x2="54.5"
+        y2="109"
+        stroke="#e5e7eb"
+        strokeWidth="0.5"
+        strokeDasharray="3 3"
+      />
+      <line
+        x1="0"
+        y1="54.5"
+        x2="109"
+        y2="54.5"
+        stroke="#e5e7eb"
+        strokeWidth="0.5"
+        strokeDasharray="3 3"
+      />
 
       {strokes.map((d, i) => {
         const len = animatedLengths[i] || 0;
@@ -128,16 +145,36 @@ export function KanaStrokePlayer({
   );
 }
 
-function StrokeNumber({ pathRef, index }: { pathRef: SVGPathElement | null; index: number }) {
+function StrokeNumber({
+  pathRef,
+  index,
+}: {
+  pathRef: SVGPathElement | null;
+  index: number;
+}) {
   if (!pathRef) return null;
   const pt = pathRef.getPointAtLength(0);
   const cx = pt.x + 2;
   const cy = pt.y - 2;
 
   return (
-    <g style={{ transformOrigin: `${cx}px ${cy}px`, animation: "kana-num-in 220ms ease-out both" }}>
+    <g
+      style={{
+        transformOrigin: `${cx}px ${cy}px`,
+        animation: "kana-num-in 220ms ease-out both",
+      }}
+    >
       <circle cx={cx} cy={cy} r={5.2} fill="#993331" />
-      <text x={cx} y={cy} textAnchor="middle" dominantBaseline="central" fill="white" fontSize={6} fontWeight={800} dy="0.1em">
+      <text
+        x={cx}
+        y={cy}
+        textAnchor="middle"
+        dominantBaseline="central"
+        fill="white"
+        fontSize={6}
+        fontWeight={800}
+        dy="0.1em"
+      >
         {index + 1}
       </text>
     </g>

@@ -14,10 +14,30 @@ const INTEREST_SECTIONS = [
     title: "Entretenimiento",
     description: "Tus pasiones y hobbies favoritos",
     interests: [
-      { id: "anime-manga", kanji: "アニメ・マンガ", meaning: "Anime y Manga", color: "bg-[#A64949]" },
-      { id: "videojuegos", kanji: "ビデオゲーム", meaning: "Videojuegos", color: "bg-[#C17B6F]" },
-      { id: "hobbies", kanji: "趣味・娯楽", meaning: "Hobbies y Ocio", color: "bg-[#E8C468]" },
-      { id: "musica-cine", kanji: "音楽・映画・テレビ", meaning: "Música, Cine y TV", color: "bg-[#2B2B2B]" },
+      {
+        id: "anime-manga",
+        kanji: "アニメ・マンガ",
+        meaning: "Anime y Manga",
+        color: "bg-[#A64949]",
+      },
+      {
+        id: "videojuegos",
+        kanji: "ビデオゲーム",
+        meaning: "Videojuegos",
+        color: "bg-[#C17B6F]",
+      },
+      {
+        id: "hobbies",
+        kanji: "趣味・娯楽",
+        meaning: "Hobbies y Ocio",
+        color: "bg-[#E8C468]",
+      },
+      {
+        id: "musica-cine",
+        kanji: "音楽・映画・テレビ",
+        meaning: "Música, Cine y TV",
+        color: "bg-[#2B2B2B]",
+      },
     ],
   },
   {
@@ -25,9 +45,24 @@ const INTEREST_SECTIONS = [
     title: "Cotidianidad y Emociones",
     description: "Tu día a día y relaciones",
     interests: [
-      { id: "vida-diaria", kanji: "日常生活", meaning: "Vida Diaria", color: "bg-[#FF9B71]" },
-      { id: "familia", kanji: "家族・人間関係", meaning: "Familia y Relaciones", color: "bg-[#FFB6A3]" },
-      { id: "sentimientos", kanji: "感情・状態", meaning: "Sentimientos y Estados", color: "bg-[#FFCDB8]" },
+      {
+        id: "vida-diaria",
+        kanji: "日常生活",
+        meaning: "Vida Diaria",
+        color: "bg-[#FF9B71]",
+      },
+      {
+        id: "familia",
+        kanji: "家族・人間関係",
+        meaning: "Familia y Relaciones",
+        color: "bg-[#FFB6A3]",
+      },
+      {
+        id: "sentimientos",
+        kanji: "感情・状態",
+        meaning: "Sentimientos y Estados",
+        color: "bg-[#FFCDB8]",
+      },
     ],
   },
   {
@@ -35,10 +70,30 @@ const INTEREST_SECTIONS = [
     title: "Conocimiento",
     description: "Aprendizaje y educación",
     interests: [
-      { id: "educacion", kanji: "教育", meaning: "Educación", color: "bg-[#5B9BD5]" },
-      { id: "tecnologia", kanji: "技術", meaning: "Tecnología", color: "bg-[#70AD47]" },
-      { id: "numeros", kanji: "数字・量", meaning: "Números y Cantidades", color: "bg-[#FFC000]" },
-      { id: "fechas", kanji: "日付・時間", meaning: "Fechas y Horario", color: "bg-[#ED7D31]" },
+      {
+        id: "educacion",
+        kanji: "教育",
+        meaning: "Educación",
+        color: "bg-[#5B9BD5]",
+      },
+      {
+        id: "tecnologia",
+        kanji: "技術",
+        meaning: "Tecnología",
+        color: "bg-[#70AD47]",
+      },
+      {
+        id: "numeros",
+        kanji: "数字・量",
+        meaning: "Números y Cantidades",
+        color: "bg-[#FFC000]",
+      },
+      {
+        id: "fechas",
+        kanji: "日付・時間",
+        meaning: "Fechas y Horario",
+        color: "bg-[#ED7D31]",
+      },
     ],
   },
   {
@@ -46,9 +101,24 @@ const INTEREST_SECTIONS = [
     title: "Salud y Bienestar",
     description: "Cuidado personal y naturaleza",
     interests: [
-      { id: "medicina", kanji: "医療・健康", meaning: "Medicina y Salud", color: "bg-[#E74C3C]" },
-      { id: "clima", kanji: "天気・自然", meaning: "Clima y Naturaleza", color: "bg-[#8FA882]" },
-      { id: "deportes", kanji: "スポーツ", meaning: "Deportes", color: "bg-[#3498DB]" },
+      {
+        id: "medicina",
+        kanji: "医療・健康",
+        meaning: "Medicina y Salud",
+        color: "bg-[#E74C3C]",
+      },
+      {
+        id: "clima",
+        kanji: "天気・自然",
+        meaning: "Clima y Naturaleza",
+        color: "bg-[#8FA882]",
+      },
+      {
+        id: "deportes",
+        kanji: "スポーツ",
+        meaning: "Deportes",
+        color: "bg-[#3498DB]",
+      },
     ],
   },
   {
@@ -56,10 +126,30 @@ const INTEREST_SECTIONS = [
     title: "Mundo y Sociedad",
     description: "Viajes y cultura global",
     interests: [
-      { id: "geografia", kanji: "地理・国", meaning: "Geografía y Países", color: "bg-[#27AE60]" },
-      { id: "ciudad", kanji: "都市・場所", meaning: "Ciudad y Lugares", color: "bg-[#95A5A6]" },
-      { id: "transporte", kanji: "交通手段", meaning: "Medios de Transporte", color: "bg-[#34495E]" },
-      { id: "viajes", kanji: "旅行・観光", meaning: "Viajes y Turismo", color: "bg-[#16A085]" },
+      {
+        id: "geografia",
+        kanji: "地理・国",
+        meaning: "Geografía y Países",
+        color: "bg-[#27AE60]",
+      },
+      {
+        id: "ciudad",
+        kanji: "都市・場所",
+        meaning: "Ciudad y Lugares",
+        color: "bg-[#95A5A6]",
+      },
+      {
+        id: "transporte",
+        kanji: "交通手段",
+        meaning: "Medios de Transporte",
+        color: "bg-[#34495E]",
+      },
+      {
+        id: "viajes",
+        kanji: "旅行・観光",
+        meaning: "Viajes y Turismo",
+        color: "bg-[#16A085]",
+      },
     ],
   },
   {
@@ -67,9 +157,24 @@ const INTEREST_SECTIONS = [
     title: "Estilo y Comunicación",
     description: "Expresión y apariencia",
     interests: [
-      { id: "moda", kanji: "服・ファッション", meaning: "Ropa y Moda", color: "bg-[#9B59B6]" },
-      { id: "colores", kanji: "色・外見", meaning: "Colores y Apariencia", color: "bg-[#E91E63]" },
-      { id: "medios", kanji: "メディア", meaning: "Medios de Comunicación", color: "bg-[#607D8B]" },
+      {
+        id: "moda",
+        kanji: "服・ファッション",
+        meaning: "Ropa y Moda",
+        color: "bg-[#9B59B6]",
+      },
+      {
+        id: "colores",
+        kanji: "色・外見",
+        meaning: "Colores y Apariencia",
+        color: "bg-[#E91E63]",
+      },
+      {
+        id: "medios",
+        kanji: "メディア",
+        meaning: "Medios de Comunicación",
+        color: "bg-[#607D8B]",
+      },
     ],
   },
 ];
@@ -80,7 +185,9 @@ export default function InterestsPage() {
   const router = useRouter();
   const [showIntro, setShowIntro] = useState(true);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [selectedInterests, setSelectedInterests] = useState<Record<string, string>>({});
+  const [selectedInterests, setSelectedInterests] = useState<
+    Record<string, string>
+  >({});
   const [loading, setLoading] = useState(false);
 
   const currentSection = INTEREST_SECTIONS[currentSectionIndex];
@@ -92,13 +199,13 @@ export default function InterestsPage() {
   const handleInterestToggle = (interestId: string) => {
     setSelectedInterests((prev) => {
       const newSelections = { ...prev };
-      
+
       if (newSelections[currentSection.id] === interestId) {
         delete newSelections[currentSection.id];
       } else {
         newSelections[currentSection.id] = interestId;
       }
-      
+
       return newSelections;
     });
   };
@@ -119,19 +226,21 @@ export default function InterestsPage() {
     if (selectedCount === 0) return;
 
     setLoading(true);
-    
+
     try {
       // Convertir selectedInterests al formato esperado por el backend
-      const interests: UserInterest[] = Object.entries(selectedInterests).map(([categoryId, interestId]) => ({
-        categoryId,
-        interestId,
-      }));
-      
+      const interests: UserInterest[] = Object.entries(selectedInterests).map(
+        ([categoryId, interestId]) => ({
+          categoryId,
+          interestId,
+        }),
+      );
+
       console.log("Guardando intereses seleccionados:", interests);
 
       // Usar la función API preparada para el backend
       await saveUserInterests(interests);
-      
+
       console.log("Intereses guardados correctamente");
       router.push("/dashboard/graph");
     } catch (error) {
@@ -145,8 +254,8 @@ export default function InterestsPage() {
 
   return (
     <main className="relative min-h-screen bg-neutral-50 overflow-hidden">
-      <AnimatedGraphBackground 
-        variant="dimmed" 
+      <AnimatedGraphBackground
+        variant="dimmed"
         density={0.00006}
         maxDist={200}
         speed={0.18}
@@ -231,10 +340,17 @@ export default function InterestsPage() {
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-neutral-600">
-                Categoría: <span className="font-semibold text-neutral-900">{currentSection.title}</span>
+                Categoría:{" "}
+                <span className="font-semibold text-neutral-900">
+                  {currentSection.title}
+                </span>
               </span>
-              <span className={`font-semibold ${currentSectionHasSelection ? 'text-green-600' : 'text-[#993331]'}`}>
-                {currentSectionHasSelection ? '✓ Seleccionado' : 'Selecciona uno'}
+              <span
+                className={`font-semibold ${currentSectionHasSelection ? "text-green-600" : "text-[#993331]"}`}
+              >
+                {currentSectionHasSelection
+                  ? "✓ Seleccionado"
+                  : "Selecciona uno"}
               </span>
             </div>
           </div>
@@ -270,7 +386,8 @@ export default function InterestsPage() {
                 {/* Grid de intereses de la sección actual */}
                 <div className="flex flex-wrap justify-center gap-4 sm:gap-6 md:gap-8 lg:gap-10 mb-6 max-w-[90rem] mx-auto">
                   {currentSection.interests.map((interest, index) => {
-                    const isSelected = selectedInterests[currentSection.id] === interest.id;
+                    const isSelected =
+                      selectedInterests[currentSection.id] === interest.id;
 
                     return (
                       <motion.div
@@ -285,15 +402,16 @@ export default function InterestsPage() {
                           className={`
                             relative rounded-lg sm:rounded-xl p-3 sm:p-4 w-full aspect-[3/4] transition-all duration-300
                             ${interest.color} text-white flex items-center justify-center
-                            ${isSelected 
-                              ? 'ring-2 sm:ring-4 ring-[#993331] scale-105 shadow-2xl' 
-                              : 'hover:scale-105 hover:shadow-xl'
+                            ${
+                              isSelected
+                                ? "ring-2 sm:ring-4 ring-[#993331] scale-105 shadow-2xl"
+                                : "hover:scale-105 hover:shadow-xl"
                             }
                           `}
                         >
                           <div className="text-center">
                             <div className="text-base sm:text-xl md:text-2xl lg:text-3xl font-bold leading-tight whitespace-pre-line">
-                              {interest.kanji.split('・').join('\n·\n')}
+                              {interest.kanji.split("・").join("\n·\n")}
                             </div>
                           </div>
 
@@ -303,13 +421,21 @@ export default function InterestsPage() {
                               animate={{ scale: 1 }}
                               className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 bg-white rounded-full flex items-center justify-center shadow-lg"
                             >
-                              <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#993331]" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              <svg
+                                className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#993331]"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
                             </motion.div>
                           )}
                         </button>
-                        
+
                         <p className="mt-3 sm:mt-4 md:mt-6 text-xs sm:text-sm md:text-base font-semibold text-neutral-800 text-center leading-tight">
                           {interest.meaning}
                         </p>
@@ -329,8 +455,10 @@ export default function InterestsPage() {
                         className="inline-block bg-white/80 backdrop-blur-sm px-5 py-2 rounded-full shadow-lg"
                       >
                         <p className="text-sm text-neutral-600">
-                          <span className="font-bold text-[#993331] text-base">{selectedCount}</span>
-                          {' '}de {MAX_FREE_SELECTIONS} categorías completadas
+                          <span className="font-bold text-[#993331] text-base">
+                            {selectedCount}
+                          </span>{" "}
+                          de {MAX_FREE_SELECTIONS} categorías completadas
                         </p>
                       </motion.div>
                     )}
@@ -345,9 +473,10 @@ export default function InterestsPage() {
                       className={`
                         px-4 sm:px-6 py-2.5 rounded-full text-sm sm:text-base font-semibold
                         transition-all duration-300
-                        ${currentSectionIndex > 0
-                          ? 'bg-neutral-200 text-neutral-700 hover:bg-neutral-300'
-                          : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'
+                        ${
+                          currentSectionIndex > 0
+                            ? "bg-neutral-200 text-neutral-700 hover:bg-neutral-300"
+                            : "bg-neutral-100 text-neutral-400 cursor-not-allowed"
                         }
                       `}
                     >
@@ -369,13 +498,14 @@ export default function InterestsPage() {
                         className={`
                           px-6 sm:px-10 py-2.5 rounded-full text-sm sm:text-base font-semibold
                           transition-all duration-300
-                          ${selectedCount > 0 && !loading
-                            ? 'bg-[#993331] text-white hover:bg-[#882d2d] shadow-lg hover:shadow-xl scale-100 hover:scale-105'
-                            : 'bg-neutral-200 text-neutral-400 cursor-not-allowed'
+                          ${
+                            selectedCount > 0 && !loading
+                              ? "bg-[#993331] text-white hover:bg-[#882d2d] shadow-lg hover:shadow-xl scale-100 hover:scale-105"
+                              : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
                           }
                         `}
                       >
-                        {loading ? 'Guardando...' : 'Comenzar mi viaje'}
+                        {loading ? "Guardando..." : "Comenzar mi viaje"}
                       </button>
                     )}
                   </div>
@@ -392,13 +522,15 @@ export default function InterestsPage() {
             >
               <div className="bg-white/60 backdrop-blur-sm px-5 py-3 rounded-xl shadow-md">
                 <p className="text-xs leading-relaxed text-neutral-600">
-                  Con la suscripción <span className="font-semibold">gratuita</span> puedes elegir{' '}
-                  <span className="font-bold text-[#993331]">un interés por categoría</span>.
-                  {' '}
+                  Con la suscripción{" "}
+                  <span className="font-semibold">gratuita</span> puedes elegir{" "}
+                  <span className="font-bold text-[#993331]">
+                    un interés por categoría
+                  </span>
+                  .{" "}
                   <span className="text-[#993331] font-semibold cursor-pointer hover:underline">
                     Actualiza a Premium
-                  </span>
-                  {' '}
+                  </span>{" "}
                   para acceder a todos los intereses y contenido exclusivo.
                 </p>
               </div>

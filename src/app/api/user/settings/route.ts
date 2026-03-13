@@ -3,7 +3,8 @@ import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 
 export const dynamic = "force-dynamic";
 
-const USERS_API_BASE = process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
+const USERS_API_BASE =
+  process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
 
 // ─── Helpers ─────────────────────────────────────────────────────
 
@@ -24,7 +25,10 @@ function getUserIdFromToken(token: string): string | null {
 function toSnakeCase(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+    const snakeKey = key.replace(
+      /[A-Z]/g,
+      (letter) => `_${letter.toLowerCase()}`,
+    );
     if (value && typeof value === "object" && !Array.isArray(value)) {
       result[snakeKey] = toSnakeCase(value as Record<string, unknown>);
     } else {
@@ -40,7 +44,9 @@ function toSnakeCase(obj: Record<string, unknown>): Record<string, unknown> {
 function toCamelCase(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(obj)) {
-    const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+    const camelKey = key.replace(/_([a-z])/g, (_, letter) =>
+      letter.toUpperCase(),
+    );
     if (value && typeof value === "object" && !Array.isArray(value)) {
       result[camelKey] = toCamelCase(value as Record<string, unknown>);
     } else {
@@ -91,7 +97,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ settings });
   } catch (error) {
     console.error("[GET /api/user/settings]", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 },
+    );
   }
 }
 
@@ -132,7 +141,9 @@ export async function PATCH(request: NextRequest) {
 
     if (!validSections.includes(section)) {
       return NextResponse.json(
-        { error: `Sección inválida. Secciones válidas: ${validSections.join(", ")}` },
+        {
+          error: `Sección inválida. Secciones válidas: ${validSections.join(", ")}`,
+        },
         { status: 400 },
       );
     }
@@ -162,7 +173,10 @@ export async function PATCH(request: NextRequest) {
     return NextResponse.json({ settings });
   } catch (error) {
     console.error("[PATCH /api/user/settings]", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 },
+    );
   }
 }
 
@@ -207,6 +221,9 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ settings });
   } catch (error) {
     console.error("[PUT /api/user/settings]", error);
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 },
+    );
   }
 }

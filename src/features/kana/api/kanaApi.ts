@@ -1,5 +1,10 @@
 import { apiFetch } from "@/shared/lib/api/client";
-import type { Kana, KanaStrokeData, KanaType, KanaExerciseAnswer } from "@/features/kana/types";
+import type {
+  Kana,
+  KanaStrokeData,
+  KanaType,
+  KanaExerciseAnswer,
+} from "@/features/kana/types";
 
 /* ── Funciones unificadas ──────────────────────────────── */
 

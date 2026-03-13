@@ -1,4 +1,10 @@
-export type { Kana, KanaType, KanaStrokeData, KanaExerciseType, KanaExerciseAnswer } from "./types";
+export type {
+  Kana,
+  KanaType,
+  KanaStrokeData,
+  KanaExerciseType,
+  KanaExerciseAnswer,
+} from "./types";
 export { getKanaLabel } from "./utils/kanaText";
 export {
   listKana,
@@ -18,10 +24,17 @@ export {
   getFeedbackLabel,
   getFeedbackColor,
 } from "./lib/strokeValidation";
-export type { StrokeValidationResult, StrokePoint } from "./lib/strokeValidation";
+export type {
+  StrokeValidationResult,
+  StrokePoint,
+} from "./lib/strokeValidation";
 
 // Mock data
-export { getMockKanaStrokes, hasMockKanaStrokes, getMockKanaSymbols } from "./mock/mockStrokeData";
+export {
+  getMockKanaStrokes,
+  hasMockKanaStrokes,
+  getMockKanaSymbols,
+} from "./mock/mockStrokeData";
 
 // Components
 export { KanaDetailModal } from "./components/KanaDetailModal";

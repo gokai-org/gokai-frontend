@@ -31,7 +31,7 @@ export type KanjiExerciseAnswer = {
 
 export type KanjiStrokeData = {
   kanjiId: string;
-  viewBox: string;     // e.g. "0 0 109 109"
+  viewBox: string; // e.g. "0 0 109 109"
   strokes: string[];
 };
 

@@ -57,7 +57,10 @@ const itemVariants = {
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+    transition: {
+      duration: 0.4,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    },
   },
 };
 
@@ -102,8 +105,8 @@ export function RecentActivity({
   title = "Actividad reciente",
   loading,
 }: RecentActivityProps) {
-const MAX_ITEMS = 8;
-const items = (activities ?? defaultActivities).slice(0, MAX_ITEMS);
+  const MAX_ITEMS = 8;
+  const items = (activities ?? defaultActivities).slice(0, MAX_ITEMS);
 
   if (loading) {
     return (
@@ -135,9 +138,12 @@ const items = (activities ?? defaultActivities).slice(0, MAX_ITEMS);
           <div className="w-14 h-14 rounded-2xl bg-[#993331]/10 flex items-center justify-center">
             <Zap className="w-7 h-7 text-[#993331]/40" />
           </div>
-          <p className="text-sm font-semibold text-gray-500">Nada por aquí todavía</p>
+          <p className="text-sm font-semibold text-gray-500">
+            Nada por aquí todavía
+          </p>
           <p className="text-xs text-gray-400 text-center max-w-[220px]">
-            Tus lecciones de kanji, kana, gramática y repasos aparecerán aquí en tiempo real.
+            Tus lecciones de kanji, kana, gramática y repasos aparecerán aquí en
+            tiempo real.
           </p>
         </div>
       </motion.div>

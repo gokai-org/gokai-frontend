@@ -3,9 +3,11 @@ import { NextRequest, NextResponse } from "next/server";
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
 const GOOGLE_REDIRECT_URI =
-  process.env.GOOGLE_REDIRECT_URI || "http://localhost:3000/api/auth/google/callback";
+  process.env.GOOGLE_REDIRECT_URI ||
+  "http://localhost:3000/api/auth/google/callback";
 
-const USERS_API_BASE = process.env.GOKAI_USERS_API_BASE || "http://localhost:8080";
+const USERS_API_BASE =
+  process.env.GOKAI_USERS_API_BASE || "http://localhost:8080";
 const GOOGLE_AUTH_PATH = process.env.GOKAI_GOOGLE_AUTH_PATH || "/auth/google";
 
 export async function GET(request: NextRequest) {
@@ -17,25 +19,33 @@ export async function GET(request: NextRequest) {
   // 1) Error de Google
   if (error) {
     console.error("Google OAuth error:", error);
-    return NextResponse.redirect(new URL("/auth/login?error=google_auth_failed", request.url));
+    return NextResponse.redirect(
+      new URL("/auth/login?error=google_auth_failed", request.url),
+    );
   }
 
   // 2) Validación CSRF state
   const cookieState = request.cookies.get("gokai_oauth_state")?.value;
   if (!state || !cookieState || state !== cookieState) {
     console.error("State inválido:", { state, cookieState });
-    return NextResponse.redirect(new URL("/auth/login?error=invalid_state", request.url));
+    return NextResponse.redirect(
+      new URL("/auth/login?error=invalid_state", request.url),
+    );
   }
 
   // 3) No vino code
   if (!code) {
-    return NextResponse.redirect(new URL("/auth/login?error=no_code", request.url));
+    return NextResponse.redirect(
+      new URL("/auth/login?error=no_code", request.url),
+    );
   }
 
   // 4) Variables necesarias
   if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
     console.error("Faltan GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET");
-    return NextResponse.redirect(new URL("/auth/login?error=google_not_configured", request.url));
+    return NextResponse.redirect(
+      new URL("/auth/login?error=google_not_configured", request.url),
+    );
   }
 
   try {
@@ -54,17 +64,23 @@ export async function GET(request: NextRequest) {
 
     const tokenRaw = await tokenResponse.text();
     let tokens: Record<string, unknown> = {};
-    try { tokens = JSON.parse(tokenRaw) as Record<string, unknown>; } catch {}
+    try {
+      tokens = JSON.parse(tokenRaw) as Record<string, unknown>;
+    } catch {}
 
     if (!tokenResponse.ok) {
       console.error("Token exchange failed:", tokenRaw);
-      return NextResponse.redirect(new URL("/auth/login?error=token_exchange_failed", request.url));
+      return NextResponse.redirect(
+        new URL("/auth/login?error=token_exchange_failed", request.url),
+      );
     }
 
     const idToken = tokens?.id_token;
     if (!idToken) {
       console.error("No id_token:", tokens);
-      return NextResponse.redirect(new URL("/auth/login?error=no_id_token", request.url));
+      return NextResponse.redirect(
+        new URL("/auth/login?error=no_id_token", request.url),
+      );
     }
 
     // 6) Mandar idToken a tu backend (validación + creación de sesión)
@@ -77,12 +93,19 @@ export async function GET(request: NextRequest) {
 
     const backendRaw = await backendResponse.text();
     let backendData: Record<string, unknown> = {};
-    try { backendData = JSON.parse(backendRaw) as Record<string, unknown>; } catch { backendData = { raw: backendRaw }; }
+    try {
+      backendData = JSON.parse(backendRaw) as Record<string, unknown>;
+    } catch {
+      backendData = { raw: backendRaw };
+    }
 
     if (!backendResponse.ok) {
       console.error("Backend failed:", backendResponse.status, backendData);
       return NextResponse.redirect(
-        new URL(`/auth/login?error=backend_failed&status=${backendResponse.status}`, request.url)
+        new URL(
+          `/auth/login?error=backend_failed&status=${backendResponse.status}`,
+          request.url,
+        ),
       );
     }
 
@@ -92,7 +115,8 @@ export async function GET(request: NextRequest) {
 
       if (gd.email) url.searchParams.set("email", String(gd.email));
       if (gd.givenName) url.searchParams.set("firstName", String(gd.givenName));
-      if (gd.familyName) url.searchParams.set("lastName", String(gd.familyName));
+      if (gd.familyName)
+        url.searchParams.set("lastName", String(gd.familyName));
       url.searchParams.set("google", "1");
 
       return NextResponse.redirect(url);
@@ -100,11 +124,15 @@ export async function GET(request: NextRequest) {
 
     const token = backendData?.token as string | undefined;
     if (!token) {
-      return NextResponse.redirect(new URL("/auth/login?error=no_token", request.url));
+      return NextResponse.redirect(
+        new URL("/auth/login?error=no_token", request.url),
+      );
     }
 
     // 7) Cookie + redirect
-    const response = NextResponse.redirect(new URL("/dashboard/graph", request.url));
+    const response = NextResponse.redirect(
+      new URL("/dashboard/graph", request.url),
+    );
 
     // limpia state
     response.cookies.set("gokai_oauth_state", "", { path: "/", maxAge: 0 });
@@ -119,6 +147,8 @@ export async function GET(request: NextRequest) {
     return response;
   } catch (err) {
     console.error("Unexpected OAuth callback error:", err);
-    return NextResponse.redirect(new URL("/auth/login?error=unexpected_error", request.url));
+    return NextResponse.redirect(
+      new URL("/auth/login?error=unexpected_error", request.url),
+    );
   }
 }

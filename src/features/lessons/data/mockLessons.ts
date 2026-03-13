@@ -17,7 +17,7 @@ export const mockLessonsByNodeId: Record<string, LessonResolved[]> = {
         readings: { on: ["ゲツ", "ガツ"], kun: ["つき"] },
         meanings: { es: ["luna", "mes"] },
         pointsToUnlock: 0,
-      }
+      },
     },
   ],
 

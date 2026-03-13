@@ -95,7 +95,8 @@ const guides: GuideCard[] = [
   {
     icon: <GraduationCap className="w-6 h-6" />,
     title: "Primeros pasos",
-    description: "Configura tu perfil, elige tu nivel y comienza tu primera lección de japonés.",
+    description:
+      "Configura tu perfil, elige tu nivel y comienza tu primera lección de japonés.",
     color: "text-blue-600",
     bgColor: "bg-blue-50",
     tourIndex: 0,
@@ -103,7 +104,8 @@ const guides: GuideCard[] = [
   {
     icon: <Library className="w-6 h-6" />,
     title: "Explorar la biblioteca",
-    description: "Descubre miles de kanji organizados por nivel de dificultad con ejemplos interactivos.",
+    description:
+      "Descubre miles de kanji organizados por nivel de dificultad con ejemplos interactivos.",
     color: "text-purple-600",
     bgColor: "bg-purple-50",
     tourIndex: 1,
@@ -111,7 +113,8 @@ const guides: GuideCard[] = [
   {
     icon: <Target className="w-6 h-6" />,
     title: "Sistema de revisiones",
-    description: "Aprende cómo funciona el SRS y cómo maximizar tu retención de vocabulario.",
+    description:
+      "Aprende cómo funciona el SRS y cómo maximizar tu retención de vocabulario.",
     color: "text-emerald-600",
     bgColor: "bg-emerald-50",
     tourIndex: 2,
@@ -119,7 +122,8 @@ const guides: GuideCard[] = [
   {
     icon: <MessageCircle className="w-6 h-6" />,
     title: "Chatbot de conversación",
-    description: "Practica japonés con IA: escenarios reales, correcciones y audio nativo.",
+    description:
+      "Practica japonés con IA: escenarios reales, correcciones y audio nativo.",
     color: "text-amber-600",
     bgColor: "bg-amber-50",
     tourIndex: 3,
@@ -127,7 +131,8 @@ const guides: GuideCard[] = [
   {
     icon: <BarChart3 className="w-6 h-6" />,
     title: "Estadísticas y progreso",
-    description: "Interpreta tus métricas, identifica patrones y optimiza tu rutina de estudio.",
+    description:
+      "Interpreta tus métricas, identifica patrones y optimiza tu rutina de estudio.",
     color: "text-rose-600",
     bgColor: "bg-rose-50",
     tourIndex: 4,
@@ -135,7 +140,8 @@ const guides: GuideCard[] = [
   {
     icon: <Settings className="w-6 h-6" />,
     title: "Personalización",
-    description: "Ajusta notificaciones, metas diarias, temas y preferencias de accesibilidad.",
+    description:
+      "Ajusta notificaciones, metas diarias, temas y preferencias de accesibilidad.",
     color: "text-indigo-600",
     bgColor: "bg-indigo-50",
     tourIndex: 5,
@@ -146,22 +152,26 @@ const tips = [
   {
     icon: <Zap className="w-5 h-5" />,
     title: "Estudia todos los días",
-    description: "Aunque sean solo 10 minutos, la consistencia es la clave del éxito.",
+    description:
+      "Aunque sean solo 10 minutos, la consistencia es la clave del éxito.",
   },
   {
     icon: <PenTool className="w-5 h-5" />,
     title: "Practica la escritura",
-    description: "Trazar los kanji a mano refuerza la memoria muscular y visual.",
+    description:
+      "Trazar los kanji a mano refuerza la memoria muscular y visual.",
   },
   {
     icon: <Star className="w-5 h-5" />,
     title: "No te saltes las revisiones",
-    description: "El SRS funciona mejor cuando completas tus revisiones a tiempo.",
+    description:
+      "El SRS funciona mejor cuando completas tus revisiones a tiempo.",
   },
   {
     icon: <Heart className="w-5 h-5" />,
     title: "Disfruta el proceso",
-    description: "Conecta con contenido que te guste: anime, manga, música o cultura.",
+    description:
+      "Conecta con contenido que te guste: anime, manga, música o cultura.",
   },
 ];
 
@@ -175,10 +185,7 @@ function FaqAccordion({ item, index }: { item: FaqItem; index: number }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, ease, delay: index * 0.05 }}
     >
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full text-left group"
-      >
+      <button onClick={() => setOpen(!open)} className="w-full text-left group">
         <div
           className={`flex items-start gap-4 p-5 rounded-2xl transition-all duration-300 ${
             open
@@ -239,7 +246,9 @@ function FaqAccordion({ item, index }: { item: FaqItem; index: number }) {
 /* ── componente principal ── */
 export default function HelpPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"guides" | "faq" | "tips">("guides");
+  const [activeTab, setActiveTab] = useState<"guides" | "faq" | "tips">(
+    "guides",
+  );
   const [supportOpen, setSupportOpen] = useState(false);
   const { startTour } = useGuideTour();
 
@@ -251,13 +260,25 @@ export default function HelpPage() {
   const filteredFaqs = faqs.filter(
     (faq) =>
       faq.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      faq.answer.toLowerCase().includes(searchQuery.toLowerCase())
+      faq.answer.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
   const tabs = [
-    { key: "guides" as const, label: "Guías", icon: <BookOpen className="w-4 h-4" /> },
-    { key: "faq" as const, label: "Preguntas frecuentes", icon: <HelpCircle className="w-4 h-4" /> },
-    { key: "tips" as const, label: "Consejos", icon: <Lightbulb className="w-4 h-4" /> },
+    {
+      key: "guides" as const,
+      label: "Guías",
+      icon: <BookOpen className="w-4 h-4" />,
+    },
+    {
+      key: "faq" as const,
+      label: "Preguntas frecuentes",
+      icon: <HelpCircle className="w-4 h-4" />,
+    },
+    {
+      key: "tips" as const,
+      label: "Consejos",
+      icon: <Lightbulb className="w-4 h-4" />,
+    },
   ];
 
   return (
@@ -320,17 +341,23 @@ export default function HelpPage() {
             <div className="flex gap-4 md:gap-6">
               <div className="text-center">
                 <div className="text-3xl font-extrabold">8</div>
-                <div className="text-xs text-white/60 font-medium mt-0.5">Guías</div>
+                <div className="text-xs text-white/60 font-medium mt-0.5">
+                  Guías
+                </div>
               </div>
               <div className="w-px bg-white/20" />
               <div className="text-center">
                 <div className="text-3xl font-extrabold">{faqs.length}</div>
-                <div className="text-xs text-white/60 font-medium mt-0.5">FAQs</div>
+                <div className="text-xs text-white/60 font-medium mt-0.5">
+                  FAQs
+                </div>
               </div>
               <div className="w-px bg-white/20" />
               <div className="text-center">
                 <div className="text-3xl font-extrabold">24/7</div>
-                <div className="text-xs text-white/60 font-medium mt-0.5">Soporte</div>
+                <div className="text-xs text-white/60 font-medium mt-0.5">
+                  Soporte
+                </div>
               </div>
             </div>
           </div>
@@ -496,14 +523,17 @@ export default function HelpPage() {
                       Consejo del día
                     </h3>
                     <p className="text-sm text-gray-700 leading-relaxed mb-4">
-                      La mejor forma de aprender kanji es en contexto. En lugar de memorizar caracteres aislados,
-                      intenta leer frases completas y asociar cada kanji con situaciones reales.
-                      Tu cerebro recordará mejor las historias que los datos sueltos. ¡Usa el chatbot para
-                      practicar en contexto!
+                      La mejor forma de aprender kanji es en contexto. En lugar
+                      de memorizar caracteres aislados, intenta leer frases
+                      completas y asociar cada kanji con situaciones reales. Tu
+                      cerebro recordará mejor las historias que los datos
+                      sueltos. ¡Usa el chatbot para practicar en contexto!
                     </p>
                     <div className="flex items-center gap-2 text-xs font-bold text-amber-600">
                       <Lightbulb className="w-4 h-4" />
-                      <span>Basado en investigación de aprendizaje cognitivo</span>
+                      <span>
+                        Basado en investigación de aprendizaje cognitivo
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -511,7 +541,6 @@ export default function HelpPage() {
             </motion.div>
           )}
         </AnimatePresence>
-
 
         {/* ── Contact CTA ── */}
         <motion.div
@@ -529,8 +558,8 @@ export default function HelpPage() {
                 ¿No encontraste lo que buscabas?
               </h3>
               <p className="text-sm text-gray-500 leading-relaxed">
-                Nuestro equipo de soporte está aquí para ayudarte. Escríbenos y te
-                responderemos lo antes posible.
+                Nuestro equipo de soporte está aquí para ayudarte. Escríbenos y
+                te responderemos lo antes posible.
               </p>
             </div>
             <motion.button

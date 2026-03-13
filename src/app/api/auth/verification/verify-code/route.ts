@@ -16,14 +16,20 @@ import { NextResponse } from "next/server";
 export async function POST(req: Request) {
   const base = process.env.GOKAI_USERS_API_BASE;
   if (!base) {
-    return NextResponse.json({ error: "Falta GOKAI_USERS_API_BASE" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Falta GOKAI_USERS_API_BASE" },
+      { status: 500 },
+    );
   }
 
   let body: Record<string, unknown>;
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json({ error: "Body invalido (JSON requerido)" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Body invalido (JSON requerido)" },
+      { status: 400 },
+    );
   }
 
   const email = String(body.email ?? "").trim();
@@ -31,7 +37,10 @@ export async function POST(req: Request) {
   const rawType = String(body.type ?? "").trim();
 
   if (!email || !code) {
-    return NextResponse.json({ error: "Los campos 'email' y 'code' son requeridos." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Los campos 'email' y 'code' son requeridos." },
+      { status: 400 },
+    );
   }
 
   const typeMap: Record<string, "verification" | "password"> = {
@@ -49,10 +58,11 @@ export async function POST(req: Request) {
   if (!type) {
     return NextResponse.json(
       {
-        error: "El campo 'type' es invalido. Usa 'email-verification' o 'password-recovery'.",
+        error:
+          "El campo 'type' es invalido. Usa 'email-verification' o 'password-recovery'.",
         received: rawType,
       },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -75,7 +85,7 @@ export async function POST(req: Request) {
       console.error("verify-code backend error:", { status: r.status, text });
       return NextResponse.json(
         { error: data?.error || text || "Codigo invalido o expirado." },
-        { status: r.status }
+        { status: r.status },
       );
     }
 
@@ -85,6 +95,9 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("Error al verificar codigo:", err);
-    return NextResponse.json({ error: "Error interno al verificar el codigo." }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno al verificar el codigo." },
+      { status: 500 },
+    );
   }
 }

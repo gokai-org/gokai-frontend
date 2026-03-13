@@ -25,8 +25,7 @@ const BASE_STROKE_POINTS = 10;
 function useCanvasSize(max: number, padding = 64): number {
   const [size, setSize] = useState(max);
   useEffect(() => {
-    const update = () =>
-      setSize(Math.min(max, window.innerWidth - padding));
+    const update = () => setSize(Math.min(max, window.innerWidth - padding));
     update();
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
@@ -163,11 +162,11 @@ export function WritingPracticeModal({
       const validation = validateStroke(
         stroke.points,
         refPath,
-        strokeData.viewBox
+        strokeData.viewBox,
       );
       const pointsDelta = getPointsForFeedback(
         validation.feedback,
-        BASE_STROKE_POINTS
+        BASE_STROKE_POINTS,
       );
       const result: StrokeResult = { validation, pointsDelta };
 
@@ -175,16 +174,10 @@ export function WritingPracticeModal({
       setStrokeResults((prev) => [...prev, result]);
       setLastFeedback(result);
 
-      if (
-        validation.feedback === "poor" ||
-        validation.feedback === "miss"
-      ) {
+      if (validation.feedback === "poor" || validation.feedback === "miss") {
         setFlashError(true);
         if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
-        feedbackTimeout.current = setTimeout(
-          () => setFlashError(false),
-          400
-        );
+        feedbackTimeout.current = setTimeout(() => setFlashError(false), 400);
       }
 
       if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
@@ -197,7 +190,7 @@ export function WritingPracticeModal({
         setPracticeStrokeIndex(nextIdx);
       }
     },
-    [practiceStrokeIndex, strokeData]
+    [practiceStrokeIndex, strokeData],
   );
 
   const handleRetry = useCallback(() => {
@@ -227,21 +220,26 @@ export function WritingPracticeModal({
 
   const totalScore = useMemo(
     () => strokeResults.reduce((sum, r) => sum + r.pointsDelta, 0),
-    [strokeResults]
+    [strokeResults],
   );
   const maxScore = totalStrokes * BASE_STROKE_POINTS;
-  const scorePercent = maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
+  const scorePercent =
+    maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0;
 
   const resultGrade = useMemo(() => {
-    if (scorePercent >= 90) return { label: "Excelente", color: "text-green-600" };
-    if (scorePercent >= 70) return { label: "Bien hecho", color: "text-blue-600" };
-    if (scorePercent >= 50) return { label: "Aceptable", color: "text-amber-600" };
+    if (scorePercent >= 90)
+      return { label: "Excelente", color: "text-green-600" };
+    if (scorePercent >= 70)
+      return { label: "Bien hecho", color: "text-blue-600" };
+    if (scorePercent >= 50)
+      return { label: "Aceptable", color: "text-amber-600" };
     return { label: "Sigue practicando", color: "text-orange-600" };
   }, [scorePercent]);
 
   // Submit results to backend when entering result step
   useEffect(() => {
-    if (step !== "result" || hasSubmitted.current || strokeResults.length === 0) return;
+    if (step !== "result" || hasSubmitted.current || strokeResults.length === 0)
+      return;
 
     // Guard: only submit when ALL exercises are actually completed
     if (strokeResults.length !== totalStrokes) {
@@ -253,9 +251,10 @@ export function WritingPracticeModal({
 
     hasSubmitted.current = true;
 
-    const durationSeconds = startTime.current > 0
-      ? Math.round((Date.now() - startTime.current) / 1000)
-      : 0;
+    const durationSeconds =
+      startTime.current > 0
+        ? Math.round((Date.now() - startTime.current) / 1000)
+        : 0;
     const correct = strokeResults.filter((r) => r.validation.isCorrect).length;
 
     const answers: KanjiLessonAnswerBody[] = strokeResults.map((r) => ({
@@ -294,7 +293,10 @@ export function WritingPracticeModal({
       opacity: 1,
       scale: 1,
       y: 0,
-      transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      transition: {
+        duration: 0.35,
+        ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+      },
     },
     exit: {
       opacity: 0,
@@ -309,7 +311,11 @@ export function WritingPracticeModal({
     visible: (i: number) => ({
       opacity: 1,
       y: 0,
-      transition: { delay: i * 0.06, duration: 0.4, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
+      transition: {
+        delay: i * 0.06,
+        duration: 0.4,
+        ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+      },
     }),
   };
 
@@ -443,8 +449,18 @@ export function WritingPracticeModal({
                 {error ? (
                   <div className="text-center py-12">
                     <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
-                      <svg className="w-6 h-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                      <svg
+                        className="w-6 h-6 text-red-400"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"
+                        />
                       </svg>
                     </div>
                     <p className="text-neutral-500 mb-4">{error}</p>
@@ -531,8 +547,18 @@ export function WritingPracticeModal({
                         title="Reiniciar"
                         disabled={demoStrokeIndex === 0}
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                          />
                         </svg>
                       </IconButton>
 
@@ -541,8 +567,18 @@ export function WritingPracticeModal({
                         title="Anterior"
                         disabled={demoStrokeIndex === 0}
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M15 19l-7-7 7-7"
+                          />
                         </svg>
                       </IconButton>
 
@@ -567,7 +603,11 @@ export function WritingPracticeModal({
                       >
                         {demoAutoPlay ? (
                           <>
-                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                            <svg
+                              className="w-3.5 h-3.5"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
                               <rect x="6" y="4" width="4" height="16" rx="1" />
                               <rect x="14" y="4" width="4" height="16" rx="1" />
                             </svg>
@@ -575,7 +615,11 @@ export function WritingPracticeModal({
                           </>
                         ) : (
                           <>
-                            <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                            <svg
+                              className="w-3.5 h-3.5"
+                              fill="currentColor"
+                              viewBox="0 0 24 24"
+                            >
                               <path d="M8 5v14l11-7z" />
                             </svg>
                             Reproducir
@@ -588,8 +632,18 @@ export function WritingPracticeModal({
                         title="Siguiente"
                         disabled={demoStrokeIndex >= totalStrokes}
                       >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
                         </svg>
                       </IconButton>
                     </motion.div>
@@ -605,8 +659,18 @@ export function WritingPracticeModal({
                       onClick={handleStartPractice}
                       className="w-full max-w-[280px] py-3.5 bg-gradient-to-r from-[#993331] to-[#BA5149] text-white rounded-2xl font-bold hover:shadow-xl hover:shadow-[#993331]/20 transition-all shadow-lg shadow-[#993331]/15 flex items-center justify-center gap-2.5 text-[15px]"
                     >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      <svg
+                        className="w-5 h-5"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                        />
                       </svg>
                       Comenzar a practicar
                     </motion.button>
@@ -652,9 +716,13 @@ export function WritingPracticeModal({
                         initial={{ opacity: 0, scale: 0.7, y: 8 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.8 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 20,
+                        }}
                         className={`absolute -top-3 -right-3 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-lg ${getFeedbackColor(
-                          lastFeedback.validation.feedback
+                          lastFeedback.validation.feedback,
                         )}`}
                       >
                         {getFeedbackLabel(lastFeedback.validation.feedback)}
@@ -669,14 +737,27 @@ export function WritingPracticeModal({
 
                 {/* Running score */}
                 <div className="flex items-center gap-2 bg-neutral-50 rounded-xl px-4 py-2">
-                  <svg className="w-4 h-4 text-[#993331]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                  <svg
+                    className="w-4 h-4 text-[#993331]"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                    />
                   </svg>
                   <span className="text-sm font-bold text-neutral-700">
                     {totalScore}
                   </span>
                   <span className="text-xs text-neutral-400">
-                    / {(practiceStrokeIndex) * BASE_STROKE_POINTS + BASE_STROKE_POINTS} pts
+                    /{" "}
+                    {practiceStrokeIndex * BASE_STROKE_POINTS +
+                      BASE_STROKE_POINTS}{" "}
+                    pts
                   </span>
                 </div>
 
@@ -686,13 +767,17 @@ export function WritingPracticeModal({
                     const sr = strokeResults[i];
                     let dotClass = "bg-neutral-200";
                     if (sr) {
-                      if (sr.validation.feedback === "perfect" || sr.validation.feedback === "good")
+                      if (
+                        sr.validation.feedback === "perfect" ||
+                        sr.validation.feedback === "good"
+                      )
                         dotClass = "bg-emerald-500";
                       else if (sr.validation.feedback === "acceptable")
                         dotClass = "bg-amber-400";
                       else dotClass = "bg-red-400";
                     } else if (i === practiceStrokeIndex) {
-                      dotClass = "bg-[#993331] ring-2 ring-[#993331]/30 ring-offset-1";
+                      dotClass =
+                        "bg-[#993331] ring-2 ring-[#993331]/30 ring-offset-1";
                     }
                     return (
                       <motion.div
@@ -742,7 +827,12 @@ export function WritingPracticeModal({
                   <motion.div
                     initial={{ scale: 0.5, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
-                    transition={{ delay: 0.15, type: "spring", stiffness: 200, damping: 15 }}
+                    transition={{
+                      delay: 0.15,
+                      type: "spring",
+                      stiffness: 200,
+                      damping: 15,
+                    }}
                     className="relative"
                   >
                     <div
@@ -750,75 +840,159 @@ export function WritingPracticeModal({
                         scorePercent >= 70
                           ? "bg-emerald-400/20"
                           : scorePercent >= 50
-                          ? "bg-amber-400/20"
-                          : "bg-[#993331]/15"
+                            ? "bg-amber-400/20"
+                            : "bg-[#993331]/15"
                       }`}
                     />
                     <div className="relative w-28 h-28 rounded-full flex flex-col items-center justify-center">
-                      <svg className="absolute inset-0 w-28 h-28 -rotate-90" viewBox="0 0 112 112">
-                        <circle cx="56" cy="56" r="50" fill="none" stroke="#f3f4f6" strokeWidth="6" />
+                      <svg
+                        className="absolute inset-0 w-28 h-28 -rotate-90"
+                        viewBox="0 0 112 112"
+                      >
+                        <circle
+                          cx="56"
+                          cy="56"
+                          r="50"
+                          fill="none"
+                          stroke="#f3f4f6"
+                          strokeWidth="6"
+                        />
                         <motion.circle
-                          cx="56" cy="56" r="50" fill="none"
-                          stroke={scorePercent >= 70 ? "#10b981" : scorePercent >= 50 ? "#f59e0b" : "#993331"}
-                          strokeWidth="6" strokeLinecap="round"
+                          cx="56"
+                          cy="56"
+                          r="50"
+                          fill="none"
+                          stroke={
+                            scorePercent >= 70
+                              ? "#10b981"
+                              : scorePercent >= 50
+                                ? "#f59e0b"
+                                : "#993331"
+                          }
+                          strokeWidth="6"
+                          strokeLinecap="round"
                           strokeDasharray={`${2 * Math.PI * 50}`}
                           initial={{ strokeDashoffset: 2 * Math.PI * 50 }}
-                          animate={{ strokeDashoffset: 2 * Math.PI * 50 * (1 - scorePercent / 100) }}
-                          transition={{ delay: 0.3, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+                          animate={{
+                            strokeDashoffset:
+                              2 * Math.PI * 50 * (1 - scorePercent / 100),
+                          }}
+                          transition={{
+                            delay: 0.3,
+                            duration: 1,
+                            ease: [0.22, 1, 0.36, 1],
+                          }}
                         />
                       </svg>
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="text-3xl font-extrabold text-neutral-900">
+                      <motion.span
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.6 }}
+                        className="text-3xl font-extrabold text-neutral-900"
+                      >
                         {scorePercent}
                       </motion.span>
-                      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }} className="text-[10px] text-neutral-400 font-semibold -mt-0.5">
+                      <motion.span
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.7 }}
+                        className="text-[10px] text-neutral-400 font-semibold -mt-0.5"
+                      >
                         / 100
                       </motion.span>
                     </div>
                   </motion.div>
 
-                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="text-center">
-                    <h3 className={`text-xl font-extrabold mb-1 ${resultGrade.color}`}>{resultGrade.label}</h3>
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.4 }}
+                    className="text-center"
+                  >
+                    <h3
+                      className={`text-xl font-extrabold mb-1 ${resultGrade.color}`}
+                    >
+                      {resultGrade.label}
+                    </h3>
                     <p className="text-sm text-neutral-500">
                       Completaste los {totalStrokes} trazos de{" "}
-                      <span className="font-bold text-neutral-800">{kanji.symbol}</span>
+                      <span className="font-bold text-neutral-800">
+                        {kanji.symbol}
+                      </span>
                     </p>
                   </motion.div>
 
                   {/* Stats row */}
-                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="flex items-center gap-0 bg-neutral-50 rounded-2xl overflow-hidden border border-neutral-100">
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="flex items-center gap-0 bg-neutral-50 rounded-2xl overflow-hidden border border-neutral-100"
+                  >
                     <div className="text-center px-5 py-3">
-                      <p className="text-lg font-extrabold text-neutral-900">{totalStrokes}</p>
-                      <p className="text-[10px] text-neutral-400 font-semibold">Trazos</p>
+                      <p className="text-lg font-extrabold text-neutral-900">
+                        {totalStrokes}
+                      </p>
+                      <p className="text-[10px] text-neutral-400 font-semibold">
+                        Trazos
+                      </p>
                     </div>
                     <div className="w-px h-10 bg-neutral-200" />
                     <div className="text-center px-5 py-3">
-                      <p className="text-lg font-extrabold text-neutral-900">{durationSec}s</p>
-                      <p className="text-[10px] text-neutral-400 font-semibold">Tiempo</p>
+                      <p className="text-lg font-extrabold text-neutral-900">
+                        {durationSec}s
+                      </p>
+                      <p className="text-[10px] text-neutral-400 font-semibold">
+                        Tiempo
+                      </p>
                     </div>
                     <div className="w-px h-10 bg-neutral-200" />
                     <div className="text-center px-5 py-3">
-                      <p className="text-lg font-extrabold text-neutral-900">{totalScore}</p>
-                      <p className="text-[10px] text-neutral-400 font-semibold">Puntos</p>
+                      <p className="text-lg font-extrabold text-neutral-900">
+                        {totalScore}
+                      </p>
+                      <p className="text-[10px] text-neutral-400 font-semibold">
+                        Puntos
+                      </p>
                     </div>
                   </motion.div>
 
                   {/* Submitting indicator */}
                   {submitting && (
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-xs text-neutral-400 font-medium">
+                    <motion.p
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-xs text-neutral-400 font-medium"
+                    >
                       Guardando resultado…
                     </motion.p>
                   )}
 
                   {/* Actions */}
-                  <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }} className="flex flex-col w-full max-w-[280px] gap-2.5">
+                  <motion.div
+                    initial={{ opacity: 0, y: 6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.8 }}
+                    className="flex flex-col w-full max-w-[280px] gap-2.5"
+                  >
                     <motion.button
                       whileHover={{ scale: 1.02, y: -1 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleRetry}
                       className="w-full py-3.5 bg-gradient-to-r from-[#993331] to-[#BA5149] text-white rounded-2xl font-bold shadow-lg shadow-[#993331]/15 hover:shadow-xl hover:shadow-[#993331]/20 transition-all flex items-center justify-center gap-2"
                     >
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                        />
                       </svg>
                       Practicar de nuevo
                     </motion.button>
@@ -830,7 +1004,10 @@ export function WritingPracticeModal({
                     >
                       Ver demostración
                     </motion.button>
-                    <button onClick={onClose} className="w-full py-2.5 text-sm font-medium text-neutral-400 hover:text-neutral-600 transition">
+                    <button
+                      onClick={onClose}
+                      className="w-full py-2.5 text-sm font-medium text-neutral-400 hover:text-neutral-600 transition"
+                    >
                       Cerrar
                     </button>
                   </motion.div>
@@ -872,7 +1049,7 @@ export function WritingPracticeModal({
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.65 + i * 0.04 }}
                             className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs ${getFeedbackColor(
-                              sr.validation.feedback
+                              sr.validation.feedback,
                             )}`}
                           >
                             <span className="font-semibold">Trazo {i + 1}</span>
@@ -914,13 +1091,23 @@ function StepPill({
           active
             ? "bg-[#993331] text-white shadow-sm"
             : done
-            ? "bg-[#993331]/20 text-[#993331]"
-            : "bg-neutral-100 text-neutral-400"
+              ? "bg-[#993331]/20 text-[#993331]"
+              : "bg-neutral-100 text-neutral-400"
         }`}
       >
         {done ? (
-          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+          <svg
+            className="w-3 h-3"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={3}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 13l4 4L19 7"
+            />
           </svg>
         ) : (
           number
@@ -928,7 +1115,11 @@ function StepPill({
       </div>
       <span
         className={`text-xs font-semibold transition ${
-          active ? "text-[#993331]" : done ? "text-neutral-500" : "text-neutral-400"
+          active
+            ? "text-[#993331]"
+            : done
+              ? "text-neutral-500"
+              : "text-neutral-400"
         }`}
       >
         {label}

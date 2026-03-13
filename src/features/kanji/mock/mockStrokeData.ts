@@ -125,25 +125,31 @@ const MOCK_大: Omit<KanjiStrokeData, "kanjiId"> = {
  * Map of kanji symbol → mock stroke data.
  * Extend this map to add more kanjis for testing.
  */
-const MOCK_STROKES_BY_SYMBOL: Record<string, Omit<KanjiStrokeData, "kanjiId">> = {
-  "四": MOCK_四,
-  "一": MOCK_一,
-  "二": MOCK_二,
-  "三": MOCK_三,
-  "山": MOCK_山,
-  "川": MOCK_川,
-  "日": MOCK_日,
-  "水": MOCK_水,
-  "火": MOCK_火,
-  "人": MOCK_人,
-  "大": MOCK_大,
+const MOCK_STROKES_BY_SYMBOL: Record<
+  string,
+  Omit<KanjiStrokeData, "kanjiId">
+> = {
+  四: MOCK_四,
+  一: MOCK_一,
+  二: MOCK_二,
+  三: MOCK_三,
+  山: MOCK_山,
+  川: MOCK_川,
+  日: MOCK_日,
+  水: MOCK_水,
+  火: MOCK_火,
+  人: MOCK_人,
+  大: MOCK_大,
 };
 
 /**
  * Returns mock KanjiStrokeData for a given kanji id and symbol.
  * Falls back to the 四 (cuatro) data if the symbol is not found.
  */
-export function getMockKanjiStrokes(kanjiId: string, symbol?: string): KanjiStrokeData | null {
+export function getMockKanjiStrokes(
+  kanjiId: string,
+  symbol?: string,
+): KanjiStrokeData | null {
   const data = (symbol && MOCK_STROKES_BY_SYMBOL[symbol]) || null;
   if (data) return { kanjiId, ...data };
 

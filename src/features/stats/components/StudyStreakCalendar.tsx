@@ -113,10 +113,7 @@ export function StudyStreakCalendar({
         {/* Day labels */}
         <div className="flex flex-col gap-1 pr-2 shrink-0">
           {dayLabels.map((label, i) => (
-            <div
-              key={i}
-              className="w-8 h-[14px] flex items-center justify-end"
-            >
+            <div key={i} className="w-8 h-[14px] flex items-center justify-end">
               <span className="text-[10px] text-gray-400 font-medium">
                 {label}
               </span>
@@ -138,7 +135,7 @@ export function StudyStreakCalendar({
                 }}
                 title={`${cell.date}: ${cell.minutes} min`}
                 className={`w-[14px] h-[14px] rounded-[3px] ${getIntensity(
-                  cell.minutes
+                  cell.minutes,
                 )} hover:ring-2 hover:ring-[#993331]/30 transition-all cursor-default`}
               />
             ))}
@@ -149,11 +146,15 @@ export function StudyStreakCalendar({
       {/* Legend */}
       <div className="flex items-center gap-2 mt-3 justify-end">
         <span className="text-[10px] text-gray-400">Menos</span>
-        {["bg-gray-100", "bg-[#993331]/20", "bg-[#993331]/40", "bg-[#993331]/60", "bg-[#993331]"].map(
-          (cls, i) => (
-            <div key={i} className={`w-3 h-3 rounded-[2px] ${cls}`} />
-          )
-        )}
+        {[
+          "bg-gray-100",
+          "bg-[#993331]/20",
+          "bg-[#993331]/40",
+          "bg-[#993331]/60",
+          "bg-[#993331]",
+        ].map((cls, i) => (
+          <div key={i} className={`w-3 h-3 rounded-[2px] ${cls}`} />
+        ))}
         <span className="text-[10px] text-gray-400">Más</span>
       </div>
 

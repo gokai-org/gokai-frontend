@@ -37,8 +37,13 @@ export default function LessonDrawer({
   const [lessons, setLessons] = useState<LessonResolved[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
 
-  const active = useMemo(() => lessons[activeIndex] ?? null, [lessons, activeIndex]);
-  const isMobile = typeof window !== "undefined" && window.matchMedia("(max-width: 640px)").matches;
+  const active = useMemo(
+    () => lessons[activeIndex] ?? null,
+    [lessons, activeIndex],
+  );
+  const isMobile =
+    typeof window !== "undefined" &&
+    window.matchMedia("(max-width: 640px)").matches;
 
   useEffect(() => {
     if (!open || !nodeId) return;
@@ -76,10 +81,18 @@ export default function LessonDrawer({
       };
     }
     if (active?.kind === "grammar") {
-      return { title: "Gramática", subtitle: "Mejora tu japonés paso a paso", pill: "Grammar" };
+      return {
+        title: "Gramática",
+        subtitle: "Mejora tu japonés paso a paso",
+        pill: "Grammar",
+      };
     }
     if (active?.kind === "subtheme") {
-      return { title: "Vocabulario", subtitle: "Aprende palabras del subtema", pill: "Vocab" };
+      return {
+        title: "Vocabulario",
+        subtitle: "Aprende palabras del subtema",
+        pill: "Vocab",
+      };
     }
     return { title: "Lección", subtitle: "", pill: "" };
   }, [active, mode]);
@@ -99,22 +112,22 @@ export default function LessonDrawer({
           />
 
           {/* Drawer: desktop floating right | mobile bottom sheet */}
-            <motion.aside
-              className={[
-                "fixed z-50 bg-white shadow-2xl flex flex-col border border-gray-200/60",
+          <motion.aside
+            className={[
+              "fixed z-50 bg-white shadow-2xl flex flex-col border border-gray-200/60",
 
-                // Desktop (panel flotante a la derecha)
-                "right-3 top-3 bottom-3 w-[440px] max-w-[90vw] rounded-3xl",
+              // Desktop (panel flotante a la derecha)
+              "right-3 top-3 bottom-3 w-[440px] max-w-[90vw] rounded-3xl",
 
-                // Mobile (sheet centrado con margen y FULL rounded)
-                "max-sm:left-6 max-sm:right-4 max-sm:bottom-4 max-sm:top-auto",
-                "max-sm:h-[85dvh] max-sm:w-auto max-sm:rounded-3xl",
-              ].join(" ")}
-              initial={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
-              animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
-              exit={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
-              transition={{ type: "spring", stiffness: 260, damping: 26 }}
-            >
+              // Mobile (sheet centrado con margen y FULL rounded)
+              "max-sm:left-6 max-sm:right-4 max-sm:bottom-4 max-sm:top-auto",
+              "max-sm:h-[85dvh] max-sm:w-auto max-sm:rounded-3xl",
+            ].join(" ")}
+            initial={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
+            animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+            exit={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 260, damping: 26 }}
+          >
             {/* Header sticky */}
             <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 rounded-t-3xl">
               <div className="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
@@ -136,7 +149,9 @@ export default function LessonDrawer({
                   </div>
 
                   {header.subtitle ? (
-                    <div className="mt-1 text-sm text-gray-600">{header.subtitle}</div>
+                    <div className="mt-1 text-sm text-gray-600">
+                      {header.subtitle}
+                    </div>
                   ) : (
                     <div className="mt-1 text-sm text-gray-600">
                       {modeTitle[mode]}
@@ -177,9 +192,7 @@ export default function LessonDrawer({
 
             {/* Body */}
             <div className="flex-1 px-6 pb-6 pt-5 overflow-y-auto">
-              {loading && (
-                <SkeletonDrawerContent />
-              )}
+              {loading && <SkeletonDrawerContent />}
 
               {!loading && !active && (
                 <div className="rounded-3xl border border-gray-100 p-5 text-gray-600">

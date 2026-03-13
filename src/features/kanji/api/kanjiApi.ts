@@ -43,13 +43,10 @@ export function submitKanjiLessonResult(body: KanjiLessonResultBody) {
     JSON.stringify(body, null, 2),
   );
 
-  return apiFetch<KanjiLessonResult>(
-    "/api/user/kanji-lessons/results",
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return apiFetch<KanjiLessonResult>("/api/user/kanji-lessons/results", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }
 
 export function getKanjiLessonResults(params?: {

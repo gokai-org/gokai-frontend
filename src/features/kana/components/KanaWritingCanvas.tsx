@@ -79,8 +79,8 @@ export function KanaWritingCanvas({
           i < activeStrokeIndex
             ? "rgba(26,26,26,0.15)"
             : i === activeStrokeIndex
-            ? "rgba(153,51,49,0.25)"
-            : "rgba(209,213,219,0.3)";
+              ? "rgba(153,51,49,0.25)"
+              : "rgba(209,213,219,0.3)";
         ctx.lineWidth = lw;
         ctx.stroke(p2d);
       } catch {
@@ -147,7 +147,7 @@ export function KanaWritingCanvas({
         y: (e.clientY - rect.top) * (vbHeight / rect.height),
       };
     },
-    [vbWidth, vbHeight]
+    [vbWidth, vbHeight],
   );
 
   const handlePointerDown = useCallback(
@@ -159,7 +159,7 @@ export function KanaWritingCanvas({
       currentPoints.current = [getCoords(e)];
       scheduleRedraw();
     },
-    [disabled, getCoords, scheduleRedraw]
+    [disabled, getCoords, scheduleRedraw],
   );
 
   const handlePointerMove = useCallback(
@@ -176,7 +176,7 @@ export function KanaWritingCanvas({
       currentPoints.current.push(pt);
       scheduleRedraw();
     },
-    [disabled, getCoords, scheduleRedraw]
+    [disabled, getCoords, scheduleRedraw],
   );
 
   const handlePointerUp = useCallback(
@@ -192,7 +192,7 @@ export function KanaWritingCanvas({
       currentPoints.current = [];
       scheduleRedraw();
     },
-    [disabled, onStrokeDrawn, scheduleRedraw]
+    [disabled, onStrokeDrawn, scheduleRedraw],
   );
 
   const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
@@ -206,7 +206,12 @@ export function KanaWritingCanvas({
       className={`touch-none rounded-xl border-2 bg-white transition-colors duration-200 ${
         flashError ? "border-red-400" : "border-neutral-200"
       }`}
-      style={{ width: size, height: size, maxWidth: "100%", cursor: disabled ? "not-allowed" : "crosshair" }}
+      style={{
+        width: size,
+        height: size,
+        maxWidth: "100%",
+        cursor: disabled ? "not-allowed" : "crosshair",
+      }}
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerUp}

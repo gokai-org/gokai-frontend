@@ -1,5 +1,9 @@
 import { apiFetch } from "@/shared/lib/api/client";
-import type { User, UserInterest, InterestsResponse } from "@/features/auth/types";
+import type {
+  User,
+  UserInterest,
+  InterestsResponse,
+} from "@/features/auth/types";
 
 // ========================================
 // USUARIO
@@ -26,7 +30,7 @@ export async function updateUserEmail(email: string): Promise<void> {
 
 export async function updateUserPassword(
   currentPassword: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<void> {
   await apiFetch("/api/auth/user/password", {
     method: "PATCH",
@@ -59,7 +63,7 @@ export async function getUserInterests(): Promise<InterestsResponse> {
 }
 
 export async function saveUserInterests(
-  interests: UserInterest[]
+  interests: UserInterest[],
 ): Promise<void> {
   await apiFetch("/api/user/interests", {
     method: "POST",
@@ -68,7 +72,7 @@ export async function saveUserInterests(
 }
 
 export async function updateUserInterests(
-  interests: UserInterest[]
+  interests: UserInterest[],
 ): Promise<void> {
   await apiFetch("/api/user/interests", {
     method: "PUT",

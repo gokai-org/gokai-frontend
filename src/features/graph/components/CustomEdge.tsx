@@ -46,7 +46,7 @@ function CustomEdge({
         }}
         fill="none"
       />
-      
+
       {/* Línea de brillo para edges completados */}
       {isCompleted && (
         <path

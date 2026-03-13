@@ -34,7 +34,10 @@ interface LearningGraphProps {
   initialEdges: GraphEdge[];
 }
 
-function LearningGraphInner({ initialNodes, initialEdges }: LearningGraphProps) {
+function LearningGraphInner({
+  initialNodes,
+  initialEdges,
+}: LearningGraphProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
@@ -69,39 +72,42 @@ function LearningGraphInner({ initialNodes, initialEdges }: LearningGraphProps) 
 
   const onConnect = useCallback(
     (params: Connection) => setEdges((eds) => addEdge(params, eds)),
-    [setEdges]
+    [setEdges],
   );
 
-  const onNodeClick = useCallback<NodeMouseHandler>((_event, node) => {
-    const nodeType = node.data?.type;
+  const onNodeClick = useCallback<NodeMouseHandler>(
+    (_event, node) => {
+      const nodeType = node.data?.type;
 
-    if (!nodeType || nodeType === "home") return;
+      if (!nodeType || nodeType === "home") return;
 
-    setSelectedEntityId(node.data?.entityId ?? null);
-    setSelectedEntityKind(node.data?.entityKind ?? null);
+      setSelectedEntityId(node.data?.entityId ?? null);
+      setSelectedEntityKind(node.data?.entityKind ?? null);
 
-    const mode: LessonMode =
-      nodeType === "writing" ||
-      nodeType === "listening" ||
-      nodeType === "reading" ||
-      nodeType === "speaking"
-        ? nodeType
-        : "reading";
+      const mode: LessonMode =
+        nodeType === "writing" ||
+        nodeType === "listening" ||
+        nodeType === "reading" ||
+        nodeType === "speaking"
+          ? nodeType
+          : "reading";
 
-    setSelectedNodeId(node.id);
-    setSelectedMode(mode);
-    setLessonOpen(true);
+      setSelectedNodeId(node.id);
+      setSelectedMode(mode);
+      setLessonOpen(true);
 
-    // Save current viewport and zoom to the clicked node
-    savedViewport.current = getViewport();
-    const posX = node.position.x + ((node.width ?? 80) / 2);
-    const posY = node.position.y + ((node.height ?? 80) / 2);
-    setCenter(posX, posY, { zoom: 1.3, duration: 500 });
+      // Save current viewport and zoom to the clicked node
+      savedViewport.current = getViewport();
+      const posX = node.position.x + (node.width ?? 80) / 2;
+      const posY = node.position.y + (node.height ?? 80) / 2;
+      setCenter(posX, posY, { zoom: 1.3, duration: 500 });
 
-    const url = new URL(window.location.href);
-    url.searchParams.set("lessonId", node.id);
-    window.history.replaceState({}, "", url.toString());
-  }, [getViewport, setCenter]);
+      const url = new URL(window.location.href);
+      url.searchParams.set("lessonId", node.id);
+      window.history.replaceState({}, "", url.toString());
+    },
+    [getViewport, setCenter],
+  );
 
   const closeDrawer = useCallback(() => {
     setLessonOpen(false);

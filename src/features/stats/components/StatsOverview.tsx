@@ -2,10 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import {
-  BookOpen,
-  TrendingUp,
-} from "lucide-react";
+import { BookOpen, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
 import type { OverviewStatsResponse } from "@/features/stats/types";
 
@@ -36,13 +33,17 @@ const defaultCards: StatCard[] = [
     id: "hiragana-learned",
     label: "Hiragana aprendidos",
     value: 0,
-    icon: <span className="text-base font-bold leading-none select-none">あ</span>,
+    icon: (
+      <span className="text-base font-bold leading-none select-none">あ</span>
+    ),
   },
   {
     id: "katakana-learned",
     label: "Katakana aprendidos",
     value: 0,
-    icon: <span className="text-base font-bold leading-none select-none">カ</span>,
+    icon: (
+      <span className="text-base font-bold leading-none select-none">カ</span>
+    ),
   },
   {
     id: "reviews",
@@ -158,13 +159,7 @@ const cardVariants = {
   }),
 };
 
-function StatOverviewCard({
-  stat,
-  index,
-}: {
-  stat: StatCard;
-  index: number;
-}) {
+function StatOverviewCard({ stat, index }: { stat: StatCard; index: number }) {
   return (
     <motion.div
       custom={index}

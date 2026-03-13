@@ -20,7 +20,8 @@ const PLAN_FEATURES = [
   {
     icon: Bot,
     title: "Chatbot ilimitado",
-    description: "Practica conversación con IA sin restricciones, las 24 horas.",
+    description:
+      "Practica conversación con IA sin restricciones, las 24 horas.",
   },
   {
     icon: BarChart3,
@@ -35,7 +36,8 @@ const PLAN_FEATURES = [
   {
     icon: Sparkles,
     title: "IA completa y adaptativa",
-    description: "Lecciones que se adaptan a tu nivel y velocidad de aprendizaje.",
+    description:
+      "Lecciones que se adaptan a tu nivel y velocidad de aprendizaje.",
   },
   {
     icon: BookOpen,
@@ -63,9 +65,13 @@ export default function CheckoutPage() {
     return () => clearTimeout(t);
   }, []);
 
-  const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_ID ?? process.env.SUBSCRIPTION_PRICE_ID;
+  const STRIPE_PRICE_ID =
+    process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_ID ??
+    process.env.SUBSCRIPTION_PRICE_ID;
 
-  async function claimCoupon(code: string): Promise<{ success: boolean; error?: string }> {
+  async function claimCoupon(
+    code: string,
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       const response = await fetch("/api/subscription/claim", {
         method: "POST",
@@ -75,7 +81,10 @@ export default function CheckoutPage() {
 
       const data = await response.json().catch(() => ({}));
       if (!response.ok || data.success === false) {
-        return { success: false, error: data.error || "No se pudo aplicar el cupón." };
+        return {
+          success: false,
+          error: data.error || "No se pudo aplicar el cupón.",
+        };
       }
 
       return { success: true };
@@ -100,7 +109,9 @@ export default function CheckoutPage() {
       return;
     }
 
-    setCouponSuccess("Cupón aplicado correctamente. Tu suscripción ya está activa.");
+    setCouponSuccess(
+      "Cupón aplicado correctamente. Tu suscripción ya está activa.",
+    );
     setCoupon("");
     setCouponLoading(false);
     window.location.href = "/checkout/success";
@@ -182,7 +193,13 @@ export default function CheckoutPage() {
                       whileHover={{ rotate: 360, scale: 1.1 }}
                       transition={{ duration: 0.5 }}
                     >
-                      <Image src="/logos/gokai-logo.svg" alt="Gokai" width={48} height={48} priority />
+                      <Image
+                        src="/logos/gokai-logo.svg"
+                        alt="Gokai"
+                        width={48}
+                        height={48}
+                        priority
+                      />
                     </motion.div>
                   </a>
 
@@ -206,8 +223,12 @@ export default function CheckoutPage() {
                     <Crown size={24} className="text-white" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-extrabold tracking-tight">GOKAI+</h1>
-                    <p className="text-sm text-white/80">Desbloquea todo tu potencial</p>
+                    <h1 className="text-2xl font-extrabold tracking-tight">
+                      GOKAI+
+                    </h1>
+                    <p className="text-sm text-white/80">
+                      Desbloquea todo tu potencial
+                    </p>
                   </div>
                 </motion.div>
 
@@ -236,7 +257,10 @@ export default function CheckoutPage() {
                       transition={{ delay: 0.3 + idx * 0.06, duration: 0.3 }}
                       className="flex items-center gap-2.5"
                     >
-                      <CheckCircle2 size={15} className="text-white/70 flex-shrink-0" />
+                      <CheckCircle2
+                        size={15}
+                        className="text-white/70 flex-shrink-0"
+                      />
                       <span className="text-sm text-white/90">{f.title}</span>
                     </motion.div>
                   ))}
@@ -275,8 +299,12 @@ export default function CheckoutPage() {
                         <feature.icon size={16} className="text-[#993331]" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900">{feature.title}</p>
-                        <p className="text-xs text-gray-500 leading-relaxed">{feature.description}</p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          {feature.title}
+                        </p>
+                        <p className="text-xs text-gray-500 leading-relaxed">
+                          {feature.description}
+                        </p>
                       </div>
                     </motion.div>
                   ))}
@@ -311,14 +339,20 @@ export default function CheckoutPage() {
                     <p className="mt-1 text-xs text-red-600">{couponError}</p>
                   )}
                   {couponSuccess && (
-                    <p className="mt-1 text-xs text-emerald-600">{couponSuccess}</p>
+                    <p className="mt-1 text-xs text-emerald-600">
+                      {couponSuccess}
+                    </p>
                   )}
                 </div>
 
                 {/* Total */}
                 <div className="flex items-center justify-between px-1">
-                  <span className="text-sm font-semibold text-gray-700">Total hoy</span>
-                  <span className="text-lg font-extrabold text-gray-900">$229 MXN</span>
+                  <span className="text-sm font-semibold text-gray-700">
+                    Total hoy
+                  </span>
+                  <span className="text-lg font-extrabold text-gray-900">
+                    $229 MXN
+                  </span>
                 </div>
 
                 {/* CTA */}
@@ -332,15 +366,32 @@ export default function CheckoutPage() {
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
-                      <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      <svg
+                        className="h-5 w-5 animate-spin"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                      >
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                        />
                       </svg>
                       Redirigiendo a Stripe...
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      {coupon.trim() ? "Aplicar cupón y activar GOKAI+" : "Suscribirme a GOKAI+"}
+                      {coupon.trim()
+                        ? "Aplicar cupón y activar GOKAI+"
+                        : "Suscribirme a GOKAI+"}
                     </span>
                   )}
                 </motion.button>
@@ -350,7 +401,8 @@ export default function CheckoutPage() {
                 )}
 
                 <p className="text-center text-xs text-gray-400">
-                  Serás redirigido a Stripe para completar el pago de forma segura.
+                  Serás redirigido a Stripe para completar el pago de forma
+                  segura.
                   <br />
                   Puedes cancelar en cualquier momento.
                 </p>

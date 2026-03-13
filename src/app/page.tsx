@@ -5,8 +5,19 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
-import { FeatureCard, PlanCard, ContactCard, LandingNavItem, MembershipPicker } from "@/features/landing";
-import { SECTIONS, FEATURES, HOW_TABS, type HowTabId } from "@/features/landing/data/landingData";
+import {
+  FeatureCard,
+  PlanCard,
+  ContactCard,
+  LandingNavItem,
+  MembershipPicker,
+} from "@/features/landing";
+import {
+  SECTIONS,
+  FEATURES,
+  HOW_TABS,
+  type HowTabId,
+} from "@/features/landing/data/landingData";
 
 export default function LandingPage() {
   const logoWrapRef = useRef<HTMLDivElement | null>(null);
@@ -17,7 +28,6 @@ export default function LandingPage() {
 
   const [howTab, setHowTab] = useState<HowTabId>("explora");
   const how = HOW_TABS.find((t) => t.id === howTab)!;
-
 
   useEffect(() => {
     const updateFromHash = () => {
@@ -42,20 +52,24 @@ export default function LandingPage() {
 
   // Active section
   useEffect(() => {
-    const els = Array.from(document.querySelectorAll<HTMLElement>("[data-section]"));
+    const els = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-section]"),
+    );
 
     const io = new IntersectionObserver(
       (entries) => {
         const visible = entries
           .filter((e) => e.isIntersecting)
-          .sort((a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0))[0];
+          .sort(
+            (a, b) => (b.intersectionRatio ?? 0) - (a.intersectionRatio ?? 0),
+          )[0];
 
         if (visible?.target?.id) setActiveId(visible.target.id);
       },
       {
         threshold: [0.25, 0.4, 0.55, 0.7],
         rootMargin: "-20% 0px -45% 0px",
-      }
+      },
     );
 
     els.forEach((el) => io.observe(el));
@@ -80,36 +94,36 @@ export default function LandingPage() {
     }
   }, [activeId]);
 
-// Show logo
-useEffect(() => {
-  let raf = 0;
+  // Show logo
+  useEffect(() => {
+    let raf = 0;
 
-  const update = () => {
-    const el = howSectionRef.current;
-    if (!el) return;
+    const update = () => {
+      const el = howSectionRef.current;
+      if (!el) return;
 
-    const headerOffset = 86;
-    const rect = el.getBoundingClientRect();
+      const headerOffset = 86;
+      const rect = el.getBoundingClientRect();
 
-    const beforeHow = rect.top > headerOffset;
-    setShowLogo(beforeHow);
-  };
+      const beforeHow = rect.top > headerOffset;
+      setShowLogo(beforeHow);
+    };
 
-  const onScroll = () => {
-    cancelAnimationFrame(raf);
-    raf = requestAnimationFrame(update);
-  };
+    const onScroll = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(update);
+    };
 
-  update();
-  window.addEventListener("scroll", onScroll, { passive: true });
-  window.addEventListener("resize", update);
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", update);
 
-  return () => {
-    cancelAnimationFrame(raf);
-    window.removeEventListener("scroll", onScroll);
-    window.removeEventListener("resize", update);
-  };
-}, []);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", update);
+    };
+  }, []);
 
   // Rotate logo
   useEffect(() => {
@@ -147,11 +161,14 @@ useEffect(() => {
     activeId === "contacto";
 
   return (
-<main className="relative min-h-screen bg-[#f3f3f3] text-neutral-900 overflow-x-hidden pt-[76px]">
+    <main className="relative min-h-screen bg-[#f3f3f3] text-neutral-900 overflow-x-hidden pt-[76px]">
       {/* GRAFO */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <AnimatedGraphBackground
-          className={["transition-opacity duration-500", showGraph ? "opacity-60" : "opacity-0"].join(" ")}
+          className={[
+            "transition-opacity duration-500",
+            showGraph ? "opacity-60" : "opacity-0",
+          ].join(" ")}
           mode="screen"
           variant="dimmed"
           edgeMargin={140}
@@ -172,7 +189,11 @@ useEffect(() => {
           </div>
 
           <nav className="hidden items-center gap-8 text-sm font-medium md:flex relative">
-            <LandingNavItem id="inicio" href="#inicio" active={activeId === "inicio"}>
+            <LandingNavItem
+              id="inicio"
+              href="#inicio"
+              active={activeId === "inicio"}
+            >
               Inicio
             </LandingNavItem>
 
@@ -193,16 +214,26 @@ useEffect(() => {
             <LandingNavItem
               id="funciones"
               href="#como-funciona"
-              active={activeId === "como-funciona" || activeId === "experiencia"}
+              active={
+                activeId === "como-funciona" || activeId === "experiencia"
+              }
             >
               Funciones
             </LandingNavItem>
 
-            <LandingNavItem id="planes" href="#planes" active={activeId === "planes"}>
+            <LandingNavItem
+              id="planes"
+              href="#planes"
+              active={activeId === "planes"}
+            >
               Planes
             </LandingNavItem>
 
-            <LandingNavItem id="contacto" href="#contacto" active={activeId === "contacto"}>
+            <LandingNavItem
+              id="contacto"
+              href="#contacto"
+              active={activeId === "contacto"}
+            >
               Contacto
             </LandingNavItem>
 
@@ -232,7 +263,12 @@ useEffect(() => {
           ].join(" ")}
         >
           {/* LEFT */}
-          <div className={["py-10", isCenterMode ? "lg:ml-0" : "lg:-ml-16 xl:-ml-24 2xl:-ml-32"].join(" ")}>
+          <div
+            className={[
+              "py-10",
+              isCenterMode ? "lg:ml-0" : "lg:-ml-16 xl:-ml-24 2xl:-ml-32",
+            ].join(" ")}
+          >
             {SECTIONS.map((s) => {
               const isActive = activeId === s.id;
               const isCenter = (s.layout ?? "split") === "center";
@@ -257,13 +293,15 @@ useEffect(() => {
                 >
                   <div
                     className={[
-                      isCenter ? "mx-auto w-full max-w-6xl text-center" : "max-w-2xl",
+                      isCenter
+                        ? "mx-auto w-full max-w-6xl text-center"
+                        : "max-w-2xl",
                       "transition-all duration-500",
                       isActive
                         ? "opacity-100 translate-y-0"
                         : s.id === "contacto"
-                        ? "opacity-100 translate-y-0"
-                        : "opacity-100 translate-y-0 md:opacity-70 md:translate-y-2",
+                          ? "opacity-100 translate-y-0"
+                          : "opacity-100 translate-y-0 md:opacity-70 md:translate-y-2",
                     ].join(" ")}
                   >
                     {/* TITULOS ESPECIALES */}
@@ -282,13 +320,16 @@ useEffect(() => {
                           Empieza gratis
                         </p>
                         <h2 className="mt-2 text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight">
-                          Desbloquea todo con <span className="text-[#993331]">GOKAI+</span>
+                          Desbloquea todo con{" "}
+                          <span className="text-[#993331]">GOKAI+</span>
                         </h2>
                       </div>
                     ) : s.id === "contacto" ? (
                       <div className="text-center">
                         <h2 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight">
-                          <span className="block text-[#993331]">{s.titleA}</span>
+                          <span className="block text-[#993331]">
+                            {s.titleA}
+                          </span>
                           <span className="block">{s.titleB}</span>
                         </h2>
                         <p className="mx-auto mt-4 max-w-3xl text-base md:text-xl leading-relaxed text-neutral-700">
@@ -301,18 +342,24 @@ useEffect(() => {
                           className={[
                             "font-extrabold leading-[1.02] tracking-tight",
                             isCenter
-                              ? (s.id === "como-funciona"
-                                  ? "text-4xl md:text-6xl lg:text-7xl"
-                                  : "text-5xl md:text-7xl lg:text-8xl")
+                              ? s.id === "como-funciona"
+                                ? "text-4xl md:text-6xl lg:text-7xl"
+                                : "text-5xl md:text-7xl lg:text-8xl"
                               : "text-6xl md:text-7xl",
                           ].join(" ")}
                         >
-                          <span className={[isCenter ? "block lg:inline" : "block"].join(" ")}>
+                          <span
+                            className={[
+                              isCenter ? "block lg:inline" : "block",
+                            ].join(" ")}
+                          >
                             {s.titleA}
                           </span>
                           <span
                             className={[
-                              isCenter ? "block lg:inline lg:ml-3 text-[#993331]" : "block text-[#993331]",
+                              isCenter
+                                ? "block lg:inline lg:ml-3 text-[#993331]"
+                                : "block text-[#993331]",
                             ].join(" ")}
                           >
                             {s.titleB}
@@ -322,7 +369,9 @@ useEffect(() => {
                         <p
                           className={[
                             "leading-relaxed text-neutral-700",
-                            isCenter ? "mx-auto mt-2 max-w-3xl text-base md:text-xl" : "mt-6 text-xl md:text-2xl",
+                            isCenter
+                              ? "mx-auto mt-2 max-w-3xl text-base md:text-xl"
+                              : "mt-6 text-xl md:text-2xl",
                           ].join(" ")}
                         >
                           {s.desc}
@@ -331,7 +380,7 @@ useEffect(() => {
                     )}
 
                     {s.cta && !isCenter && (
-                      <motion.div 
+                      <motion.div
                         className="mt-8"
                         initial={{ opacity: 0, scale: 0.9 }}
                         whileInView={{ opacity: 1, scale: 1 }}
@@ -362,7 +411,7 @@ useEffect(() => {
                     {/* FUNCIONES */}
                     {s.id === "como-funciona" && (
                       <div className="mt-2">
-                        <motion.div 
+                        <motion.div
                           className="mx-auto w-full max-w-5xl"
                           initial={{ opacity: 0, scale: 0.95 }}
                           whileInView={{ opacity: 1, scale: 1 }}
@@ -378,12 +427,17 @@ useEffect(() => {
                               transition={{ duration: 0.3 }}
                               className="relative aspect-[16/9] w-full"
                             >
-                              <Image src={how.img} alt={how.label} fill className="object-contain" />
+                              <Image
+                                src={how.img}
+                                alt={how.label}
+                                fill
+                                className="object-contain"
+                              />
                             </motion.div>
                           </AnimatePresence>
                         </motion.div>
 
-                        <motion.div 
+                        <motion.div
                           className="mt-6 flex flex-wrap items-center justify-center gap-5"
                           initial={{ opacity: 0, y: 20 }}
                           whileInView={{ opacity: 1, y: 0 }}
@@ -398,7 +452,10 @@ useEffect(() => {
                               initial={{ opacity: 0, y: 20 }}
                               whileInView={{ opacity: 1, y: 0 }}
                               viewport={{ once: true }}
-                              transition={{ delay: 0.5 + idx * 0.1, duration: 0.4 }}
+                              transition={{
+                                delay: 0.5 + idx * 0.1,
+                                duration: 0.4,
+                              }}
                               whileHover={{ scale: 1.05 }}
                               whileTap={{ scale: 0.95 }}
                               className={[
@@ -414,7 +471,11 @@ useEffect(() => {
                                   layoutId="activeTab"
                                   className="absolute inset-0 rounded-full bg-[#993331]"
                                   style={{ zIndex: -1 }}
-                                  transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                                  transition={{
+                                    type: "spring",
+                                    bounce: 0.2,
+                                    duration: 0.6,
+                                  }}
                                 />
                               )}
                             </motion.button>
@@ -425,7 +486,7 @@ useEffect(() => {
 
                     {/* EXPERIENCIA */}
                     {s.id === "experiencia" && (
-                      <motion.div 
+                      <motion.div
                         className="mt-12"
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
@@ -442,7 +503,7 @@ useEffect(() => {
 
                     {/* PLANES */}
                     {s.id === "planes" && (
-                      <motion.div 
+                      <motion.div
                         className="mt-12"
                         initial={{ opacity: 0 }}
                         whileInView={{ opacity: 1 }}
@@ -455,7 +516,7 @@ useEffect(() => {
 
                     {/* CONTACTO */}
                     {s.id === "contacto" && (
-                      <motion.div 
+                      <motion.div
                         className="mt-10"
                         initial={{ opacity: 0, y: 30 }}
                         whileInView={{ opacity: 1, y: 0 }}
@@ -493,7 +554,6 @@ useEffect(() => {
               </div>
             </aside>
           )}
-
         </div>
       </div>
 

@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 interface ChatInputProps {
   onSendMessage: (message: string) => void;
@@ -15,13 +15,13 @@ export function ChatInput({
   isRecording,
   disabled,
 }: ChatInputProps) {
-  const [message, setMessage] = useState('');
+  const [message, setMessage] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && !disabled) {
       onSendMessage(message);
-      setMessage('');
+      setMessage("");
     }
   };
 
@@ -34,12 +34,12 @@ export function ChatInput({
           disabled={disabled}
           className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${
             isRecording
-              ? 'bg-[#993331] animate-pulse'
-              : 'bg-gray-100 hover:bg-gray-200'
+              ? "bg-[#993331] animate-pulse"
+              : "bg-gray-100 hover:bg-gray-200"
           } disabled:opacity-50 disabled:cursor-not-allowed`}
         >
           <svg
-            className={`w-5 h-5 ${isRecording ? 'text-white' : 'text-gray-600'}`}
+            className={`w-5 h-5 ${isRecording ? "text-white" : "text-gray-600"}`}
             fill="currentColor"
             viewBox="0 0 20 20"
           >

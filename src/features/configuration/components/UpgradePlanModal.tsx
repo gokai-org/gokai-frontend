@@ -1,13 +1,25 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Sparkles, Bot, BarChart3, Network, BookOpen, Zap, Crown, CheckCircle2, Shield } from "lucide-react";
+import {
+  X,
+  Sparkles,
+  Bot,
+  BarChart3,
+  Network,
+  BookOpen,
+  Zap,
+  Crown,
+  CheckCircle2,
+  Shield,
+} from "lucide-react";
 
 const PLAN_FEATURES = [
   {
     icon: Bot,
     title: "Chatbot ilimitado",
-    description: "Practica conversación con IA sin restricciones, las 24 horas.",
+    description:
+      "Practica conversación con IA sin restricciones, las 24 horas.",
   },
   {
     icon: BarChart3,
@@ -22,7 +34,8 @@ const PLAN_FEATURES = [
   {
     icon: Sparkles,
     title: "IA completa y adaptativa",
-    description: "Lecciones que se adaptan a tu nivel y velocidad de aprendizaje.",
+    description:
+      "Lecciones que se adaptan a tu nivel y velocidad de aprendizaje.",
   },
   {
     icon: BookOpen,
@@ -131,8 +144,12 @@ export function UpgradePlanModal({
                       <Crown size={24} className="text-white" />
                     </div>
                     <div>
-                      <h2 className="text-2xl font-extrabold tracking-tight">GOKAI+</h2>
-                      <p className="text-sm text-white/80">Desbloquea todo tu potencial</p>
+                      <h2 className="text-2xl font-extrabold tracking-tight">
+                        GOKAI+
+                      </h2>
+                      <p className="text-sm text-white/80">
+                        Desbloquea todo tu potencial
+                      </p>
                     </div>
                   </motion.div>
 
@@ -161,7 +178,10 @@ export function UpgradePlanModal({
                         transition={{ delay: 0.3 + idx * 0.06, duration: 0.3 }}
                         className="flex items-center gap-2.5"
                       >
-                        <CheckCircle2 size={15} className="text-white/70 flex-shrink-0" />
+                        <CheckCircle2
+                          size={15}
+                          className="text-white/70 flex-shrink-0"
+                        />
                         <span className="text-sm text-white/90">{f.title}</span>
                       </motion.div>
                     ))}
@@ -201,15 +221,22 @@ export function UpgradePlanModal({
                         key={feature.title}
                         initial={{ opacity: 0, x: -15 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.15 + idx * 0.06, duration: 0.35 }}
+                        transition={{
+                          delay: 0.15 + idx * 0.06,
+                          duration: 0.35,
+                        }}
                         className="flex items-start gap-3 rounded-xl p-2 hover:bg-gray-50 transition-colors"
                       >
                         <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#993331]/10">
                           <feature.icon size={16} className="text-[#993331]" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900">{feature.title}</p>
-                          <p className="text-xs text-gray-500 leading-relaxed">{feature.description}</p>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {feature.title}
+                          </p>
+                          <p className="text-xs text-gray-500 leading-relaxed">
+                            {feature.description}
+                          </p>
                         </div>
                       </motion.div>
                     ))}
@@ -243,7 +270,9 @@ export function UpgradePlanModal({
                         </motion.button>
                       </div>
                       {couponError && (
-                        <p className="mt-1 text-xs text-red-600">{couponError}</p>
+                        <p className="mt-1 text-xs text-red-600">
+                          {couponError}
+                        </p>
                       )}
                     </div>
                   )}
@@ -258,9 +287,24 @@ export function UpgradePlanModal({
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
-                        <svg className="h-5 w-5 animate-spin" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        <svg
+                          className="h-5 w-5 animate-spin"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                          />
                         </svg>
                         Redirigiendo a Stripe...
                       </span>
@@ -271,7 +315,9 @@ export function UpgradePlanModal({
                     )}
                   </motion.button>
 
-                  {error && <p className="text-center text-xs text-red-600">{error}</p>}
+                  {error && (
+                    <p className="text-center text-xs text-red-600">{error}</p>
+                  )}
 
                   <p className="text-center text-xs text-gray-400">
                     Pago seguro con Stripe · Cancela cuando quieras

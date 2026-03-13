@@ -27,7 +27,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Hiragana: "#b45309",
   Katakana: "#0369a1",
   Vocabulario: "#6b7280",
-  "Gramática": "#059669",
+  Gramática: "#059669",
 };
 
 const FALLBACK_COLOR = "#d1d5db";
@@ -138,17 +138,36 @@ export function ProgressRing({
         <div className="flex flex-col items-center justify-center py-6 gap-3">
           <div className="relative w-[140px] h-[140px]">
             <svg width={140} height={140} viewBox="0 0 140 140">
-              <circle cx="70" cy="70" r="55" fill="none" stroke="#f3f4f6" strokeWidth="16" />
-              <circle cx="70" cy="70" r="55" fill="none" stroke="#e5e7eb" strokeWidth="16" strokeDasharray="12 8" opacity={0.5} />
+              <circle
+                cx="70"
+                cy="70"
+                r="55"
+                fill="none"
+                stroke="#f3f4f6"
+                strokeWidth="16"
+              />
+              <circle
+                cx="70"
+                cy="70"
+                r="55"
+                fill="none"
+                stroke="#e5e7eb"
+                strokeWidth="16"
+                strokeDasharray="12 8"
+                opacity={0.5}
+              />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
               <span className="text-2xl font-extrabold text-gray-300">0</span>
               <span className="text-xs text-gray-300">items</span>
             </div>
           </div>
-          <p className="text-sm font-semibold text-gray-500">Sin distribución aún</p>
+          <p className="text-sm font-semibold text-gray-500">
+            Sin distribución aún
+          </p>
           <p className="text-xs text-gray-400 text-center max-w-[200px]">
-            A medida que estudies, verás aquí cómo se distribuye tu progreso entre categorías.
+            A medida que estudies, verás aquí cómo se distribuye tu progreso
+            entre categorías.
           </p>
         </div>
       </motion.div>
@@ -200,7 +219,9 @@ export function ProgressRing({
                 {cat.label}
               </span>
             </div>
-            <span className="text-sm font-bold text-gray-900">{cat.value}%</span>
+            <span className="text-sm font-bold text-gray-900">
+              {cat.value}%
+            </span>
           </div>
         ))}
       </div>

@@ -8,11 +8,7 @@ import { useEffect } from "react";
  */
 export function LoginHistoryHandler() {
   useEffect(() => {
-    window.history.replaceState(
-      { page: "login" },
-      "",
-      window.location.href
-    );
+    window.history.replaceState({ page: "login" }, "", window.location.href);
   }, []);
 
   return null;

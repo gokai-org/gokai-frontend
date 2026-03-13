@@ -1,6 +1,11 @@
 import { Node, Edge } from "reactflow";
 
-export type NodeType = "home" | "writing" | "listening" | "reading" | "speaking";
+export type NodeType =
+  | "home"
+  | "writing"
+  | "listening"
+  | "reading"
+  | "speaking";
 
 export type NodeStatus = "completed" | "available" | "locked";
 export interface GraphNodeData {

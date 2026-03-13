@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 
-const SUBSCRIPTIONS_API_BASE = process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
+const SUBSCRIPTIONS_API_BASE =
+  process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
 
-export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const rawToken = getTokenFromRequest(req);
     if (!rawToken) {
@@ -13,13 +17,16 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const token = normalizeBearerToken(rawToken);
 
     const { id } = await params;
-    const response = await fetch(`${SUBSCRIPTIONS_API_BASE}/subscriptions/${id}`, {
-      method: "GET",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${SUBSCRIPTIONS_API_BASE}/subscriptions/${id}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
     const data = await response.json();
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
@@ -30,7 +37,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> },
+) {
   try {
     const rawToken = getTokenFromRequest(req);
     if (!rawToken) {
@@ -39,13 +49,16 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     const token = normalizeBearerToken(rawToken);
 
     const { id } = await params;
-    const response = await fetch(`${SUBSCRIPTIONS_API_BASE}/subscriptions/${id}`, {
-      method: "DELETE",
-      headers: {
-        "Authorization": `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${SUBSCRIPTIONS_API_BASE}/subscriptions/${id}`,
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     const data = await response.json();
     if (!response.ok) {
@@ -53,6 +66,9 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
     }
     return NextResponse.json(data);
   } catch (err) {
-    return NextResponse.json({ error: "Error al cancelar suscripción" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error al cancelar suscripción" },
+      { status: 500 },
+    );
   }
 }
