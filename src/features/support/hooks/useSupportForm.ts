@@ -67,6 +67,7 @@ interface UseSupportFormOptions {
 export interface UseSupportFormReturn {
   form: SupportFormState;
   errors: SupportFormErrors;
+  submitError: string | null;
   submitting: boolean;
   submitted: boolean;
   ticketId: string | null;
@@ -80,6 +81,7 @@ export function useSupportForm(opts: UseSupportFormOptions = {}): UseSupportForm
 
   const [form, setForm] = useState<SupportFormState>(initial);
   const [errors, setErrors] = useState<SupportFormErrors>({});
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [ticketId, setTicketId] = useState<string | null>(null);
@@ -87,6 +89,7 @@ export function useSupportForm(opts: UseSupportFormOptions = {}): UseSupportForm
   const setField = useCallback(
     <K extends keyof SupportFormState>(key: K, value: SupportFormState[K]) => {
       setForm((prev) => ({ ...prev, [key]: value }));
+      setSubmitError((prev) => (prev ? null : prev));
       // Limpiar error del campo al escribir
       setErrors((prev) => {
         if (!prev[key]) return prev;
@@ -106,6 +109,7 @@ export function useSupportForm(opts: UseSupportFormOptions = {}): UseSupportForm
     }
 
     setErrors({});
+    setSubmitError(null);
     setSubmitting(true);
 
     try {
@@ -122,8 +126,8 @@ export function useSupportForm(opts: UseSupportFormOptions = {}): UseSupportForm
       setSubmitted(true);
       opts.onSuccess?.(ticket);
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : "Error al enviar el ticket";
+      const message = extractErrorMessage(err);
+      setSubmitError(message);
       opts.onError?.(message);
     } finally {
       setSubmitting(false);
@@ -133,11 +137,30 @@ export function useSupportForm(opts: UseSupportFormOptions = {}): UseSupportForm
   const reset = useCallback(() => {
     setForm(initial);
     setErrors({});
+    setSubmitError(null);
     setSubmitting(false);
     setSubmitted(false);
     setTicketId(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { form, errors, submitting, submitted, ticketId, setField, submit, reset };
+  return { form, errors, submitError, submitting, submitted, ticketId, setField, submit, reset };
+}
+
+function extractErrorMessage(err: unknown): string {
+  if (!(err instanceof Error)) return "Error al enviar el ticket";
+
+  const raw = err.message || "";
+  const jsonPart = raw.startsWith("HTTP") ? raw.split(": ").slice(1).join(": ") : "";
+
+  if (jsonPart) {
+    try {
+      const parsed = JSON.parse(jsonPart) as { error?: string };
+      if (parsed.error) return parsed.error;
+    } catch {
+      // ignore parse error and fallback to raw message
+    }
+  }
+
+  return raw || "Error al enviar el ticket";
 }

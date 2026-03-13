@@ -37,7 +37,13 @@ export interface SupportContactRequest {
  */
 export interface SupportTicketResponse {
   id: string;
-  status: "open" | "in_progress" | "resolved" | "closed";
+  name?: string;
+  email?: string;
+  subject?: string;
+  category?: string;
+  message?: string;
+  status: string;
+  note?: string | null;
   created_at: string;
 }
 

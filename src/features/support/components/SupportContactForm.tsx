@@ -269,7 +269,7 @@ export default function SupportContactForm({
   onSuccess,
   onError,
 }: SupportContactFormProps) {
-  const { form, errors, submitting, submitted, ticketId, setField, submit, reset } =
+  const { form, errors, submitError, submitting, submitted, ticketId, setField, submit, reset } =
     useSupportForm({ defaults, onSuccess, onError });
 
   const handleClose = () => {
@@ -441,6 +441,9 @@ export default function SupportContactForm({
                 >
                   Cerrar
                 </motion.button>
+              )}
+              {submitError && (
+                <p className="mt-2 text-xs text-red-600">{submitError}</p>
               )}
             </div>
           </motion.div>

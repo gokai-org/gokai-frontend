@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
+import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 
 const SUBSCRIPTIONS_API_BASE = process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = getTokenFromRequest(req);
-    if (!token) {
+    const rawToken = getTokenFromRequest(req);
+    if (!rawToken) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
+    const token = normalizeBearerToken(rawToken);
 
     const { id } = await params;
     const response = await fetch(`${SUBSCRIPTIONS_API_BASE}/subscriptions/${id}`, {
@@ -30,10 +32,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const token = getTokenFromRequest(req);
-    if (!token) {
+    const rawToken = getTokenFromRequest(req);
+    if (!rawToken) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
+    const token = normalizeBearerToken(rawToken);
 
     const { id } = await params;
     const response = await fetch(`${SUBSCRIPTIONS_API_BASE}/subscriptions/${id}`, {

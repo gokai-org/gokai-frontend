@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
+import { motion } from "framer-motion";
 import { SettingsSidebar } from "@/features/configuration/components/SettingsSidebar";
 import { SettingsSection } from "@/features/configuration/components/SettingsSection";
 import { SettingsItem } from "@/features/configuration/components/SettingsItem";
 import { SettingsSelectItem, SettingsToggleItem, SettingsToggleSelectItem } from "@/features/configuration/components/SettingsFields";
-import { Toggle } from "@/shared/ui/Toggle";
 import { IntegrationButton } from "@/features/configuration/components/IntegrationButton";
 import { getCurrentUser } from "@/features/auth/services/api";
 import type { User } from "@/features/auth/types";
@@ -168,7 +168,7 @@ function NotificationSettings({ settings, updateSection }: { settings: UserSetti
           onChange={(v) => updateSection("notifications", { quietHoursEnabled: v })}
         />
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <SettingsSelectItem
             label="Días de la semana"
             value={n.quietHoursDays}
@@ -333,7 +333,6 @@ function PrivacySettings({ settings, updateSection }: { settings: UserSettings; 
 function AccountSettings({ user, setUser, loading }: { user: User | null; setUser: (user: User | null) => void; loading: boolean }) {
   const toast = useToast();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [showEmailModal, setShowEmailModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   // Estados para edición de perfil
@@ -401,8 +400,6 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
           if (response.ok) {
             const data = await response.json();
             setSubscription(data);
-          } else {
-            console.error("Error loading subscription:", response.statusText);
           }
         } catch (error) {
           console.error("Error loading subscription:", error);
@@ -414,7 +411,8 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
     }
   }, [user?.id]);
 
-  const handleSaveProfile = async () => {
+  const handleSaveProfile = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
     setIsSaving(true);
     try {
       const updateData = {
@@ -443,15 +441,12 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
           
           setIsEditingProfile(false);
           toast.success("Perfil actualizado correctamente");
-        } else {
-          toast.error("No se recibieron datos del usuario");
         }
       } else {
         const errorData = await response.json();
         toast.error(errorData.error || "Error al guardar los cambios");
       }
     } catch (error) {
-      console.error("Error saving profile:", error);
       toast.error("Error al guardar los cambios");
     } finally {
       setIsSaving(false);
@@ -484,22 +479,10 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
     }
   };
 
-  const handleToggle2FA = async (enabled: boolean) => {
-    try {
-      await fetch("/api/auth/user/2fa", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ enabled }),
-      });
-    } catch (error) {
-      console.error("Error toggling 2FA:", error);
-    }
-  };
-
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-gray-500">Cargando información...</div>
+        <div className="text-gray-500 animate-pulse">Cargando tu información...</div>
       </div>
     );
   }
@@ -510,14 +493,115 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
     pro: "Plan Pro",
   };
 
-  const isSubscriptionActive = user?.subscribed && subscription?.status === "active";
-  const userPlanLabel = isSubscriptionActive ? "Plan GOKAI+" : (user?.plan ? planNames[user.plan] : "Plan Gratuito");
+  const parseDate = (value: unknown): Date | null => {
+    if (!value) return null;
+    const parsed = new Date(String(value));
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
 
-  const STRIPE_PRICE_ID = process.env.SUBSCRIPTION_PRICE_ID;
+  const formatDateEs = (value: unknown): string => {
+    const parsed = parseDate(value);
+    if (!parsed) return "No disponible";
+    return parsed.toLocaleDateString("es-ES", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
+
+  const subscriptionStartDate = parseDate(subscription?.created_at ?? subscription?.start_date);
+  const subscriptionEndDate = parseDate(
+    subscription?.current_period_end
+      ?? subscription?.expires_at
+      ?? subscription?.expiry_date
+      ?? subscription?.vigency,
+  );
+  const hasRecurringPayment = subscription?.has_recurring_payment !== false;
+  const hasActiveWindow = !!(subscriptionEndDate && subscriptionEndDate > new Date());
+
+  const isSubscriptionActive = !!(
+    (user?.subscribed && subscription?.status === "active")
+    || (subscription?.status === "active")
+    || (user?.subscribed && hasActiveWindow)
+  );
+  const isCouponBasedSubscription = isSubscriptionActive && !hasRecurringPayment;
+  const userPlanLabel = isSubscriptionActive ? "Plan GOKAI+" : (user?.plan ? planNames[user.plan] : "Plan Gratuito");
+  const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_ID ?? process.env.SUBSCRIPTION_PRICE_ID;
+
+  const refreshUserAndSubscription = async () => {
+    const updatedUser = await getCurrentUser();
+    if (!updatedUser) return;
+
+    setUser(updatedUser);
+    const subRes = await fetch(`/api/subscription/${updatedUser.id}`);
+    if (subRes.ok) {
+      const subData = await subRes.json();
+      setSubscription(subData);
+    }
+  };
+
+  const claimCoupon = async (code: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const res = await fetch("/api/subscription/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok || data.success === false) {
+        return { success: false, error: data.error || "No se pudo aplicar el cupón" };
+      }
+
+      return { success: true };
+    } catch {
+      return { success: false, error: "Error de red" };
+    }
+  };
+
+  const handleApplyCoupon = async () => {
+    const code = coupon.trim();
+    if (!code) return;
+
+    setCouponLoading(true);
+    setCouponError(null);
+    setStripeError(null);
+
+    const result = await claimCoupon(code);
+    if (!result.success) {
+      setCouponError(result.error || "No se pudo aplicar el cupón");
+      setCouponLoading(false);
+      return;
+    }
+
+    await refreshUserAndSubscription();
+    setCoupon("");
+    setShowUpgradeModal(false);
+    setCouponLoading(false);
+    toast.success("Cupón aplicado correctamente. Tu suscripción ya está activa.");
+  };
 
   const handleStripe = async () => {
     setStripeLoading(true);
     setStripeError(null);
+
+    const couponCode = coupon.trim();
+    if (couponCode) {
+      const result = await claimCoupon(couponCode);
+      if (!result.success) {
+        setCouponError(result.error || "No se pudo aplicar el cupón");
+        setStripeLoading(false);
+        return;
+      }
+
+      await refreshUserAndSubscription();
+      setCoupon("");
+      setShowUpgradeModal(false);
+      setStripeLoading(false);
+      toast.success("Cupón aplicado correctamente. Tu suscripción ya está activa.");
+      return;
+    }
+
     if (!STRIPE_PRICE_ID) {
       setStripeError("Error de configuración: falta el priceId de Stripe");
       setStripeLoading(false);
@@ -558,13 +642,7 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
       toast.success("Suscripción cancelada correctamente");
       setShowCancelModal(false);
       // Refrescar datos del usuario y suscripción
-      const updatedUser = await getCurrentUser();
-      if (updatedUser) setUser(updatedUser);
-      const subRes = await fetch(`/api/subscription/${user.id}`);
-      if (subRes.ok) {
-        const subData = await subRes.json();
-        setSubscription(subData);
-      }
+      await refreshUserAndSubscription();
     } catch {
       setCancelError("Error de red al cancelar la suscripción");
     } finally {
@@ -573,197 +651,222 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
   };
 
   return (
-    <>
-        {/* Modal Mejorar Plan */}
-        <UpgradePlanModal
-          isOpen={showUpgradeModal}
-          onClose={() => setShowUpgradeModal(false)}
-          onUpgrade={handleStripe}
-          loading={stripeLoading}
-          error={stripeError}
-          coupon={coupon}
-          onCouponChange={setCoupon}
-          onApplyCoupon={() => {}}
-          couponLoading={couponLoading}
-          couponError={couponError}
-        />
+    <div className="space-y-8">
+      <UpgradePlanModal
+        isOpen={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        onUpgrade={handleStripe}
+        loading={stripeLoading}
+        error={stripeError}
+        coupon={coupon}
+        onCouponChange={(value) => {
+          setCoupon(value);
+          if (couponError) setCouponError(null);
+        }}
+        onApplyCoupon={handleApplyCoupon}
+        couponLoading={couponLoading}
+        couponError={couponError}
+      />
 
-        {/* Modal Cancelar Suscripción */}
-        <CancelSubscriptionModal
-          isOpen={showCancelModal}
-          onClose={() => { setShowCancelModal(false); setCancelError(null); }}
-          onConfirmCancel={handleCancelSubscription}
-          loading={cancelLoading}
-          error={cancelError}
-        />
+      <CancelSubscriptionModal
+        isOpen={showCancelModal}
+        onClose={() => {
+          setShowCancelModal(false);
+          setCancelError(null);
+        }}
+        onConfirmCancel={handleCancelSubscription}
+        loading={cancelLoading}
+        error={cancelError}
+      />
 
       <SettingsSection
         title="Información Personal"
-        description="Visualiza y edita tu información de perfil"
+        description="Visualiza y actualiza tu información de contacto"
       >
-        <div className="bg-gray-100 rounded-lg p-4 md:p-6 space-y-4">
-          {/* Avatar y ID */}
-          <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6">
-            <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gradient-to-br from-[#993331] to-[#BA5149] flex items-center justify-center text-white text-xl md:text-2xl font-bold flex-shrink-0">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm"
+        >
+          <div className="bg-gradient-to-r from-gray-50 to-white p-6 border-b border-gray-100 flex flex-col sm:flex-row items-center sm:items-start gap-5">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#993331] to-[#BA5149] flex items-center justify-center text-white text-3xl font-bold shadow-md">
               {user?.firstName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || "U"}
             </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-xs text-gray-500 mb-1">ID de Usuario</div>
-              <div className="font-mono text-xs md:text-sm text-gray-700 break-all">{user?.id || "---"}</div>
-              <div className="text-xs text-gray-500 mt-2">
-                {user?.createdAt && `Miembro desde ${new Date(user.createdAt).toLocaleDateString('es-ES', { 
-                  day: 'numeric',
-                  month: 'long', 
-                  year: 'numeric' 
-                })}`}
+            <div className="flex-1 text-center sm:text-left mt-2 sm:mt-0">
+              <h3 className="text-lg font-semibold text-gray-900">
+                {user?.firstName ? `${user.firstName} ${user.lastName || ""}` : "Tu cuenta"}
+              </h3>
+              <p className="text-sm text-gray-500">{user?.email}</p>
+              <div className="mt-3 inline-flex items-center rounded-full bg-[#993331]/10 px-3 py-1 text-xs font-medium text-[#993331]">
+                {user?.createdAt ? `Miembro desde ${formatDateEs(user.createdAt)}` : "Perfil activo"}
               </div>
             </div>
             {!isEditingProfile && (
               <button
                 onClick={() => setIsEditingProfile(true)}
-                className="w-full sm:w-auto px-4 py-2 text-sm font-medium text-[#993331] bg-white border border-[#993331]/20 rounded-lg hover:bg-[#993331]/5 transition-colors"
+                className="mt-4 sm:mt-0 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm focus:ring-2 focus:ring-[#993331] focus:outline-none"
               >
                 Editar Perfil
               </button>
             )}
           </div>
 
-          {/* Campos editables */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-gray-300">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Nombre
-              </label>
-              {isEditingProfile ? (
-                <input
-                  type="text"
-                  value={profileData.firstName}
-                  onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#993331] focus:border-transparent"
-                  placeholder="Tu nombre"
-                />
-              ) : (
-                <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900">
-                  {user?.firstName || "No especificado"}
-                </div>
-              )}
-            </div>
+          <form onSubmit={handleSaveProfile} className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nombre</label>
+                {isEditingProfile ? (
+                  <input
+                    type="text"
+                    value={profileData.firstName}
+                    onChange={(e) => setProfileData({ ...profileData, firstName: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#993331] focus:border-[#993331] outline-none transition-all"
+                    placeholder="Tu nombre"
+                    autoFocus
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2">{user?.firstName || "—"}</p>
+                )}
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Apellido
-              </label>
-              {isEditingProfile ? (
-                <input
-                  type="text"
-                  value={profileData.lastName}
-                  onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#993331] focus:border-transparent"
-                  placeholder="Tu apellido"
-                />
-              ) : (
-                <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900">
-                  {user?.lastName || "No especificado"}
-                </div>
-              )}
-            </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Apellido</label>
+                {isEditingProfile ? (
+                  <input
+                    type="text"
+                    value={profileData.lastName}
+                    onChange={(e) => setProfileData({ ...profileData, lastName: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#993331] focus:border-[#993331] outline-none transition-all"
+                    placeholder="Tu apellido"
+                  />
+                ) : (
+                  <p className="text-gray-900 py-2">{user?.lastName || "—"}</p>
+                )}
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Correo electrónico
-              </label>
-              {isEditingProfile ? (
-                <div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  Correo electrónico
+                  {isEditingProfile && <span className="text-xs text-gray-400 font-normal">(No editable)</span>}
+                </label>
+                {isEditingProfile ? (
                   <input
                     type="email"
                     value={profileData.email}
-                    onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
                     disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed opacity-60"
-                    placeholder="tu@email.com"
-                    title="La actualización de email aún no está disponible"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                   />
-                  <p className="text-xs text-gray-500 mt-1">La actualización de email aún no está disponible en el backend</p>
-                </div>
-              ) : (
-                <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900">
-                  {user?.email || "No especificado"}
-                </div>
-              )}
-            </div>
+                ) : (
+                  <p className="text-gray-900 py-2">{user?.email || "—"}</p>
+                )}
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Fecha de nacimiento
-              </label>
-              {isEditingProfile ? (
-                <div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                  Fecha de nacimiento
+                  {isEditingProfile && <span className="text-xs text-gray-400 font-normal">(No editable)</span>}
+                </label>
+                {isEditingProfile ? (
                   <input
                     type="date"
                     value={profileData.birthdate}
-                    onChange={(e) => setProfileData({ ...profileData, birthdate: e.target.value })}
                     disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed opacity-60"
-                    title="La actualización de fecha de nacimiento aún no está disponible"
+                    className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
                   />
-                  <p className="text-xs text-gray-500 mt-1">La actualización de fecha de nacimiento aún no está disponible en el backend</p>
-                </div>
-              ) : (
-                <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg text-gray-900">
-                  {formatBirthdateForDisplay(user?.birthdate)}
-                </div>
-              )}
+                ) : (
+                  <p className="text-gray-900 py-2">{formatBirthdateForDisplay(user?.birthdate)}</p>
+                )}
+              </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Plan actual
-              </label>
-              <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg">
-                <span className={`inline-flex items-center gap-2 text-sm font-medium ${
-                  isSubscriptionActive ? 'text-[#993331]' : 'text-gray-600'
-                }`}>
-                  {isSubscriptionActive && (
-                    <span className="inline-flex h-2 w-2 rounded-full bg-green-500" />
+            {isEditingProfile && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-100"
+              >
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                  className="px-5 py-2 text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-5 py-2 text-sm font-medium text-white bg-[#993331] rounded-lg hover:bg-[#802a28] shadow-sm transition-colors disabled:opacity-70 flex items-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      Guardando...
+                    </>
+                  ) : (
+                    "Guardar cambios"
                   )}
-                  {userPlanLabel}
-                </span>
-              </div>
+                </button>
+              </motion.div>
+            )}
+          </form>
+        </motion.div>
+      </SettingsSection>
+
+      <SettingsSection
+        title="Suscripción y Facturación"
+        description="Administra tu plan actual y beneficios"
+      >
+        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+            <div>
+              <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                {userPlanLabel}
+                {isSubscriptionActive && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    Activo
+                  </span>
+                )}
+              </h4>
+              <p className="text-sm text-gray-500 mt-1">
+                {isCouponBasedSubscription ? "Suscripción activa mediante cupón promocional." : "Obtén acceso total a todas las herramientas de estudio."}
+              </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Autenticación 2FA
-              </label>
-              <div className="px-3 py-2 bg-white border border-gray-200 rounded-lg flex items-center justify-between">
-                <span className={`text-sm ${user?.twoFactorEnabled ? 'text-green-600' : 'text-gray-500'}`}>
-                  {user?.twoFactorEnabled ? 'Activada' : 'Desactivada'}
-                </span>
-                <Toggle 
-                  enabled={user?.twoFactorEnabled || false} 
-                  onChange={handleToggle2FA}
-                  disabled={isEditingProfile}
-                />
-              </div>
-            </div>
+            {!isSubscriptionActive && (
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                className="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-[#993331] to-[#BA5149] rounded-lg hover:shadow-md transition-all whitespace-nowrap"
+              >
+                Mejorar Plan
+              </button>
+            )}
           </div>
 
-          {/* Botones de acción */}
-          {isEditingProfile && (
-            <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-gray-300">
+          {(isSubscriptionActive || hasActiveWindow || subscriptionLoading) && (
+            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <span className="block text-xs text-gray-500 mb-1">Fecha de inicio</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {subscriptionLoading ? "Cargando..." : formatDateEs(subscriptionStartDate)}
+                </span>
+              </div>
+              <div>
+                <span className="block text-xs text-gray-500 mb-1">{isCouponBasedSubscription ? "Expira el" : "Próxima renovación"}</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {subscriptionLoading ? "Cargando..." : formatDateEs(subscriptionEndDate)}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {isSubscriptionActive && hasRecurringPayment && (
+            <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
               <button
-                onClick={handleSaveProfile}
-                disabled={isSaving}
-                className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#993331] to-[#BA5149] rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => setShowCancelModal(true)}
+                className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
               >
-                {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-              </button>
-              <button
-                onClick={handleCancelEdit}
-                disabled={isSaving}
-                className="w-full sm:w-auto px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Cancelar
+                Cancelar mi suscripción
               </button>
             </div>
           )}
@@ -771,151 +874,55 @@ function AccountSettings({ user, setUser, loading }: { user: User | null; setUse
       </SettingsSection>
 
       <SettingsSection
-        title="Seguridad"
-        description="Gestiona la seguridad de tu cuenta"
+        title="Seguridad de la Cuenta"
+        description="Actualiza tus credenciales o elimina tu cuenta definitivamente."
       >
-        <SettingsItem
-          label="Cambiar contraseña"
-          description="Actualiza tu contraseña de acceso"
-        >
-          <button 
-            onClick={() => setShowPasswordModal(true)}
-            className="px-4 py-2 text-sm font-medium text-[#993331] bg-[#993331]/10 rounded-lg hover:bg-[#993331]/20 transition-colors"
-          >
-            Cambiar
-          </button>
-        </SettingsItem>
-      </SettingsSection>
-
-      <SettingsSection
-        title="Suscripción"
-        description="Administra tu plan y facturación"
-      >
-        <SettingsItem
-          label="Plan actual"
-          description={userPlanLabel}
-        >
-          {!isSubscriptionActive && (
-            <button className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-[#993331] to-[#BA5149] rounded-lg hover:shadow-lg transition-all"
-              onClick={() => setShowUpgradeModal(true)}>
-              Mejorar Plan
-            </button>
-          )}
-          {isSubscriptionActive && (
-            <span className="px-4 py-2 text-sm font-medium text-green-700 bg-green-50 rounded-lg">
-              Activo
-            </span>
-          )}
-        </SettingsItem>
-
-        {(user?.subscribed || (subscription && subscription.current_period_end && new Date(subscription.current_period_end) > new Date() && user?.subscribed === false)) && (
-          <>
-            <SettingsItem
-              label="Estado de suscripción"
-              description={subscriptionLoading ? "Cargando..." : (() => {
-                if (user?.subscribed) {
-                  if (subscription?.status === 'active') return 'Activa';
-                  if (subscription?.status === 'canceled') return 'Cancelada';
-                  return subscription?.status || 'Desconocido';
-                }
-                if (subscription && subscription.current_period_end && new Date(subscription.current_period_end) > new Date()) {
-                  return `Cancelada (beneficios hasta ${new Date(subscription.current_period_end).toLocaleDateString('es-ES', {
-                    day: 'numeric', month: 'long', year: 'numeric'
-                  })})`;
-                }
-                return 'No disponible';
-              })()}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+            <div>
+              <p className="font-medium text-gray-900">Contraseña</p>
+              <p className="text-sm text-gray-500">Mantén tu cuenta segura actualizando tu contraseña regularmente.</p>
+            </div>
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              <span className={`px-4 py-2 text-sm font-medium rounded-lg ${
-                user?.subscribed && subscription?.status === 'active' ? 'text-green-700 bg-green-50' :
-                (!user?.subscribed && subscription && subscription.current_period_end && new Date(subscription.current_period_end) > new Date()) ? 'text-yellow-700 bg-yellow-50' :
-                'text-red-700 bg-red-50'
-              }`}>
-                {(() => {
-                  if (user?.subscribed) {
-                    if (subscription?.status === 'active') return 'Activa';
-                    if (subscription?.status === 'canceled') return 'Cancelada';
-                    return subscription?.status || 'Desconocido';
-                  }
-                  if (subscription && subscription.current_period_end && new Date(subscription.current_period_end) > new Date()) {
-                    return `Cancelada (beneficios hasta ${new Date(subscription.current_period_end).toLocaleDateString('es-ES', {
-                      day: 'numeric', month: 'long', year: 'numeric'
-                    })})`;
-                  }
-                  return 'No disponible';
-                })()}
-              </span>
-            </SettingsItem>
+              Cambiar
+            </button>
+          </div>
 
-            <SettingsItem
-              children
-              label="Fecha de inicio"
-              description={subscriptionLoading ? "Cargando..." : (subscription?.created_at ? 
-                new Date(subscription.created_at).toLocaleDateString('es-ES', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
-                }) : "No disponible")}
-            />
+          <div className="p-5 mt-8 border border-red-200 bg-red-50/50 rounded-xl">
+            <h4 className="text-base font-semibold text-red-700">Zona de peligro</h4>
+            <p className="text-sm text-red-600/80 mt-1 mb-4">
+              Una vez que elimines tu cuenta, no hay vuelta atrás. Por favor, asegúrate de estar seguro.
+            </p>
 
-            <SettingsItem
-              children
-              label="Vigencia"
-              description={subscriptionLoading ? "Cargando..." : (subscription?.current_period_end ? 
-                new Date(subscription.current_period_end).toLocaleDateString('es-ES', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric'
-                }) : "No disponible")}
-            />
-
-            {/* Botón de cancelar suscripción — solo visible si la suscripción está activa */}
-            {isSubscriptionActive && (
-              <SettingsItem
-                label="Cancelar suscripción"
-                description="Puedes cancelar tu suscripción en cualquier momento"
-              >
+            {showDeleteConfirm ? (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={() => setShowCancelModal(true)}
-                  className="px-4 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 transition-colors"
+                  onClick={handleDeleteAccount}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  Cancelar plan
+                  Sí, eliminar mi cuenta definitivamente
                 </button>
-              </SettingsItem>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+              </motion.div>
+            ) : (
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors"
+              >
+                Eliminar cuenta
+              </button>
             )}
-          </>
-        )}
+          </div>
+        </div>
       </SettingsSection>
-
-      <SettingsSection
-        title="Gestión de Cuenta"
-        description="Opciones avanzadas de cuenta"
-      >
-
-        <SettingsItem
-          label="Eliminar cuenta"
-          description={showDeleteConfirm ? "¿Estás seguro? Esta acción es irreversible" : "Elimina permanentemente tu cuenta y datos"}
-        >
-          <button 
-            onClick={handleDeleteAccount}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              showDeleteConfirm 
-                ? 'text-white bg-red-600 hover:bg-red-700' 
-                : 'text-red-600 bg-red-50 hover:bg-red-100'
-            }`}
-          >
-            {showDeleteConfirm ? "Confirmar Eliminación" : "Eliminar"}
-          </button>
-          {showDeleteConfirm && (
-            <button 
-              onClick={() => setShowDeleteConfirm(false)}
-              className="px-4 py-2 text-sm font-medium text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
-            >
-              Cancelar
-            </button>
-          )}
-        </SettingsItem>
-      </SettingsSection>
-    </>
+    </div>
   );
 }

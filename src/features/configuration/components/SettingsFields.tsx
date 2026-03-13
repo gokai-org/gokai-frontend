@@ -62,7 +62,12 @@ export function SettingsSelectItem({
 }: SettingsSelectItemProps) {
   return (
     <SettingsItem label={label} description={description} icon={icon}>
-      <Dropdown value={value} options={options} onChange={onChange} className={className} />
+      <Dropdown
+        value={value}
+        options={options}
+        onChange={onChange}
+        className={className ?? "min-w-[220px] w-full sm:w-auto"}
+      />
     </SettingsItem>
   );
 }
@@ -81,7 +86,12 @@ export function SettingsToggleSelectItem({
   return (
     <SettingsItem label={label} description={description} icon={icon}>
       <Toggle enabled={toggleEnabled} onChange={onToggleChange} disabled={toggleDisabled} />
-      <Dropdown value={value} options={options} onChange={onChange} />
+      <Dropdown
+        value={value}
+        options={options}
+        onChange={onChange}
+        className="min-w-[220px] w-full sm:w-auto"
+      />
     </SettingsItem>
   );
 }

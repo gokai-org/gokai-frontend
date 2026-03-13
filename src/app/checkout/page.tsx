@@ -54,17 +54,74 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [coupon, setCoupon] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 100);
     return () => clearTimeout(t);
   }, []);
 
-  const STRIPE_PRICE_ID = process.env.SUBSCRIPTION_PRICE_ID;
+  const STRIPE_PRICE_ID = process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_ID ?? process.env.SUBSCRIPTION_PRICE_ID;
+
+  async function claimCoupon(code: string): Promise<{ success: boolean; error?: string }> {
+    try {
+      const response = await fetch("/api/subscription/claim", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.success === false) {
+        return { success: false, error: data.error || "No se pudo aplicar el cupón." };
+      }
+
+      return { success: true };
+    } catch {
+      return { success: false, error: "Error de red. Inténtalo de nuevo." };
+    }
+  }
+
+  async function handleApplyCoupon() {
+    const code = coupon.trim();
+    if (!code) return;
+
+    setCouponLoading(true);
+    setCouponError(null);
+    setCouponSuccess(null);
+    setError(null);
+
+    const result = await claimCoupon(code);
+    if (!result.success) {
+      setCouponError(result.error || "No se pudo aplicar el cupón.");
+      setCouponLoading(false);
+      return;
+    }
+
+    setCouponSuccess("Cupón aplicado correctamente. Tu suscripción ya está activa.");
+    setCoupon("");
+    setCouponLoading(false);
+    window.location.href = "/checkout/success";
+  }
 
   async function handleCheckout() {
     setLoading(true);
     setError(null);
+    setCouponError(null);
+
+    const couponCode = coupon.trim();
+    if (couponCode) {
+      const result = await claimCoupon(couponCode);
+      if (!result.success) {
+        setCouponError(result.error || "No se pudo aplicar el cupón.");
+        setLoading(false);
+        return;
+      }
+      window.location.href = "/checkout/success";
+      return;
+    }
 
     if (!STRIPE_PRICE_ID) {
       setError("Error de configuración: falta el identificador de precio.");
@@ -242,12 +299,20 @@ export default function CheckoutPage() {
                       className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#993331]/30 focus:border-[#993331]/40 transition-all"
                     />
                     <button
-                      disabled={!coupon.trim()}
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      disabled={couponLoading || !coupon.trim()}
                       className="rounded-lg bg-[#993331]/10 px-4 py-2 text-sm font-semibold text-[#993331] hover:bg-[#993331]/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
-                      Aplicar
+                      {couponLoading ? "Aplicando..." : "Aplicar"}
                     </button>
                   </div>
+                  {couponError && (
+                    <p className="mt-1 text-xs text-red-600">{couponError}</p>
+                  )}
+                  {couponSuccess && (
+                    <p className="mt-1 text-xs text-emerald-600">{couponSuccess}</p>
+                  )}
                 </div>
 
                 {/* Total */}
@@ -275,7 +340,7 @@ export default function CheckoutPage() {
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      Suscribirme a GOKAI+
+                      {coupon.trim() ? "Aplicar cupón y activar GOKAI+" : "Suscribirme a GOKAI+"}
                     </span>
                   )}
                 </motion.button>
