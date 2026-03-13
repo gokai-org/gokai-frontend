@@ -4,15 +4,10 @@ import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import {
   BookOpen,
-  Flame,
-  Target,
-  Clock,
   TrendingUp,
 } from "lucide-react";
 import type { ReactNode } from "react";
 import type { OverviewStatsResponse } from "@/features/stats/types";
-
-/* ── Types ────────────────────────────────────────────── */
 
 interface StatCard {
   id: string;
@@ -30,43 +25,35 @@ interface StatsOverviewProps {
   loading?: boolean;
 }
 
-/* ── Helpers ──────────────────────────────────────────── */
-
-function formatStudyTime(value: number): string {
-  if (value <= 0) return "0m";
-  if (value < 60) return `${value}m`;
-
-  const hours = value / 60;
-
-  if (Number.isInteger(hours)) {
-    return `${hours}h`;
-  }
-
-  return `${hours.toFixed(1)}h`;
-}
-
 const defaultCards: StatCard[] = [
-  { id: "study-time", label: "Tiempo de estudio", value: 0, icon: <Clock className="w-6 h-6" />, formatter: formatStudyTime },
-  { id: "kanji-learned", label: "Kanji aprendidos", value: 0, icon: <BookOpen className="w-6 h-6" /> },
-  { id: "hiragana-learned", label: "Hiragana aprendidos", value: 0, icon: <span className="text-base font-bold leading-none select-none">あ</span> },
-  { id: "katakana-learned", label: "Katakana aprendidos", value: 0, icon: <span className="text-base font-bold leading-none select-none">カ</span> },
-  { id: "accuracy", label: "Precisión", value: 0, suffix: "%", icon: <Target className="w-6 h-6" /> },
-  { id: "streak", label: "Racha actual", value: 0, icon: <Flame className="w-6 h-6" />, formatter: (v: number) => `${v} días` },
-  { id: "reviews", label: "Repasos completados", value: 0, icon: <TrendingUp className="w-6 h-6" /> },
+  {
+    id: "kanji-learned",
+    label: "Kanji aprendidos",
+    value: 0,
+    icon: <BookOpen className="w-6 h-6" />,
+  },
+  {
+    id: "hiragana-learned",
+    label: "Hiragana aprendidos",
+    value: 0,
+    icon: <span className="text-base font-bold leading-none select-none">あ</span>,
+  },
+  {
+    id: "katakana-learned",
+    label: "Katakana aprendidos",
+    value: 0,
+    icon: <span className="text-base font-bold leading-none select-none">カ</span>,
+  },
+  {
+    id: "reviews",
+    label: "Repasos completados",
+    value: 0,
+    icon: <TrendingUp className="w-6 h-6" />,
+  },
 ];
-
-/* ── Mapeo backend → tarjetas ─────────────────────────── */
 
 function mapToCards(data: OverviewStatsResponse): StatCard[] {
   return [
-    {
-      id: "study-time",
-      label: "Tiempo de estudio",
-      value: data.study_hours,
-      icon: <Clock className="w-6 h-6" />,
-      trend: data.study_hours_trend,
-      formatter: formatStudyTime,
-    },
     {
       id: "kanji-learned",
       label: "Kanji aprendidos",
@@ -93,21 +80,6 @@ function mapToCards(data: OverviewStatsResponse): StatCard[] {
       trend: data.katakana_learned_trend,
     },
     {
-      id: "accuracy",
-      label: "Precisión",
-      value: data.accuracy,
-      suffix: "%",
-      icon: <Target className="w-6 h-6" />,
-      trend: data.accuracy_trend,
-    },
-    {
-      id: "streak",
-      label: "Racha actual",
-      value: data.current_streak,
-      icon: <Flame className="w-6 h-6" />,
-      formatter: (v: number) => `${v} ${v === 1 ? "d\u00eda" : "d\u00edas"}`,
-    },
-    {
       id: "reviews",
       label: "Repasos completados",
       value: data.reviews_completed,
@@ -116,8 +88,6 @@ function mapToCards(data: OverviewStatsResponse): StatCard[] {
     },
   ];
 }
-
-/* ── Animated counter ─────────────────────────────────── */
 
 function AnimatedCounter({
   value,
@@ -161,8 +131,6 @@ function AnimatedCounter({
   );
 }
 
-/* ── Skeleton card ────────────────────────────────────── */
-
 function SkeletonCard() {
   return (
     <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-pulse">
@@ -175,8 +143,6 @@ function SkeletonCard() {
     </div>
   );
 }
-
-/* ── Card ─────────────────────────────────────────────── */
 
 const cardVariants = {
   hidden: { opacity: 0, y: 24, scale: 0.95 },
@@ -205,13 +171,17 @@ function StatOverviewCard({
       variants={cardVariants}
       initial="hidden"
       animate="visible"
-      whileHover={{ y: -4, boxShadow: "0 12px 24px -4px rgba(153,51,49,0.12)" }}
+      whileHover={{
+        y: -4,
+        boxShadow: "0 12px 24px -4px rgba(153,51,49,0.12)",
+      }}
       className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-default select-none"
     >
       <div className="flex items-center justify-between mb-3">
         <div className="w-11 h-11 rounded-xl bg-[#993331]/10 flex items-center justify-center text-[#993331]">
           {stat.icon}
         </div>
+
         {stat.trend !== undefined && stat.trend !== 0 && (
           <motion.span
             initial={{ opacity: 0, x: 8 }}
@@ -246,23 +216,21 @@ function StatOverviewCard({
   );
 }
 
-/* ── Main ─────────────────────────────────────────────── */
-
 export function StatsOverview({ data, loading }: StatsOverviewProps) {
+  const cards = data ? mapToCards(data) : defaultCards;
+
   if (loading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        {Array.from({ length: 7 }).map((_, i) => (
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {Array.from({ length: 4 }).map((_, i) => (
           <SkeletonCard key={i} />
         ))}
       </div>
     );
   }
 
-  const cards = data ? mapToCards(data) : defaultCards;
-
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {cards.map((stat, i) => (
         <StatOverviewCard key={stat.id} stat={stat} index={i} />
       ))}
