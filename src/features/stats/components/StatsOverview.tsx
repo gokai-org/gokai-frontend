@@ -53,39 +53,43 @@ const defaultCards: StatCard[] = [
   },
 ];
 
+function safeNumber(value: unknown): number {
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
 function mapToCards(data: OverviewStatsResponse): StatCard[] {
   return [
     {
       id: "kanji-learned",
       label: "Kanji aprendidos",
-      value: data.kanji_learned,
+      value: safeNumber(data.kanjiLearned),
       icon: <BookOpen className="w-6 h-6" />,
-      trend: data.kanji_learned_trend,
+      trend: safeNumber(data.kanjiLearnedTrend),
     },
     {
       id: "hiragana-learned",
       label: "Hiragana aprendidos",
-      value: data.hiragana_learned,
+      value: safeNumber(data.hiraganaLearned),
       icon: (
         <span className="text-base font-bold leading-none select-none">あ</span>
       ),
-      trend: data.hiragana_learned_trend,
+      trend: safeNumber(data.hiraganaLearnedTrend),
     },
     {
       id: "katakana-learned",
       label: "Katakana aprendidos",
-      value: data.katakana_learned,
+      value: safeNumber(data.katakanaLearned),
       icon: (
         <span className="text-base font-bold leading-none select-none">カ</span>
       ),
-      trend: data.katakana_learned_trend,
+      trend: safeNumber(data.katakanaLearnedTrend),
     },
     {
       id: "reviews",
       label: "Repasos completados",
-      value: data.reviews_completed,
+      value: safeNumber(data.reviewsCompleted),
       icon: <TrendingUp className="w-6 h-6" />,
-      trend: data.reviews_completed_trend,
+      trend: safeNumber(data.reviewsCompletedTrend),
     },
   ];
 }
@@ -105,9 +109,14 @@ function AnimatedCounter({
 
   useEffect(() => {
     let start = 0;
-    const end = value;
+    const end = Number.isFinite(value) ? value : 0;
     const step = end / (duration * 60);
     let raf: number;
+
+    if (end <= 0) {
+      setCount(0);
+      return;
+    }
 
     const animate = () => {
       start += step;

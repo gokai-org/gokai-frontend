@@ -148,15 +148,13 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const payload = toSnakeCase({ section, data: toSnakeCase(data) });
-
     const response = await fetch(`${USERS_API_BASE}/users/${userId}/settings`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ section, data }),
     });
 
     if (!response.ok) {
@@ -196,7 +194,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const payload = toSnakeCase(body);
 
     const response = await fetch(`${USERS_API_BASE}/users/${userId}/settings`, {
       method: "PUT",
@@ -204,7 +201,7 @@ export async function PUT(request: NextRequest) {
         Authorization: `Bearer ${token}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {

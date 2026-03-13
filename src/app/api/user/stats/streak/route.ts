@@ -1,41 +1,34 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
+import { toCamelCase } from "@/shared/lib/utils/case";
 
 export const dynamic = "force-dynamic";
 
 const BASE = process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
 
-/** GET /api/user/stats/streak?weeks=12
- *  Proxy → GET {USERS_API_BASE}/users/stats/streak?weeks=...
- *
- *  Parámetros:
- *    weeks  – entero 1–52 (default: 12)
- *
- *  Retorna: { streak_days: Record<string, number>, current_streak, longest_streak }
- *
- *  Errores:
- *    400  – weeks no es un entero válido (1–52)
- *    401  – token ausente o expirado
- */
 export async function GET(req: NextRequest) {
-  const raw = getTokenFromRequest(req);
-  if (!raw)
+  const rawToken = getTokenFromRequest(req);
+  if (!rawToken) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
+  }
 
-  const token = normalizeBearerToken(raw);
+  const token = normalizeBearerToken(rawToken);
 
-  // Extraer userId del JWT
   const tokenParts = token.split(".");
-  if (tokenParts.length !== 3)
+  if (tokenParts.length !== 3) {
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+  }
+
   const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
   const userId = payload.userId || payload.sub || payload.id;
-  if (!userId)
+
+  if (!userId) {
     return NextResponse.json(
       { error: "No se encontró ID de usuario" },
       { status: 401 },
     );
+  }
 
   const weeksParam = req.nextUrl.searchParams.get("weeks") || "12";
   const weeks = Number(weeksParam);
@@ -57,6 +50,8 @@ export async function GET(req: NextRequest) {
     },
   );
 
-  const data = await upstream.json().catch(() => ({}));
+  const upstreamData = await upstream.json().catch(() => ({}));
+  const data = toCamelCase(upstreamData);
+
   return NextResponse.json(data, { status: upstream.status });
 }

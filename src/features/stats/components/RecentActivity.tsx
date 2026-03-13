@@ -87,7 +87,7 @@ function ActivityRow({ activity }: { activity: RecentActivityEntry }) {
       </div>
 
       <div className="text-right shrink-0">
-        <p className="text-xs text-gray-400">{timeAgo(activity.created_at)}</p>
+        <p className="text-xs text-gray-400">{timeAgo(activity.createdAt)}</p>
         {activity.score !== undefined && (
           <p className="text-sm font-extrabold text-[#993331]">
             {activity.score}%

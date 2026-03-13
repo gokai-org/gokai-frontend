@@ -49,7 +49,7 @@ export function StudyStreakCalendar({
   loading,
 }: StudyStreakCalendarProps) {
   const calendarData = useMemo(
-    () => data?.streak_days ?? generateEmptyData(weeks),
+    () => data?.streakDays ?? generateEmptyData(weeks),
     [data, weeks],
   );
 

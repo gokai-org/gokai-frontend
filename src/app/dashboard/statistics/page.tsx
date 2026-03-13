@@ -73,7 +73,7 @@ export default function Page() {
   const { data, loading, error, period, setPeriod, refresh } = useStats();
 
   const overview = data.overview;
-  const streak = overview?.current_streak ?? 0;
+  const streak = overview?.currentStreak ?? 0;
   const accuracy = overview?.accuracy ?? 0;
 
   const scoreEntries =
@@ -89,14 +89,14 @@ export default function Page() {
         )
       : 0;
 
-  const hasAnyData = !!(
-    overview &&
-    (overview.study_hours > 0 ||
-      overview.kanji_learned > 0 ||
-      overview.hiragana_learned > 0 ||
-      overview.katakana_learned > 0 ||
-      overview.reviews_completed > 0)
-  );
+    const hasAnyData = !!(
+      overview &&
+      (overview.studyHours > 0 ||
+        overview.kanjiLearned > 0 ||
+        overview.hiraganaLearned > 0 ||
+        overview.katakanaLearned > 0 ||
+        overview.reviewsCompleted > 0)
+    );
 
   const banner = getBannerMessage(accuracy, streak, hasAnyData);
 
