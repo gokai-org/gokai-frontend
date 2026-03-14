@@ -17,6 +17,7 @@ interface RecentActivityProps {
   activities?: RecentActivityEntry[] | null;
   title?: string;
   loading?: boolean;
+  animationsEnabled?: boolean;
 }
 
 /*  Icon map  */
@@ -64,13 +65,20 @@ const itemVariants = {
   },
 };
 
-function ActivityRow({ activity }: { activity: RecentActivityEntry }) {
+function ActivityRow({
+  activity,
+  animationsEnabled = true,
+}: {
+  activity: RecentActivityEntry;
+  animationsEnabled?: boolean;
+}) {
   const Icon = iconMap[activity.type];
   const colorClass = colorMap[activity.type];
+  const RowWrapper = animationsEnabled ? motion.div : "div";
 
   return (
-    <motion.div
-      variants={itemVariants}
+    <RowWrapper
+      {...(animationsEnabled ? { variants: itemVariants } : {})}
       className="flex items-center gap-4 py-3 px-2 rounded-xl hover:bg-gray-50 transition-colors cursor-default"
     >
       <div
@@ -94,7 +102,7 @@ function ActivityRow({ activity }: { activity: RecentActivityEntry }) {
           </p>
         )}
       </div>
-    </motion.div>
+    </RowWrapper>
   );
 }
 
@@ -104,9 +112,12 @@ export function RecentActivity({
   activities,
   title = "Actividad reciente",
   loading,
+  animationsEnabled = true,
 }: RecentActivityProps) {
   const MAX_ITEMS = 8;
   const items = (activities ?? defaultActivities).slice(0, MAX_ITEMS);
+  const Wrapper = animationsEnabled ? motion.div : "div";
+  const ListWrapper = animationsEnabled ? motion.div : "div";
 
   if (loading) {
     return (
@@ -127,10 +138,18 @@ export function RecentActivity({
 
   if (items.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      <Wrapper
+        {...(animationsEnabled
+          ? {
+              initial: { opacity: 0, y: 20 },
+              animate: { opacity: 1, y: 0 },
+              transition: {
+                duration: 0.6,
+                delay: 0.2,
+                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+              },
+            }
+          : {})}
         className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
       >
         <h3 className="text-lg font-extrabold text-gray-900 mb-4">{title}</h3>
@@ -146,30 +165,46 @@ export function RecentActivity({
             tiempo real.
           </p>
         </div>
-      </motion.div>
+      </Wrapper>
     );
   }
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+    <Wrapper
+      {...(animationsEnabled
+        ? {
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 },
+            transition: {
+              duration: 0.6,
+              delay: 0.2,
+              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            },
+          }
+        : {})}
       className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
     >
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
       </div>
 
-      <motion.div
-        variants={listVariants}
-        initial="hidden"
-        animate="visible"
+      <ListWrapper
+        {...(animationsEnabled
+          ? {
+              variants: listVariants,
+              initial: "hidden" as const,
+              animate: "visible" as const,
+            }
+          : {})}
         className="divide-y divide-gray-50"
       >
         {items.map((activity) => (
-          <ActivityRow key={activity.id} activity={activity} />
+          <ActivityRow
+            key={activity.id}
+            activity={activity}
+            animationsEnabled={animationsEnabled}
+          />
         ))}
-      </motion.div>
-    </motion.div>
+      </ListWrapper>
+    </Wrapper>
   );
 }
