@@ -12,19 +12,19 @@ import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
 import { StatsSkeleton } from "@/shared/ui/Skeleton";
 import { useStats } from "@/features/stats/hooks/useStats";
 import { useStatsSummary } from "@/features/stats/hooks/useStatsSummary";
+import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 
 export default function StatsPage() {
   const { data, loading, period, setPeriod } = useStats();
   const { banner, averageScore, streak } = useStatsSummary(data);
 
-  const animationsEnabled = true;
+  const { animationsEnabled, heavyAnimationsEnabled } =
+    useAnimationPreferences();
 
   if (loading) {
     return (
       <DashboardShell
-        header={
-          <StatsHeader period={period} onPeriodChange={setPeriod} />
-        }
+        header={<StatsHeader period={period} onPeriodChange={setPeriod} />}
       >
         <StatsSkeleton />
       </DashboardShell>
@@ -35,19 +35,27 @@ export default function StatsPage() {
     <DashboardShell
       header={<StatsHeader period={period} onPeriodChange={setPeriod} />}
     >
-      <StatsBanner
+    <AnimatedEntrance
+      index={0}
+      disabled={!animationsEnabled}
+      mode={heavyAnimationsEnabled ? "default" : "light"}
+    >
+<StatsBanner
         title={banner.title}
         subtitle={banner.subtitle}
         averageScore={averageScore}
         streak={streak}
         loading={loading}
         animationsEnabled={animationsEnabled}
+        heavyAnimationsEnabled={heavyAnimationsEnabled}
       />
+      </AnimatedEntrance>
 
       <AnimatedEntrance
-        index={1}
+        index={2}
         className="mb-8"
         disabled={!animationsEnabled}
+        mode={heavyAnimationsEnabled ? "default" : "light"}
       >
         <StatsOverview
           data={data.overview}
@@ -56,26 +64,50 @@ export default function StatsPage() {
         />
       </AnimatedEntrance>
 
-      <StatsActivitySection
-        data={data.activity}
-        loading={loading}
-        animationsEnabled={animationsEnabled}
-      />
+      <AnimatedEntrance
+        index={3}
+        disabled={!animationsEnabled}
+        mode={heavyAnimationsEnabled ? "default" : "light"}
+      >
+        <StatsActivitySection
+          data={data.activity}
+          loading={loading}
+          animationsEnabled={animationsEnabled}
+        />
+      </AnimatedEntrance>
 
-      <StatsSkillsSection
-        skills={data.skills}
-        recentActivity={data.recentActivity}
-        loading={loading}
-        animationsEnabled={animationsEnabled}
-      />
+      <AnimatedEntrance
+        index={4}
+        disabled={!animationsEnabled}
+        mode={heavyAnimationsEnabled ? "default" : "light"}
+      >
+        <StatsSkillsSection
+          skills={data.skills}
+          recentActivity={data.recentActivity}
+          loading={loading}
+          animationsEnabled={animationsEnabled}
+        />
+      </AnimatedEntrance>
 
-      <StatsStreakSection
-        data={data.streakCalendar}
-        loading={loading}
-        animationsEnabled={animationsEnabled}
-      />
+      <AnimatedEntrance
+        index={5}
+        disabled={!animationsEnabled}
+        mode={heavyAnimationsEnabled ? "default" : "light"}
+      >
+        <StatsStreakSection
+          data={data.streakCalendar}
+          loading={loading}
+          animationsEnabled={animationsEnabled}
+        />
+      </AnimatedEntrance>
 
-      <StatsCTA animationsEnabled={animationsEnabled} />
+      <AnimatedEntrance
+        index={6}
+        disabled={!animationsEnabled}
+        mode={heavyAnimationsEnabled ? "default" : "light"}
+      >
+        <StatsCTA animationsEnabled={animationsEnabled} />
+      </AnimatedEntrance>
     </DashboardShell>
   );
 }

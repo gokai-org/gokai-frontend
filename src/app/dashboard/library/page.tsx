@@ -1,5 +1,6 @@
 "use client";
 
+import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import { useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
@@ -36,7 +37,8 @@ export default function LibraryPage() {
   const [selectedKanji, setSelectedKanji] = useState<Kanji | null>(null);
   const [selectedKana, setSelectedKana] = useState<Kana | null>(null);
 
-  const animationsEnabled = true;
+  const { animationsEnabled, heavyAnimationsEnabled } =
+    useAnimationPreferences();  useAnimationPreferences();
 
   const {
     kanjis,
@@ -96,11 +98,12 @@ export default function LibraryPage() {
         <LibrarySkeleton />
       ) : (
         <>
-          <AnimatedEntrance
-            index={0}
-            className="mb-8"
-            disabled={!animationsEnabled}
-          >
+            <AnimatedEntrance
+              index={0}
+              className="mb-8"
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
             <CategoryFilter
               categories={dynamicCategories}
               selectedCategory={selectedCategory}
@@ -112,7 +115,7 @@ export default function LibraryPage() {
           </AnimatedEntrance>
 
           {isSearching && !selectedCategory && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled}>
+            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
               <div>
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-900">
@@ -153,6 +156,7 @@ export default function LibraryPage() {
                 index={1}
                 className="order-1 xl:order-2"
                 disabled={!animationsEnabled}
+                mode={heavyAnimationsEnabled ? "default" : "light"}
               >
                 <LibraryRecentPanel
                   recentItems={recentItems}
@@ -200,7 +204,7 @@ export default function LibraryPage() {
           )}
 
           {selectedCategory === "favoritos" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled}>
+            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
               <div>
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-900">
@@ -286,7 +290,7 @@ export default function LibraryPage() {
           )}
 
           {selectedCategory === "kanji" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled}>
+            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
               <LibraryCategorySection
                 title="Colección de Kanjis"
                 countLabel={`${kanjis.length} kanjis`}
@@ -312,7 +316,7 @@ export default function LibraryPage() {
           )}
 
           {selectedCategory === "katakana" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled}>
+            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
               <LibraryCategorySection
                 title="Colección de Katakana"
                 countLabel={`${katakanas.length} katakana`}
@@ -336,7 +340,7 @@ export default function LibraryPage() {
           )}
 
           {selectedCategory === "hiragana" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled}>
+            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
               <LibraryCategorySection
                 title="Colección de Hiragana"
                 countLabel={`${hiraganas.length} hiragana`}
@@ -360,7 +364,7 @@ export default function LibraryPage() {
           )}
 
           {selectedCategory === "recent" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled}>
+            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
               <LibraryCategorySection
                 title="Reciente"
                 countLabel={`${recentItems.length} elementos`}

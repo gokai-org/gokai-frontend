@@ -1,97 +1,130 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useMemo, useRef, useState } from "react";
 
 interface AudioPlayerProps {
   audioUrl: string;
   duration: string;
   isUserMessage?: boolean;
+  waveform?: number[];
+}
+
+const FALLBACK_WAVEFORM = [
+  8, 12, 18, 14, 10, 16, 22, 17, 11, 15, 20, 16, 10, 18, 24, 19, 12, 9, 8, 10,
+  14, 18, 15, 10, 12, 17, 14, 9, 8, 10, 13, 16,
+];
+
+function normalizeWaveform(values?: number[], targetBars = 36) {
+  const source = values && values.length > 0 ? values : FALLBACK_WAVEFORM;
+
+  if (source.length === targetBars) return source;
+
+  const bucketSize = source.length / targetBars;
+
+  return Array.from({ length: targetBars }, (_, index) => {
+    const start = Math.floor(index * bucketSize);
+    const end = Math.floor((index + 1) * bucketSize);
+    const slice = source.slice(start, Math.max(start + 1, end));
+
+    const average =
+      slice.reduce((sum, value) => sum + value, 0) / Math.max(slice.length, 1);
+
+    return Math.max(5, Math.min(26, Math.round(average)));
+  });
 }
 
 export function AudioPlayer({
   audioUrl,
   duration,
-  isUserMessage,
+  isUserMessage = false,
+  waveform,
 }: AudioPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
-  const barHeights = useMemo(
-    () =>
-      Array.from({ length: 40 }, (_, i) => {
-        const x = Math.sin(i * 127.1) * 43758.5453;
-        return (x - Math.floor(x)) * 20 + 8;
-      }),
-    [],
-  );
 
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+  const bars = useMemo(() => normalizeWaveform(waveform, 34), [waveform]);
+
+  const togglePlay = async () => {
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (isPlaying) {
+      audio.pause();
+      setIsPlaying(false);
+      return;
+    }
+
+    try {
+      await audio.play();
+      setIsPlaying(true);
+    } catch {
+      setIsPlaying(false);
     }
   };
 
   return (
-    <div className="flex items-center gap-3">
+    <div className="flex w-full items-center gap-3">
       <button
+        type="button"
         onClick={togglePlay}
-        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+        className={[
+          "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors",
           isUserMessage
-            ? "bg-white/20 hover:bg-white/30"
-            : "bg-[#993331] hover:bg-[#882d2d]"
-        } transition-colors`}
+            ? "bg-white/18 hover:bg-white/28"
+            : "bg-[#993331] hover:bg-[#882d2d]",
+        ].join(" ")}
+        aria-label={isPlaying ? "Pausar audio" : "Reproducir audio"}
       >
         {isPlaying ? (
           <svg
-            className={`w-4 h-4 ${isUserMessage ? "text-white" : "text-white"}`}
+            className="h-4 w-4 text-white"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
-            <path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z" />
+            <path d="M5 4h3v12H5V4Zm7 0h3v12h-3V4Z" />
           </svg>
         ) : (
           <svg
-            className={`w-4 h-4 ${isUserMessage ? "text-white" : "text-white"} ml-0.5`}
+            className="ml-0.5 h-4 w-4 text-white"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
-            <path d="M6 4l10 6-10 6V4z" />
+            <path d="M6 4l10 6-10 6V4Z" />
           </svg>
         )}
       </button>
 
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <div className="flex-1 h-8 flex items-center gap-0.5">
-            {barHeights.map((h, i) => (
-              <div
-                key={i}
-                className={`w-0.5 rounded-full ${
-                  isUserMessage ? "bg-white/60" : "bg-[#993331]/60"
-                }`}
-                style={{
-                  height: `${h}px`,
-                }}
-              />
-            ))}
-          </div>
+      <div className="min-w-0 flex-1">
+        <div className="mb-1 flex items-center justify-end">
+          <span
+            className={`text-xs font-bold ${
+              isUserMessage ? "text-white/90" : "text-gray-500"
+            }`}
+          >
+            {duration}
+          </span>
+        </div>
+
+        <div className="flex h-8 items-center gap-[3px] overflow-hidden">
+          {bars.map((height, index) => (
+            <div
+              key={index}
+              className={`w-[3px] shrink-0 rounded-full ${
+                isUserMessage ? "bg-white/78" : "bg-[#993331]/58"
+              }`}
+              style={{
+                height: `${Math.max(5, Math.min(height, 26))}px`,
+              }}
+            />
+          ))}
         </div>
       </div>
-
-      <span
-        className={`text-xs ${isUserMessage ? "text-white/80" : "text-gray-500"}`}
-      >
-        {duration}
-      </span>
 
       <audio
         ref={audioRef}
         src={audioUrl}
         onEnded={() => setIsPlaying(false)}
+        preload="none"
       />
     </div>
   );

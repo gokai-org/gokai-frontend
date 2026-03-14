@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import type { ReactNode } from "react";
 
 const defaultEase = [0.22, 1, 0.36, 1] as [number, number, number, number];
@@ -13,6 +13,10 @@ interface AnimatedEntranceProps {
   delayStep?: number;
   duration?: number;
   offsetY?: number;
+  exitOffsetY?: number;
+  animateOnMount?: boolean;
+  presence?: boolean;
+  mode?: "default" | "light";
 }
 
 export function AnimatedEntrance({
@@ -23,26 +27,55 @@ export function AnimatedEntrance({
   delayStep = 0.08,
   duration = 0.5,
   offsetY = 16,
+  exitOffsetY = 10,
+  animateOnMount = true,
+  presence = false,
+  mode = "default",
 }: AnimatedEntranceProps) {
   if (disabled) {
     return <div className={className}>{children}</div>;
   }
 
-  return (
+  const isLight = mode === "light";
+
+  const content = (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: offsetY }}
+      initial={
+        animateOnMount
+          ? {
+              opacity: 0,
+              y: isLight ? 8 : offsetY,
+              scale: isLight ? 1 : 0.985,
+            }
+          : false
+      }
       animate={{
         opacity: 1,
         y: 0,
+        scale: 1,
         transition: {
           delay: index * delayStep,
-          duration,
+          duration: isLight ? 0.28 : duration,
           ease: defaultEase,
         },
       }}
+      exit={{
+        opacity: 0,
+        y: isLight ? 6 : exitOffsetY,
+        scale: isLight ? 1 : 0.985,
+        transition: {
+          duration: isLight ? 0.2 : 0.28,
+          ease: defaultEase,
+        },
+      }}
+      layout={mode === "default"}
     >
       {children}
     </motion.div>
   );
+
+  if (!presence) return content;
+
+  return <AnimatePresence mode="popLayout">{content}</AnimatePresence>;
 }
