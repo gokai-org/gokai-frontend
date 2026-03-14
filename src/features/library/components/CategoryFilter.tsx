@@ -33,6 +33,7 @@ export function CategoryFilter({
         const newCategories = categories.filter(
           (cat) => !orderIds.includes(cat.id),
         );
+
         return [...ordered, ...newCategories];
       } catch {
         return categories;
@@ -60,17 +61,23 @@ export function CategoryFilter({
     });
   }, [categories]);
 
+  const baseButtonClass =
+    "inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-300";
+  const activeButtonClass =
+    "border-[#993331] bg-gradient-to-r from-[#993331] to-[#7a2927] text-white shadow-md shadow-[#993331]/15";
+  const inactiveButtonClass =
+    "border-gray-200 bg-white text-gray-700 hover:border-[#993331]/20 hover:text-[#993331] hover:shadow-sm";
+
   return (
-    <div className="flex items-center gap-3 overflow-x-auto pb-2 no-scrollbar">
+    <div className="no-scrollbar -mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2">
       <button
         onClick={() => onSelectCategory(null)}
-        className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-          selectedCategory === null
-            ? "bg-[#993331] text-white shadow-md"
-            : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-        }`}
+        className={[
+          baseButtonClass,
+          selectedCategory === null ? activeButtonClass : inactiveButtonClass,
+        ].join(" ")}
       >
-        Todos
+        <span>Todos</span>
       </button>
 
       <Reorder.Group
@@ -87,14 +94,24 @@ export function CategoryFilter({
           >
             <button
               onClick={() => onSelectCategory(category.id)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+              className={[
+                baseButtonClass,
                 selectedCategory === category.id
-                  ? "bg-[#993331] text-white shadow-md"
-                  : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-              }`}
+                  ? activeButtonClass
+                  : inactiveButtonClass,
+              ].join(" ")}
             >
-              {category.name}
-              <span className="ml-2 text-xs opacity-75">{category.count}</span>
+              <span>{category.name}</span>
+              <span
+                className={[
+                  "rounded-full px-2 py-0.5 text-[11px] font-bold",
+                  selectedCategory === category.id
+                    ? "bg-white/15 text-white"
+                    : "bg-[#993331]/8 text-[#993331]",
+                ].join(" ")}
+              >
+                {category.count}
+              </span>
             </button>
           </Reorder.Item>
         ))}

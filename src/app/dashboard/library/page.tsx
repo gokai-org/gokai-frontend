@@ -24,14 +24,17 @@ import {
   getPrimaryMeaning,
   getPrimaryReading,
 } from "@/features/kanji/utils/kanjiText";
-import { listKatakanas } from "@/features/kana/api/kanaApi";
-import { listHiraganas } from "@/features/kana/api/kanaApi";
+import { listKatakanas, listHiraganas } from "@/features/kana/api/kanaApi";
 import type { Kana } from "@/features/kana/types";
 import {
   LibrarySkeleton,
-  SkeletonSection,
   SkeletonCard,
 } from "@/shared/ui/Skeleton";
+
+type CombinedLibraryItem =
+  | { type: "kanji"; data: Kanji }
+  | { type: "katakana"; data: Kana }
+  | { type: "hiragana"; data: Kana };
 
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -41,15 +44,12 @@ export default function LibraryPage() {
   const [loadingKanjis, setLoadingKanjis] = useState(true);
   const [selectedKanji, setSelectedKanji] = useState<Kanji | null>(null);
 
-  // ── Katakana state ────────────────────────────────────────
   const [katakanas, setKatakanas] = useState<Kana[]>([]);
   const [loadingKatakanas, setLoadingKatakanas] = useState(true);
 
-  // ── Hiragana state ────────────────────────────────────────
   const [hiraganas, setHiraganas] = useState<Kana[]>([]);
   const [loadingHiraganas, setLoadingHiraganas] = useState(true);
 
-  // ── Kana detail modal ─────────────────────────────────────
   const [selectedKana, setSelectedKana] = useState<Kana | null>(null);
 
   const { recentItems, addRecentItem } = useRecentItems();
@@ -110,7 +110,6 @@ export default function LibraryPage() {
     })();
   }, []);
 
-  // ── Búsqueda ──────────────────────────────────────────────
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
   const filteredKanjis = useMemo(() => {
@@ -128,19 +127,32 @@ export default function LibraryPage() {
 
   const filteredKatakanas = useMemo(() => {
     if (!normalizedQuery) return katakanas;
-    return katakanas.filter((k) => {
-      return k.symbol.toLowerCase().includes(normalizedQuery);
-    });
+    return katakanas.filter((k) =>
+      k.symbol.toLowerCase().includes(normalizedQuery),
+    );
   }, [katakanas, normalizedQuery]);
 
   const filteredHiraganas = useMemo(() => {
     if (!normalizedQuery) return hiraganas;
-    return hiraganas.filter((h) => {
-      return h.symbol.toLowerCase().includes(normalizedQuery);
-    });
+    return hiraganas.filter((h) =>
+      h.symbol.toLowerCase().includes(normalizedQuery),
+    );
   }, [hiraganas, normalizedQuery]);
 
-  // ── Categorías dinámicas ──────────────────────────────────
+  const allLibraryItems = useMemo<CombinedLibraryItem[]>(() => {
+    return [
+      ...filteredKanjis.map((kanji) => ({ type: "kanji" as const, data: kanji })),
+      ...filteredHiraganas.map((hiragana) => ({
+        type: "hiragana" as const,
+        data: hiragana,
+      })),
+      ...filteredKatakanas.map((katakana) => ({
+        type: "katakana" as const,
+        data: katakana,
+      })),
+    ];
+  }, [filteredKanjis, filteredHiraganas, filteredKatakanas]);
+
   const dynamicCategories: LibraryCategory[] = [
     {
       id: "favoritos",
@@ -179,7 +191,6 @@ export default function LibraryPage() {
     },
   ];
 
-  // ── Helpers de mapeo ──────────────────────────────────────
   function kanjiToCard(kanji: Kanji) {
     const meaning = getPrimaryMeaning(kanji.meanings) || kanji.symbol;
     const reading = getPrimaryReading(kanji.readings);
@@ -209,7 +220,7 @@ export default function LibraryPage() {
     return {
       id: katakana.id,
       title: katakana.symbol,
-      subtitle: `${katakana.pointsToUnlock} pts`,
+      subtitle: "Katakana",
       thumbnail: katakana.symbol,
     };
   }
@@ -218,7 +229,7 @@ export default function LibraryPage() {
     return {
       id: hiragana.id,
       title: hiragana.symbol,
-      subtitle: `${hiragana.pointsToUnlock} pts`,
+      subtitle: "Hiragana",
       thumbnail: hiragana.symbol,
     };
   }
@@ -291,7 +302,7 @@ export default function LibraryPage() {
         const arr = JSON.parse(fav.meanings);
         if (Array.isArray(arr)) parsedMeanings = arr.join(", ");
       } catch {
-        /* ignora */
+        //
       }
     }
     return {
@@ -302,9 +313,9 @@ export default function LibraryPage() {
     };
   }
 
-  // ── Render ────────────────────────────────────────────────
   const isSearching = normalizedQuery.length > 0;
-  const isGlobalLoading = loadingKanjis && loadingKatakanas && loadingHiraganas;
+  const isGlobalLoading =
+    loadingKanjis || loadingKatakanas || loadingHiraganas;
 
   return (
     <DashboardShell header={<LibraryHeader onSearchChange={setSearchQuery} />}>
@@ -312,7 +323,6 @@ export default function LibraryPage() {
         <LibrarySkeleton />
       ) : (
         <>
-          {/* Filtro de categorías */}
           <div className="mb-8">
             <CategoryFilter
               categories={dynamicCategories}
@@ -324,284 +334,191 @@ export default function LibraryPage() {
             />
           </div>
 
-          {/* ════════ Resultados de búsqueda ════════ */}
           {isSearching && !selectedCategory && (
             <div>
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
                   Resultados para &ldquo;{searchQuery.trim()}&rdquo;
                 </h2>
                 <span className="text-sm text-gray-600">
-                  {filteredKanjis.length +
-                    filteredKatakanas.length +
-                    filteredHiraganas.length}{" "}
-                  resultados
+                  {allLibraryItems.length} resultados
                 </span>
               </div>
 
-              {filteredKanjis.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Kanjis
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {filteredKanjis.map((kanji) => (
+              {allLibraryItems.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                  {allLibraryItems.map((item) => {
+                    if (item.type === "kanji") {
+                      return (
+                        <ContentCard
+                          key={item.data.id}
+                          {...kanjiToCard(item.data)}
+                          onClick={() => handleKanjiClick(item.data)}
+                          onFavoriteToggle={toggleFavoriteKanji}
+                          isFavorite={favoriteKanjis.has(item.data.id)}
+                        />
+                      );
+                    }
+
+                    return (
                       <ContentCard
-                        key={kanji.id}
-                        {...kanjiToCard(kanji)}
-                        onClick={() => handleKanjiClick(kanji)}
-                        onFavoriteToggle={toggleFavoriteKanji}
-                        isFavorite={favoriteKanjis.has(kanji.id)}
+                        key={item.data.id}
+                        {...(item.type === "hiragana"
+                          ? hiraganaToCard(item.data)
+                          : katakanaToCard(item.data))}
+                        onClick={() => handleKanaClick(item.data)}
                       />
-                    ))}
-                  </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <h3 className="mb-2 text-xl font-bold text-gray-900">
+                    Sin resultados
+                  </h3>
+                  <p className="max-w-md text-center text-gray-600">
+                    No encontramos contenido que coincida con &ldquo;
+                    {searchQuery.trim()}&rdquo;.
+                  </p>
                 </div>
               )}
-
-              {filteredKatakanas.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Katakana
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {filteredKatakanas.map((katakana) => (
-                      <ContentCard
-                        key={katakana.id}
-                        {...katakanaToCard(katakana)}
-                        onClick={() => handleKanaClick(katakana)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {filteredHiraganas.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Hiragana
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {filteredHiraganas.map((hiragana) => (
-                      <ContentCard
-                        key={hiragana.id}
-                        {...hiraganaToCard(hiragana)}
-                        onClick={() => handleKanaClick(hiragana)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {filteredKanjis.length === 0 &&
-                filteredKatakanas.length === 0 &&
-                filteredHiraganas.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      Sin resultados
-                    </h3>
-                    <p className="text-gray-600 text-center max-w-md">
-                      No encontramos contenido que coincida con &ldquo;
-                      {searchQuery.trim()}&rdquo;.
-                    </p>
-                  </div>
-                )}
             </div>
           )}
 
-          {/* ════════ Vista principal (sin filtro) ════════ */}
           {!selectedCategory && !isSearching && (
-            <>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-                {/* Kanjis destacados */}
-                <div className="lg:col-span-2 space-y-10">
-                  <div>
-                    <SectionHeader
-                      className="mb-4"
-                      title="Kanjis"
-                      action={
-                        <button
-                          onClick={() => setSelectedCategory("kanji")}
-                          className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                        >
-                          Ver todo ({kanjis.length}) →
-                        </button>
-                      }
-                    />
-                    {loadingKanjis ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                          <SkeletonCard key={i} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {kanjis.slice(0, 8).map((kanji) => (
-                          <ContentCard
-                            key={kanji.id}
-                            {...kanjiToCard(kanji)}
-                            onClick={() => handleKanjiClick(kanji)}
-                            onFavoriteToggle={toggleFavoriteKanji}
-                            isFavorite={favoriteKanjis.has(kanji.id)}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-8">
+              <aside className="order-1 xl:order-2 xl:sticky xl:top-6 xl:self-start">
+                <div className="rounded-3xl border border-gray-100 bg-white p-5 shadow-sm md:p-6">
+                  <div className="mb-5 flex items-start gap-4">
+                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#993331]/10">
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        className="h-6 w-6 text-[#993331]"
+                      >
+                        <path d="M12 8v4l3 3" />
+                        <circle cx="12" cy="12" r="9" />
+                      </svg>
+                    </div>
 
-                {/* Sidebar: Recientes */}
-                <div className="space-y-6">
-                  <div>
-                    <SectionHeader
-                      className="mb-4"
-                      title="Reciente"
-                      action={
-                        recentItems.length > 0 ? (
-                          <button
-                            onClick={() => setSelectedCategory("recent")}
-                            className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                          >
-                            Ver todo →
-                          </button>
-                        ) : null
-                      }
-                    />
-                    {recentItems.length > 0 ? (
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-extrabold text-gray-900">
+                            Reciente
+                          </h3>
+                          <p className="mt-1 text-sm leading-relaxed text-gray-500">
+                            Continúa con el contenido que has explorado recientemente.
+                          </p>
+                        </div>
+
+                        {recentItems.length > 0 && (
+                          <span className="shrink-0 rounded-full bg-[#993331]/8 px-3 py-1 text-xs font-semibold text-[#993331]">
+                            {recentItems.length}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {recentItems.length > 0 ? (
+                    <>
                       <div className="space-y-3">
-                        {recentItems.slice(0, 6).map((item) => (
+                        {recentItems.slice(0, 4).map((item) => (
                           <RecentCard
                             key={item.id}
                             item={recentToCardProps(item)}
                             onClick={() => {
                               if (item.type === "kanji") {
-                                const kanji = kanjis.find(
-                                  (k) => k.id === item.id,
-                                );
+                                const kanji = kanjis.find((k) => k.id === item.id);
                                 if (kanji) handleKanjiClick(kanji);
                               }
                             }}
                           />
                         ))}
                       </div>
-                    ) : (
-                      <div className="bg-gray-50 rounded-xl p-6 text-center border border-gray-100">
-                        <p className="text-sm text-gray-500">
-                          Aún no has explorado contenido.
-                          <br />
-                          Los elementos que visites aparecerán aquí.
-                        </p>
+
+                      <div className="mt-5">
+                        <button
+                          onClick={() => setSelectedCategory("recent")}
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#993331] to-[#7a2927] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#993331]/20 transition-all duration-300 hover:shadow-xl hover:shadow-[#993331]/25"
+                        >
+                          Ver todo
+                          <span aria-hidden="true">→</span>
+                        </button>
                       </div>
-                    )}
-                  </div>
+                    </>
+                  ) : (
+                    <div className="rounded-2xl border border-dashed border-gray-200 bg-[#FAF7F5] p-5 text-center">
+                      <h4 className="mb-1 text-sm font-bold text-gray-900">
+                        Aún no hay actividad
+                      </h4>
+                      <p className="text-sm leading-relaxed text-gray-500">
+                        Los kanjis, hiraganas y katakanas que abras aparecerán aquí para
+                        retomarlos más rápido.
+                      </p>
+                    </div>
+                  )}
                 </div>
-              </div>
+              </aside>
 
-              {/* Katakana destacados */}
-              {!loadingKatakanas && katakanas.length > 0 && (
-                <div className="mb-10">
-                  <SectionHeader
-                    className="mb-4"
-                    title="Katakana"
-                    action={
-                      <button
-                        onClick={() => setSelectedCategory("katakana")}
-                        className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                      >
-                        Ver todo ({katakanas.length}) →
-                      </button>
-                    }
-                  />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {katakanas.slice(0, 12).map((katakana) => (
-                      <ContentCard
-                        key={katakana.id}
-                        {...katakanaToCard(katakana)}
-                        onClick={() => handleKanaClick(katakana)}
-                      />
-                    ))}
+              <div className="order-2 min-w-0 xl:order-1">
+                <SectionHeader
+                  className="mb-4"
+                  title="Todo el contenido"
+                  action={
+                    <span className="text-sm font-medium text-gray-500">
+                      {kanjis.length + katakanas.length + hiraganas.length} elementos
+                    </span>
+                  }
+                />
+
+                {allLibraryItems.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:gap-4 2xl:grid-cols-5">
+                    {allLibraryItems.map((item) => {
+                      if (item.type === "kanji") {
+                        return (
+                          <ContentCard
+                            key={item.data.id}
+                            {...kanjiToCard(item.data)}
+                            onClick={() => handleKanjiClick(item.data)}
+                            onFavoriteToggle={toggleFavoriteKanji}
+                            isFavorite={favoriteKanjis.has(item.data.id)}
+                          />
+                        );
+                      }
+
+                      return (
+                        <ContentCard
+                          key={item.data.id}
+                          {...(item.type === "hiragana"
+                            ? hiraganaToCard(item.data)
+                            : katakanaToCard(item.data))}
+                          onClick={() => handleKanaClick(item.data)}
+                        />
+                      );
+                    })}
                   </div>
-                </div>
-              )}
-
-              {/* Hiragana destacados */}
-              {!loadingHiraganas && hiraganas.length > 0 && (
-                <div className="mb-10">
-                  <SectionHeader
-                    className="mb-4"
-                    title="Hiragana"
-                    action={
-                      <button
-                        onClick={() => setSelectedCategory("hiragana")}
-                        className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                      >
-                        Ver todo ({hiraganas.length}) →
-                      </button>
-                    }
-                  />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {hiraganas.slice(0, 12).map((hiragana) => (
-                      <ContentCard
-                        key={hiragana.id}
-                        {...hiraganaToCard(hiragana)}
-                        onClick={() => handleKanaClick(hiragana)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Más kanjis */}
-              {!loadingKanjis && kanjis.length > 8 && (
-                <div className="mb-10">
-                  <SectionHeader
-                    className="mb-4"
-                    title="Colección de Kanjis"
-                    action={
-                      <button
-                        onClick={() => setSelectedCategory("kanji")}
-                        className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                      >
-                        Ver todo ({kanjis.length}) →
-                      </button>
-                    }
-                  />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {kanjis.slice(8, 24).map((kanji) => (
-                      <ContentCard
-                        key={kanji.id}
-                        {...kanjiToCard(kanji)}
-                        onClick={() => handleKanjiClick(kanji)}
-                        onFavoriteToggle={toggleFavoriteKanji}
-                        isFavorite={favoriteKanjis.has(kanji.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Empty state */}
-              {!loadingKanjis &&
-                kanjis.length === 0 &&
-                !loadingKatakanas &&
-                katakanas.length === 0 &&
-                !loadingHiraganas &&
-                hiraganas.length === 0 && (
+                ) : (
                   <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    <h3 className="mb-2 text-xl font-bold text-gray-900">
                       No hay contenido
                     </h3>
-                    <p className="text-gray-600 text-center max-w-md">
+                    <p className="max-w-md text-center text-gray-600">
                       No encontramos contenido disponible.
                     </p>
                   </div>
                 )}
-            </>
+              </div>
+            </div>
           )}
 
-          {/* ════════ Favoritos ════════ */}
           {selectedCategory === "favoritos" && (
             <div>
-              <div className="flex items-center justify-between mb-6">
+              <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-2xl font-bold text-gray-900">
                   Mis Favoritos
                 </h2>
@@ -612,10 +529,10 @@ export default function LibraryPage() {
 
               {favoriteKanjis.size > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-800">
                     Kanjis
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {kanjis
                       .filter((kanji) => favoriteKanjis.has(kanji.id))
                       .map((kanji) => (
@@ -633,10 +550,10 @@ export default function LibraryPage() {
 
               {favoriteData.grammar.length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-800">
                     Gramática
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {favoriteData.grammar.map((fav) => (
                       <ContentCard
                         key={fav.id}
@@ -651,10 +568,10 @@ export default function LibraryPage() {
 
               {favoriteData.word.length > 0 && (
                 <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
+                  <h3 className="mb-4 text-lg font-semibold text-gray-800">
                     Vocabulario
                   </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {favoriteData.word.map((fav) => (
                       <ContentCard
                         key={fav.id}
@@ -669,10 +586,10 @@ export default function LibraryPage() {
 
               {getTotalFavorites() === 0 && (
                 <div className="flex flex-col items-center justify-center py-16">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="mb-2 text-xl font-bold text-gray-900">
                     No tienes favoritos aún
                   </h3>
-                  <p className="text-gray-600 text-center max-w-md">
+                  <p className="max-w-md text-center text-gray-600">
                     Agrega contenido a favoritos haciendo clic en el corazón en
                     cualquier elemento.
                   </p>
@@ -681,10 +598,9 @@ export default function LibraryPage() {
             </div>
           )}
 
-          {/* ════════ Kanjis (filtro) ════════ */}
           {selectedCategory === "kanji" && (
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">
                   Colección de Kanjis
                 </h2>
@@ -693,14 +609,14 @@ export default function LibraryPage() {
                 </span>
               </div>
               {loadingKanjis ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {Array.from({ length: 12 }).map((_, i) => (
                     <SkeletonCard key={i} />
                   ))}
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {kanjis.map((kanji) => (
                       <ContentCard
                         key={kanji.id}
@@ -713,10 +629,10 @@ export default function LibraryPage() {
                   </div>
                   {kanjis.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      <h3 className="mb-2 text-xl font-bold text-gray-900">
                         No hay kanjis disponibles
                       </h3>
-                      <p className="text-gray-600 text-center max-w-md">
+                      <p className="max-w-md text-center text-gray-600">
                         No encontramos kanjis para mostrar.
                       </p>
                     </div>
@@ -726,10 +642,9 @@ export default function LibraryPage() {
             </div>
           )}
 
-          {/* ════════ Katakana (filtro) ════════ */}
           {selectedCategory === "katakana" && (
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">
                   Colección de Katakana
                 </h2>
@@ -738,14 +653,14 @@ export default function LibraryPage() {
                 </span>
               </div>
               {loadingKatakanas ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {Array.from({ length: 12 }).map((_, i) => (
                     <SkeletonCard key={i} />
                   ))}
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {katakanas.map((katakana) => (
                       <ContentCard
                         key={katakana.id}
@@ -756,10 +671,10 @@ export default function LibraryPage() {
                   </div>
                   {katakanas.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      <h3 className="mb-2 text-xl font-bold text-gray-900">
                         No hay katakana disponibles
                       </h3>
-                      <p className="text-gray-600 text-center max-w-md">
+                      <p className="max-w-md text-center text-gray-600">
                         No encontramos katakana para mostrar.
                       </p>
                     </div>
@@ -769,10 +684,9 @@ export default function LibraryPage() {
             </div>
           )}
 
-          {/* ════════ Hiragana (filtro) ════════ */}
           {selectedCategory === "hiragana" && (
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">
                   Colección de Hiragana
                 </h2>
@@ -781,14 +695,14 @@ export default function LibraryPage() {
                 </span>
               </div>
               {loadingHiraganas ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {Array.from({ length: 12 }).map((_, i) => (
                     <SkeletonCard key={i} />
                   ))}
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {hiraganas.map((hiragana) => (
                       <ContentCard
                         key={hiragana.id}
@@ -799,10 +713,10 @@ export default function LibraryPage() {
                   </div>
                   {hiraganas.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-16">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
+                      <h3 className="mb-2 text-xl font-bold text-gray-900">
                         No hay hiragana disponibles
                       </h3>
-                      <p className="text-gray-600 text-center max-w-md">
+                      <p className="max-w-md text-center text-gray-600">
                         No encontramos hiragana para mostrar.
                       </p>
                     </div>
@@ -812,17 +726,16 @@ export default function LibraryPage() {
             </div>
           )}
 
-          {/* ════════ Recientes (filtro) ════════ */}
           {selectedCategory === "recent" && (
             <div>
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-xl font-bold text-gray-900">Reciente</h2>
                 <span className="text-sm text-gray-600">
                   {recentItems.length} elementos
                 </span>
               </div>
               {recentItems.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                   {recentItems.map((r) => {
                     if (r.type === "kanji") {
                       const kanji = kanjis.find((k) => k.id === r.id);
@@ -873,10 +786,10 @@ export default function LibraryPage() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-16">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="mb-2 text-xl font-bold text-gray-900">
                     No hay elementos recientes
                   </h3>
-                  <p className="text-gray-600 text-center max-w-md">
+                  <p className="max-w-md text-center text-gray-600">
                     Los elementos que visites aparecerán aquí.
                   </p>
                 </div>
@@ -888,6 +801,7 @@ export default function LibraryPage() {
             kanji={selectedKanji}
             onClose={() => setSelectedKanji(null)}
           />
+
           {selectedKana && (
             <KanaDetailModal
               kana={selectedKana}

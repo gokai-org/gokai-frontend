@@ -41,56 +41,52 @@ export function RecentCard({ item, onClick }: RecentCardProps) {
         day: "numeric",
         month: "short",
       }).format(date);
-    } catch (e) {
+    } catch {
       return "Reciente";
     }
   };
 
   return (
-    <div
+    <button
+      type="button"
       onClick={onClick}
       className={[
-        "group flex items-center gap-5 p-4 rounded-[20px] bg-transparent border border-transparent",
-        "hover:bg-white hover:border-gray-100/50 hover:shadow-[0_4px_24px_-6px_rgba(0,0,0,0.05)]",
-        "transition-all duration-300 cursor-pointer select-none",
+        "group w-full text-left",
+        "flex items-center gap-4 rounded-2xl border border-gray-100 bg-[#FCFCFC] p-3.5",
+        "transition-all duration-300",
+        "hover:-translate-y-[1px] hover:border-[#993331]/15 hover:bg-white hover:shadow-sm",
+        "focus:outline-none focus:ring-2 focus:ring-[#993331]/20",
       ].join(" ")}
     >
-      {/* Ícono de la actividad (más grande: w-14 h-14) */}
-      <div className="shrink-0 flex items-center justify-center w-14 h-14 rounded-[16px] bg-[#BA5149]/10 text-[#BA5149] font-bold text-xl group-hover:bg-[#BA5149] group-hover:text-white transition-colors duration-300">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#993331]/8 text-lg font-bold text-[#993331] transition-colors duration-300 group-hover:bg-[#993331] group-hover:text-white">
         {item.thumbnail}
       </div>
 
-      {/* Textos centrales */}
-      <div className="flex-1 min-w-0 flex flex-col justify-center">
-        <h3 className="font-black text-[15px] text-gray-900 truncate group-hover:text-[#993331] transition-colors">
+      <div className="min-w-0 flex-1">
+        <h3 className="truncate text-[15px] font-extrabold text-gray-900 transition-colors group-hover:text-[#993331]">
           {item.title}
         </h3>
 
-        {item.description ? (
-          <p className="text-[13px] font-medium text-gray-400 truncate mt-1">
-            {item.description}
-          </p>
-        ) : (
-          <p className="text-[13px] font-medium text-gray-300 truncate mt-1">
-            Actividad completada
-          </p>
-        )}
+        <p className="mt-1 truncate text-[13px] font-medium text-gray-500">
+          {item.description || "Actividad reciente"}
+        </p>
       </div>
 
-      {/* Métricas lado derecho */}
-      <div className="shrink-0 flex flex-col items-end justify-center">
-        <span className="text-[12px] font-medium text-gray-400 mb-1">
+      <div className="shrink-0 text-right">
+        <span className="block text-[11px] font-semibold text-gray-400">
           {formatTime(item.lastAccessed)}
         </span>
 
         {item.progress !== undefined ? (
-          <span className="text-[15px] font-black text-[#993331]">
+          <span className="mt-1 block text-[14px] font-extrabold text-[#993331]">
             {item.progress}%
           </span>
         ) : (
-          <span className="text-[15px] font-black text-gray-300">--</span>
+          <span className="mt-1 block text-[14px] font-bold text-gray-300">
+            --
+          </span>
         )}
       </div>
-    </div>
+    </button>
   );
 }

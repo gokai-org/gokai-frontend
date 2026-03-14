@@ -17,10 +17,18 @@ export function Thumbnail({
 
   return (
     <div
-      className={`bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center relative overflow-hidden ${sizeClasses[size]} ${className}`}
+      className={[
+        "relative flex items-center justify-center overflow-hidden rounded-[20px]",
+        "bg-gradient-to-br from-[#FAF6F4] via-[#F8F3F1] to-[#F3E7E4]",
+        "border border-[#993331]/8",
+        sizeClasses[size],
+        className,
+      ].join(" ")}
     >
-      <div className="absolute inset-0 bg-gradient-to-t from-black/5 to-transparent" />
-      <span className="relative z-10 font-bold text-gray-900">{content}</span>
+      <div className="absolute inset-0 bg-gradient-to-t from-[#993331]/[0.06] to-transparent" />
+      <span className="relative z-10 font-bold tracking-tight text-[#993331]">
+        {content}
+      </span>
     </div>
   );
 }
