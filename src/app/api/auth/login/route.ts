@@ -1,43 +1,52 @@
 import { NextResponse } from "next/server";
 import { AUTH_COOKIE, getCookieConfig } from "@/shared/lib/auth/cookies";
+import { apiConfig } from "@/shared/config";
 
 export async function POST(req: Request) {
-  const base = process.env.GOKAI_USERS_API_BASE;
-  if (!base)
+  const base = apiConfig.usersApiBase;
+
+  if (!base) {
     return NextResponse.json(
-      { error: "Falta GOKAI_USERS_API_BASE" },
+      { error: "Falta configuración de usersApiBase" },
       { status: 500 },
-    );
-
-  const body = await req.json();
-
-  const r = await fetch(`${base}/users/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email: body.email, password: body.password }),
-  });
-
-  const text = await r.text();
-  let data: Record<string, unknown> | null = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {}
-
-  if (!r.ok) {
-    return NextResponse.json(
-      { error: data?.error || text || "Credenciales inválidas." },
-      { status: r.status },
     );
   }
 
-  const token = data?.token as string;
-  if (!token)
+  const body = await req.json();
+
+  const response = await fetch(`${base}/users/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      email: body.email,
+      password: body.password,
+    }),
+  });
+
+  const text = await response.text();
+  let data: Record<string, unknown> | null = null;
+
+  try {
+    data = text ? (JSON.parse(text) as Record<string, unknown>) : null;
+  } catch {}
+
+  if (!response.ok) {
+    return NextResponse.json(
+      { error: data?.error || text || "Credenciales inválidas." },
+      { status: response.status },
+    );
+  }
+
+  const token = data?.token as string | undefined;
+
+  if (!token) {
     return NextResponse.json(
       { error: "Respuesta inválida (token faltante)" },
       { status: 500 },
     );
+  }
 
-  const remember = !!body.remember;
+  const remember = Boolean(body.remember);
   const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7;
 
   const res = NextResponse.json({

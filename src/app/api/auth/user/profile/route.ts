@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
+import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
-
-const USERS_API_BASE =
-  process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
 
 export async function PATCH(request: NextRequest) {
   console.log("PATCH /api/auth/user/profile called");
 
   try {
     const token = getTokenFromRequest(request);
+
     if (!token) {
       console.error("No token found");
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -42,14 +41,24 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updateData: Record<string, string> = {};
+
     if (finalFirstName) {
       updateData.first_name = finalFirstName;
-      if (finalLastName) updateData.last_name = finalLastName;
+      if (finalLastName) {
+        updateData.last_name = finalLastName;
+      }
     }
-    if (email) updateData.email = email;
-    if (birthdate) updateData.birthdate = birthdate;
+
+    if (email) {
+      updateData.email = email;
+    }
+
+    if (birthdate) {
+      updateData.birthdate = birthdate;
+    }
 
     const tokenParts = token.split(".");
+
     if (tokenParts.length !== 3) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
@@ -64,7 +73,7 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${USERS_API_BASE}/users/${userId}`, {
+    const response = await fetch(`${apiConfig.usersApiBase}/users/${userId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -77,6 +86,7 @@ export async function PATCH(request: NextRequest) {
       const errorData = await response
         .json()
         .catch(() => ({ error: "Error al actualizar perfil" }));
+
       return NextResponse.json(
         { error: errorData.error || "Error al actualizar perfil" },
         { status: response.status },

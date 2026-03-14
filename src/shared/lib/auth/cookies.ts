@@ -1,12 +1,13 @@
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
 import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
+import { appConfig } from "@/shared/config";
 
 export const AUTH_COOKIE = "gokai_token";
 
 const COOKIE_CONFIG: Partial<ResponseCookie> = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
+  secure: appConfig.isProduction,
   sameSite: "lax",
   path: "/",
 };
@@ -39,6 +40,7 @@ export function getTokenFromRequest(req: NextRequest | Request): string | null {
   ) {
     return (req as NextRequest).cookies.get(AUTH_COOKIE)?.value ?? null;
   }
+
   const header = req.headers.get("cookie") ?? "";
   const match = header.match(new RegExp(`(?:^|;\\s*)${AUTH_COOKIE}=([^;]*)`));
   return match?.[1] ?? null;

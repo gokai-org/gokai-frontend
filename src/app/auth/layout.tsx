@@ -2,6 +2,7 @@
 
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { ToastProvider } from "@/shared/ui/ToastProvider";
+import { authConfig } from "@/shared/config";
 
 export default function AuthLayout({
   children,
@@ -9,9 +10,7 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <GoogleOAuthProvider
-      clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || ""}
-    >
+    <GoogleOAuthProvider clientId={authConfig.publicGoogleClientId}>
       <ToastProvider>{children}</ToastProvider>
     </GoogleOAuthProvider>
   );

@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiConfig } from "@/shared/config";
 
 export async function POST(req: NextRequest) {
-  const base = process.env.GOKAI_USERS_API_BASE;
+  const base = apiConfig.usersApiBase;
+
   if (!base) {
     return NextResponse.json(
-      { error: "Falta GOKAI_USERS_API_BASE" },
+      { error: "Falta configuración de usersApiBase" },
       { status: 500 },
     );
   }
 
   let body: Record<string, unknown> | null = null;
+
   try {
     body = await req.json();
   } catch {
@@ -36,7 +39,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const r = await fetch(`${base}/users/`, {
+  const response = await fetch(`${base}/users/`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -49,18 +52,19 @@ export async function POST(req: NextRequest) {
     }),
   });
 
-  const text = await r.text();
+  const text = await response.text();
   let data: Record<string, unknown> | null = null;
+
   try {
-    data = text ? JSON.parse(text) : null;
+    data = text ? (JSON.parse(text) as Record<string, unknown>) : null;
   } catch {
-    // Non-JSON backend response
+    // Backend devolvió algo que no es JSON
   }
 
-  if (!r.ok) {
+  if (!response.ok) {
     return NextResponse.json(
       { error: data?.error || text || "No se pudo registrar." },
-      { status: r.status },
+      { status: response.status },
     );
   }
 

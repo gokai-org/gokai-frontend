@@ -15,22 +15,18 @@ export async function getFavorites(): Promise<FavoritesResponse> {
 }
 
 /** POST /api/content/favorites → { id, type: "kanji"|"grammar"|"word" } */
-export async function addFavorite(
-  id: string,
-  type: FavoriteType,
-): Promise<void> {
-  await apiFetch("/api/content/favorites", {
+export async function addFavorite(id: string, type: "kanji" | "grammar" | "word") {
+  return apiFetch("/api/content/favorites", {
     method: "POST",
     body: JSON.stringify({ id, type }),
   });
 }
 
 /** DELETE /api/content/favorites/:type/:id */
-export async function removeFavorite(
-  id: string,
-  type: FavoriteType,
-): Promise<void> {
-  await apiFetch(`/api/content/favorites/${type}/${id}`, { method: "DELETE" });
+export async function removeFavorite(id: string, type: "kanji" | "grammar" | "word") {
+  return apiFetch(`/api/content/favorites/${type}/${id}`, {
+    method: "DELETE",
+  });
 }
 
 // ========================================

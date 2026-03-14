@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
+import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
-
-const USERS_API_BASE =
-  process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
-const SUBSCRIPTIONS_API_BASE =
-  process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
 
 export async function GET(req: NextRequest) {
   try {
     const token = getTokenFromRequest(req);
+
     if (!token) {
       console.log("No token found");
       return NextResponse.json({ user: null }, { status: 401 });
@@ -20,10 +17,12 @@ export async function GET(req: NextRequest) {
 
     try {
       const tokenParts = token.split(".");
+
       if (tokenParts.length === 3) {
         const payload = JSON.parse(
           Buffer.from(tokenParts[1], "base64").toString(),
         );
+
         console.log("Token payload:", payload);
 
         const userId = payload.userId || payload.sub || payload.id;
@@ -33,7 +32,7 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ user: null }, { status: 401 });
         }
 
-        const response = await fetch(`${USERS_API_BASE}/users/${userId}`, {
+        const response = await fetch(`${apiConfig.usersApiBase}/users/${userId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -70,12 +69,12 @@ export async function GET(req: NextRequest) {
         const firstName = userData.first_name || "";
         const lastName = userData.last_name || "";
 
-        // Check subscription status from the subscriptions service
         let plan: "free" | "premium" | "pro" = "free";
         let subscribed = false;
+
         try {
           const subRes = await fetch(
-            `${SUBSCRIPTIONS_API_BASE}/subscriptions/${userId}`,
+            `${apiConfig.subscriptionsApiBase}/subscriptions/${userId}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -83,8 +82,10 @@ export async function GET(req: NextRequest) {
               },
             },
           );
+
           if (subRes.ok) {
             const subData = await subRes.json();
+
             if (subData?.status === "active") {
               plan = "premium";
               subscribed = true;
@@ -97,8 +98,8 @@ export async function GET(req: NextRequest) {
         const user = {
           id: userData.id,
           email: userData.email,
-          firstName: firstName,
-          lastName: lastName,
+          firstName,
+          lastName,
           name:
             firstName && lastName
               ? `${firstName} ${lastName}`
@@ -134,6 +135,7 @@ export async function PATCH(request: NextRequest) {
     console.log("PATCH /api/auth/user called");
 
     const token = getTokenFromRequest(request);
+
     if (!token) {
       console.log("No token found");
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -143,6 +145,7 @@ export async function PATCH(request: NextRequest) {
     console.log("Request body:", body);
 
     const tokenParts = token.split(".");
+
     if (tokenParts.length !== 3) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
@@ -165,6 +168,7 @@ export async function PATCH(request: NextRequest) {
     if (body.firstName !== undefined) {
       updateData.firstName = body.firstName;
     }
+
     if (body.lastName !== undefined) {
       updateData.lastName = body.lastName;
     }
@@ -172,27 +176,19 @@ export async function PATCH(request: NextRequest) {
     if (body.name && !body.firstName && !body.lastName) {
       const nameParts = body.name.trim().split(" ");
       updateData.firstName = nameParts[0];
+
       if (nameParts.length > 1) {
         updateData.lastName = nameParts.slice(1).join(" ");
       }
     }
 
-    // El backend aún no soporta actualizar email y birthdate
-    // if (body.email !== undefined) {
-    //   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    //   if (!emailRegex.test(body.email)) {
-    //     return NextResponse.json({ error: "Email inválido" }, { status: 400 });
-    //   }
-    //   updateData.email = body.email;
-    // }
-    // if (body.birthdate !== undefined) {
-    //   updateData.birthdate = body.birthdate;
-    // }
-
     console.log("Updating user with data:", updateData);
-    console.log("Calling backend URL:", `${USERS_API_BASE}/users/${userId}`);
+    console.log(
+      "Calling backend URL:",
+      `${apiConfig.usersApiBase}/users/${userId}`,
+    );
 
-    const response = await fetch(`${USERS_API_BASE}/users/${userId}`, {
+    const response = await fetch(`${apiConfig.usersApiBase}/users/${userId}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -206,6 +202,7 @@ export async function PATCH(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Error updating user:", response.status, errorText);
+
       return NextResponse.json(
         { error: "Error al actualizar perfil" },
         { status: response.status },
@@ -221,8 +218,8 @@ export async function PATCH(request: NextRequest) {
     const user = {
       id: userData.id,
       email: userData.email,
-      firstName: firstName,
-      lastName: lastName,
+      firstName,
+      lastName,
       name:
         firstName && lastName
           ? `${firstName} ${lastName}`
@@ -249,13 +246,16 @@ export async function PATCH(request: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const token = getTokenFromRequest(req);
+
     if (!token) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    await fetch(`${USERS_API_BASE}/users/me`, {
+    await fetch(`${apiConfig.usersApiBase}/users/me`, {
       method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
     });
 
     return NextResponse.json({ success: true });

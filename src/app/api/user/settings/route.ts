@@ -1,12 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
+import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
-
-const USERS_API_BASE =
-  process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
-
-// ─── Helpers ─────────────────────────────────────────────────────
 
 function getUserIdFromToken(token: string): string | null {
   try {
@@ -19,71 +15,73 @@ function getUserIdFromToken(token: string): string | null {
   }
 }
 
-/**
- * Convierte claves camelCase → snake_case para enviar al backend Go.
- */
 function toSnakeCase(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
+
   for (const [key, value] of Object.entries(obj)) {
     const snakeKey = key.replace(
       /[A-Z]/g,
       (letter) => `_${letter.toLowerCase()}`,
     );
+
     if (value && typeof value === "object" && !Array.isArray(value)) {
       result[snakeKey] = toSnakeCase(value as Record<string, unknown>);
     } else {
       result[snakeKey] = value;
     }
   }
+
   return result;
 }
 
-/**
- * Convierte claves snake_case → camelCase al recibir del backend Go.
- */
 function toCamelCase(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
+
   for (const [key, value] of Object.entries(obj)) {
     const camelKey = key.replace(/_([a-z])/g, (_, letter) =>
       letter.toUpperCase(),
     );
+
     if (value && typeof value === "object" && !Array.isArray(value)) {
       result[camelKey] = toCamelCase(value as Record<string, unknown>);
     } else {
       result[camelKey] = value;
     }
   }
+
   return result;
 }
-
-// ─── GET /api/user/settings ──────────────────────────────────────
-// Obtiene todas las configuraciones del usuario.
 
 export async function GET(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
+
     if (!token) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
     const userId = getUserIdFromToken(token);
+
     if (!userId) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
-    const response = await fetch(`${USERS_API_BASE}/users/${userId}/settings`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${apiConfig.usersApiBase}/users/${userId}/settings`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       },
-    });
+    );
 
     if (!response.ok) {
-      // Si 404, el usuario aún no tiene settings → devolver null para que el front use defaults
       if (response.status === 404) {
         return NextResponse.json({ settings: null });
       }
+
       const errorData = await response.json().catch(() => ({}));
       return NextResponse.json(
         { error: errorData.error || "Error al obtener configuración" },
@@ -104,18 +102,16 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ─── PATCH /api/user/settings ────────────────────────────────────
-// Actualiza parcialmente la configuración del usuario.
-// Body esperado: { section: "general" | "notifications" | ... , data: { ...fields } }
-
 export async function PATCH(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
+
     if (!token) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
     const userId = getUserIdFromToken(token);
+
     if (!userId) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
@@ -148,14 +144,17 @@ export async function PATCH(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${USERS_API_BASE}/users/${userId}/settings`, {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${apiConfig.usersApiBase}/users/${userId}/settings`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ section, data }),
       },
-      body: JSON.stringify({ section, data }),
-    });
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
@@ -178,31 +177,33 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// ─── PUT /api/user/settings ──────────────────────────────────────
-// Reemplaza TODAS las configuraciones del usuario (bulk save).
-
 export async function PUT(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
+
     if (!token) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
     const userId = getUserIdFromToken(token);
+
     if (!userId) {
       return NextResponse.json({ error: "Token inválido" }, { status: 401 });
     }
 
     const body = await request.json();
 
-    const response = await fetch(`${USERS_API_BASE}/users/${userId}/settings`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    const response = await fetch(
+      `${apiConfig.usersApiBase}/users/${userId}/settings`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+    );
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));

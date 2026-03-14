@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
+import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
-
-const BASE = process.env.GOKAI_CONTENT_API_BASE!;
 
 /**
  * GET /api/content/kana/:id
@@ -16,6 +15,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> },
 ) {
   const raw = getTokenFromRequest(req);
+
   if (!raw) {
     return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
   }
@@ -23,7 +23,7 @@ export async function GET(
   const token = normalizeBearerToken(raw);
   const { id } = await params;
 
-  const upstream = await fetch(`${BASE}/content/kana/${id}`, {
+  const upstream = await fetch(`${apiConfig.contentApiBase}/content/kana/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });

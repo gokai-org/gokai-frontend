@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
+import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
-
-const BASE = process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
 
 const VALID_CATEGORIES = new Set([
   "technical_issue",
@@ -15,34 +14,15 @@ const VALID_CATEGORIES = new Set([
   "other",
 ]);
 
-/**
- * POST /api/support/tickets
- * Proxy → POST {USERS_API_BASE}/support/tickets
- *
- * Body (JSON):
- *   name      – string, requerido
- *   email     – string, requerido, formato email
- *   subject   – string, requerido
- *   category  – SupportCategory, requerido
- *   message   – string, requerido (min 10 chars)
- *
- * Respuesta exitosa (201):
- *   { id, status, created_at }
- *
- * Errores:
- *   400 – campos faltantes o inválidos
- *   401 – no autenticado
- *   500 – error interno
- */
 export async function POST(req: NextRequest) {
   const raw = getTokenFromRequest(req);
+
   if (!raw) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
   const token = normalizeBearerToken(raw);
 
-  /* ── Parsear body ─────────────────────── */
   let body: Record<string, unknown>;
   try {
     body = await req.json();
@@ -59,7 +39,6 @@ export async function POST(req: NextRequest) {
   const category = String(body.category ?? "").trim();
   const message = String(body.message ?? "").trim();
 
-  /* ── Validación ───────────────────────── */
   const errors: string[] = [];
 
   if (!name) errors.push("'name' es requerido");
@@ -83,9 +62,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: errors.join(". ") }, { status: 400 });
   }
 
-  /* ── Proxy al backend ─────────────────── */
   try {
-    const upstream = await fetch(`${BASE}/support/tickets`, {
+    const upstream = await fetch(`${apiConfig.usersApiBase}/support/tickets`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

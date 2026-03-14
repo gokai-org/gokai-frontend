@@ -1,20 +1,15 @@
 import { NextResponse } from "next/server";
+import { apiConfig } from "@/shared/config";
 
 /**
  * POST /api/auth/verification/verify-email
- *
- * Body:
- *   - email: string
- *   - code:  string   — código de 5 dígitos
- *
- * Proxy hacia el backend de usuarios:
- *   POST {GOKAI_USERS_API_BASE}/users/verification/verify-email
  */
 export async function POST(req: Request) {
-  const base = process.env.GOKAI_USERS_API_BASE;
+  const base = apiConfig.usersApiBase;
+
   if (!base) {
     return NextResponse.json(
-      { error: "Falta GOKAI_USERS_API_BASE" },
+      { error: "Falta configuración de usersApiBase" },
       { status: 500 },
     );
   }
@@ -40,26 +35,25 @@ export async function POST(req: Request) {
   }
 
   try {
-    const r = await fetch(`${base}/users/verification/verify-email`, {
+    const response = await fetch(`${base}/users/verification/verify-email`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, code }),
     });
 
-    const text = await r.text();
+    const text = await response.text();
     let data: Record<string, unknown> | null = null;
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      /* respuesta no-JSON del backend */
-    }
 
-    if (!r.ok) {
+    try {
+      data = text ? (JSON.parse(text) as Record<string, unknown>) : null;
+    } catch {}
+
+    if (!response.ok) {
       return NextResponse.json(
         {
           error: data?.error || text || "No se pudo verificar el correo.",
         },
-        { status: r.status },
+        { status: response.status },
       );
     }
 
