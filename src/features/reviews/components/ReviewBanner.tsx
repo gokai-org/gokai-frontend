@@ -14,18 +14,19 @@ export function ReviewBanner({
   heavyAnimationsEnabled = true,
 }: ReviewBannerProps) {
   return (
-    <div className="relative mb-8 overflow-hidden rounded-3xl bg-gradient-to-r from-[#993331] to-[#7a2927] p-8 text-white shadow-lg md:p-10">
-      <div className="absolute right-0 top-0 h-64 w-64 translate-x-1/3 -translate-y-1/2 rounded-full bg-white/5" />
-      <div className="absolute bottom-0 left-1/2 h-48 w-48 translate-y-1/2 rounded-full bg-white/5" />
+    <section className="relative mb-8 overflow-hidden rounded-[32px] bg-gradient-to-r from-[#993331] to-[#7a2927] p-6 text-white shadow-lg sm:p-8 lg:p-10">
+      <div className="absolute right-[-20px] top-[-40px] h-44 w-44 rounded-full bg-white/5" />
+      <div className="absolute bottom-[-30px] left-[30%] h-32 w-32 rounded-full bg-white/5" />
+      <div className="absolute right-[12%] top-[50%] h-20 w-20 rounded-full bg-white/5" />
 
-      <div className="relative z-10 flex flex-col items-start justify-between gap-6 md:flex-row md:items-center">
-        <div>
+      <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="min-w-0">
           <AnimatedEntrance
             index={0}
             disabled={!animationsEnabled}
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >
-            <p className="mb-1 text-sm font-medium text-white/80">
+            <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-white/65">
               Sesión de repaso
             </p>
           </AnimatedEntrance>
@@ -35,7 +36,7 @@ export function ReviewBanner({
             disabled={!animationsEnabled}
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >
-            <h2 className="text-3xl font-extrabold tracking-tight md:text-4xl">
+            <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl lg:text-4xl">
               ¡Hora de repasar!
             </h2>
           </AnimatedEntrance>
@@ -45,10 +46,10 @@ export function ReviewBanner({
             disabled={!animationsEnabled}
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >
-            <p className="mt-2 max-w-md text-sm text-white/80">
+            <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/78 sm:text-[15px]">
               復習の時間です。少しずつ進めましょう！
               <br />
-              <span className="text-xs text-white/60">
+              <span className="text-xs text-white/60 sm:text-sm">
                 Es momento de repasar. ¡Vamos paso a paso!
               </span>
             </p>
@@ -60,16 +61,18 @@ export function ReviewBanner({
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
-          <div className="flex items-center gap-4">
-            <div className="text-center">
-              <p className="text-4xl font-extrabold">{pendingCount}</p>
-              <p className="mt-1 text-xs font-medium text-white/70">
+          <div className="rounded-[24px] border border-white/10 bg-white/8 p-3 backdrop-blur-sm sm:p-4">
+            <div className="min-w-[120px] rounded-2xl bg-white/6 px-4 py-4 text-center">
+              <p className="text-3xl font-extrabold leading-none text-white sm:text-4xl">
+                {pendingCount}
+              </p>
+              <p className="mt-1 text-[11px] font-semibold text-white/70 sm:text-xs">
                 Pendientes
               </p>
             </div>
           </div>
         </AnimatedEntrance>
       </div>
-    </div>
+    </section>
   );
 }

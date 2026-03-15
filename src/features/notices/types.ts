@@ -2,8 +2,8 @@ export type NoticeCategory =
   | "lesson"
   | "review"
   | "achievement"
-  | "system"
-  | "streak";
+  | "streak"
+  | "system";
 
 export interface Notice {
   id: string;
@@ -12,7 +12,13 @@ export interface Notice {
   category: NoticeCategory;
   read: boolean;
   pinned: boolean;
-  createdAt: string; // ISO-8601
+  createdAt: string;
   actionLabel?: string;
   actionHref?: string;
+}
+
+export interface NoticeCategoryItem {
+  id: NoticeCategory;
+  name: string;
+  count: number;
 }
