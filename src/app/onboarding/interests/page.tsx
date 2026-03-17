@@ -21,12 +21,6 @@ const INTEREST_SECTIONS = [
         color: "bg-[#A64949]",
       },
       {
-        id: "videojuegos",
-        kanji: "ビデオゲーム",
-        meaning: "Videojuegos",
-        color: "bg-[#C17B6F]",
-      },
-      {
         id: "hobbies",
         kanji: "趣味・娯楽",
         meaning: "Hobbies y Ocio",

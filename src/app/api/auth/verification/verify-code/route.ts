@@ -1,23 +1,15 @@
 import { NextResponse } from "next/server";
+import { apiConfig } from "@/shared/config";
 
 /**
  * POST /api/auth/verification/verify-code
- *
- * Body (frontend):
- *   - email: string
- *   - code: string
- *   - type: "password-recovery" | "email-verification"
- *
- * Body expected by backend:
- *   - email: string
- *   - code: string
- *   - type: "password" | "verification"
  */
 export async function POST(req: Request) {
-  const base = process.env.GOKAI_USERS_API_BASE;
+  const base = apiConfig.usersApiBase;
+
   if (!base) {
     return NextResponse.json(
-      { error: "Falta GOKAI_USERS_API_BASE" },
+      { error: "Falta configuración de usersApiBase" },
       { status: 500 },
     );
   }
@@ -67,31 +59,35 @@ export async function POST(req: Request) {
   }
 
   try {
-    const r = await fetch(`${base}/users/verification/verify-code`, {
+    const response = await fetch(`${base}/users/verification/verify-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, code, type }),
     });
 
-    const text = await r.text();
+    const text = await response.text();
     let data: Record<string, unknown> | null = null;
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      // Non-JSON backend response
-    }
 
-    if (!r.ok) {
-      console.error("verify-code backend error:", { status: r.status, text });
+    try {
+      data = text ? (JSON.parse(text) as Record<string, unknown>) : null;
+    } catch {}
+
+    if (!response.ok) {
+      console.error("verify-code backend error:", {
+        status: response.status,
+        text,
+      });
+
       return NextResponse.json(
         { error: data?.error || text || "Codigo invalido o expirado." },
-        { status: r.status },
+        { status: response.status },
       );
     }
 
     return NextResponse.json({
       success: true,
-      message: (data?.message as string) || "Codigo verificado correctamente.",
+      message:
+        (data?.message as string) || "Codigo verificado correctamente.",
     });
   } catch (err) {
     console.error("Error al verificar codigo:", err);

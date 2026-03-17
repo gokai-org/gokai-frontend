@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiConfig } from "@/shared/config";
 
 /**
  * POST /api/auth/verification/reset-password
@@ -12,10 +13,11 @@ import { NextResponse } from "next/server";
  *   POST {GOKAI_USERS_API_BASE}/users/verification/reset-password
  */
 export async function POST(req: Request) {
-  const base = process.env.GOKAI_USERS_API_BASE;
+  const base = apiConfig.usersApiBase;
+
   if (!base) {
     return NextResponse.json(
-      { error: "Falta GOKAI_USERS_API_BASE" },
+      { error: "Falta configuración de usersApiBase" },
       { status: 500 },
     );
   }
@@ -49,34 +51,31 @@ export async function POST(req: Request) {
   }
 
   try {
-    const r = await fetch(`${base}/users/verification/reset-password`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        email,
-        code,
+    const response = await fetch(
+      `${base}/users/verification/reset-password`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          code,
+          password: newPassword,
+          newPassword,
+          type: "password",
+        }),
+      },
+    );
 
-        password: newPassword,
-
-        newPassword,
-
-        type: "password",
-      }),
-    });
-
-    const text = await r.text();
-    let data: any = null;
+    const text = await response.text();
+    let data: Record<string, unknown> | null = null;
 
     try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      /* respuesta no-JSON del backend */
-    }
+      data = text ? (JSON.parse(text) as Record<string, unknown>) : null;
+    } catch {}
 
-    if (!r.ok) {
-      // útil para debug en consola del servidor Next
+    if (!response.ok) {
       console.error("reset-password backend error:", {
-        status: r.status,
+        status: response.status,
         text,
       });
 
@@ -84,7 +83,7 @@ export async function POST(req: Request) {
         {
           error: data?.error || text || "No se pudo restablecer la contraseña.",
         },
-        { status: r.status },
+        { status: response.status },
       );
     }
 

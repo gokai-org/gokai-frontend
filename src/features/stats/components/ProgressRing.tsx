@@ -18,6 +18,7 @@ interface ProgressRingProps {
   title?: string;
   subtitle?: string;
   loading?: boolean;
+  animationsEnabled?: boolean;
 }
 
 /* ── Color map para categorías ── */
@@ -45,10 +46,12 @@ function Ring({
   categories,
   size = 180,
   strokeWidth = 20,
+  animationsEnabled = true,
 }: {
   categories: ColoredCategory[];
   size?: number;
   strokeWidth?: number;
+  animationsEnabled?: boolean;
 }) {
   const [animated, setAnimated] = useState(false);
   const radius = (size - strokeWidth) / 2;
@@ -56,9 +59,14 @@ function Ring({
   const center = size / 2;
 
   useEffect(() => {
+    if (!animationsEnabled) {
+      setAnimated(true);
+      return;
+    }
+
     const t = setTimeout(() => setAnimated(true), 100);
     return () => clearTimeout(t);
-  }, []);
+  }, [animationsEnabled]);
 
   const segments = useMemo(() => {
     return categories.map((cat, i) => {
@@ -91,12 +99,16 @@ function Ring({
           fill="none"
           stroke={cat.color}
           strokeWidth={strokeWidth}
-          strokeDasharray={`${animated ? segmentLength : 0} ${circumference}`}
+          strokeDasharray={`${
+            animationsEnabled ? (animated ? segmentLength : 0) : segmentLength
+          } ${circumference}`}
           strokeDashoffset={-startOffset}
           strokeLinecap="round"
           transform={`rotate(-90 ${center} ${center})`}
           style={{
-            transition: "stroke-dasharray 1.2s cubic-bezier(0.22, 1, 0.36, 1)",
+            transition: animationsEnabled
+              ? "stroke-dasharray 1.2s cubic-bezier(0.22, 1, 0.36, 1)"
+              : undefined,
           }}
         />
       ))}
@@ -112,7 +124,11 @@ export function ProgressRing({
   title = "Progreso total",
   subtitle = "Distribución de estudio por categoría",
   loading,
+  animationsEnabled = true,
 }: ProgressRingProps) {
+  const Wrapper = animationsEnabled ? motion.div : "div";
+  const TotalWrapper = animationsEnabled ? motion.span : "span";
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
@@ -125,10 +141,18 @@ export function ProgressRing({
 
   if (!categories || categories.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+      <Wrapper
+        {...(animationsEnabled
+          ? {
+              initial: { opacity: 0, scale: 0.95 },
+              animate: { opacity: 1, scale: 1 },
+              transition: {
+                duration: 0.6,
+                delay: 0.15,
+                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+              },
+            }
+          : {})}
         className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
       >
         <div className="mb-4">
@@ -170,16 +194,24 @@ export function ProgressRing({
             entre categorías.
           </p>
         </div>
-      </motion.div>
+      </Wrapper>
     );
   }
 
   const colored = withColors(categories);
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.6, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
+    <Wrapper
+      {...(animationsEnabled
+        ? {
+            initial: { opacity: 0, scale: 0.95 },
+            animate: { opacity: 1, scale: 1 },
+            transition: {
+              duration: 0.6,
+              delay: 0.15,
+              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            },
+          }
+        : {})}
       className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
     >
       <div className="mb-4">
@@ -189,18 +221,22 @@ export function ProgressRing({
 
       <div className="flex items-center justify-center">
         <div className="relative">
-          <Ring categories={colored} />
+          <Ring categories={colored} animationsEnabled={animationsEnabled} />
           {/* Center label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-xs text-gray-500 font-medium">Total</span>
-            <motion.span
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.5, duration: 0.4 }}
+            <TotalWrapper
+              {...(animationsEnabled
+                ? {
+                    initial: { opacity: 0, scale: 0.5 },
+                    animate: { opacity: 1, scale: 1 },
+                    transition: { delay: 0.5, duration: 0.4 },
+                  }
+                : {})}
               className="text-2xl font-extrabold text-gray-900"
             >
               {total}
-            </motion.span>
+            </TotalWrapper>
             <span className="text-xs text-gray-400">items</span>
           </div>
         </div>
@@ -225,6 +261,6 @@ export function ProgressRing({
           </div>
         ))}
       </div>
-    </motion.div>
+    </Wrapper>
   );
 }

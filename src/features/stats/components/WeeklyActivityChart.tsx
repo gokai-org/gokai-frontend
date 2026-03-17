@@ -21,6 +21,7 @@ interface WeeklyActivityChartProps {
   subtitle?: string;
   highlight?: string;
   loading?: boolean;
+  animationsEnabled?: boolean;
 }
 
 /*  Custom tooltip   */
@@ -53,7 +54,10 @@ export function WeeklyActivityChart({
   subtitle = "Minutos de estudio por día",
   highlight,
   loading,
+  animationsEnabled = true,
 }: WeeklyActivityChartProps) {
+  const Wrapper = animationsEnabled ? motion.div : "div";
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
@@ -66,10 +70,18 @@ export function WeeklyActivityChart({
 
   if (!data || data.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+      <Wrapper
+        {...(animationsEnabled
+          ? {
+              initial: { opacity: 0, y: 20 },
+              animate: { opacity: 1, y: 0 },
+              transition: {
+                duration: 0.6,
+                delay: 0.1,
+                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+              },
+            }
+          : {})}
         className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
       >
         <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
@@ -98,7 +110,7 @@ export function WeeklyActivityChart({
             aparecerá aquí.
           </p>
         </div>
-      </motion.div>
+      </Wrapper>
     );
   }
 
@@ -111,10 +123,18 @@ export function WeeklyActivityChart({
   const highlightDay = highlight ?? maxDay.day;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+    <Wrapper
+      {...(animationsEnabled
+        ? {
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 },
+            transition: {
+              duration: 0.6,
+              delay: 0.1,
+              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            },
+          }
+        : {})}
       className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
     >
       <div className="flex items-start justify-between mb-1">
@@ -168,7 +188,7 @@ export function WeeklyActivityChart({
             <Bar
               dataKey="minutes"
               radius={[8, 8, 0, 0]}
-              animationDuration={1000}
+              animationDuration={animationsEnabled ? 1000 : 0}
               animationEasing="ease-out"
             >
               {data.map((entry) => (
@@ -182,6 +202,6 @@ export function WeeklyActivityChart({
           </BarChart>
         </ResponsiveContainer>
       </div>
-    </motion.div>
+    </Wrapper>
   );
 }

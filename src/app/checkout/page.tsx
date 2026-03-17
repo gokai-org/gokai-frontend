@@ -15,6 +15,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
+import { billingConfig } from "@/shared/config";
 
 const PLAN_FEATURES = [
   {
@@ -65,9 +66,7 @@ export default function CheckoutPage() {
     return () => clearTimeout(t);
   }, []);
 
-  const STRIPE_PRICE_ID =
-    process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_ID ??
-    process.env.SUBSCRIPTION_PRICE_ID;
+  const stripePriceId = billingConfig.publicSubscriptionPriceId;
 
   async function claimCoupon(
     code: string,
@@ -134,7 +133,7 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!STRIPE_PRICE_ID) {
+    if (!stripePriceId) {
       setError("Error de configuración: falta el identificador de precio.");
       setLoading(false);
       return;
@@ -145,16 +144,18 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId: STRIPE_PRICE_ID,
+          priceId: stripePriceId,
           successUrl: `${window.location.origin}/checkout/success`,
         }),
       });
+
       const data = await res.json();
 
       if (data.url) {
         window.location.href = data.url;
         return;
       }
+
       setError(data.error || "Error al iniciar el pago.");
     } catch {
       setError("Error de red. Inténtalo de nuevo.");
@@ -168,7 +169,6 @@ export default function CheckoutPage() {
       <AnimatedGraphBackground />
       <div className="absolute inset-0 bg-linear-to-b from-white/20 via-white/10 to-white/30" />
 
-      {/* Centrado vertical + horizontal, scroll solo si el viewport es muy pequeño */}
       <div className="relative z-10 flex min-h-screen items-center justify-center overflow-y-auto px-4 py-8 sm:px-6 sm:py-12">
         <motion.div
           className="w-full max-w-lg md:max-w-3xl"
@@ -176,17 +176,13 @@ export default function CheckoutPage() {
           animate={ready ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          {/* Card — horizontal desktop, vertical móvil */}
           <div className="overflow-hidden rounded-2xl bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur flex flex-col md:flex-row">
-            {/* ═══ PANEL IZQUIERDO — Gradiente + info ═══ */}
             <div className="relative flex flex-col justify-between bg-gradient-to-br from-[#993331] to-[#BA5149] text-white overflow-hidden md:w-[340px] md:min-h-[480px] flex-shrink-0">
-              {/* Decoración */}
               <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10" />
               <div className="pointer-events-none absolute -left-6 bottom-8 h-20 w-20 rounded-full bg-white/5" />
               <div className="pointer-events-none absolute right-4 bottom-4 h-14 w-14 rounded-full bg-white/5" />
 
               <div className="relative z-[1] px-6 pt-6 pb-6 md:pb-0 md:pt-8 md:px-7">
-                {/* Logo + badge */}
                 <div className="flex flex-col items-center md:items-start">
                   <a href="/" className="inline-block">
                     <motion.div
@@ -242,7 +238,6 @@ export default function CheckoutPage() {
                   <span className="text-sm text-white/60">MXN / mes</span>
                 </motion.div>
 
-                {/* Features compactas (solo desktop) */}
                 <motion.div
                   className="mt-6 hidden md:block space-y-2.5"
                   initial={{ opacity: 0 }}
@@ -267,7 +262,6 @@ export default function CheckoutPage() {
                 </motion.div>
               </div>
 
-              {/* Sello seguridad (solo desktop) */}
               <motion.div
                 className="hidden md:flex items-center gap-3 px-7 pb-6 text-white/50 text-xs"
                 initial={{ opacity: 0 }}
@@ -279,9 +273,7 @@ export default function CheckoutPage() {
               </motion.div>
             </div>
 
-            {/* ═══ PANEL DERECHO — Features detalladas + CTA ═══ */}
             <div className="flex flex-1 flex-col min-w-0">
-              {/* Features detalladas */}
               <div className="px-5 py-5 md:px-6 md:pt-6 md:pb-4 flex-1">
                 <p className="text-sm font-semibold text-gray-900 mb-3">
                   Todo lo que incluye GOKAI+:
@@ -311,9 +303,7 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              {/* Cupón + CTA */}
               <div className="border-t border-gray-100 px-5 py-4 md:px-6 md:py-5 space-y-3 bg-gray-50/50">
-                {/* Cupón */}
                 <div>
                   <label className="block text-xs font-medium text-gray-500 mb-1.5">
                     ¿Tienes un cupón?
@@ -345,7 +335,6 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                {/* Total */}
                 <div className="flex items-center justify-between px-1">
                   <span className="text-sm font-semibold text-gray-700">
                     Total hoy
@@ -355,7 +344,6 @@ export default function CheckoutPage() {
                   </span>
                 </div>
 
-                {/* CTA */}
                 <motion.button
                   type="button"
                   disabled={loading}
@@ -407,7 +395,6 @@ export default function CheckoutPage() {
                   Puedes cancelar en cualquier momento.
                 </p>
 
-                {/* Skip */}
                 <div className="border-t border-gray-100 pt-3 text-center">
                   <a
                     href="/onboarding/interests"
@@ -420,7 +407,6 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Security badges (solo móvil) */}
           <motion.div
             className="mt-5 flex md:hidden items-center justify-center gap-4 text-xs text-neutral-400"
             initial={{ opacity: 0 }}

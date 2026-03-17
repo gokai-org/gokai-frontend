@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
-
-const SUBSCRIPTIONS_API_BASE =
-  process.env.GOKAI_SUBSCRIPTIONS_API_BASE || "http://localhost:8084";
+import { apiConfig } from "@/shared/config";
 
 export async function GET(
   req: NextRequest,
@@ -11,14 +9,16 @@ export async function GET(
 ) {
   try {
     const rawToken = getTokenFromRequest(req);
+
     if (!rawToken) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
-    const token = normalizeBearerToken(rawToken);
 
+    const token = normalizeBearerToken(rawToken);
     const { id } = await params;
+
     const response = await fetch(
-      `${SUBSCRIPTIONS_API_BASE}/subscriptions/${id}`,
+      `${apiConfig.subscriptionsApiBase}/subscriptions/${id}`,
       {
         method: "GET",
         headers: {
@@ -27,12 +27,14 @@ export async function GET(
         },
       },
     );
+
     const data = await response.json();
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
     }
+
     return NextResponse.json(data);
-  } catch (err) {
+  } catch {
     return NextResponse.json({ error: "Error interno" }, { status: 500 });
   }
 }
@@ -43,14 +45,16 @@ export async function DELETE(
 ) {
   try {
     const rawToken = getTokenFromRequest(req);
+
     if (!rawToken) {
       return NextResponse.json({ error: "No autorizado" }, { status: 401 });
     }
-    const token = normalizeBearerToken(rawToken);
 
+    const token = normalizeBearerToken(rawToken);
     const { id } = await params;
+
     const response = await fetch(
-      `${SUBSCRIPTIONS_API_BASE}/subscriptions/${id}`,
+      `${apiConfig.subscriptionsApiBase}/subscriptions/${id}`,
       {
         method: "DELETE",
         headers: {
@@ -64,8 +68,9 @@ export async function DELETE(
     if (!response.ok) {
       return NextResponse.json(data, { status: response.status });
     }
+
     return NextResponse.json(data);
-  } catch (err) {
+  } catch {
     return NextResponse.json(
       { error: "Error al cancelar suscripción" },
       { status: 500 },

@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 
 interface NoticesBannerProps {
@@ -14,52 +13,58 @@ export default function NoticesBanner({
   unreadCount,
   pinnedCount,
 }: NoticesBannerProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 400, damping: 35 }}
-      className="relative overflow-hidden bg-gradient-to-r from-[#993331] to-[#7a2927] rounded-3xl p-8 md:p-10 text-white shadow-lg"
-    >
-      {/* decorativas */}
-      <div className="absolute top-[-40px] right-[-20px] w-44 h-44 bg-white/5 rounded-full" />
-      <div className="absolute bottom-[-30px] left-[30%] w-32 h-32 bg-white/5 rounded-full" />
-      <div className="absolute top-[50%] right-[15%] w-20 h-20 bg-white/5 rounded-full" />
+  const stats = [
+    { value: totalCount, label: "Total" },
+    { value: unreadCount, label: "Sin leer" },
+    { value: pinnedCount, label: "Fijadas" },
+  ];
 
-      <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
-            <Sparkles className="w-7 h-7 text-white" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-extrabold tracking-tight">
-              Centro de notificaciones
-            </h2>
-            <p className="text-white/70 text-sm mt-0.5">
-              No te pierdas ninguna actualización importante
-            </p>
+  return (
+    <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#993331] to-[#7a2927] p-6 text-white shadow-lg sm:p-8 lg:p-10">
+      <div className="absolute right-[-20px] top-[-40px] h-44 w-44 rounded-full bg-white/5" />
+      <div className="absolute bottom-[-30px] left-[30%] h-32 w-32 rounded-full bg-white/5" />
+      <div className="absolute right-[12%] top-[50%] h-20 w-20 rounded-full bg-white/5" />
+
+      <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
+        <div className="min-w-0">
+          <div className="flex items-start gap-4">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
+              <Sparkles className="h-7 w-7 text-white" />
+            </div>
+
+            <div className="min-w-0">
+              <p className="mb-1 text-xs font-bold uppercase tracking-[0.18em] text-white/65">
+                Panel general
+              </p>
+
+              <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl">
+                Centro de notificaciones
+              </h2>
+
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-white/78 sm:text-[15px]">
+                No te pierdas ninguna actualización importante sobre tus
+                lecciones, revisiones, logros y actividad reciente.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* stats */}
-        <div className="flex gap-6">
-          {[
-            { value: totalCount, label: "Total" },
-            { value: unreadCount, label: "Sin leer" },
-            { value: pinnedCount, label: "Fijadas" },
-          ].map((stat, i) => (
-            <div key={stat.label} className="flex items-center gap-6">
-              {i > 0 && <div className="w-px h-10 bg-white/20 -ml-6" />}
-              <div className="text-center">
-                <div className="text-3xl font-extrabold">{stat.value}</div>
-                <div className="text-xs text-white/60 font-medium mt-0.5">
-                  {stat.label}
-                </div>
+        <div className="grid grid-cols-3 gap-3 rounded-[24px] border border-white/10 bg-white/8 p-3 backdrop-blur-sm sm:gap-4 sm:p-4">
+          {stats.map((stat) => (
+            <div
+              key={stat.label}
+              className="min-w-[72px] rounded-2xl bg-white/6 px-3 py-3 text-center"
+            >
+              <div className="text-2xl font-extrabold leading-none text-white sm:text-3xl">
+                {stat.value}
+              </div>
+              <div className="mt-1 text-[11px] font-semibold text-white/70 sm:text-xs">
+                {stat.label}
               </div>
             </div>
           ))}
         </div>
       </div>
-    </motion.div>
+    </section>
   );
 }

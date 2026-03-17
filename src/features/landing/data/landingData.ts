@@ -22,6 +22,7 @@ export type Feature = {
   title: string;
   desc: string;
   icon: string;
+  jp: string;
 };
 
 export const HOW_TABS: readonly HowTab[] = [
@@ -39,31 +40,37 @@ export const FEATURES: Feature[] = [
     title: "IA adaptativa",
     desc: "GOKAI analiza tu progreso y estilo de estudio para recomendarte lecciones, repasos y desafíos personalizados.",
     icon: "/icons/ia.svg",
+    jp: "知能",
   },
   {
     title: "Ruta personalizada",
     desc: "Visualiza tu camino con puntos interactivos que representan tus avances y nuevas rutas por descubrir.",
     icon: "/icons/ruta.svg",
+    jp: "道筋",
   },
   {
     title: "Chatbot de repaso",
     desc: "Conversa con un asistente inteligente que te ayuda a reforzar vocabulario, gramática y comprensión de forma natural.",
     icon: "/icons/chatbot.svg",
+    jp: "復習",
   },
   {
     title: "Recompensas",
     desc: "Gana puntos, insignias y niveles al completar ejercicios. Cada logro desbloquea nuevas rutas en tu aprendizaje.",
     icon: "/icons/recompensas.svg",
+    jp: "報酬",
   },
   {
     title: "Aprendizaje integral",
     desc: "GOKAI integra las cinco habilidades del idioma: escribir, leer, pensar, hablar y escuchar, para un progreso equilibrado.",
     icon: "/icons/integral.svg",
+    jp: "総合",
   },
   {
     title: "IA que te escucha",
     desc: "Habla japonés, y deja que la inteligencia artificial te ayude a perfeccionar tu entonación y confianza.",
     icon: "/icons/escucha.svg",
+    jp: "聞く",
   },
 ];
 

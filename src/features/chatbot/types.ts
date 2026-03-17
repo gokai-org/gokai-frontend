@@ -6,9 +6,9 @@ export interface ChatMessage {
   content: string;
   role: MessageRole;
   timestamp: Date;
-  // Campos opcionales para mensajes de audio (CHECAR DESPUÉS)
   audioUrl?: string;
   audioDuration?: string;
+  waveform?: number[];
 }
 
 export interface ReviewChat {
@@ -22,5 +22,12 @@ export interface ChatbotState {
   messages: ChatMessage[];
   currentChat?: ReviewChat;
   isLoading: boolean;
-  isRecording: boolean;
+}
+
+export interface SendMockMessagePayload {
+  text: string;
+}
+
+export interface MockChatResponse {
+  reply: ChatMessage;
 }

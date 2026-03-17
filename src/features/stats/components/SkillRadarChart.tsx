@@ -19,6 +19,7 @@ interface SkillRadarChartProps {
   title?: string;
   subtitle?: string;
   loading?: boolean;
+  animationsEnabled?: boolean;
 }
 
 /*  Component  */
@@ -28,8 +29,10 @@ export function SkillRadarChart({
   title = "Habilidades",
   subtitle = "Tu dominio en cada área de estudio",
   loading,
+  animationsEnabled = true,
 }: SkillRadarChartProps) {
   const chartData = (data ?? []).map((d) => ({ ...d, fullMark: 100 }));
+  const Wrapper = animationsEnabled ? motion.div : "div";
 
   if (loading) {
     return (
@@ -43,10 +46,17 @@ export function SkillRadarChart({
 
   if (!data || data.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      <Wrapper
+        {...(animationsEnabled
+          ? {
+              initial: { opacity: 0, scale: 0.95 },
+              animate: { opacity: 1, scale: 1 },
+              transition: {
+                duration: 0.6,
+                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+              },
+            }
+          : {})}
         className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
       >
         <div className="mb-4">
@@ -79,14 +89,21 @@ export function SkillRadarChart({
             dominio.
           </p>
         </div>
-      </motion.div>
+      </Wrapper>
     );
   }
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+    <Wrapper
+      {...(animationsEnabled
+        ? {
+            initial: { opacity: 0, scale: 0.95 },
+            animate: { opacity: 1, scale: 1 },
+            transition: {
+              duration: 0.6,
+              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            },
+          }
+        : {})}
       className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
     >
       <div className="mb-4">
@@ -131,7 +148,7 @@ export function SkillRadarChart({
                 fill: "#993331",
                 strokeWidth: 0,
               }}
-              animationDuration={1200}
+              animationDuration={animationsEnabled ? 1200 : 0}
               animationEasing="ease-out"
             />
           </RadarChart>
@@ -149,6 +166,6 @@ export function SkillRadarChart({
           </span>
         ))}
       </div>
-    </motion.div>
+    </Wrapper>
   );
 }

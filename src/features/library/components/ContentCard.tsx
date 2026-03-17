@@ -11,6 +11,13 @@ export interface ContentCardProps {
   onClick?: () => void;
   onFavoriteToggle?: (id: string) => void;
   isFavorite?: boolean;
+  thumbnailClassName?: string;
+  titleClassName?: string;
+  subtitleClassName?: string;
+}
+
+function isLongTextThumbnail(thumbnail: string | ReactNode) {
+  return typeof thumbnail === "string" && thumbnail.trim().length > 2;
 }
 
 export function ContentCard({
@@ -22,68 +29,88 @@ export function ContentCard({
   onClick,
   onFavoriteToggle,
   isFavorite = false,
+  thumbnailClassName = "",
+  titleClassName = "",
+  subtitleClassName = "",
 }: ContentCardProps) {
+  const longThumbnail = isLongTextThumbnail(thumbnail);
+
   return (
-    <div className="relative group h-full">
-      <div
+    <div className="group relative h-full">
+      <button
+        type="button"
         onClick={onClick}
         className={[
-          "flex flex-col justify-between h-full p-6 rounded-[24px] bg-white",
-          "border border-gray-100/80",
-          "shadow-[0_2px_12px_-4px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_-6px_rgba(0,0,0,0.08)]",
-          "transition-all duration-300 cursor-pointer",
-          "hover:-translate-y-1.5 active:translate-y-0",
-          "select-none min-h-[160px]",
+          "flex h-full w-full flex-col justify-between rounded-[24px] border border-[#E8E3E1] bg-white p-5 text-left",
+          "shadow-[0_2px_14px_-6px_rgba(0,0,0,0.06)]",
+          "transition-all duration-300",
+          "hover:-translate-y-1 hover:border-[#993331]/20 hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.10)]",
+          "focus:outline-none focus:ring-2 focus:ring-[#993331]/20",
+          "min-h-[188px]",
         ].join(" ")}
       >
-        {/* Header: Ícono */}
-        <div className="flex items-start mb-5">
-          <div className="flex h-[48px] w-[48px] shrink-0 items-center justify-center rounded-[18px] bg-[#BA5149]/10 text-[22px] font-bold text-[#BA5149] group-hover:bg-[#BA5149] group-hover:text-white transition-colors duration-300">
+        <div className="mb-5 flex items-start">
+          <div
+            className={[
+              "flex shrink-0 items-center justify-center rounded-2xl bg-[#993331]/8 text-[#993331] transition-colors duration-300",
+              "group-hover:bg-[#993331]/12",
+              longThumbnail
+                ? "min-h-[60px] min-w-[60px] max-w-[72px] px-3 py-2 text-[14px] font-extrabold leading-tight"
+                : "h-14 w-14 text-[24px] font-bold",
+              thumbnailClassName,
+            ].join(" ")}
+          >
             {thumbnail}
           </div>
         </div>
 
-        {/* Contenido principal */}
-        <div className="flex-1 flex flex-col justify-end mt-2">
-          <h3 className="font-black text-[20px] leading-tight tracking-tight text-gray-900 group-hover:text-[#993331] transition-colors line-clamp-2 break-words">
+        <div className="flex flex-1 flex-col justify-end">
+          <h3
+            className={[
+              "line-clamp-2 break-words text-[18px] font-extrabold leading-tight tracking-tight text-gray-900 transition-colors group-hover:text-[#993331]",
+              titleClassName,
+            ].join(" ")}
+          >
             {title}
           </h3>
 
           {subtitle && (
-            <p className="mt-1.5 text-[14px] font-medium text-gray-400 line-clamp-1">
+            <p
+              className={[
+                "mt-2 line-clamp-2 break-words text-[13px] font-medium leading-relaxed text-gray-500",
+                subtitleClassName,
+              ].join(" ")}
+            >
               {subtitle}
             </p>
           )}
 
-          {/* Barra de progreso sutil */}
           {progress !== undefined && (
             <div className="mt-5 flex items-center gap-3">
-              <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className="h-full rounded-full transition-all duration-500 bg-[#BA5149]"
+                  className="h-full rounded-full bg-[#993331] transition-all duration-500"
                   style={{ width: `${progress}%` }}
                 />
               </div>
-              <span className="text-[12px] font-bold text-[#993331] shrink-0">
+              <span className="shrink-0 text-[12px] font-extrabold text-[#993331]">
                 {progress}%
               </span>
             </div>
           )}
         </div>
-      </div>
+      </button>
 
-      {/* Botón de Favorito */}
       {onFavoriteToggle && (
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onFavoriteToggle(id);
           }}
           className={[
-            "absolute top-5 right-5 z-10 p-2 rounded-full",
-            "bg-white shadow-sm border border-gray-100",
-            "transition-all duration-200",
-            "hover:scale-110 active:scale-95",
+            "absolute right-4 top-4 z-10 rounded-full border border-gray-100 bg-white p-2 shadow-sm",
+            "transition-all duration-200 hover:scale-105 active:scale-95",
             isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100",
           ].join(" ")}
           aria-label={
@@ -91,10 +118,10 @@ export function ContentCard({
           }
         >
           <svg
-            className={`w-4.5 h-4.5 transition-colors ${
+            className={`h-4.5 w-4.5 transition-colors ${
               isFavorite
                 ? "fill-[#F5D076] text-[#F5D076]"
-                : "text-gray-300 hover:text-[#BA5149]"
+                : "text-gray-300 hover:text-[#993331]"
             }`}
             viewBox="0 0 24 24"
             stroke="currentColor"

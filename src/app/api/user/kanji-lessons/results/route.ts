@@ -1,37 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
+import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
-const BASE = process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
-
-/** POST /api/user/kanji-lessons/results
- *  Proxy → POST {USERS_API_BASE}/users/{userId}/kanji-lessons/results
- *
- *  Body (JSON):
- *    lessonId         – ID de la lección completada
- *    kanjiId          – ID del kanji practicado
- *    mode             – "writing" | "listening" | "reading" | "speaking"
- *    score            – Puntuación obtenida (0-100)
- *    duration         – Duración total en segundos
- *    totalExercises   – Cantidad de ejercicios en la lección
- *    correctExercises – Cantidad de ejercicios correctos
- *    answers[]        – Detalle de cada respuesta individual
- *      exerciseType   – "writing" | "meaning"
- *      points         – Puntos del ejercicio
- *      duration       – Duración del ejercicio en segundos
- *      isCorrect      – Si la respuesta fue correcta
- *
- *  Respuesta exitosa (201):
- *    KanjiLessonResult completo con id, userId, completedAt, etc.
- *
- *  Errores:
- *    400  – Body inválido o campos faltantes
- *    401  – Token ausente o expirado
- */
 export async function POST(req: NextRequest) {
   const raw = getTokenFromRequest(req);
+
   if (!raw) {
     console.error("[API ROUTE] No autenticado: no se encontró token");
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -94,7 +70,7 @@ export async function POST(req: NextRequest) {
     JSON.stringify(backendBody, null, 2),
   );
 
-  const upstreamUrl = `${BASE}/users/${userId}/kanji-lessons/results`;
+  const upstreamUrl = `${apiConfig.usersApiBase}/users/${userId}/kanji-lessons/results`;
   console.log("[API ROUTE] enviando a upstream:", upstreamUrl);
 
   const upstream = await fetch(upstreamUrl, {
@@ -119,18 +95,9 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(data, { status: upstream.status });
 }
 
-/** GET /api/user/kanji-lessons/results?kanjiId=...&limit=...
- *  Proxy → GET {USERS_API_BASE}/users/{userId}/kanji-lessons/results?...
- *
- *  Query params (opcionales):
- *    kanjiId – Filtrar por kanji específico
- *    limit   – Cantidad máxima de resultados (default: 20, max: 100)
- *
- *  Respuesta (200):
- *    { results: KanjiLessonResult[] }
- */
 export async function GET(req: NextRequest) {
   const raw = getTokenFromRequest(req);
+
   if (!raw) {
     console.error("[API ROUTE GET] No autenticado");
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -173,7 +140,7 @@ export async function GET(req: NextRequest) {
   });
 
   const qs = query.toString();
-  const url = `${BASE}/users/${userId}/kanji-lessons/results${qs ? `?${qs}` : ""}`;
+  const url = `${apiConfig.usersApiBase}/users/${userId}/kanji-lessons/results${qs ? `?${qs}` : ""}`;
 
   console.log("[API ROUTE GET] url final al backend:", url);
 

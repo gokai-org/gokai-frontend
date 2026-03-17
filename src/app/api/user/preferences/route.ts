@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
+import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
-
-const USERS_API_BASE =
-  process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
 
 export async function POST(request: NextRequest) {
   try {
     const token = getTokenFromRequest(request);
+
     if (!token) {
       console.error("No hay token de autenticación");
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
@@ -24,7 +23,7 @@ export async function POST(request: NextRequest) {
 
     console.log("Enviando preferencia al backend:", { theme_id: themeId });
 
-    const response = await fetch(`${USERS_API_BASE}/users/preferences`, {
+    const response = await fetch(`${apiConfig.usersApiBase}/users/preferences`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -37,10 +36,12 @@ export async function POST(request: NextRequest) {
       const errorData = await response
         .json()
         .catch(() => ({ error: "Error al guardar preferencias" }));
+
       console.error("Backend respondió con error:", {
         status: response.status,
         error: errorData,
       });
+
       return NextResponse.json(
         { error: errorData.error || "Error al guardar preferencias" },
         { status: response.status },

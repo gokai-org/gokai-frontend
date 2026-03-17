@@ -18,6 +18,7 @@ import { useSettings } from "@/features/configuration/hooks/useSettings";
 import type { UserSettings } from "@/features/configuration/types";
 import { UpgradePlanModal } from "@/features/configuration/components/UpgradePlanModal";
 import { CancelSubscriptionModal } from "@/features/configuration/components/CancelSubscriptionModal";
+import { billingConfig } from "@/shared/config";
 
 const sectionTitles: Record<string, string> = {
   general: "Configuración General",
@@ -455,8 +456,6 @@ function AccountSettings({
   const toast = useToast();
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
-  // Estados para edición de perfil
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || "",
@@ -465,12 +464,8 @@ function AccountSettings({
     birthdate: "",
   });
   const [isSaving, setIsSaving] = useState(false);
-
-  // Estado para la suscripción
   const [subscription, setSubscription] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
-
-  // Estados para modales de upgrade y cancelación
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [stripeLoading, setStripeLoading] = useState(false);
   const [stripeError, setStripeError] = useState<string | null>(null);
@@ -480,6 +475,8 @@ function AccountSettings({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+
+  const stripePriceId = billingConfig.publicSubscriptionPriceId;
 
   const formatBirthdateForInput = (birthdate?: string | Date | null) => {
     if (!birthdate) return "";
@@ -515,7 +512,6 @@ function AccountSettings({
     }
   }, [user]);
 
-  // Cargar detalles de suscripción si el usuario está suscrito
   useEffect(() => {
     if (user && user.id) {
       const loadSubscription = async () => {
@@ -539,6 +535,7 @@ function AccountSettings({
   const handleSaveProfile = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     setIsSaving(true);
+
     try {
       const updateData = {
         firstName: profileData.firstName,
@@ -571,7 +568,7 @@ function AccountSettings({
         const errorData = await response.json();
         toast.error(errorData.error || "Error al guardar los cambios");
       }
-    } catch (error) {
+    } catch {
       toast.error("Error al guardar los cambios");
     } finally {
       setIsSaving(false);
@@ -662,9 +659,6 @@ function AccountSettings({
     : user?.plan
       ? planNames[user.plan]
       : "Plan Gratuito";
-  const STRIPE_PRICE_ID =
-    process.env.NEXT_PUBLIC_SUBSCRIPTION_PRICE_ID ??
-    process.env.SUBSCRIPTION_PRICE_ID;
 
   const refreshUserAndSubscription = async () => {
     const updatedUser = await getCurrentUser();
@@ -749,25 +743,29 @@ function AccountSettings({
       return;
     }
 
-    if (!STRIPE_PRICE_ID) {
+    if (!stripePriceId) {
       setStripeError("Error de configuración: falta el priceId de Stripe");
       setStripeLoading(false);
       return;
     }
+
     try {
       const res = await fetch("/api/subscription/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId: STRIPE_PRICE_ID,
+          priceId: stripePriceId,
           successUrl: window.location.href,
         }),
       });
+
       const data = await res.json();
+
       if (data.url) {
         window.location.href = data.url;
         return;
       }
+
       setStripeError(data.error || "Error al iniciar pago");
     } catch {
       setStripeError("Error de red");
@@ -778,20 +776,24 @@ function AccountSettings({
 
   const handleCancelSubscription = async () => {
     if (!user?.id) return;
+
     setCancelLoading(true);
     setCancelError(null);
+
     try {
       const res = await fetch(`/api/subscription/${user.id}`, {
         method: "DELETE",
       });
+
       const data = await res.json();
+
       if (!res.ok) {
         setCancelError(data.error || "Error al cancelar la suscripción");
         return;
       }
+
       toast.success("Suscripción cancelada correctamente");
       setShowCancelModal(false);
-      // Refrescar datos del usuario y suscripción
       await refreshUserAndSubscription();
     } catch {
       setCancelError("Error de red al cancelar la suscripción");

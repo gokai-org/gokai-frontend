@@ -1,24 +1,15 @@
 import { NextResponse } from "next/server";
+import { apiConfig } from "@/shared/config";
 
 /**
  * POST /api/auth/verification/send-code
- *
- * Body (frontend):
- *   - email: string
- *   - type: "password-recovery" | "email-verification"
- *
- * Body real que espera el backend:
- *   - email: string
- *   - type: "password" | "verification"
- *
- * Proxy hacia el backend de usuarios:
- *   POST {GOKAI_USERS_API_BASE}/users/verification/send-code
  */
 export async function POST(req: Request) {
-  const base = process.env.GOKAI_USERS_API_BASE;
+  const base = apiConfig.usersApiBase;
+
   if (!base) {
     return NextResponse.json(
-      { error: "Falta GOKAI_USERS_API_BASE" },
+      { error: "Falta configuración de usersApiBase" },
       { status: 500 },
     );
   }
@@ -46,11 +37,9 @@ export async function POST(req: Request) {
   const typeMap: Record<string, string> = {
     "email-verification": "verification",
     "password-recovery": "password",
-
     email_verification: "verification",
     "verify-email": "verification",
     verification: "verification",
-
     password_recovery: "password",
     "password-reset": "password",
     "reset-password": "password",
@@ -71,25 +60,28 @@ export async function POST(req: Request) {
   }
 
   try {
-    const r = await fetch(`${base}/users/verification/send-code`, {
+    const response = await fetch(`${base}/users/verification/send-code`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, type }),
     });
 
-    const text = await r.text();
+    const text = await response.text();
     let data: Record<string, unknown> | null = null;
-    try {
-      data = text ? JSON.parse(text) : null;
-    } catch {
-      /* respuesta no-JSON del backend */
-    }
 
-    if (!r.ok) {
-      console.error("send-code backend error:", { status: r.status, text });
+    try {
+      data = text ? (JSON.parse(text) as Record<string, unknown>) : null;
+    } catch {}
+
+    if (!response.ok) {
+      console.error("send-code backend error:", {
+        status: response.status,
+        text,
+      });
+
       return NextResponse.json(
         { error: data?.error || text || "No se pudo enviar el código." },
-        { status: r.status },
+        { status: response.status },
       );
     }
 

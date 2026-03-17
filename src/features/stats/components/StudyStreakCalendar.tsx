@@ -12,6 +12,7 @@ interface StudyStreakCalendarProps {
   subtitle?: string;
   weeks?: number;
   loading?: boolean;
+  animationsEnabled?: boolean;
 }
 
 /*  Helpers  */
@@ -47,7 +48,11 @@ export function StudyStreakCalendar({
   subtitle = "Tu consistencia en las últimas semanas",
   weeks = 12,
   loading,
+  animationsEnabled = true,
 }: StudyStreakCalendarProps) {
+  const Wrapper = animationsEnabled ? motion.div : "div";
+  const CellWrapper = animationsEnabled ? motion.div : "div";
+
   const calendarData = useMemo(
     () => data?.streakDays ?? generateEmptyData(weeks),
     [data, weeks],
@@ -88,10 +93,18 @@ export function StudyStreakCalendar({
   const hasActivity = totalDays > 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.25, ease: [0.22, 1, 0.36, 1] }}
+    <Wrapper
+      {...(animationsEnabled
+        ? {
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 },
+            transition: {
+              duration: 0.6,
+              delay: 0.25,
+              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            },
+          }
+        : {})}
       className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
     >
       <div className="flex items-start justify-between mb-5">
@@ -125,14 +138,18 @@ export function StudyStreakCalendar({
         {grid.map((col, wIdx) => (
           <div key={wIdx} className="flex flex-col gap-1">
             {col.map((cell) => (
-              <motion.div
+              <CellWrapper
                 key={cell.date}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{
-                  delay: wIdx * 0.02 + Math.random() * 0.1,
-                  duration: 0.3,
-                }}
+                {...(animationsEnabled
+                  ? {
+                      initial: { scale: 0, opacity: 0 },
+                      animate: { scale: 1, opacity: 1 },
+                      transition: {
+                        delay: wIdx * 0.02 + Math.random() * 0.1,
+                        duration: 0.3,
+                      },
+                    }
+                  : {})}
                 title={`${cell.date}: ${cell.minutes} min`}
                 className={`w-[14px] h-[14px] rounded-[3px] ${getIntensity(
                   cell.minutes,
@@ -168,6 +185,6 @@ export function StudyStreakCalendar({
           </p>
         </div>
       )}
-    </motion.div>
+    </Wrapper>
   );
 }

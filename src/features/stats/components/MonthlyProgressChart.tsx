@@ -19,6 +19,7 @@ interface MonthlyProgressChartProps {
   title?: string;
   subtitle?: string;
   loading?: boolean;
+  animationsEnabled?: boolean;
 }
 
 /*  Custom tooltip  */
@@ -54,7 +55,10 @@ export function MonthlyProgressChart({
   title = "Progreso mensual",
   subtitle = "Evolución de tu precisión y sesiones",
   loading,
+  animationsEnabled = true,
 }: MonthlyProgressChartProps) {
+  const Wrapper = animationsEnabled ? motion.div : "div";
+
   if (loading) {
     return (
       <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
@@ -67,10 +71,18 @@ export function MonthlyProgressChart({
 
   if (!data || data.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+      <Wrapper
+        {...(animationsEnabled
+          ? {
+              initial: { opacity: 0, y: 20 },
+              animate: { opacity: 1, y: 0 },
+              transition: {
+                duration: 0.6,
+                delay: 0.12,
+                ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+              },
+            }
+          : {})}
         className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
       >
         <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
@@ -98,7 +110,7 @@ export function MonthlyProgressChart({
             Tu evolución mes a mes aparecerá aquí conforme vayas estudiando.
           </p>
         </div>
-      </motion.div>
+      </Wrapper>
     );
   }
 
@@ -106,10 +118,18 @@ export function MonthlyProgressChart({
     data.length >= 2 ? data[data.length - 1].score - data[0].score : 0;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.6, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
+    <Wrapper
+      {...(animationsEnabled
+        ? {
+            initial: { opacity: 0, y: 20 },
+            animate: { opacity: 1, y: 0 },
+            transition: {
+              duration: 0.6,
+              delay: 0.12,
+              ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+            },
+          }
+        : {})}
       className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
     >
       <div className="flex items-start justify-between mb-4">
@@ -177,7 +197,7 @@ export function MonthlyProgressChart({
                 stroke: "#fff",
                 strokeWidth: 2,
               }}
-              animationDuration={1200}
+              animationDuration={animationsEnabled ? 1200 : 0}
               animationEasing="ease-out"
             />
           </AreaChart>
@@ -191,6 +211,6 @@ export function MonthlyProgressChart({
           <span className="text-xs text-gray-500 font-medium">Precisión</span>
         </div>
       </div>
-    </motion.div>
+    </Wrapper>
   );
 }

@@ -1,58 +1,81 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { LibraryHeader } from "@/features/library/components/LibraryHeader";
-import { ContentCard } from "@/features/library/components/ContentCard";
-import { RecentCard } from "@/features/library/components/RecentCard";
-import type { RecentItemProps } from "@/features/library/components/RecentCard";
-import { CategoryFilter } from "@/features/library/components/CategoryFilter";
+import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
+import { useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
-import type {
-  BackendFavoriteItem,
-  BackendRecentItem,
-  FavoriteType,
-  LibraryCategory,
-} from "@/features/library/types";
-import { listKanjis } from "@/features/kanji/api/kanjiApi";
-import type { Kanji } from "@/features/kanji/types";
+import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
+import { LibraryHeader } from "@/features/library/components/LibraryHeader";
+import { CategoryFilter } from "@/features/library/components/CategoryFilter";
+import { ContentCard } from "@/features/library/components/ContentCard";
+import { LibraryGrid } from "@/features/library/components/LibraryGrid";
+import { LibraryRecentPanel } from "@/features/library/components/LibraryRecentPanel";
+import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
 import { KanjiDetailModal } from "@/features/kanji/components/KanjiDetailModal";
 import { KanaDetailModal } from "@/features/kana/components/KanaDetailModal";
-import { useRecentItems } from "@/features/library/hooks/useRecentItems";
+import { LibrarySkeleton } from "@/shared/ui/Skeleton";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
+import { useRecentItems } from "@/features/library/hooks/useRecentItems";
+import { useVocabularyContent } from "@/features/library/hooks/useVocabularyContent";
 import {
-  getPrimaryMeaning,
-  getPrimaryReading,
-} from "@/features/kanji/utils/kanjiText";
-import { listKatakanas } from "@/features/kana/api/kanaApi";
-import { listHiraganas } from "@/features/kana/api/kanaApi";
+  CombinedLibraryItem,
+  useLibraryContent,
+} from "@/features/library/hooks/useLibraryContent";
+import type { Kanji } from "@/features/kanji/types";
 import type { Kana } from "@/features/kana/types";
 import {
-  LibrarySkeleton,
-  SkeletonSection,
-  SkeletonCard,
-} from "@/shared/ui/Skeleton";
+  buildLibraryCategories,
+  grammarFavToCard,
+  hiraganaToCard,
+  kanjiToCard,
+  katakanaToCard,
+  subthemeToCard,
+  themeToCard,
+  wordFavToCard,
+  wordToCard,
+} from "@/features/library/utils/libraryMappers";
 
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-
-  const [kanjis, setKanjis] = useState<Kanji[]>([]);
-  const [loadingKanjis, setLoadingKanjis] = useState(true);
   const [selectedKanji, setSelectedKanji] = useState<Kanji | null>(null);
-
-  // ── Katakana state ────────────────────────────────────────
-  const [katakanas, setKatakanas] = useState<Kana[]>([]);
-  const [loadingKatakanas, setLoadingKatakanas] = useState(true);
-
-  // ── Hiragana state ────────────────────────────────────────
-  const [hiraganas, setHiraganas] = useState<Kana[]>([]);
-  const [loadingHiraganas, setLoadingHiraganas] = useState(true);
-
-  // ── Kana detail modal ─────────────────────────────────────
   const [selectedKana, setSelectedKana] = useState<Kana | null>(null);
 
+  const { animationsEnabled, heavyAnimationsEnabled } =
+    useAnimationPreferences();
+
+  const {
+    kanjis,
+    katakanas,
+    hiraganas,
+    filteredKanjis,
+    filteredKatakanas,
+    filteredHiraganas,
+    allLibraryItems,
+    isSearching,
+    isGlobalLoading,
+    loadingKanjis,
+    loadingKatakanas,
+    loadingHiraganas,
+  } = useLibraryContent(searchQuery);
+
+  const {
+    themes,
+    filteredThemes,
+    filteredSubthemes,
+    filteredWords,
+    selectedTheme,
+    selectedSubtheme,
+    loadingThemes,
+    loadingSubthemes,
+    loadingWords,
+    openTheme,
+    openSubtheme,
+    resetVocabularyView,
+  } = useVocabularyContent(searchQuery);
+
   const { recentItems, addRecentItem } = useRecentItems();
+
   const {
     favoriteKanjis,
     favoriteData,
@@ -62,249 +85,44 @@ export default function LibraryPage() {
     getTotalFavorites,
   } = useFavorites();
 
+  const dynamicCategories = buildLibraryCategories({
+    totalFavorites: getTotalFavorites(),
+    recentCount: recentItems.length,
+    kanjiCount: kanjis.length,
+    katakanaCount: katakanas.length,
+    hiraganaCount: hiraganas.length,
+    themeCount: themes.length,
+  });
+
   const handleKanjiClick = (kanji: Kanji) => {
     addRecentItem("kanji", kanji.id);
     setSelectedKanji(kanji);
   };
 
   const handleKanaClick = (kana: Kana) => {
-    addRecentItem(
-      kana.kanaType === "hiragana" ? "hiragana" : "katakana",
-      kana.id,
-    );
     setSelectedKana(kana);
   };
 
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await listKanjis();
-        setKanjis(res);
-      } catch (e) {
-        console.error("Error loading kanjis:", e);
-      } finally {
-        setLoadingKanjis(false);
-      }
-    })();
+  const handleCategoryChange = (cat: string | null) => {
+    setSelectedCategory(cat);
+    setSearchQuery("");
 
-    (async () => {
-      try {
-        const res = await listKatakanas();
-        setKatakanas(res);
-      } catch (e) {
-        console.error("Error loading katakanas:", e);
-      } finally {
-        setLoadingKatakanas(false);
-      }
-    })();
+    if (cat !== "themes") {
+      resetVocabularyView();
+    }
+  };
 
-    (async () => {
-      try {
-        const res = await listHiraganas();
-        setHiraganas(res);
-      } catch (e) {
-        console.error("Error loading hiraganas:", e);
-      } finally {
-        setLoadingHiraganas(false);
-      }
-    })();
-  }, []);
+  const totalBaseContentCount = kanjis.length + katakanas.length + hiraganas.length;
+  const vocabularyCurrentCount = selectedSubtheme
+    ? filteredWords.length
+    : selectedTheme
+      ? filteredSubthemes.length
+      : filteredThemes.length;
 
-  // ── Búsqueda ──────────────────────────────────────────────
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-
-  const filteredKanjis = useMemo(() => {
-    if (!normalizedQuery) return kanjis;
-    return kanjis.filter((k) => {
-      const meaning = getPrimaryMeaning(k.meanings) || "";
-      const reading = getPrimaryReading(k.readings) || "";
-      return (
-        k.symbol.toLowerCase().includes(normalizedQuery) ||
-        meaning.toLowerCase().includes(normalizedQuery) ||
-        reading.toLowerCase().includes(normalizedQuery)
-      );
-    });
-  }, [kanjis, normalizedQuery]);
-
-  const filteredKatakanas = useMemo(() => {
-    if (!normalizedQuery) return katakanas;
-    return katakanas.filter((k) => {
-      return k.symbol.toLowerCase().includes(normalizedQuery);
-    });
-  }, [katakanas, normalizedQuery]);
-
-  const filteredHiraganas = useMemo(() => {
-    if (!normalizedQuery) return hiraganas;
-    return hiraganas.filter((h) => {
-      return h.symbol.toLowerCase().includes(normalizedQuery);
-    });
-  }, [hiraganas, normalizedQuery]);
-
-  // ── Categorías dinámicas ──────────────────────────────────
-  const dynamicCategories: LibraryCategory[] = [
-    {
-      id: "favoritos",
-      name: "Favoritos",
-      icon: "",
-      count: getTotalFavorites(),
-      color: "bg-red-500",
-    },
-    {
-      id: "recent",
-      name: "Reciente",
-      icon: "",
-      count: recentItems.length,
-      color: "bg-gray-500",
-    },
-    {
-      id: "kanji",
-      name: "Kanjis",
-      icon: "",
-      count: kanjis.length,
-      color: "bg-purple-500",
-    },
-    {
-      id: "katakana",
-      name: "Katakana",
-      icon: "",
-      count: katakanas.length,
-      color: "bg-blue-500",
-    },
-    {
-      id: "hiragana",
-      name: "Hiragana",
-      icon: "",
-      count: hiraganas.length,
-      color: "bg-green-500",
-    },
+  const kanaItems: CombinedLibraryItem[] = [
+    ...filteredHiraganas.map((data) => ({ type: "hiragana" as const, data })),
+    ...filteredKatakanas.map((data) => ({ type: "katakana" as const, data })),
   ];
-
-  // ── Helpers de mapeo ──────────────────────────────────────
-  function kanjiToCard(kanji: Kanji) {
-    const meaning = getPrimaryMeaning(kanji.meanings) || kanji.symbol;
-    const reading = getPrimaryReading(kanji.readings);
-
-    const meaningsCount = Array.isArray(kanji.meanings)
-      ? kanji.meanings.length
-      : (kanji.meanings?.es?.length ?? 0) +
-        (kanji.meanings?.en?.length ?? 0) +
-        (kanji.meanings?.other?.length ?? 0);
-
-    const readingsCount = Array.isArray(kanji.readings)
-      ? kanji.readings.length
-      : (kanji.readings?.on?.length ?? 0) +
-        (kanji.readings?.kun?.length ?? 0) +
-        (kanji.readings?.other?.length ?? 0);
-
-    return {
-      id: kanji.id,
-      title: meaning,
-      subtitle: reading ? `Lectura: ${reading}` : "Sin lectura",
-      thumbnail: kanji.symbol,
-      meta: `${readingsCount || 0} lecturas • ${meaningsCount || 0} significados`,
-    };
-  }
-
-  function katakanaToCard(katakana: Kana) {
-    return {
-      id: katakana.id,
-      title: katakana.symbol,
-      subtitle: `${katakana.pointsToUnlock} pts`,
-      thumbnail: katakana.symbol,
-    };
-  }
-
-  function hiraganaToCard(hiragana: Kana) {
-    return {
-      id: hiragana.id,
-      title: hiragana.symbol,
-      subtitle: `${hiragana.pointsToUnlock} pts`,
-      thumbnail: hiragana.symbol,
-    };
-  }
-
-  function recentToCardProps(item: BackendRecentItem): RecentItemProps {
-    switch (item.type) {
-      case "kanji": {
-        const kanji = kanjis.find((k) => k.id === item.id);
-        return {
-          id: item.id,
-          title: kanji
-            ? getPrimaryMeaning(kanji.meanings) || kanji.symbol
-            : item.symbol || "漢",
-          description: kanji
-            ? getPrimaryReading(kanji.readings)
-              ? `音: ${getPrimaryReading(kanji.readings)}`
-              : undefined
-            : undefined,
-          thumbnail: item.symbol || kanji?.symbol || "漢",
-          category: "kanji",
-          lastAccessed: item.createdAt,
-        };
-      }
-      case "grammar_lesson":
-      case "grammar":
-        return {
-          id: item.id,
-          title: item.title || "Gramática",
-          description: item.description || undefined,
-          thumbnail: "文",
-          category: "grammar",
-          lastAccessed: item.createdAt,
-        };
-      case "word": {
-        const meanings = Array.isArray(item.meanings)
-          ? (item.meanings as string[]).join(", ")
-          : undefined;
-        return {
-          id: item.id,
-          title: item.kanjiWord || item.hiragana || "Palabra",
-          description: meanings,
-          thumbnail: item.kanjiWord || item.hiragana || "言",
-          category: "word",
-          lastAccessed: item.createdAt,
-        };
-      }
-      default:
-        return {
-          id: item.id,
-          title: "Elemento",
-          thumbnail: "?",
-          lastAccessed: item.createdAt,
-        };
-    }
-  }
-
-  function grammarFavToCard(fav: BackendFavoriteItem) {
-    return {
-      id: fav.id,
-      title: fav.title || "Gramática",
-      subtitle: fav.description || undefined,
-      thumbnail: "文",
-    };
-  }
-
-  function wordFavToCard(fav: BackendFavoriteItem) {
-    let parsedMeanings: string | undefined;
-    if (fav.meanings) {
-      try {
-        const arr = JSON.parse(fav.meanings);
-        if (Array.isArray(arr)) parsedMeanings = arr.join(", ");
-      } catch {
-        /* ignora */
-      }
-    }
-    return {
-      id: fav.id,
-      title: fav.kanjiWord || fav.hiragana || "Palabra",
-      subtitle: parsedMeanings || fav.hiragana || undefined,
-      thumbnail: fav.kanjiWord || fav.hiragana || "言",
-    };
-  }
-
-  // ── Render ────────────────────────────────────────────────
-  const isSearching = normalizedQuery.length > 0;
-  const isGlobalLoading = loadingKanjis && loadingKatakanas && loadingHiraganas;
 
   return (
     <DashboardShell header={<LibraryHeader onSearchChange={setSearchQuery} />}>
@@ -312,395 +130,217 @@ export default function LibraryPage() {
         <LibrarySkeleton />
       ) : (
         <>
-          {/* Filtro de categorías */}
-          <div className="mb-8">
+          <AnimatedEntrance
+            index={0}
+            className="mb-8"
+            disabled={!animationsEnabled}
+            mode={heavyAnimationsEnabled ? "default" : "light"}
+          >
             <CategoryFilter
               categories={dynamicCategories}
               selectedCategory={selectedCategory}
-              onSelectCategory={(cat) => {
-                setSelectedCategory(cat);
-                setSearchQuery("");
-              }}
+              onSelectCategory={handleCategoryChange}
             />
-          </div>
+          </AnimatedEntrance>
 
-          {/* ════════ Resultados de búsqueda ════════ */}
           {isSearching && !selectedCategory && (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Resultados para &ldquo;{searchQuery.trim()}&rdquo;
-                </h2>
-                <span className="text-sm text-gray-600">
-                  {filteredKanjis.length +
-                    filteredKatakanas.length +
-                    filteredHiraganas.length}{" "}
-                  resultados
-                </span>
-              </div>
-
-              {filteredKanjis.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Kanjis
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {filteredKanjis.map((kanji) => (
-                      <ContentCard
-                        key={kanji.id}
-                        {...kanjiToCard(kanji)}
-                        onClick={() => handleKanjiClick(kanji)}
-                        onFavoriteToggle={toggleFavoriteKanji}
-                        isFavorite={favoriteKanjis.has(kanji.id)}
-                      />
-                    ))}
-                  </div>
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
+              <div>
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Resultados para &ldquo;{searchQuery.trim()}&rdquo;
+                  </h2>
+                  <span className="text-sm text-gray-600">
+                    {allLibraryItems.length} resultados
+                  </span>
                 </div>
-              )}
 
-              {filteredKatakanas.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Katakana
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {filteredKatakanas.map((katakana) => (
-                      <ContentCard
-                        key={katakana.id}
-                        {...katakanaToCard(katakana)}
-                        onClick={() => handleKanaClick(katakana)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {filteredHiraganas.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Hiragana
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {filteredHiraganas.map((hiragana) => (
-                      <ContentCard
-                        key={hiragana.id}
-                        {...hiraganaToCard(hiragana)}
-                        onClick={() => handleKanaClick(hiragana)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {filteredKanjis.length === 0 &&
-                filteredKatakanas.length === 0 &&
-                filteredHiraganas.length === 0 && (
+                {allLibraryItems.length > 0 ? (
+                  <LibraryGrid
+                    items={allLibraryItems}
+                    favoriteKanjis={favoriteKanjis}
+                    toggleFavoriteKanji={toggleFavoriteKanji}
+                    onKanjiClick={handleKanjiClick}
+                    onKanaClick={handleKanaClick}
+                    className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
+                  />
+                ) : (
                   <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
+                    <h3 className="mb-2 text-xl font-bold text-gray-900">
                       Sin resultados
                     </h3>
-                    <p className="text-gray-600 text-center max-w-md">
+                    <p className="max-w-md text-center text-gray-600">
                       No encontramos contenido que coincida con &ldquo;
                       {searchQuery.trim()}&rdquo;.
                     </p>
                   </div>
                 )}
+              </div>
+            </AnimatedEntrance>
+          )}
+
+          {!selectedCategory && !isSearching && (
+            <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-8">
+              <AnimatedEntrance
+                index={1}
+                className="order-1 xl:order-2"
+                disabled={!animationsEnabled}
+                mode={heavyAnimationsEnabled ? "default" : "light"}
+              >
+                <LibraryRecentPanel
+                  recentItems={recentItems}
+                  kanjis={kanjis}
+                  onOpenRecent={() => setSelectedCategory("recent")}
+                  onKanjiClick={handleKanjiClick}
+                />
+              </AnimatedEntrance>
+
+              <AnimatedEntrance
+                index={2}
+                className="order-2 min-w-0 xl:order-1"
+                disabled={!animationsEnabled}
+              >
+                <SectionHeader
+                  className="mb-4"
+                  title="Todo el contenido"
+                  action={
+                    <span className="text-sm font-medium text-gray-500">
+                      {totalBaseContentCount} elementos
+                    </span>
+                  }
+                />
+
+                {allLibraryItems.length > 0 ? (
+                  <LibraryGrid
+                    items={allLibraryItems}
+                    favoriteKanjis={favoriteKanjis}
+                    toggleFavoriteKanji={toggleFavoriteKanji}
+                    onKanjiClick={handleKanjiClick}
+                    onKanaClick={handleKanaClick}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <h3 className="mb-2 text-xl font-bold text-gray-900">
+                      No hay contenido
+                    </h3>
+                    <p className="max-w-md text-center text-gray-600">
+                      No encontramos contenido disponible.
+                    </p>
+                  </div>
+                )}
+              </AnimatedEntrance>
             </div>
           )}
 
-          {/* ════════ Vista principal (sin filtro) ════════ */}
-          {!selectedCategory && !isSearching && (
-            <>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-10">
-                {/* Kanjis destacados */}
-                <div className="lg:col-span-2 space-y-10">
-                  <div>
-                    <SectionHeader
-                      className="mb-4"
-                      title="Kanjis"
-                      action={
-                        <button
-                          onClick={() => setSelectedCategory("kanji")}
-                          className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                        >
-                          Ver todo ({kanjis.length}) →
-                        </button>
-                      }
-                    />
-                    {loadingKanjis ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {Array.from({ length: 8 }).map((_, i) => (
-                          <SkeletonCard key={i} />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                        {kanjis.slice(0, 8).map((kanji) => (
+          {selectedCategory === "favoritos" && (
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
+              <div>
+                <div className="mb-6 flex items-center justify-between">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Mis Favoritos
+                  </h2>
+                  <span className="text-sm text-gray-600">
+                    {getTotalFavorites()} elementos
+                  </span>
+                </div>
+
+                {favoriteKanjis.size > 0 && (
+                  <div className="mb-8">
+                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                      Kanjis
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {kanjis
+                        .filter((kanji) => favoriteKanjis.has(kanji.id))
+                        .map((kanji) => (
                           <ContentCard
                             key={kanji.id}
                             {...kanjiToCard(kanji)}
                             onClick={() => handleKanjiClick(kanji)}
                             onFavoriteToggle={toggleFavoriteKanji}
-                            isFavorite={favoriteKanjis.has(kanji.id)}
+                            isFavorite
                           />
                         ))}
-                      </div>
-                    )}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* Sidebar: Recientes */}
-                <div className="space-y-6">
-                  <div>
-                    <SectionHeader
-                      className="mb-4"
-                      title="Reciente"
-                      action={
-                        recentItems.length > 0 ? (
-                          <button
-                            onClick={() => setSelectedCategory("recent")}
-                            className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                          >
-                            Ver todo →
-                          </button>
-                        ) : null
-                      }
-                    />
-                    {recentItems.length > 0 ? (
-                      <div className="space-y-3">
-                        {recentItems.slice(0, 6).map((item) => (
-                          <RecentCard
-                            key={item.id}
-                            item={recentToCardProps(item)}
-                            onClick={() => {
-                              if (item.type === "kanji") {
-                                const kanji = kanjis.find(
-                                  (k) => k.id === item.id,
-                                );
-                                if (kanji) handleKanjiClick(kanji);
-                              }
-                            }}
-                          />
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="bg-gray-50 rounded-xl p-6 text-center border border-gray-100">
-                        <p className="text-sm text-gray-500">
-                          Aún no has explorado contenido.
-                          <br />
-                          Los elementos que visites aparecerán aquí.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Katakana destacados */}
-              {!loadingKatakanas && katakanas.length > 0 && (
-                <div className="mb-10">
-                  <SectionHeader
-                    className="mb-4"
-                    title="Katakana"
-                    action={
-                      <button
-                        onClick={() => setSelectedCategory("katakana")}
-                        className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                      >
-                        Ver todo ({katakanas.length}) →
-                      </button>
-                    }
-                  />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {katakanas.slice(0, 12).map((katakana) => (
-                      <ContentCard
-                        key={katakana.id}
-                        {...katakanaToCard(katakana)}
-                        onClick={() => handleKanaClick(katakana)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Hiragana destacados */}
-              {!loadingHiraganas && hiraganas.length > 0 && (
-                <div className="mb-10">
-                  <SectionHeader
-                    className="mb-4"
-                    title="Hiragana"
-                    action={
-                      <button
-                        onClick={() => setSelectedCategory("hiragana")}
-                        className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                      >
-                        Ver todo ({hiraganas.length}) →
-                      </button>
-                    }
-                  />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {hiraganas.slice(0, 12).map((hiragana) => (
-                      <ContentCard
-                        key={hiragana.id}
-                        {...hiraganaToCard(hiragana)}
-                        onClick={() => handleKanaClick(hiragana)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Más kanjis */}
-              {!loadingKanjis && kanjis.length > 8 && (
-                <div className="mb-10">
-                  <SectionHeader
-                    className="mb-4"
-                    title="Colección de Kanjis"
-                    action={
-                      <button
-                        onClick={() => setSelectedCategory("kanji")}
-                        className="text-sm font-medium text-[#993331] hover:text-[#882d2d] transition-colors"
-                      >
-                        Ver todo ({kanjis.length}) →
-                      </button>
-                    }
-                  />
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {kanjis.slice(8, 24).map((kanji) => (
-                      <ContentCard
-                        key={kanji.id}
-                        {...kanjiToCard(kanji)}
-                        onClick={() => handleKanjiClick(kanji)}
-                        onFavoriteToggle={toggleFavoriteKanji}
-                        isFavorite={favoriteKanjis.has(kanji.id)}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Empty state */}
-              {!loadingKanjis &&
-                kanjis.length === 0 &&
-                !loadingKatakanas &&
-                katakanas.length === 0 &&
-                !loadingHiraganas &&
-                hiraganas.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">
-                      No hay contenido
+                {favoriteData.grammar.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                      Gramática
                     </h3>
-                    <p className="text-gray-600 text-center max-w-md">
-                      No encontramos contenido disponible.
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {favoriteData.grammar.map((fav) => (
+                        <ContentCard
+                          key={fav.id}
+                          {...grammarFavToCard(fav)}
+                          onFavoriteToggle={(id) =>
+                            toggleFavorite(id, "grammar")
+                          }
+                          isFavorite
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {favoriteData.word.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                      Vocabulario
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {favoriteData.word.map((fav) => (
+                        <ContentCard
+                          key={fav.id}
+                          {...wordFavToCard(fav)}
+                          onFavoriteToggle={(id) => toggleFavorite(id, "word")}
+                          isFavorite
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {getTotalFavorites() === 0 && (
+                  <div className="flex flex-col items-center justify-center py-16">
+                    <h3 className="mb-2 text-xl font-bold text-gray-900">
+                      No tienes favoritos aún
+                    </h3>
+                    <p className="max-w-md text-center text-gray-600">
+                      Agrega contenido a favoritos haciendo clic en el corazón en
+                      cualquier elemento.
                     </p>
                   </div>
                 )}
-            </>
-          )}
-
-          {/* ════════ Favoritos ════════ */}
-          {selectedCategory === "favoritos" && (
-            <div>
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">
-                  Mis Favoritos
-                </h2>
-                <span className="text-sm text-gray-600">
-                  {getTotalFavorites()} elementos
-                </span>
               </div>
-
-              {favoriteKanjis.size > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Kanjis
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {kanjis
-                      .filter((kanji) => favoriteKanjis.has(kanji.id))
-                      .map((kanji) => (
-                        <ContentCard
-                          key={kanji.id}
-                          {...kanjiToCard(kanji)}
-                          onClick={() => handleKanjiClick(kanji)}
-                          onFavoriteToggle={toggleFavoriteKanji}
-                          isFavorite={true}
-                        />
-                      ))}
-                  </div>
-                </div>
-              )}
-
-              {favoriteData.grammar.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Gramática
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {favoriteData.grammar.map((fav) => (
-                      <ContentCard
-                        key={fav.id}
-                        {...grammarFavToCard(fav)}
-                        onFavoriteToggle={(id) => toggleFavorite(id, "grammar")}
-                        isFavorite={true}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {favoriteData.word.length > 0 && (
-                <div className="mb-8">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-4">
-                    Vocabulario
-                  </h3>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {favoriteData.word.map((fav) => (
-                      <ContentCard
-                        key={fav.id}
-                        {...wordFavToCard(fav)}
-                        onFavoriteToggle={(id) => toggleFavorite(id, "word")}
-                        isFavorite={true}
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {getTotalFavorites() === 0 && (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    No tienes favoritos aún
-                  </h3>
-                  <p className="text-gray-600 text-center max-w-md">
-                    Agrega contenido a favoritos haciendo clic en el corazón en
-                    cualquier elemento.
-                  </p>
-                </div>
-              )}
-            </div>
+            </AnimatedEntrance>
           )}
 
-          {/* ════════ Kanjis (filtro) ════════ */}
           {selectedCategory === "kanji" && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Colección de Kanjis
-                </h2>
-                <span className="text-sm text-gray-600">
-                  {kanjis.length} kanjis
-                </span>
-              </div>
-              {loadingKanjis ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <SkeletonCard key={i} />
-                  ))}
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
+              <LibraryCategorySection
+                title="Colección de Kanjis"
+                countLabel={`${kanjis.length} kanjis`}
+                loading={loadingKanjis}
+                emptyTitle="No hay kanjis disponibles"
+                emptyDescription="No encontramos kanjis para mostrar."
+              >
+                {kanjis.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {kanjis.map((kanji) => (
                       <ContentCard
                         key={kanji.id}
@@ -711,41 +351,26 @@ export default function LibraryPage() {
                       />
                     ))}
                   </div>
-                  {kanjis.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        No hay kanjis disponibles
-                      </h3>
-                      <p className="text-gray-600 text-center max-w-md">
-                        No encontramos kanjis para mostrar.
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+              </LibraryCategorySection>
+            </AnimatedEntrance>
           )}
 
-          {/* ════════ Katakana (filtro) ════════ */}
           {selectedCategory === "katakana" && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Colección de Katakana
-                </h2>
-                <span className="text-sm text-gray-600">
-                  {katakanas.length} katakana
-                </span>
-              </div>
-              {loadingKatakanas ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <SkeletonCard key={i} />
-                  ))}
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
+              <LibraryCategorySection
+                title="Colección de Katakana"
+                countLabel={`${katakanas.length} katakana`}
+                loading={loadingKatakanas}
+                emptyTitle="No hay katakana disponibles"
+                emptyDescription="No encontramos katakana para mostrar."
+              >
+                {katakanas.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {katakanas.map((katakana) => (
                       <ContentCard
                         key={katakana.id}
@@ -754,41 +379,26 @@ export default function LibraryPage() {
                       />
                     ))}
                   </div>
-                  {katakanas.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        No hay katakana disponibles
-                      </h3>
-                      <p className="text-gray-600 text-center max-w-md">
-                        No encontramos katakana para mostrar.
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+              </LibraryCategorySection>
+            </AnimatedEntrance>
           )}
 
-          {/* ════════ Hiragana (filtro) ════════ */}
           {selectedCategory === "hiragana" && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">
-                  Colección de Hiragana
-                </h2>
-                <span className="text-sm text-gray-600">
-                  {hiraganas.length} hiragana
-                </span>
-              </div>
-              {loadingHiraganas ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {Array.from({ length: 12 }).map((_, i) => (
-                    <SkeletonCard key={i} />
-                  ))}
-                </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
+              <LibraryCategorySection
+                title="Colección de Hiragana"
+                countLabel={`${hiraganas.length} hiragana`}
+                loading={loadingHiraganas}
+                emptyTitle="No hay hiragana disponibles"
+                emptyDescription="No encontramos hiragana para mostrar."
+              >
+                {hiraganas.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {hiraganas.map((hiragana) => (
                       <ContentCard
                         key={hiragana.id}
@@ -797,97 +407,192 @@ export default function LibraryPage() {
                       />
                     ))}
                   </div>
-                  {hiraganas.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-16">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        No hay hiragana disponibles
-                      </h3>
-                      <p className="text-gray-600 text-center max-w-md">
-                        No encontramos hiragana para mostrar.
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
+                )}
+              </LibraryCategorySection>
+            </AnimatedEntrance>
           )}
 
-          {/* ════════ Recientes (filtro) ════════ */}
+          {selectedCategory === "themes" && (
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
+              <LibraryCategorySection
+                title={
+                  selectedSubtheme
+                    ? `Palabras de ${selectedSubtheme.meaning}`
+                    : selectedTheme
+                      ? `Subtemas de ${selectedTheme.meaning}`
+                      : "Temas de vocabulario"
+                }
+                countLabel={`${vocabularyCurrentCount} elementos`}
+                loading={loadingThemes || loadingSubthemes || loadingWords}
+                emptyTitle="No hay contenido disponible"
+                emptyDescription="No encontramos elementos para mostrar en esta sección."
+              >
+                <div className="mb-5 flex flex-wrap gap-3">
+                  {selectedTheme && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedSubtheme) {
+                          void openTheme(selectedTheme);
+                        } else {
+                          resetVocabularyView();
+                        }
+                      }}
+                      className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-[#993331]/20 hover:text-[#993331]"
+                    >
+                      {selectedSubtheme ? "Volver a subtemas" : "Volver a temas"}
+                    </button>
+                  )}
+
+                  {selectedSubtheme && (
+                    <button
+                      type="button"
+                      onClick={resetVocabularyView}
+                      className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-[#993331]/20 hover:text-[#993331]"
+                    >
+                      Ir al inicio
+                    </button>
+                  )}
+                </div>
+
+                {!selectedTheme && filteredThemes.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {filteredThemes.map((theme) => {
+                      const card = themeToCard(theme);
+
+                      return (
+                        <ContentCard
+                          key={theme.id}
+                          {...card}
+                          thumbnailClassName={card.thumbnailClassName}
+                          onClick={() => void openTheme(theme)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+
+                {selectedTheme &&
+                  !selectedSubtheme &&
+                  filteredSubthemes.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {filteredSubthemes.map((subtheme) => {
+                        const card = subthemeToCard(subtheme);
+
+                        return (
+                          <ContentCard
+                            key={subtheme.id}
+                            {...card}
+                            thumbnailClassName={card.thumbnailClassName}
+                            onClick={() => void openSubtheme(subtheme)}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {selectedSubtheme && filteredWords.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {filteredWords.map((word) => {
+                        const card = wordToCard(word);
+
+                        return (
+                          <ContentCard
+                            key={word.id}
+                            {...card}
+                            thumbnailClassName={card.thumbnailClassName}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+              </LibraryCategorySection>
+            </AnimatedEntrance>
+          )}
+
           {selectedCategory === "recent" && (
-            <div>
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Reciente</h2>
-                <span className="text-sm text-gray-600">
-                  {recentItems.length} elementos
-                </span>
-              </div>
-              {recentItems.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                  {recentItems.map((r) => {
-                    if (r.type === "kanji") {
-                      const kanji = kanjis.find((k) => k.id === r.id);
-                      if (!kanji) return null;
-                      return (
-                        <ContentCard
-                          key={r.id}
-                          {...kanjiToCard(kanji)}
-                          onClick={() => handleKanjiClick(kanji)}
-                          onFavoriteToggle={toggleFavoriteKanji}
-                          isFavorite={favoriteKanjis.has(kanji.id)}
-                        />
-                      );
-                    }
-                    if (r.type === "grammar_lesson" || r.type === "grammar") {
-                      return (
-                        <ContentCard
-                          key={r.id}
-                          id={r.id}
-                          title={r.title || "Gramática"}
-                          subtitle={r.description || undefined}
-                          thumbnail="文"
-                          onFavoriteToggle={(id) =>
-                            toggleFavorite(id, "grammar")
-                          }
-                          isFavorite={isFavorite(r.id)}
-                        />
-                      );
-                    }
-                    if (r.type === "word") {
-                      const meanings = Array.isArray(r.meanings)
-                        ? (r.meanings as string[]).join(", ")
-                        : undefined;
-                      return (
-                        <ContentCard
-                          key={r.id}
-                          id={r.id}
-                          title={r.kanjiWord || r.hiragana || "Palabra"}
-                          subtitle={meanings}
-                          thumbnail={r.kanjiWord || r.hiragana || "言"}
-                          onFavoriteToggle={(id) => toggleFavorite(id, "word")}
-                          isFavorite={isFavorite(r.id)}
-                        />
-                      );
-                    }
-                    return null;
-                  })}
-                </div>
-              ) : (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
-                    No hay elementos recientes
-                  </h3>
-                  <p className="text-gray-600 text-center max-w-md">
-                    Los elementos que visites aparecerán aquí.
-                  </p>
-                </div>
-              )}
-            </div>
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
+              <LibraryCategorySection
+                title="Reciente"
+                countLabel={`${recentItems.length} elementos`}
+                emptyTitle="No hay elementos recientes"
+                emptyDescription="Los elementos que visites aparecerán aquí."
+              >
+                {recentItems.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {recentItems.map((r) => {
+                      if (r.type === "kanji") {
+                        const kanji = kanjis.find((k) => k.id === r.id);
+                        if (!kanji) return null;
+
+                        return (
+                          <ContentCard
+                            key={r.id}
+                            {...kanjiToCard(kanji)}
+                            onClick={() => handleKanjiClick(kanji)}
+                            onFavoriteToggle={toggleFavoriteKanji}
+                            isFavorite={favoriteKanjis.has(kanji.id)}
+                          />
+                        );
+                      }
+
+                      if (r.type === "grammar_lesson" || r.type === "grammar") {
+                        return (
+                          <ContentCard
+                            key={r.id}
+                            id={r.id}
+                            title={r.title || "Gramática"}
+                            subtitle={r.description || undefined}
+                            thumbnail="文"
+                            onFavoriteToggle={(id) =>
+                              toggleFavorite(id, "grammar")
+                            }
+                            isFavorite={isFavorite(r.id)}
+                          />
+                        );
+                      }
+
+                      if (r.type === "word") {
+                        const meanings = Array.isArray(r.meanings)
+                          ? (r.meanings as string[]).join(", ")
+                          : undefined;
+
+                        return (
+                          <ContentCard
+                            key={r.id}
+                            id={r.id}
+                            title={r.kanjiWord || r.hiragana || "Palabra"}
+                            subtitle={meanings}
+                            thumbnail={r.kanjiWord || r.hiragana || "言"}
+                            onFavoriteToggle={(id) =>
+                              toggleFavorite(id, "word")
+                            }
+                            isFavorite={isFavorite(r.id)}
+                          />
+                        );
+                      }
+
+                      return null;
+                    })}
+                  </div>
+                )}
+              </LibraryCategorySection>
+            </AnimatedEntrance>
           )}
 
           <KanjiDetailModal
             kanji={selectedKanji}
             onClose={() => setSelectedKanji(null)}
           />
+
           {selectedKana && (
             <KanaDetailModal
               kana={selectedKana}

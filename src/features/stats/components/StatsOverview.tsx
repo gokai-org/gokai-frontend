@@ -20,6 +20,7 @@ interface StatCard {
 interface StatsOverviewProps {
   data?: OverviewStatsResponse | null;
   loading?: boolean;
+  animationsEnabled?: boolean;
 }
 
 const defaultCards: StatCard[] = [
@@ -99,17 +100,25 @@ function AnimatedCounter({
   prefix = "",
   suffix = "",
   duration = 1.5,
+  animationsEnabled = true,
 }: {
   value: number;
   prefix?: string;
   suffix?: string;
   duration?: number;
+  animationsEnabled?: boolean;
 }) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
     let start = 0;
     const end = Number.isFinite(value) ? value : 0;
+
+    if (!animationsEnabled) {
+      setCount(end);
+      return;
+    }
+
     const step = end / (duration * 60);
     let raf: number;
 
@@ -130,7 +139,7 @@ function AnimatedCounter({
 
     raf = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(raf);
-  }, [value, duration]);
+  }, [value, duration, animationsEnabled]);
 
   return (
     <span>
@@ -168,17 +177,32 @@ const cardVariants = {
   }),
 };
 
-function StatOverviewCard({ stat, index }: { stat: StatCard; index: number }) {
+function StatOverviewCard({
+  stat,
+  index,
+  animationsEnabled = true,
+}: {
+  stat: StatCard;
+  index: number;
+  animationsEnabled?: boolean;
+}) {
+  const CardWrapper = animationsEnabled ? motion.div : "div";
+  const TrendWrapper = animationsEnabled ? motion.span : "span";
+
   return (
-    <motion.div
-      custom={index}
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      whileHover={{
-        y: -4,
-        boxShadow: "0 12px 24px -4px rgba(153,51,49,0.12)",
-      }}
+    <CardWrapper
+      {...(animationsEnabled
+        ? {
+            custom: index,
+            variants: cardVariants,
+            initial: "hidden" as const,
+            animate: "visible" as const,
+            whileHover: {
+              y: -4,
+              boxShadow: "0 12px 24px -4px rgba(153,51,49,0.12)",
+            },
+          }
+        : {})}
       className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-default select-none"
     >
       <div className="flex items-center justify-between mb-3">
@@ -187,10 +211,14 @@ function StatOverviewCard({ stat, index }: { stat: StatCard; index: number }) {
         </div>
 
         {stat.trend !== undefined && stat.trend !== 0 && (
-          <motion.span
-            initial={{ opacity: 0, x: 8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.08 + 0.4 }}
+          <TrendWrapper
+            {...(animationsEnabled
+              ? {
+                  initial: { opacity: 0, x: 8 },
+                  animate: { opacity: 1, x: 0 },
+                  transition: { delay: index * 0.08 + 0.4 },
+                }
+              : {})}
             className={`text-xs font-bold px-2 py-1 rounded-full ${
               stat.trend > 0
                 ? "bg-green-50 text-green-600"
@@ -199,7 +227,7 @@ function StatOverviewCard({ stat, index }: { stat: StatCard; index: number }) {
           >
             {stat.trend > 0 ? "+" : ""}
             {stat.trend}%
-          </motion.span>
+          </TrendWrapper>
         )}
       </div>
 
@@ -211,16 +239,21 @@ function StatOverviewCard({ stat, index }: { stat: StatCard; index: number }) {
             value={stat.value}
             prefix={stat.prefix}
             suffix={stat.suffix}
+            animationsEnabled={animationsEnabled}
           />
         )}
       </p>
 
       <p className="text-xs text-gray-500 font-medium mt-1">{stat.label}</p>
-    </motion.div>
+    </CardWrapper>
   );
 }
 
-export function StatsOverview({ data, loading }: StatsOverviewProps) {
+export function StatsOverview({
+  data,
+  loading,
+  animationsEnabled = true,
+}: StatsOverviewProps) {
   const cards = data ? mapToCards(data) : defaultCards;
 
   if (loading) {
@@ -236,7 +269,12 @@ export function StatsOverview({ data, loading }: StatsOverviewProps) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
       {cards.map((stat, i) => (
-        <StatOverviewCard key={stat.id} stat={stat} index={i} />
+        <StatOverviewCard
+          key={stat.id}
+          stat={stat}
+          index={i}
+          animationsEnabled={animationsEnabled}
+        />
       ))}
     </div>
   );

@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 import { toCamelCase } from "@/shared/lib/utils/case";
+import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
-const BASE = process.env.GOKAI_USERS_API_BASE || "http://localhost:8082";
-
 export async function GET(req: NextRequest) {
   const rawToken = getTokenFromRequest(req);
+
   if (!rawToken) {
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   }
 
   const upstream = await fetch(
-    `${BASE}/users/${userId}/stats/recent-activity`,
+    `${apiConfig.usersApiBase}/users/${userId}/stats/recent-activity`,
     {
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",

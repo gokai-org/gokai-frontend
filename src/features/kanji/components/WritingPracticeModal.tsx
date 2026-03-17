@@ -8,6 +8,7 @@ import { getMockKanjiStrokes } from "@/features/kanji/mock/mockStrokeData";
 import { KanjiStrokePlayer } from "./KanjiStrokePlayer";
 import { KanjiWritingCanvas, type DrawnStroke } from "./KanjiWritingCanvas";
 import { getPrimaryMeaning } from "@/features/kanji/utils/kanjiText";
+import { safeRandomId } from "@/shared/lib/utils/safeRandomId";
 import {
   validateStroke,
   getPointsForFeedback,
@@ -269,7 +270,7 @@ export function WritingPracticeModal({
     );
 
     submitLesson({
-      lessonId: crypto.randomUUID(),
+      lessonId: safeRandomId(),
       kanjiId: kanji.id,
       mode: "writing",
       score: scorePercent,
