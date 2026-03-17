@@ -32,36 +32,44 @@ export interface LibrarySection {
   items: LibraryItem[];
 }
 
-// WORDS
+// THEMES / SUBTHEMES
+export type Theme = {
+  id: string;
+  kanji: string;
+  kana: string;
+  meaning: string;
+  released: boolean;
+};
+
+export type Subtheme = {
+  id: string;
+  themeId?: string;
+  kanji: string;
+  kana: string;
+  meaning: string;
+};
+
 export type Word = {
   id: string;
-  subtheme_id: string | null;
-  kanji: string | null;
-  hiragana: string | null;
-  icon: string | null;
-  meanings: string[] | null;
+  subthemeId?: string | null;
+  kanji?: string | null;
+  hiragana?: string | null;
+  icon?: string | null;
+  meanings?: string[] | null;
 };
 
-export type WordKanji = {
-  word_id: string;
-  kanji_id: string;
-};
-
-// FAVORITES (match backend: gokai-content)
+// FAVORITES
 export type FavoriteType = "kanji" | "grammar" | "word";
 
 export interface BackendFavoriteItem {
   type: FavoriteType;
   id: string;
   createdAt: string;
-  // Kanji fields
   symbol?: string | null;
-  readings?: string | null; // stringified JSON from backend
-  // Word fields
+  readings?: string | null;
   kanjiWord?: string | null;
-  meanings?: string | null; // stringified JSON from backend
+  meanings?: string | null;
   hiragana?: string | null;
-  // Grammar lesson fields
   title?: string | null;
   description?: string | null;
 }
@@ -72,21 +80,18 @@ export interface FavoritesResponse {
   word: BackendFavoriteItem[];
 }
 
-// RECENT ITEMS (match backend: gokai-content)
+// RECENT ITEMS
 export type RecentEntityType = "kanji" | "grammar_lesson" | "grammar" | "word";
 
 export interface BackendRecentItem {
   type: string;
   id: string;
   createdAt: string;
-  // Kanji fields
   symbol?: string | null;
   readings?: string[] | Record<string, string[]> | null;
-  // Word fields
   kanjiWord?: string | null;
   meanings?: string[] | Record<string, string[]> | null;
   hiragana?: string | null;
-  // Grammar lesson fields
   title?: string | null;
   description?: string | null;
 }
@@ -96,3 +101,4 @@ export interface RecentItemsResponse {
   grammar_lesson: BackendRecentItem[];
   word: BackendRecentItem[];
 }
+

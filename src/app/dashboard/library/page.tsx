@@ -16,6 +16,7 @@ import { KanaDetailModal } from "@/features/kana/components/KanaDetailModal";
 import { LibrarySkeleton } from "@/shared/ui/Skeleton";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
+import { useVocabularyContent } from "@/features/library/hooks/useVocabularyContent";
 import {
   CombinedLibraryItem,
   useLibraryContent,
@@ -25,10 +26,13 @@ import type { Kana } from "@/features/kana/types";
 import {
   buildLibraryCategories,
   grammarFavToCard,
+  hiraganaToCard,
   kanjiToCard,
   katakanaToCard,
-  hiraganaToCard,
+  subthemeToCard,
+  themeToCard,
   wordFavToCard,
+  wordToCard,
 } from "@/features/library/utils/libraryMappers";
 
 export default function LibraryPage() {
@@ -38,7 +42,7 @@ export default function LibraryPage() {
   const [selectedKana, setSelectedKana] = useState<Kana | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
-    useAnimationPreferences();  useAnimationPreferences();
+    useAnimationPreferences();
 
   const {
     kanjis,
@@ -54,6 +58,21 @@ export default function LibraryPage() {
     loadingKatakanas,
     loadingHiraganas,
   } = useLibraryContent(searchQuery);
+
+  const {
+    themes,
+    filteredThemes,
+    filteredSubthemes,
+    filteredWords,
+    selectedTheme,
+    selectedSubtheme,
+    loadingThemes,
+    loadingSubthemes,
+    loadingWords,
+    openTheme,
+    openSubtheme,
+    resetVocabularyView,
+  } = useVocabularyContent(searchQuery);
 
   const { recentItems, addRecentItem } = useRecentItems();
 
@@ -72,6 +91,7 @@ export default function LibraryPage() {
     kanjiCount: kanjis.length,
     katakanaCount: katakanas.length,
     hiraganaCount: hiraganas.length,
+    themeCount: themes.length,
   });
 
   const handleKanjiClick = (kanji: Kanji) => {
@@ -80,12 +100,24 @@ export default function LibraryPage() {
   };
 
   const handleKanaClick = (kana: Kana) => {
-    addRecentItem(
-      kana.kanaType === "hiragana" ? "hiragana" : "katakana",
-      kana.id,
-    );
     setSelectedKana(kana);
   };
+
+  const handleCategoryChange = (cat: string | null) => {
+    setSelectedCategory(cat);
+    setSearchQuery("");
+
+    if (cat !== "themes") {
+      resetVocabularyView();
+    }
+  };
+
+  const totalBaseContentCount = kanjis.length + katakanas.length + hiraganas.length;
+  const vocabularyCurrentCount = selectedSubtheme
+    ? filteredWords.length
+    : selectedTheme
+      ? filteredSubthemes.length
+      : filteredThemes.length;
 
   const kanaItems: CombinedLibraryItem[] = [
     ...filteredHiraganas.map((data) => ({ type: "hiragana" as const, data })),
@@ -98,24 +130,25 @@ export default function LibraryPage() {
         <LibrarySkeleton />
       ) : (
         <>
-            <AnimatedEntrance
-              index={0}
-              className="mb-8"
-              disabled={!animationsEnabled}
-              mode={heavyAnimationsEnabled ? "default" : "light"}
-            >
+          <AnimatedEntrance
+            index={0}
+            className="mb-8"
+            disabled={!animationsEnabled}
+            mode={heavyAnimationsEnabled ? "default" : "light"}
+          >
             <CategoryFilter
               categories={dynamicCategories}
               selectedCategory={selectedCategory}
-              onSelectCategory={(cat) => {
-                setSelectedCategory(cat);
-                setSearchQuery("");
-              }}
+              onSelectCategory={handleCategoryChange}
             />
           </AnimatedEntrance>
 
           {isSearching && !selectedCategory && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
               <div>
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-900">
@@ -176,7 +209,7 @@ export default function LibraryPage() {
                   title="Todo el contenido"
                   action={
                     <span className="text-sm font-medium text-gray-500">
-                      {kanjis.length + katakanas.length + hiraganas.length} elementos
+                      {totalBaseContentCount} elementos
                     </span>
                   }
                 />
@@ -204,7 +237,11 @@ export default function LibraryPage() {
           )}
 
           {selectedCategory === "favoritos" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
               <div>
                 <div className="mb-6 flex items-center justify-between">
                   <h2 className="text-2xl font-bold text-gray-900">
@@ -290,7 +327,11 @@ export default function LibraryPage() {
           )}
 
           {selectedCategory === "kanji" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
               <LibraryCategorySection
                 title="Colección de Kanjis"
                 countLabel={`${kanjis.length} kanjis`}
@@ -316,7 +357,11 @@ export default function LibraryPage() {
           )}
 
           {selectedCategory === "katakana" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
               <LibraryCategorySection
                 title="Colección de Katakana"
                 countLabel={`${katakanas.length} katakana`}
@@ -340,7 +385,11 @@ export default function LibraryPage() {
           )}
 
           {selectedCategory === "hiragana" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
               <LibraryCategorySection
                 title="Colección de Hiragana"
                 countLabel={`${hiraganas.length} hiragana`}
@@ -363,8 +412,114 @@ export default function LibraryPage() {
             </AnimatedEntrance>
           )}
 
+          {selectedCategory === "themes" && (
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
+              <LibraryCategorySection
+                title={
+                  selectedSubtheme
+                    ? `Palabras de ${selectedSubtheme.meaning}`
+                    : selectedTheme
+                      ? `Subtemas de ${selectedTheme.meaning}`
+                      : "Temas de vocabulario"
+                }
+                countLabel={`${vocabularyCurrentCount} elementos`}
+                loading={loadingThemes || loadingSubthemes || loadingWords}
+                emptyTitle="No hay contenido disponible"
+                emptyDescription="No encontramos elementos para mostrar en esta sección."
+              >
+                <div className="mb-5 flex flex-wrap gap-3">
+                  {selectedTheme && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (selectedSubtheme) {
+                          void openTheme(selectedTheme);
+                        } else {
+                          resetVocabularyView();
+                        }
+                      }}
+                      className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-[#993331]/20 hover:text-[#993331]"
+                    >
+                      {selectedSubtheme ? "Volver a subtemas" : "Volver a temas"}
+                    </button>
+                  )}
+
+                  {selectedSubtheme && (
+                    <button
+                      type="button"
+                      onClick={resetVocabularyView}
+                      className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-[#993331]/20 hover:text-[#993331]"
+                    >
+                      Ir al inicio
+                    </button>
+                  )}
+                </div>
+
+                {!selectedTheme && filteredThemes.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {filteredThemes.map((theme) => {
+                      const card = themeToCard(theme);
+
+                      return (
+                        <ContentCard
+                          key={theme.id}
+                          {...card}
+                          thumbnailClassName={card.thumbnailClassName}
+                          onClick={() => void openTheme(theme)}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+
+                {selectedTheme &&
+                  !selectedSubtheme &&
+                  filteredSubthemes.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {filteredSubthemes.map((subtheme) => {
+                        const card = subthemeToCard(subtheme);
+
+                        return (
+                          <ContentCard
+                            key={subtheme.id}
+                            {...card}
+                            thumbnailClassName={card.thumbnailClassName}
+                            onClick={() => void openSubtheme(subtheme)}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {selectedSubtheme && filteredWords.length > 0 && (
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {filteredWords.map((word) => {
+                        const card = wordToCard(word);
+
+                        return (
+                          <ContentCard
+                            key={word.id}
+                            {...card}
+                            thumbnailClassName={card.thumbnailClassName}
+                          />
+                        );
+                      })}
+                    </div>
+                  )}
+              </LibraryCategorySection>
+            </AnimatedEntrance>
+          )}
+
           {selectedCategory === "recent" && (
-            <AnimatedEntrance index={1} disabled={!animationsEnabled} mode={heavyAnimationsEnabled ? "default" : "light"}>
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
               <LibraryCategorySection
                 title="Reciente"
                 countLabel={`${recentItems.length} elementos`}

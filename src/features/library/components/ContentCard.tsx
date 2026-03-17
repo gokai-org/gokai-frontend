@@ -11,6 +11,13 @@ export interface ContentCardProps {
   onClick?: () => void;
   onFavoriteToggle?: (id: string) => void;
   isFavorite?: boolean;
+  thumbnailClassName?: string;
+  titleClassName?: string;
+  subtitleClassName?: string;
+}
+
+function isLongTextThumbnail(thumbnail: string | ReactNode) {
+  return typeof thumbnail === "string" && thumbnail.trim().length > 2;
 }
 
 export function ContentCard({
@@ -22,34 +29,58 @@ export function ContentCard({
   onClick,
   onFavoriteToggle,
   isFavorite = false,
+  thumbnailClassName = "",
+  titleClassName = "",
+  subtitleClassName = "",
 }: ContentCardProps) {
+  const longThumbnail = isLongTextThumbnail(thumbnail);
+
   return (
     <div className="group relative h-full">
       <button
         type="button"
         onClick={onClick}
         className={[
-          "flex h-full w-full flex-col justify-between rounded-[24px] border border-gray-100 bg-white p-5 text-left",
+          "flex h-full w-full flex-col justify-between rounded-[24px] border border-[#E8E3E1] bg-white p-5 text-left",
           "shadow-[0_2px_14px_-6px_rgba(0,0,0,0.06)]",
           "transition-all duration-300",
-          "hover:-translate-y-1 hover:border-[#993331]/15 hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.10)]",
+          "hover:-translate-y-1 hover:border-[#993331]/20 hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.10)]",
           "focus:outline-none focus:ring-2 focus:ring-[#993331]/20",
-          "min-h-[170px]",
+          "min-h-[188px]",
         ].join(" ")}
       >
         <div className="mb-5 flex items-start">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#993331]/8 text-[24px] font-bold text-[#993331] transition-colors duration-300 group-hover:bg-[#993331] group-hover:text-white">
+          <div
+            className={[
+              "flex shrink-0 items-center justify-center rounded-2xl bg-[#993331]/8 text-[#993331] transition-colors duration-300",
+              "group-hover:bg-[#993331]/12",
+              longThumbnail
+                ? "min-h-[60px] min-w-[60px] max-w-[72px] px-3 py-2 text-[14px] font-extrabold leading-tight"
+                : "h-14 w-14 text-[24px] font-bold",
+              thumbnailClassName,
+            ].join(" ")}
+          >
             {thumbnail}
           </div>
         </div>
 
         <div className="flex flex-1 flex-col justify-end">
-          <h3 className="line-clamp-2 break-words text-[19px] font-extrabold leading-tight tracking-tight text-gray-900 transition-colors group-hover:text-[#993331]">
+          <h3
+            className={[
+              "line-clamp-2 break-words text-[18px] font-extrabold leading-tight tracking-tight text-gray-900 transition-colors group-hover:text-[#993331]",
+              titleClassName,
+            ].join(" ")}
+          >
             {title}
           </h3>
 
           {subtitle && (
-            <p className="mt-2 line-clamp-1 text-[13px] font-medium text-gray-500">
+            <p
+              className={[
+                "mt-2 line-clamp-2 break-words text-[13px] font-medium leading-relaxed text-gray-500",
+                subtitleClassName,
+              ].join(" ")}
+            >
               {subtitle}
             </p>
           )}
