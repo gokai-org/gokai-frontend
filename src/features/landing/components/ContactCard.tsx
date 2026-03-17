@@ -1,87 +1,68 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
-import {
-  IconPhone,
-  IconMail,
-  IconTwitter,
-  IconInstagram,
-  IconFacebook,
-  IconWhatsApp,
-} from "./SocialIcons";
+import { Mail, MessageCircle, Send } from "lucide-react";
+import SocialIcons from "@/features/landing/components/SocialIcons";
 
-function SocialBadge({ children }: { children: React.ReactNode }) {
+export function ContactCard() {
   return (
-    <motion.div
-      whileHover={{ scale: 1.15, rotate: 5 }}
-      whileTap={{ scale: 0.9 }}
-      transition={{ type: "spring", stiffness: 300 }}
-      className="inline-flex h-12 w-12 items-center justify-center rounded-full bg-[#993331] shadow-sm ring-1 ring-black/10 cursor-pointer hover:shadow-lg"
+    <motion.article
+      initial={{ opacity: 0, y: 26, scale: 0.985 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+      className="relative overflow-hidden rounded-[40px] border border-black/5 bg-white/95 p-8 shadow-[0_22px_50px_-22px_rgba(0,0,0,0.22)] md:p-10 lg:p-12"
     >
-      <div className="text-white">{children}</div>
-    </motion.div>
-  );
-}
+      <div className="absolute right-[-20px] top-[-20px] h-36 w-36 rounded-full bg-[#993331]/[0.045]" />
+      <div className="absolute bottom-[-26px] left-[42%] h-28 w-28 rounded-full bg-[#993331]/[0.035]" />
 
-export default function ContactCard() {
-  return (
-    <div className="mx-auto w-full max-w-4xl overflow-hidden rounded-[28px] bg-white ring-1 ring-black/10 shadow-[0_18px_55px_rgba(0,0,0,0.18)]">
-      <div className="h-8 bg-[#b34a45]" />
+      <div className="relative z-10 grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-center">
+        <div>
+          <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-[28px] bg-[#993331]/10 text-[#993331]">
+            <MessageCircle className="h-10 w-10" />
+          </div>
 
-      <div className="px-8 pb-10 pt-8 md:px-12">
-        <div className="text-left">
-          <h3 className="text-3xl md:text-4xl font-extrabold tracking-tight text-[#993331]">
-            ¿Tienes alguna duda?
+          <h3 className="text-4xl font-extrabold tracking-tight text-neutral-950 md:text-5xl">
+            Hablemos de GOKAI
           </h3>
-          <h4 className="mt-1 text-4xl md:text-6xl font-extrabold tracking-tight text-neutral-900">
-            Escríbenos
-          </h4>
-          <p className="mt-4 max-w-2xl text-base md:text-lg leading-relaxed text-neutral-700">
-            Tu aprendizaje es nuestra prioridad. Si tienes alguna pregunta o
-            sugerencia, estamos aquí para ayudarte.
+
+          <p className="mt-5 max-w-3xl text-lg leading-relaxed text-neutral-600 md:text-[1.35rem]">
+            ¿Tienes dudas, ideas, comentarios o quieres saber más sobre la
+            plataforma? Escríbenos y te responderemos lo antes posible.
           </p>
-        </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-          <div className="flex items-start gap-4">
-            <IconPhone />
-            <div className="text-left">
-              <p className="text-lg font-extrabold text-neutral-900">
-                Teléfono
-              </p>
-              <p className="text-neutral-600">+52 33-2380-5480</p>
-            </div>
-          </div>
+          <div className="mt-8 flex flex-wrap items-center gap-4">
+            <Link
+              href="mailto:contacto@gokai.app"
+              className="inline-flex items-center gap-3 rounded-full bg-gradient-to-r from-[#993331] to-[#7a2927] px-7 py-4 text-xl font-extrabold text-white shadow-[0_18px_38px_-16px_rgba(153,51,49,0.52)] transition-all duration-300 hover:shadow-[0_22px_48px_-18px_rgba(153,51,49,0.60)]"
+            >
+              <Mail className="h-5 w-5" />
+              Contactanos
+            </Link>
 
-          <div className="flex items-start gap-4">
-            <IconMail />
-            <div className="text-left">
-              <p className="text-lg font-extrabold text-neutral-900">Email</p>
-              <p className="text-neutral-600">contacto@gokai.com</p>
-            </div>
+            <Link
+              href="/auth/login"
+              className="inline-flex items-center gap-3 rounded-full bg-neutral-100 px-7 py-4 text-xl font-bold text-neutral-950 transition-all duration-300 hover:bg-neutral-200"
+            >
+              <Send className="h-5 w-5" />
+              Probar GOKAI
+            </Link>
           </div>
         </div>
 
-        <div className="mt-8 text-left">
-          <p className="text-xl font-extrabold text-neutral-900">
-            Redes sociales
-          </p>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <SocialBadge>
-              <IconTwitter />
-            </SocialBadge>
-            <SocialBadge>
-              <IconInstagram />
-            </SocialBadge>
-            <SocialBadge>
-              <IconFacebook />
-            </SocialBadge>
-            <SocialBadge>
-              <IconWhatsApp />
-            </SocialBadge>
+        <div className="lg:justify-self-end">
+          <div className="rounded-[30px] border border-black/5 bg-[#faf8f7] p-7 shadow-inner">
+            <p className="text-sm font-extrabold uppercase tracking-[0.22em] text-neutral-500">
+              Síguenos
+            </p>
+
+            <div className="mt-6">
+              <SocialIcons />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </motion.article>
   );
 }

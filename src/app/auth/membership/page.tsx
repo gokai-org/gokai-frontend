@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
-import MembershipPicker from "@/features/landing/components/MembershipPicker";
+import { MembershipPicker } from "@/features/landing/components/MembershipPicker";
 
 export default function MembershipPage() {
   return (
@@ -54,7 +54,7 @@ export default function MembershipPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
         >
-          <MembershipPicker mode="link" animateOnMount />
+          <MembershipPicker mode="link" />
         </motion.div>
 
         {/* Footer link */}

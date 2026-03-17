@@ -1,102 +1,142 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
+import { Check } from "lucide-react";
 
 interface PlanCardProps {
-  variant: "free" | "plus";
   title: string;
-  subtitle: string;
   price: string;
-  period: string;
-  buttonText: string;
-  bullets: string[];
-  index: number;
+  description: string;
+  features: string[];
+  href: string;
+  ctaLabel?: string;
+  highlighted?: boolean;
+  badge?: string;
 }
 
-export default function PlanCard({
-  variant,
+export function PlanCard({
   title,
-  subtitle,
   price,
-  period,
-  buttonText,
-  bullets,
-  index,
+  description,
+  features,
+  href,
+  ctaLabel = "Elegir plan",
+  highlighted = false,
+  badge,
 }: PlanCardProps) {
-  const headerBg = "bg-[#b34a45]";
+  const jp = highlighted ? "特典" : "無料";
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-50px" }}
-      transition={{ delay: index * 0.15, duration: 0.6, ease: "easeOut" }}
-      whileHover={{ y: -12, scale: 1.02, transition: { duration: 0.3 } }}
-      className="relative overflow-hidden rounded-[28px] bg-white ring-1 ring-black/10 shadow-[0_18px_55px_rgba(0,0,0,0.18)] hover:shadow-[0_25px_70px_rgba(0,0,0,0.25)] transition-shadow"
+    <motion.article
+      initial={{ opacity: 0, y: 24, scale: 0.985 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
+      viewport={{ once: true, margin: "-80px" }}
+      transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={{ y: -8, scale: 1.01 }}
+      className={[
+        "relative flex h-full min-h-[650px] flex-col overflow-hidden rounded-[40px] border p-8 transition-all duration-300 lg:min-h-[690px] lg:p-10",
+        highlighted
+          ? "border-[#993331]/20 bg-gradient-to-b from-white via-[#fff9f8] to-[#fff1ef] shadow-[0_30px_70px_-26px_rgba(153,51,49,0.34)]"
+          : "border-black/5 bg-white shadow-[0_22px_50px_-22px_rgba(0,0,0,0.18)]",
+      ].join(" ")}
     >
-      <div className="pointer-events-none absolute inset-0 -z-10" />
-      <div className="pointer-events-none absolute -left-8 top-1/2 -z-10 h-16 w-16 -translate-y-1/2 rounded-full bg-white ring-1 ring-black/10" />
-      <div className="pointer-events-none absolute -right-8 top-1/2 -z-10 h-16 w-16 -translate-y-1/2 rounded-full bg-white ring-1 ring-black/10" />
+      {/* decorativos */}
+      <div className="absolute right-[-16px] top-[-16px] h-28 w-28 rounded-full bg-[#993331]/[0.05]" />
+      <div className="absolute bottom-[-20px] left-[72%] h-20 w-20 rounded-full bg-[#993331]/[0.04]" />
 
-      <div className={[headerBg, "px-8 pt-7 pb-6"].join(" ")}>
-        <h3 className="text-3xl font-extrabold tracking-wide text-white">
-          {title}
-        </h3>
-        <p className="mt-2 text-sm md:text-base text-white/90">{subtitle}</p>
-      </div>
-
-      <div className="bg-white px-8 pb-8 pt-7">
-        <div className="rounded-2xl bg-white ring-1 ring-black/10 shadow-sm p-5">
-          <div className="flex items-end gap-3">
-            <span className="text-neutral-300 text-2xl font-extrabold">$</span>
-            <div className="flex items-baseline gap-3">
-              <span className="text-5xl font-extrabold tracking-tight text-neutral-900">
-                {price.replace("$", "").trim()}
-              </span>
-              <span className="text-xs md:text-sm text-neutral-400">
-                {period}
-              </span>
-            </div>
-          </div>
-
-          <motion.button
-            type="button"
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            className="mt-4 w-full rounded-xl bg-[#993331] py-3 text-base font-extrabold text-white shadow-sm hover:bg-[#882d2d] transition-colors"
+      {/* kanji vertical decorativo */}
+      <div className="pointer-events-none absolute right-7 top-8 z-0 flex flex-col items-center leading-none text-[#993331]/12 select-none">
+        {jp.split("").map((char, index) => (
+          <span
+            key={`${char}-${index}`}
+            className="text-[3.1rem] font-semibold lg:text-[3.8rem]"
           >
-            {buttonText}
-          </motion.button>
-        </div>
-
-        <ul className="mt-6 space-y-3 text-left">
-          {bullets.map((b, idx) => (
-            <motion.li
-              key={b}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3 + idx * 0.1, duration: 0.4 }}
-              className="flex items-start gap-3 text-sm md:text-base text-neutral-800"
-            >
-              <motion.span
-                initial={{ scale: 0 }}
-                whileInView={{ scale: 1 }}
-                viewport={{ once: true }}
-                transition={{
-                  delay: 0.4 + idx * 0.1,
-                  type: "spring",
-                  stiffness: 200,
-                }}
-                className="mt-[2px] inline-flex h-6 w-6 items-center justify-center rounded-full bg-white ring-1 ring-black/10"
-              >
-                <span className="text-[#993331] font-black">✓</span>
-              </motion.span>
-              <span>{b}</span>
-            </motion.li>
-          ))}
-        </ul>
+            {char}
+          </span>
+        ))}
       </div>
-    </motion.div>
+
+      {/* espacio fijo para badge */}
+      <div className="relative z-10 mb-6 min-h-[44px]">
+        {badge ? (
+          <div className="w-fit rounded-full bg-gradient-to-r from-[#993331] to-[#7a2927] px-4 py-2 text-sm font-bold text-white shadow-lg shadow-[#993331]/20">
+            {badge}
+          </div>
+        ) : (
+          <div className="h-[44px]" />
+        )}
+      </div>
+
+      {/* header */}
+      <div className="relative z-10 flex min-h-[175px] flex-col text-left">
+        <div className="max-w-[82%]">
+          <h3 className="text-[2.15rem] font-extrabold leading-[1.02] tracking-tight text-neutral-950 lg:text-[2.45rem]">
+            {title}
+          </h3>
+
+          <p className="mt-4 text-lg leading-relaxed text-neutral-600">
+            {description}
+          </p>
+        </div>
+      </div>
+
+      {/* precio */}
+      <div className="relative z-10 my-8 flex min-h-[120px] items-center">
+        <div className="text-left">
+          <p
+            className={[
+              "font-black tracking-tight",
+              highlighted
+                ? "text-6xl text-[#b33c37] lg:text-7xl"
+                : "text-6xl text-[#b33c37] lg:text-7xl",
+            ].join(" ")}
+          >
+            {price}
+          </p>
+
+          <p className="mt-2 text-sm font-semibold uppercase tracking-[0.18em] text-neutral-400">
+            {highlighted ? "Plan premium" : "Plan inicial"}
+          </p>
+        </div>
+      </div>
+
+      {/* lista */}
+      <div className="relative z-10 flex-1 space-y-5">
+        {features.map((feature) => (
+          <div key={feature} className="flex items-start gap-4">
+            <div
+              className={[
+                "mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full shadow-sm",
+                highlighted
+                  ? "bg-[#993331]/10 text-[#993331]"
+                  : "bg-neutral-100 text-[#993331]",
+              ].join(" ")}
+            >
+              <Check className="h-5 w-5" />
+            </div>
+
+            <p className="text-lg leading-relaxed text-neutral-700">
+              {feature}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      {/* botón */}
+      <div className="relative z-10 mt-10">
+        <Link
+          href={href}
+          className={[
+            "inline-flex w-full items-center justify-center rounded-full px-6 py-5 text-xl font-extrabold transition-all duration-300",
+            highlighted
+              ? "bg-gradient-to-r from-[#993331] to-[#7a2927] text-white shadow-[0_18px_38px_-16px_rgba(153,51,49,0.52)] hover:shadow-[0_22px_48px_-18px_rgba(153,51,49,0.60)]"
+              : "bg-neutral-100 text-neutral-950 hover:bg-neutral-200",
+          ].join(" ")}
+        >
+          {ctaLabel}
+        </Link>
+      </div>
+    </motion.article>
   );
 }
