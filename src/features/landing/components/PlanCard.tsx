@@ -37,7 +37,7 @@ export function PlanCard({
       className={[
         "relative flex h-full min-h-[650px] flex-col overflow-hidden rounded-[40px] border p-8 transition-all duration-300 lg:min-h-[690px] lg:p-10",
         highlighted
-          ? "border-[#993331]/20 bg-gradient-to-b from-white via-[#fff9f8] to-[#fff1ef] shadow-[0_30px_70px_-26px_rgba(153,51,49,0.34)]"
+          ? "border-[#993331]/15 bg-gradient-to-b from-white via-[#fffaf9] to-[#fff5f3] shadow-[0_30px_70px_-26px_rgba(153,51,49,0.22)]"
           : "border-black/5 bg-white shadow-[0_22px_50px_-22px_rgba(0,0,0,0.18)]",
       ].join(" ")}
     >
