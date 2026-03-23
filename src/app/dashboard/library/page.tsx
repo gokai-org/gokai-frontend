@@ -23,10 +23,13 @@ import {
 } from "@/features/library/hooks/useLibraryContent";
 import type { Kanji } from "@/features/kanji/types";
 import type { Kana } from "@/features/kana/types";
+import { getKana } from "@/features/kana/api/kanaApi";
 import {
   buildLibraryCategories,
   grammarFavToCard,
+  hiraganaFavToCard,
   hiraganaToCard,
+  katakanaFavToCard,
   kanjiToCard,
   katakanaToCard,
   subthemeToCard,
@@ -78,6 +81,8 @@ export default function LibraryPage() {
 
   const {
     favoriteKanjis,
+    favoriteHiraganas,
+    favoriteKatakanas,
     favoriteData,
     isFavorite,
     toggleFavorite,
@@ -99,8 +104,14 @@ export default function LibraryPage() {
     setSelectedKanji(kanji);
   };
 
-  const handleKanaClick = (kana: Kana) => {
-    setSelectedKana(kana);
+  const handleKanaClick = async (kana: Kana) => {
+    try {
+      const detail = await getKana(kana.id);
+      setSelectedKana(detail);
+    } catch {
+      // Fallback to list item so the modal can still open.
+      setSelectedKana(kana);
+    }
   };
 
   const handleCategoryChange = (cat: string | null) => {
@@ -163,7 +174,15 @@ export default function LibraryPage() {
                   <LibraryGrid
                     items={allLibraryItems}
                     favoriteKanjis={favoriteKanjis}
+                    favoriteHiraganas={favoriteHiraganas}
+                    favoriteKatakanas={favoriteKatakanas}
                     toggleFavoriteKanji={toggleFavoriteKanji}
+                    toggleFavoriteHiragana={(id) =>
+                      void toggleFavorite(id, "hiragana")
+                    }
+                    toggleFavoriteKatakana={(id) =>
+                      void toggleFavorite(id, "katakana")
+                    }
                     onKanjiClick={handleKanjiClick}
                     onKanaClick={handleKanaClick}
                     className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
@@ -218,7 +237,15 @@ export default function LibraryPage() {
                   <LibraryGrid
                     items={allLibraryItems}
                     favoriteKanjis={favoriteKanjis}
+                    favoriteHiraganas={favoriteHiraganas}
+                    favoriteKatakanas={favoriteKatakanas}
                     toggleFavoriteKanji={toggleFavoriteKanji}
+                    toggleFavoriteHiragana={(id) =>
+                      void toggleFavorite(id, "hiragana")
+                    }
+                    toggleFavoriteKatakana={(id) =>
+                      void toggleFavorite(id, "katakana")
+                    }
                     onKanjiClick={handleKanjiClick}
                     onKanaClick={handleKanaClick}
                   />
@@ -285,6 +312,46 @@ export default function LibraryPage() {
                           {...grammarFavToCard(fav)}
                           onFavoriteToggle={(id) =>
                             toggleFavorite(id, "grammar")
+                          }
+                          isFavorite
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {favoriteData.hiragana.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                      Hiragana
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {favoriteData.hiragana.map((fav) => (
+                        <ContentCard
+                          key={fav.id}
+                          {...hiraganaFavToCard(fav)}
+                          onFavoriteToggle={(id) =>
+                            void toggleFavorite(id, "hiragana")
+                          }
+                          isFavorite
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {favoriteData.katakana.length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                      Katakana
+                    </h3>
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                      {favoriteData.katakana.map((fav) => (
+                        <ContentCard
+                          key={fav.id}
+                          {...katakanaFavToCard(fav)}
+                          onFavoriteToggle={(id) =>
+                            void toggleFavorite(id, "katakana")
                           }
                           isFavorite
                         />
@@ -376,6 +443,10 @@ export default function LibraryPage() {
                         key={katakana.id}
                         {...katakanaToCard(katakana)}
                         onClick={() => handleKanaClick(katakana)}
+                        onFavoriteToggle={(id) =>
+                          void toggleFavorite(id, "katakana")
+                        }
+                        isFavorite={favoriteKatakanas.has(katakana.id)}
                       />
                     ))}
                   </div>
@@ -404,6 +475,10 @@ export default function LibraryPage() {
                         key={hiragana.id}
                         {...hiraganaToCard(hiragana)}
                         onClick={() => handleKanaClick(hiragana)}
+                        onFavoriteToggle={(id) =>
+                          void toggleFavorite(id, "hiragana")
+                        }
+                        isFavorite={favoriteHiraganas.has(hiragana.id)}
                       />
                     ))}
                   </div>

@@ -5,6 +5,66 @@ import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
+type RawKana = {
+  id?: string;
+  symbol?: string;
+  kanaType?: string;
+  kana_type?: string;
+  romaji?: string;
+  pointsToUnlock?: number;
+  points_to_unlock?: number;
+  viewBox?: string;
+  view_box?: string;
+  strokes?: string[];
+};
+
+type RawKanaListResponse = {
+  hiragana?: RawKana[];
+  katakana?: RawKana[];
+};
+
+function normalizeKana(raw: RawKana) {
+  return {
+    id: raw.id ?? "",
+    symbol: raw.symbol ?? "",
+    kanaType: raw.kanaType ?? raw.kana_type ?? "hiragana",
+    romaji: raw.romaji ?? "",
+    pointsToUnlock: raw.pointsToUnlock ?? raw.points_to_unlock ?? 0,
+    viewBox: raw.viewBox ?? raw.view_box,
+    strokes: Array.isArray(raw.strokes) ? raw.strokes : [],
+  };
+}
+
+function normalizeKanaBody(body: unknown) {
+  if (!body || typeof body !== "object") return body;
+
+  const input = body as Record<string, unknown>;
+  return {
+    id: typeof input.id === "string" ? input.id : undefined,
+    symbol: typeof input.symbol === "string" ? input.symbol : "",
+    kanaType:
+      typeof input.kanaType === "string"
+        ? input.kanaType
+        : typeof input.kana_type === "string"
+          ? input.kana_type
+          : "",
+    romaji: typeof input.romaji === "string" ? input.romaji : "",
+    pointsToUnlock:
+      typeof input.pointsToUnlock === "number"
+        ? input.pointsToUnlock
+        : typeof input.points_to_unlock === "number"
+          ? input.points_to_unlock
+          : 0,
+    viewBox:
+      typeof input.viewBox === "string"
+        ? input.viewBox
+        : typeof input.view_box === "string"
+          ? input.view_box
+          : "",
+    strokes: Array.isArray(input.strokes) ? input.strokes : [],
+  };
+}
+
 /**
  * GET /api/content/kana?kana_type=hiragana|katakana
  */
@@ -18,18 +78,38 @@ export async function GET(req: NextRequest) {
   const token = normalizeBearerToken(raw);
   const kanaType = req.nextUrl.searchParams.get("kana_type") ?? "";
 
-  const url = new URL(`${apiConfig.contentApiBase}/content/kana`);
-  if (kanaType) {
-    url.searchParams.set("kana_type", kanaType);
-  }
-
-  const upstream = await fetch(url.toString(), {
+  const upstream = await fetch(`${apiConfig.contentApiBase}/content/kanas`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });
 
-  const data = await upstream.json().catch(() => ({}));
-  return NextResponse.json(data, { status: upstream.status });
+  const rawData = await upstream.json().catch(() => ({}));
+
+  if (!upstream.ok) {
+    return NextResponse.json(rawData, { status: upstream.status });
+  }
+
+  const data = rawData as RawKanaListResponse | RawKana[];
+  const hiragana = Array.isArray((data as RawKanaListResponse)?.hiragana)
+    ? (data as RawKanaListResponse).hiragana!
+    : [];
+  const katakana = Array.isArray((data as RawKanaListResponse)?.katakana)
+    ? (data as RawKanaListResponse).katakana!
+    : [];
+
+  // Some environments may still return a flat array.
+  const flat = Array.isArray(data) ? data : [...hiragana, ...katakana];
+
+  if (kanaType === "hiragana" || kanaType === "katakana") {
+    const filtered = flat.filter(
+      (item) => (item.kanaType ?? item.kana_type) === kanaType,
+    );
+    return NextResponse.json(filtered.map(normalizeKana), {
+      status: upstream.status,
+    });
+  }
+
+  return NextResponse.json(flat.map(normalizeKana), { status: upstream.status });
 }
 
 /**
@@ -45,15 +125,22 @@ export async function POST(req: NextRequest) {
   const token = normalizeBearerToken(raw);
   const body = await req.json();
 
-  const upstream = await fetch(`${apiConfig.contentApiBase}/content/kana`, {
+  const upstream = await fetch(`${apiConfig.contentApiBase}/content/kanas`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify(normalizeKanaBody(body)),
   });
 
   const data = await upstream.json().catch(() => ({}));
-  return NextResponse.json(data, { status: upstream.status });
+
+  if (!upstream.ok) {
+    return NextResponse.json(data, { status: upstream.status });
+  }
+
+  return NextResponse.json(normalizeKana(data as RawKana), {
+    status: upstream.status,
+  });
 }

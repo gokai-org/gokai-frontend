@@ -59,7 +59,12 @@ export type Word = {
 };
 
 // FAVORITES
-export type FavoriteType = "kanji" | "grammar" | "word";
+export type FavoriteType =
+  | "kanji"
+  | "hiragana"
+  | "katakana"
+  | "grammar"
+  | "word";
 
 export interface BackendFavoriteItem {
   type: FavoriteType;
@@ -76,6 +81,8 @@ export interface BackendFavoriteItem {
 
 export interface FavoritesResponse {
   kanji: BackendFavoriteItem[];
+  hiragana: BackendFavoriteItem[];
+  katakana: BackendFavoriteItem[];
   grammar: BackendFavoriteItem[];
   word: BackendFavoriteItem[];
 }

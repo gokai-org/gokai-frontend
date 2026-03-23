@@ -4,6 +4,7 @@ export type Kana = {
   id: string;
   symbol: string;
   kanaType: KanaType;
+  romaji?: string;
   pointsToUnlock: number;
   viewBox?: string;
   strokes?: string[];

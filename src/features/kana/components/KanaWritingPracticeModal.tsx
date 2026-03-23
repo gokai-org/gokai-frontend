@@ -112,7 +112,7 @@ export function KanaWritingPracticeModal({
     return () => {
       cancelled = true;
     };
-  }, [kana.id, kana.strokes, kana.viewBox]);
+  }, [kana.id, kana.symbol, kana.strokes, kana.viewBox]);
 
   // ── Demo auto-play ──
   useEffect(() => {
@@ -318,6 +318,11 @@ export function KanaWritingPracticeModal({
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {usingMock && (
+                  <span className="px-2.5 py-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold rounded-full">
+                    DEMO
+                  </span>
+                )}
                 <button
                   onClick={onClose}
                   className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition"

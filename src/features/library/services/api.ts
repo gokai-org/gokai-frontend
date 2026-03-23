@@ -9,13 +9,13 @@ import type {
 // FAVORITOS
 // ========================================
 
-/** GET /api/content/favorites → { kanji: [...], grammar: [...], word: [...] } */
+/** GET /api/content/favorites → { kanji, hiragana, katakana, grammar, word } */
 export async function getFavorites(): Promise<FavoritesResponse> {
   return apiFetch<FavoritesResponse>("/api/content/favorites");
 }
 
-/** POST /api/content/favorites → { id, type: "kanji"|"grammar"|"word" } */
-export async function addFavorite(id: string, type: "kanji" | "grammar" | "word") {
+/** POST /api/content/favorites → { id, type: FavoriteType } */
+export async function addFavorite(id: string, type: FavoriteType) {
   return apiFetch("/api/content/favorites", {
     method: "POST",
     body: JSON.stringify({ id, type }),
@@ -23,7 +23,7 @@ export async function addFavorite(id: string, type: "kanji" | "grammar" | "word"
 }
 
 /** DELETE /api/content/favorites/:type/:id */
-export async function removeFavorite(id: string, type: "kanji" | "grammar" | "word") {
+export async function removeFavorite(id: string, type: FavoriteType) {
   return apiFetch(`/api/content/favorites/${type}/${id}`, {
     method: "DELETE",
   });

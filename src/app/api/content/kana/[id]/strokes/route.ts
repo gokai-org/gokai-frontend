@@ -23,7 +23,7 @@ export async function GET(
   const token = normalizeBearerToken(raw);
   const { id } = await params;
 
-  const upstream = await fetch(`${apiConfig.contentApiBase}/content/kana/${id}`, {
+  const upstream = await fetch(`${apiConfig.contentApiBase}/content/kanas/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
     cache: "no-store",
   });

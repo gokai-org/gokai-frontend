@@ -188,6 +188,13 @@ export function KanaWritingCanvas({
         const drawnStroke: DrawnStroke = { points: [...currentPoints.current] };
         completedStrokes.current.push(drawnStroke);
         onStrokeDrawn(drawnStroke);
+      } else if (currentPoints.current.length === 1) {
+        // Keep parity with kanji practice: a tap still counts as a miss attempt.
+        const drawnStroke: DrawnStroke = {
+          points: [...currentPoints.current, currentPoints.current[0]],
+        };
+        completedStrokes.current.push(drawnStroke);
+        onStrokeDrawn(drawnStroke);
       }
       currentPoints.current = [];
       scheduleRedraw();

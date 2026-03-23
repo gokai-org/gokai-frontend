@@ -7,6 +7,11 @@ export interface ContentCardProps {
   title: string;
   subtitle?: string;
   thumbnail: string | ReactNode;
+  topRightBadge?: string;
+  topRightBadgeClassName?: string;
+  favoriteButtonThemeClassName?: string;
+  favoriteIconThemeClassName?: string;
+  favoriteIconHoverClassName?: string;
   progress?: number;
   onClick?: () => void;
   onFavoriteToggle?: (id: string) => void;
@@ -25,6 +30,11 @@ export function ContentCard({
   title,
   subtitle,
   thumbnail,
+  topRightBadge,
+  topRightBadgeClassName = "",
+  favoriteButtonThemeClassName = "",
+  favoriteIconThemeClassName = "",
+  favoriteIconHoverClassName = "hover:text-[#993331]",
   progress,
   onClick,
   onFavoriteToggle,
@@ -34,9 +44,22 @@ export function ContentCard({
   subtitleClassName = "",
 }: ContentCardProps) {
   const longThumbnail = isLongTextThumbnail(thumbnail);
+  const hasCustomThumbnailStyles = thumbnailClassName.trim().length > 0;
 
   return (
     <div className="group relative h-full">
+      {topRightBadge && (
+        <div
+          className={[
+            "absolute right-4 top-4 z-10 rounded-full px-2 py-0.5 text-[10px] font-extrabold",
+            topRightBadgeClassName ||
+              "border border-[#993331]/15 bg-[#993331]/10 text-[#993331]",
+          ].join(" ")}
+        >
+          {topRightBadge}
+        </div>
+      )}
+
       <button
         type="button"
         onClick={onClick}
@@ -52,8 +75,10 @@ export function ContentCard({
         <div className="mb-5 flex items-start">
           <div
             className={[
-              "flex shrink-0 items-center justify-center rounded-2xl bg-[#993331]/8 text-[#993331] transition-colors duration-300",
-              "group-hover:bg-[#993331]/12",
+              "flex shrink-0 items-center justify-center rounded-2xl transition-colors duration-300",
+              hasCustomThumbnailStyles
+                ? ""
+                : "bg-[#993331]/8 text-[#993331] group-hover:bg-[#993331]/12",
               longThumbnail
                 ? "min-h-[60px] min-w-[60px] max-w-[72px] px-3 py-2 text-[14px] font-extrabold leading-tight"
                 : "h-14 w-14 text-[24px] font-bold",
@@ -109,9 +134,11 @@ export function ContentCard({
             onFavoriteToggle(id);
           }}
           className={[
-            "absolute right-4 top-4 z-10 rounded-full border border-gray-100 bg-white p-2 shadow-sm",
+            "absolute z-10 rounded-full border border-gray-100 bg-white p-2 shadow-sm",
             "transition-all duration-200 hover:scale-105 active:scale-95",
             isFavorite ? "opacity-100" : "opacity-0 group-hover:opacity-100",
+            isFavorite ? favoriteButtonThemeClassName : "",
+            "right-4 bottom-4",
           ].join(" ")}
           aria-label={
             isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
@@ -120,8 +147,8 @@ export function ContentCard({
           <svg
             className={`h-4.5 w-4.5 transition-colors ${
               isFavorite
-                ? "fill-[#F5D076] text-[#F5D076]"
-                : "text-gray-300 hover:text-[#993331]"
+                ? `fill-current ${favoriteIconThemeClassName || "text-[#F5D076]"}`
+                : `text-gray-300 ${favoriteIconHoverClassName}`
             }`}
             viewBox="0 0 24 24"
             stroke="currentColor"

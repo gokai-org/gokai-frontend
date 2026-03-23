@@ -12,6 +12,23 @@ import {
 } from "@/features/kanji/utils/kanjiText";
 import type { Theme, Subtheme, Word } from "@/features/library/types";
 
+const RED_THEME = {
+  primary: "#993331",
+  secondary: "#BA5149",
+  soft: "#E7D8D8",
+  softBg: "#FFF8F7",
+  softBg2: "#F8ECEA",
+  badgeBg: "bg-[#993331]/10",
+  badgeText: "text-[#993331]",
+  badgeBorder: "border-[#993331]/10",
+  surface:
+    "border-[#E7D8D8] bg-gradient-to-br from-white via-[#FFF8F7] to-[#F8ECEA]",
+  thumbStrong:
+    "bg-gradient-to-br from-[#993331] to-[#BA5149] text-white shadow-lg",
+  thumbSoft: "bg-[#993331]/10 text-[#993331]",
+  thumbSoftAlt: "bg-[#993331]/8 text-[#993331]",
+};
+
 function compactJapaneseText(value?: string | null) {
   if (!value) return "";
   return value.replace(/\s+/g, " ").trim();
@@ -53,25 +70,49 @@ export function kanjiToCard(kanji: Kanji) {
     title: meaning,
     subtitle: reading ? `Lectura: ${reading}` : "Sin lectura",
     thumbnail: kanji.symbol,
+    thumbnailClassName:
+      "w-[72px] h-[72px] text-[40px] rounded-2xl " + RED_THEME.thumbStrong,
+    topRightBadge: `${kanji.pointsToUnlock} pts`,
+    topRightBadgeClassName:
+      "border border-[#993331]/20 bg-[#993331]/10 text-[#993331] backdrop-blur-sm",
+    favoriteButtonThemeClassName: "border-[#993331]/25 bg-[#993331]/10",
+    favoriteIconThemeClassName: "text-[#993331]",
+    favoriteIconHoverClassName: "hover:text-[#BA5149]",
     meta: `${readingsCount || 0} lecturas • ${meaningsCount || 0} significados`,
   };
 }
 
 export function katakanaToCard(katakana: Kana) {
+  const title = katakana.romaji?.trim() || katakana.symbol;
   return {
     id: katakana.id,
-    title: katakana.symbol,
-    subtitle: "Katakana",
+    title,
     thumbnail: katakana.symbol,
+    thumbnailClassName:
+      "w-[72px] h-[72px] text-[40px] rounded-2xl shadow-lg bg-gradient-to-br from-[#A63B38] to-[#C85B52] text-white",
+    topRightBadge: `${katakana.pointsToUnlock} pts`,
+    topRightBadgeClassName:
+      "border border-[#A63B38]/25 bg-[#A63B38]/12 text-[#A63B38] backdrop-blur-sm",
+    favoriteButtonThemeClassName: "border-[#A63B38]/30 bg-[#A63B38]/10",
+    favoriteIconThemeClassName: "text-[#A63B38]",
+    favoriteIconHoverClassName: "hover:text-[#C85B52]",
   };
 }
 
 export function hiraganaToCard(hiragana: Kana) {
+  const title = hiragana.romaji?.trim() || hiragana.symbol;
   return {
     id: hiragana.id,
-    title: hiragana.symbol,
-    subtitle: "Hiragana",
+    title,
     thumbnail: hiragana.symbol,
+    thumbnailClassName:
+      "w-[72px] h-[72px] text-[40px] rounded-2xl shadow-lg bg-gradient-to-br from-[#8F2F2D] to-[#B84C45] text-white",
+    topRightBadge: `${hiragana.pointsToUnlock} pts`,
+    topRightBadgeClassName:
+      "border border-[#8F2F2D]/25 bg-[#8F2F2D]/12 text-[#8F2F2D] backdrop-blur-sm",
+    favoriteButtonThemeClassName: "border-[#8F2F2D]/30 bg-[#8F2F2D]/10",
+    favoriteIconThemeClassName: "text-[#8F2F2D]",
+    favoriteIconHoverClassName: "hover:text-[#B84C45]",
   };
 }
 
@@ -97,6 +138,26 @@ export function recentToCardProps(
         lastAccessed: item.createdAt,
       };
     }
+
+    case "hiragana":
+      return {
+        id: item.id,
+        title: item.symbol || "Hiragana",
+        description: "Hiragana",
+        thumbnail: item.symbol || "あ",
+        category: "word",
+        lastAccessed: item.createdAt,
+      };
+
+    case "katakana":
+      return {
+        id: item.id,
+        title: item.symbol || "Katakana",
+        description: "Katakana",
+        thumbnail: item.symbol || "ア",
+        category: "word",
+        lastAccessed: item.createdAt,
+      };
 
     case "grammar_lesson":
     case "grammar":
@@ -143,6 +204,38 @@ export function grammarFavToCard(fav: BackendFavoriteItem) {
   };
 }
 
+export function hiraganaFavToCard(fav: BackendFavoriteItem) {
+  const symbol = compactJapaneseText(fav.symbol) || "あ";
+
+  return {
+    id: fav.id,
+    title: symbol,
+    subtitle: "Hiragana",
+    thumbnail: symbol,
+    thumbnailClassName:
+      "w-[72px] h-[72px] text-[40px] rounded-2xl shadow-lg bg-gradient-to-br from-[#8F2F2D] to-[#B84C45] text-white",
+    favoriteButtonThemeClassName: "border-[#8F2F2D]/30 bg-[#8F2F2D]/10",
+    favoriteIconThemeClassName: "text-[#8F2F2D]",
+    favoriteIconHoverClassName: "hover:text-[#B84C45]",
+  };
+}
+
+export function katakanaFavToCard(fav: BackendFavoriteItem) {
+  const symbol = compactJapaneseText(fav.symbol) || "ア";
+
+  return {
+    id: fav.id,
+    title: symbol,
+    subtitle: "Katakana",
+    thumbnail: symbol,
+    thumbnailClassName:
+      "w-[72px] h-[72px] text-[40px] rounded-2xl shadow-lg bg-gradient-to-br from-[#A63B38] to-[#C85B52] text-white",
+    favoriteButtonThemeClassName: "border-[#A63B38]/30 bg-[#A63B38]/10",
+    favoriteIconThemeClassName: "text-[#A63B38]",
+    favoriteIconHoverClassName: "hover:text-[#C85B52]",
+  };
+}
+
 export function wordFavToCard(fav: BackendFavoriteItem) {
   let parsedMeanings: string | undefined;
 
@@ -172,8 +265,7 @@ export function themeToCard(theme: Theme) {
     thumbnail: compactKanji || theme.kana || "題",
     badge: "Tema",
     accentClassName: "text-[#993331]",
-    surfaceClassName:
-      "border-[#E7D8D8] bg-gradient-to-br from-white via-[#FFF8F7] to-[#F8ECEA]",
+    surfaceClassName: RED_THEME.surface,
     badgeClassName:
       "bg-[#993331]/10 text-[#993331] border border-[#993331]/10",
     thumbnailClassName:
@@ -193,15 +285,15 @@ export function subthemeToCard(subtheme: Subtheme) {
     subtitle: japanesePreview || "Subtema",
     thumbnail: compactKanji || subtheme.kana || "章",
     badge: "Subtema",
-    accentClassName: "text-[#9A5B16]",
+    accentClassName: "text-[#A63B38]",
     surfaceClassName:
-      "border-[#E9DFC9] bg-gradient-to-br from-white via-[#FFF9F1] to-[#F8F0E2]",
+      "border-[#E7D8D8] bg-gradient-to-br from-white via-[#FFF8F7] to-[#FAEEEC]",
     badgeClassName:
-      "bg-[#B7791F]/10 text-[#9A5B16] border border-[#B7791F]/10",
+      "bg-[#A63B38]/10 text-[#A63B38] border border-[#A63B38]/10",
     thumbnailClassName:
       compactKanji && compactKanji.length > 2
-        ? "min-h-[64px] min-w-[64px] max-w-[86px] px-3 py-2 text-[12px] font-extrabold leading-tight bg-[#B7791F]/10 text-[#9A5B16]"
-        : "h-14 w-14 text-[24px] font-bold bg-[#B7791F]/10 text-[#9A5B16]",
+        ? "min-h-[64px] min-w-[64px] max-w-[86px] px-3 py-2 text-[12px] font-extrabold leading-tight bg-[#A63B38]/10 text-[#A63B38]"
+        : "h-14 w-14 text-[24px] font-bold bg-[#A63B38]/10 text-[#A63B38]",
   };
 }
 
@@ -218,13 +310,13 @@ export function wordToCard(word: Word) {
     subtitle: subtitle || "Vocabulario",
     thumbnail: pickWordThumbnail(word),
     badge: "Palabra",
-    accentClassName: "text-[#155E75]",
+    accentClassName: "text-[#B84C45]",
     surfaceClassName:
-      "border-[#D7E7EC] bg-gradient-to-br from-white via-[#F6FBFC] to-[#EAF5F8]",
+      "border-[#E9D7D6] bg-gradient-to-br from-white via-[#FFF9F8] to-[#FBEFEE]",
     badgeClassName:
-      "bg-[#0891B2]/10 text-[#155E75] border border-[#0891B2]/10",
+      "bg-[#B84C45]/10 text-[#B84C45] border border-[#B84C45]/10",
     thumbnailClassName:
-      "h-14 w-14 text-[20px] font-bold bg-[#0891B2]/10 text-[#155E75]",
+      "h-14 w-14 text-[20px] font-bold bg-[#B84C45]/10 text-[#B84C45]",
   };
 }
 
@@ -242,42 +334,42 @@ export function buildLibraryCategories(params: {
       name: "Favoritos",
       icon: "",
       count: params.totalFavorites,
-      color: "bg-red-500",
+      color: "bg-[#993331]",
     },
     {
       id: "recent",
       name: "Reciente",
       icon: "",
       count: params.recentCount,
-      color: "bg-gray-500",
+      color: "bg-[#A63B38]",
     },
     {
       id: "kanji",
       name: "Kanjis",
       icon: "",
       count: params.kanjiCount,
-      color: "bg-purple-500",
+      color: "bg-[#B14540]",
     },
     {
       id: "katakana",
       name: "Katakana",
       icon: "",
       count: params.katakanaCount,
-      color: "bg-blue-500",
+      color: "bg-[#BA5149]",
     },
     {
       id: "hiragana",
       name: "Hiragana",
       icon: "",
       count: params.hiraganaCount,
-      color: "bg-green-500",
+      color: "bg-[#C85B52]",
     },
     {
       id: "themes",
       name: "Temas",
       icon: "",
       count: params.themeCount,
-      color: "bg-amber-500",
+      color: "bg-[#D06A61]",
     },
   ];
 }

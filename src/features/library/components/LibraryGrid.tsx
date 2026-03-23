@@ -13,7 +13,11 @@ import {
 interface LibraryGridProps {
   items: CombinedLibraryItem[];
   favoriteKanjis: Set<string>;
+  favoriteHiraganas: Set<string>;
+  favoriteKatakanas: Set<string>;
   toggleFavoriteKanji: (id: string) => void;
+  toggleFavoriteHiragana: (id: string) => void;
+  toggleFavoriteKatakana: (id: string) => void;
   onKanjiClick: (kanji: Kanji) => void;
   onKanaClick: (kana: Kana) => void;
   className?: string;
@@ -22,7 +26,11 @@ interface LibraryGridProps {
 export function LibraryGrid({
   items,
   favoriteKanjis,
+  favoriteHiraganas,
+  favoriteKatakanas,
   toggleFavoriteKanji,
+  toggleFavoriteHiragana,
+  toggleFavoriteKatakana,
   onKanjiClick,
   onKanaClick,
   className = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:gap-4 2xl:grid-cols-5",
@@ -49,6 +57,16 @@ export function LibraryGrid({
               ? hiraganaToCard(item.data)
               : katakanaToCard(item.data))}
             onClick={() => onKanaClick(item.data)}
+            onFavoriteToggle={
+              item.type === "hiragana"
+                ? toggleFavoriteHiragana
+                : toggleFavoriteKatakana
+            }
+            isFavorite={
+              item.type === "hiragana"
+                ? favoriteHiraganas.has(item.data.id)
+                : favoriteKatakanas.has(item.data.id)
+            }
           />
         );
       })}

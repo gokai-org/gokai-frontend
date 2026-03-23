@@ -8,14 +8,25 @@ import {
 } from "@/features/library/services/api";
 import type {
   FavoriteType,
-  BackendFavoriteItem,
   FavoritesResponse,
 } from "@/features/library/types";
 
-const EMPTY_RESPONSE: FavoritesResponse = { kanji: [], grammar: [], word: [] };
+const EMPTY_RESPONSE: FavoritesResponse = {
+  kanji: [],
+  hiragana: [],
+  katakana: [],
+  grammar: [],
+  word: [],
+};
 
 export function useFavorites() {
   const [favoriteKanjis, setFavoriteKanjis] = useState<Set<string>>(new Set());
+  const [favoriteHiraganas, setFavoriteHiraganas] = useState<Set<string>>(
+    new Set(),
+  );
+  const [favoriteKatakanas, setFavoriteKatakanas] = useState<Set<string>>(
+    new Set(),
+  );
   const [favoriteGrammar, setFavoriteGrammar] = useState<Set<string>>(
     new Set(),
   );
@@ -30,11 +41,15 @@ export function useFavorites() {
       const response = await getFavorites();
       const safeResponse: FavoritesResponse = {
         kanji: response.kanji ?? [],
+        hiragana: response.hiragana ?? [],
+        katakana: response.katakana ?? [],
         grammar: response.grammar ?? [],
         word: response.word ?? [],
       };
       setFavoriteData(safeResponse);
       setFavoriteKanjis(new Set(safeResponse.kanji.map((f) => f.id)));
+      setFavoriteHiraganas(new Set(safeResponse.hiragana.map((f) => f.id)));
+      setFavoriteKatakanas(new Set(safeResponse.katakana.map((f) => f.id)));
       setFavoriteGrammar(new Set(safeResponse.grammar.map((f) => f.id)));
       setFavoriteWords(new Set(safeResponse.word.map((f) => f.id)));
     } catch (e) {
@@ -52,9 +67,17 @@ export function useFavorites() {
   const isFavorite = useCallback(
     (id: string) =>
       favoriteKanjis.has(id) ||
+      favoriteHiraganas.has(id) ||
+      favoriteKatakanas.has(id) ||
       favoriteGrammar.has(id) ||
       favoriteWords.has(id),
-    [favoriteKanjis, favoriteGrammar, favoriteWords],
+    [
+      favoriteKanjis,
+      favoriteHiraganas,
+      favoriteKatakanas,
+      favoriteGrammar,
+      favoriteWords,
+    ],
   );
 
   /** Toggle genérico – requiere indicar el tipo backend */
@@ -65,6 +88,8 @@ export function useFavorites() {
         React.Dispatch<React.SetStateAction<Set<string>>>
       > = {
         kanji: setFavoriteKanjis,
+        hiragana: setFavoriteHiraganas,
+        katakana: setFavoriteKatakanas,
         grammar: setFavoriteGrammar,
         word: setFavoriteWords,
       };
@@ -106,12 +131,25 @@ export function useFavorites() {
   );
 
   const getTotalFavorites = useCallback(
-    () => favoriteKanjis.size + favoriteGrammar.size + favoriteWords.size,
-    [favoriteKanjis, favoriteGrammar, favoriteWords],
+    () =>
+      favoriteKanjis.size +
+      favoriteHiraganas.size +
+      favoriteKatakanas.size +
+      favoriteGrammar.size +
+      favoriteWords.size,
+    [
+      favoriteKanjis,
+      favoriteHiraganas,
+      favoriteKatakanas,
+      favoriteGrammar,
+      favoriteWords,
+    ],
   );
 
   return {
     favoriteKanjis,
+    favoriteHiraganas,
+    favoriteKatakanas,
     favoriteGrammar,
     favoriteWords,
     favoriteData,
