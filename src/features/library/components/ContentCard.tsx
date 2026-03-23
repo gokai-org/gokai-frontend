@@ -51,7 +51,7 @@ export function ContentCard({
       {topRightBadge && (
         <div
           className={[
-            "absolute right-4 top-4 z-10 rounded-full px-2 py-0.5 text-[10px] font-extrabold",
+            "absolute right-3 top-3 z-10 rounded-full px-1.5 py-[2px] text-[9px] font-extrabold leading-none",
             topRightBadgeClassName ||
               "border border-[#993331]/15 bg-[#993331]/10 text-[#993331]",
           ].join(" ")}
