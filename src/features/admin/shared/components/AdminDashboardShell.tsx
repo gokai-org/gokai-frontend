@@ -1,0 +1,48 @@
+"use client";
+
+import { ReactNode } from "react";
+
+interface AdminDashboardShellProps {
+  header: ReactNode;
+  children: ReactNode;
+  footer?: ReactNode;
+  contentClassName?: string;
+  containerClassName?: string;
+  useContainer?: boolean;
+}
+
+const baseContentClassName = "flex-1 overflow-y-auto bg-white";
+const baseContainerClassName = "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6";
+
+const joinClassNames = (...classes: Array<string | false | undefined>) =>
+  classes.filter(Boolean).join(" ");
+
+export function AdminDashboardShell({
+  header,
+  children,
+  footer,
+  contentClassName,
+  containerClassName,
+  useContainer = true,
+}: AdminDashboardShellProps) {
+  return (
+    <div className="flex flex-col h-screen bg-white">
+      {header}
+      <div className={joinClassNames(baseContentClassName, contentClassName)}>
+        {useContainer ? (
+          <div
+            className={joinClassNames(
+              baseContainerClassName,
+              containerClassName,
+            )}
+          >
+            {children}
+          </div>
+        ) : (
+          children
+        )}
+      </div>
+      {footer}
+    </div>
+  );
+}
