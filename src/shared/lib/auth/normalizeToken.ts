@@ -1,6 +1,12 @@
 export function normalizeBearerToken(raw: string) {
   let t = raw.trim();
 
+  try {
+    t = decodeURIComponent(t);
+  } catch {
+    // Keep original token when it is not URI-encoded.
+  }
+
   if (
     (t.startsWith('"') && t.endsWith('"')) ||
     (t.startsWith("'") && t.endsWith("'"))

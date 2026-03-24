@@ -1,6 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiConfig, appConfig, authConfig } from "@/shared/config";
 
+function normalizeProfile(value: unknown): "admin" | "user" | null {
+  if (typeof value !== "string") return null;
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "admin" || normalized === "user") return normalized;
+
+  return null;
+}
+
+function getProfileFromToken(token: string): "admin" | "user" | null {
+  try {
+    const tokenParts = token.split(".");
+    if (tokenParts.length !== 3) return null;
+
+    const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
+    return normalizeProfile(payload?.profile ?? payload?.role);
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const code = searchParams.get("code");
@@ -117,8 +138,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    const profile =
+      normalizeProfile(backendData.profile) ?? getProfileFromToken(token);
+    const destination =
+      profile === "admin" ? "/admin/dashboard" : "/dashboard/graph";
+
     const response = NextResponse.redirect(
-      new URL("/dashboard/graph", request.url),
+      new URL(destination, request.url),
     );
 
     response.cookies.set("gokai_oauth_state", "", {
@@ -132,6 +158,20 @@ export async function GET(request: NextRequest) {
       sameSite: "lax",
       path: "/",
     });
+
+    if (profile) {
+      response.cookies.set("gokai_profile", profile, {
+        httpOnly: true,
+        secure: appConfig.isProduction,
+        sameSite: "lax",
+        path: "/",
+      });
+    } else {
+      response.cookies.set("gokai_profile", "", {
+        path: "/",
+        maxAge: 0,
+      });
+    }
 
     return response;
   } catch (err) {

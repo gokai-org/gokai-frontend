@@ -1,13 +1,44 @@
-export type AdminTicketStatus = "open" | "review" | "pending" | "closed";
+export type AdminTicketStatus =
+  | "open"
+  | "in_progress"
+  | "resolved"
+  | "closed";
 
-export type AdminTicketPriority = "low" | "medium" | "high";
+export type AdminTicketCategory =
+  | "technical_issue"
+  | "billing"
+  | "account_access"
+  | "bug_report"
+  | "feature_request"
+  | "other";
+
+export interface BackendSupportTicket {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  category: string;
+  message: string;
+  status: string;
+  note?: string | null;
+  created_at: string;
+}
+
+export type BackendSupportTicketsGrouped = Record<string, BackendSupportTicket[]>;
+
+export interface UpdateSupportTicketStatusRequest {
+  status: AdminTicketStatus;
+  note?: string | null;
+}
 
 export interface AdminSupportTicket {
   id: string;
-  requesterName: string;
+  name: string;
+  email: string;
   subject: string;
-  status: AdminTicketStatus;
-  priority: AdminTicketPriority;
-  assignee: string;
+  category: AdminTicketCategory | string;
+  message: string;
+  status: AdminTicketStatus | string;
+  note?: string | null;
   createdAt: string;
 }

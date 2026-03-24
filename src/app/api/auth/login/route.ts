@@ -1,6 +1,32 @@
 import { NextResponse } from "next/server";
-import { AUTH_COOKIE, getCookieConfig } from "@/shared/lib/auth/cookies";
+import {
+  AUTH_COOKIE,
+  PROFILE_COOKIE,
+  getCookieConfig,
+} from "@/shared/lib/auth/cookies";
 import { apiConfig } from "@/shared/config";
+
+function normalizeProfile(value: unknown): "admin" | "user" | null {
+  if (typeof value !== "string") return null;
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "admin" || normalized === "user") return normalized;
+
+  return null;
+}
+
+function getProfileFromToken(token: string): "admin" | "user" | null {
+  try {
+    const tokenParts = token.split(".");
+    if (tokenParts.length !== 3) return null;
+
+    const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
+
+    return normalizeProfile(payload?.profile ?? payload?.role);
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(req: Request) {
   const base = apiConfig.usersApiBase;
@@ -46,6 +72,8 @@ export async function POST(req: Request) {
     );
   }
 
+  const profile = normalizeProfile(data?.profile) ?? getProfileFromToken(token);
+
   const remember = Boolean(body.remember);
   const maxAge = remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24 * 7;
 
@@ -55,12 +83,18 @@ export async function POST(req: Request) {
       email: data?.email,
       firstName: data?.firstName,
       lastName: data?.lastName,
-      profile: data?.profile,
+      profile,
       birthdate: data?.birthdate,
     },
   });
 
   res.cookies.set(AUTH_COOKIE, token, getCookieConfig(maxAge));
+
+  if (profile) {
+    res.cookies.set(PROFILE_COOKIE, profile, getCookieConfig(maxAge));
+  } else {
+    res.cookies.set(PROFILE_COOKIE, "", getCookieConfig(0));
+  }
 
   return res;
 }

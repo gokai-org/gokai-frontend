@@ -6,7 +6,7 @@ import {
   type AdminFilterOption,
 } from "@/features/admin/shared/components/AdminFilterDropdown";
 import type {
-  SupportPriorityFilter,
+  SupportCategoryFilter,
   SupportStatusFilter,
 } from "../hooks/useAdminSupportTickets";
 
@@ -18,16 +18,19 @@ type StatusOption = {
 const statusOptions: StatusOption[] = [
   { value: "all", label: "Todos" },
   { value: "open", label: "Abiertos" },
-  { value: "review", label: "Por revisar" },
-  { value: "pending", label: "Pendientes" },
+  { value: "in_progress", label: "En progreso" },
+  { value: "resolved", label: "Resueltos" },
   { value: "closed", label: "Cerrados" },
 ];
 
-const priorityOptions: AdminFilterOption<SupportPriorityFilter>[] = [
-  { value: "all", label: "Todos" },
-  { value: "high", label: "Alta" },
-  { value: "medium", label: "Media" },
-  { value: "low", label: "Baja" },
+const categoryOptions: AdminFilterOption<SupportCategoryFilter>[] = [
+  { value: "all", label: "Todas las categorias" },
+  { value: "technical_issue", label: "Problema tecnico" },
+  { value: "billing", label: "Facturacion" },
+  { value: "account_access", label: "Acceso de cuenta" },
+  { value: "bug_report", label: "Reporte de bug" },
+  { value: "feature_request", label: "Solicitud de mejora" },
+  { value: "other", label: "Otro" },
 ];
 
 interface AdminSupportFiltersProps {
@@ -35,8 +38,8 @@ interface AdminSupportFiltersProps {
   onQueryChange: (value: string) => void;
   statusFilter: SupportStatusFilter;
   onStatusFilterChange: (value: SupportStatusFilter) => void;
-  priorityFilter: SupportPriorityFilter;
-  onPriorityFilterChange: (value: SupportPriorityFilter) => void;
+  categoryFilter: SupportCategoryFilter;
+  onCategoryFilterChange: (value: SupportCategoryFilter) => void;
 }
 
 export function AdminSupportFilters({
@@ -44,8 +47,8 @@ export function AdminSupportFilters({
   onQueryChange,
   statusFilter,
   onStatusFilterChange,
-  priorityFilter,
-  onPriorityFilterChange,
+  categoryFilter,
+  onCategoryFilterChange,
 }: AdminSupportFiltersProps) {
   return (
     <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
@@ -53,19 +56,19 @@ export function AdminSupportFilters({
         <div className="w-full lg:max-w-md">
           <div className="flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-[#FCFCFC] px-3 transition-colors focus-within:border-[#993331]/40">
             <Search className="h-4 w-4 shrink-0 text-gray-400" />
-          <input
-            value={query}
-            onChange={(e) => onQueryChange(e.target.value)}
-            placeholder="Buscar por id, usuario, asunto o asignado"
-            className="h-full w-full bg-transparent text-sm leading-none text-gray-700 outline-none placeholder:text-gray-400"
-          />
+            <input
+              value={query}
+              onChange={(e) => onQueryChange(e.target.value)}
+              placeholder="Buscar por id, nombre, correo o asunto"
+              className="h-full w-full bg-transparent text-sm leading-none text-gray-700 outline-none placeholder:text-gray-400"
+            />
           </div>
         </div>
 
         <AdminFilterDropdown
-          value={priorityFilter}
-          options={priorityOptions}
-          onChange={onPriorityFilterChange}
+          value={categoryFilter}
+          options={categoryOptions}
+          onChange={onCategoryFilterChange}
         />
       </div>
 

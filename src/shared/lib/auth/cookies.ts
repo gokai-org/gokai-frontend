@@ -4,6 +4,7 @@ import type { ResponseCookie } from "next/dist/compiled/@edge-runtime/cookies";
 import { appConfig } from "@/shared/config";
 
 export const AUTH_COOKIE = "gokai_token";
+export const PROFILE_COOKIE = "gokai_profile";
 
 const COOKIE_CONFIG: Partial<ResponseCookie> = {
   httpOnly: true,

@@ -329,7 +329,7 @@ export default function SupportContactForm({
 
           {/* Panel — siempre modal centrado, responsive con max-w */}
           <motion.div
-            className="relative z-10 flex w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:rounded-[28px]"
+            className="support-modal-panel relative z-10 flex w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:rounded-[28px]"
             style={{ maxHeight: "min(92dvh, 720px)" }}
             initial={{ opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -376,7 +376,7 @@ export default function SupportContactForm({
             </div>
 
             {/* Body */}
-            <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-8 sm:py-6">
+            <div className="support-modal-scroll flex-1 overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
               {!submitted ? (
                 <div className="space-y-4">
                   {/* Name & Email */}

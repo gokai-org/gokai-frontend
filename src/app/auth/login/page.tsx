@@ -26,10 +26,25 @@ type Mode = "login" | "register" | "forgot-password";
 type ForgotStep = "email" | "code" | "password";
 type RegisterStep = "form" | "verify-email";
 type MembershipIntent = "free" | "premium";
+type UserProfile = "admin" | "user";
 
 function parseIntent(raw: string | null): MembershipIntent | null {
   if (raw === "free" || raw === "premium") return raw;
   return null;
+}
+
+function normalizeProfile(value: unknown): UserProfile | null {
+  if (typeof value !== "string") return null;
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "admin" || normalized === "user") return normalized;
+
+  return null;
+}
+
+function getDestinationByProfile(profile: UserProfile | null, from: string | null) {
+  if (profile === "admin") return "/admin/dashboard";
+  return from || "/dashboard/graph";
 }
 
 export default function LoginPage() {
@@ -175,11 +190,25 @@ export default function LoginPage() {
       const data = await res.json().catch(() => null);
       if (!res.ok) throw new Error(data?.error || "No se pudo iniciar sesión.");
 
+      let profile = normalizeProfile(data?.user?.profile);
+
+      if (!profile) {
+        const meRes = await fetch("/api/auth/user", {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (meRes.ok) {
+          const meData = await meRes.json().catch(() => null);
+          profile = normalizeProfile(meData?.user?.profile);
+        }
+      }
+
       toast.success("Sesión iniciada correctamente");
 
       const searchParams = new URLSearchParams(window.location.search);
-      const from = searchParams.get("from") || "/dashboard/graph";
-      window.location.replace(from);
+      const from = searchParams.get("from");
+      window.location.replace(getDestinationByProfile(profile, from));
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Error desconocido");
       toast.error(error.message ?? "Error inesperado.");

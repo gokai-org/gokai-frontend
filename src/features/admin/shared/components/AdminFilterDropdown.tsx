@@ -14,6 +14,9 @@ interface AdminFilterDropdownProps<T extends string = string> {
   onChange: (value: T) => void;
   buttonLabel?: string;
   className?: string;
+  fullWidth?: boolean;
+  menuAlign?: "left" | "right";
+  menuDirection?: "up" | "down";
 }
 
 export function AdminFilterDropdown<T extends string = string>({
@@ -22,6 +25,9 @@ export function AdminFilterDropdown<T extends string = string>({
   onChange,
   buttonLabel,
   className,
+  fullWidth = false,
+  menuAlign = "right",
+  menuDirection = "down",
 }: AdminFilterDropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -30,6 +36,8 @@ export function AdminFilterDropdown<T extends string = string>({
     options.find((option) => option.value === value) ?? options[0] ?? null;
 
   useEffect(() => {
+    if (!open) return;
+
     const onOutsideClick = (event: MouseEvent) => {
       if (!containerRef.current) return;
       if (!containerRef.current.contains(event.target as Node)) {
@@ -48,7 +56,7 @@ export function AdminFilterDropdown<T extends string = string>({
       window.removeEventListener("mousedown", onOutsideClick);
       window.removeEventListener("keydown", onEscape);
     };
-  }, []);
+  }, [open]);
 
   if (!selected) return null;
 
@@ -57,19 +65,29 @@ export function AdminFilterDropdown<T extends string = string>({
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex h-10 items-center gap-2 rounded-full border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-all hover:border-[#993331]/30 hover:text-[#993331]"
+        className={[
+          "inline-flex h-10 min-w-[240px] items-center justify-between gap-2 rounded-full border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-all hover:border-[#993331]/30 hover:text-[#993331]",
+          fullWidth ? "w-full" : "",
+        ].join(" ")}
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        {buttonLabel ?? selected.label}
+        <span className="whitespace-nowrap">{buttonLabel ?? selected.label}</span>
         <ChevronDown
-          className={["h-4 w-4 transition-transform", open ? "rotate-180" : ""].join(" ")}
+          className={[
+            "h-4 w-4 shrink-0 transition-transform",
+            open ? "rotate-180" : "",
+          ].join(" ")}
         />
       </button>
 
       {open && (
         <div
-          className="absolute right-0 z-20 mt-2 min-w-[190px] overflow-hidden rounded-2xl border border-gray-200 bg-white p-1.5 shadow-xl"
+          className={[
+            "absolute z-20 min-w-[280px] overflow-hidden rounded-2xl border border-gray-200 bg-white p-1.5 shadow-xl",
+            menuAlign === "left" ? "left-0" : "right-0",
+            menuDirection === "up" ? "bottom-full mb-2" : "top-full mt-2",
+          ].join(" ")}
           role="listbox"
         >
           {options.map((option) => {
@@ -90,7 +108,7 @@ export function AdminFilterDropdown<T extends string = string>({
                     : "text-gray-700 hover:bg-gray-50",
                 ].join(" ")}
               >
-                <span className="font-medium">{option.label}</span>
+                <span className="whitespace-nowrap font-medium">{option.label}</span>
                 {active && <Check className="h-4 w-4" />}
               </button>
             );
