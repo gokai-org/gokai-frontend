@@ -13,11 +13,12 @@ export default function AdminContentShell({
   const isSupport = pathname === "/admin/dashboard/support";
   const isLessons = pathname === "/admin/dashboard/lessons";
   const isStatistics = pathname === "/admin/dashboard/statistics";
+  const isCoupons = pathname === "/admin/dashboard/coupons";
 
   const padDesktop = "lg:pl-[140px]";
   const padMd = "md:pl-[120px]";
 
-  if (isSupport || isLessons || isStatistics) {
+  if (isSupport || isLessons || isStatistics || isCoupons) {
     return (
       <main
         className={[

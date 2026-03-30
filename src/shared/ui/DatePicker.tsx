@@ -91,12 +91,19 @@ export function DatePicker({
     function updatePos() {
       const rect = triggerRef.current!.getBoundingClientRect();
       const dropW = 280;
+      const dropH = 340;
       let left = rect.left + rect.width / 2 - dropW / 2;
       if (left < 8) left = 8;
       if (left + dropW > window.innerWidth - 8)
         left = window.innerWidth - 8 - dropW;
+
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const openAbove = spaceBelow < dropH && rect.top > dropH;
+
       setDropdownPos({
-        top: rect.bottom + 8 + window.scrollY,
+        top: openAbove
+          ? rect.top - dropH - 8 + window.scrollY
+          : rect.bottom + 8 + window.scrollY,
         left: left + window.scrollX,
       });
     }

@@ -3,7 +3,7 @@
 import { ReactNode } from "react";
 
 interface DashboardShellProps {
-  header: ReactNode;
+  header?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
   contentClassName?: string;
@@ -12,7 +12,7 @@ interface DashboardShellProps {
 }
 
 const baseContentClassName = "flex-1 overflow-y-auto bg-white";
-const baseContainerClassName = "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6";
+const baseContainerClassName = "mx-auto px-4 sm:px-6 lg:px-10 py-6";
 
 const joinClassNames = (...classes: Array<string | false | undefined>) =>
   classes.filter(Boolean).join(" ");

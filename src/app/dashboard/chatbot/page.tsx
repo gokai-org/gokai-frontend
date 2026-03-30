@@ -1,7 +1,6 @@
 "use client";
 
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
-import { ChatHeader } from "@/features/chatbot/components/ChatHeader";
 import { ChatInput } from "@/features/chatbot/components/ChatInput";
 import { ChatConversation } from "@/features/chatbot/components/ChatConversation";
 import { useChatbotMock } from "@/features/chatbot/hooks/useChatbotMock";
@@ -22,7 +21,6 @@ export default function ChatbotPage() {
 
   return (
     <DashboardShell
-      header={<ChatHeader />}
       useContainer={false}
       contentClassName="px-4 py-4 sm:px-6 sm:py-6"
       footer={

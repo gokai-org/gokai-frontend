@@ -1,8 +1,8 @@
 "use client";
 
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
-import { StatsHeader } from "@/features/stats/components/StatsHeader";
 import { StatsBanner } from "@/features/stats/components/StatsBanner";
+import { StatsPeriodFilter } from "@/features/stats/components/StatsPeriodFilter";
 import { StatsOverview } from "@/features/stats/components/StatsOverview";
 import { StatsActivitySection } from "@/features/stats/components/StatsActivitySection";
 import { StatsSkillsSection } from "@/features/stats/components/StatsSkillsSection";
@@ -23,18 +23,20 @@ export default function StatsPage() {
 
   if (loading) {
     return (
-      <DashboardShell
-        header={<StatsHeader period={period} onPeriodChange={setPeriod} />}
-      >
+      <DashboardShell>
+        <div className="mb-6 flex justify-end">
+          <StatsPeriodFilter period={period} onChange={setPeriod} />
+        </div>
         <StatsSkeleton />
       </DashboardShell>
     );
   }
 
   return (
-    <DashboardShell
-      header={<StatsHeader period={period} onPeriodChange={setPeriod} />}
-    >
+    <DashboardShell>
+    <div className="mb-6 flex justify-end">
+      <StatsPeriodFilter period={period} onChange={setPeriod} />
+    </div>
     <AnimatedEntrance
       index={0}
       disabled={!animationsEnabled}

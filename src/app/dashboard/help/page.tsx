@@ -14,7 +14,6 @@ import {
   HelpSupportCTA,
   HelpSkeleton,
 } from "@/features/help";
-import HelpHeader from "@/features/help/components/HelpHeader";
 import { useHelpPage } from "@/features/help/hooks/useHelpPage";
 
 export default function HelpPageRoute() {
@@ -36,14 +35,14 @@ export default function HelpPageRoute() {
 
   if (loading) {
     return (
-      <DashboardShell header={<HelpHeader />}>
+      <DashboardShell>
         <HelpSkeleton />
       </DashboardShell>
     );
   }
 
   return (
-    <DashboardShell header={<HelpHeader />}>
+    <DashboardShell>
       <div className="space-y-8 pb-12">
         <AnimatedEntrance
           index={0}

@@ -6,7 +6,6 @@ import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences"
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
 
 import {
-  ReviewHeader,
   ReviewBanner,
   ReviewPendingSection,
   ReviewCTA,
@@ -27,9 +26,7 @@ export default function Page() {
     useAnimationPreferences();
 
   return (
-    <DashboardShell
-      header={<ReviewHeader pendingCount={reviewItems.length} />}
-    >
+    <DashboardShell>
       {practiceKanji && (
         <WritingPracticeModal
           kanji={practiceKanji}

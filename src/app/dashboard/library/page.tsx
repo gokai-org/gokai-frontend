@@ -5,7 +5,7 @@ import { useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
-import { LibraryHeader } from "@/features/library/components/LibraryHeader";
+import { Search } from "lucide-react";
 import { CategoryFilter } from "@/features/library/components/CategoryFilter";
 import { ContentCard } from "@/features/library/components/ContentCard";
 import { LibraryGrid } from "@/features/library/components/LibraryGrid";
@@ -136,11 +136,24 @@ export default function LibraryPage() {
   ];
 
   return (
-    <DashboardShell header={<LibraryHeader onSearchChange={setSearchQuery} />}>
+    <DashboardShell>
       {isGlobalLoading ? (
         <LibrarySkeleton />
       ) : (
         <>
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
+              <Search className="h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar kanjis, hiraganas o katakanas..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="bg-transparent text-sm outline-none w-48 lg:w-72"
+              />
+            </div>
+          </div>
+
           <AnimatedEntrance
             index={0}
             className="mb-8"

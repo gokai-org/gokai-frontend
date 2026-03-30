@@ -1,8 +1,7 @@
 "use client";
 
-import { Bell, CheckCheck } from "lucide-react";
+import { CheckCheck } from "lucide-react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
-import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import {
@@ -44,35 +43,23 @@ export default function Page() {
     useAnimationPreferences();
 
   return (
-    <DashboardShell
-      header={
-        <DashboardHeader
-          icon={<Bell className="h-7 w-7 text-white" strokeWidth={2.5} />}
-          title="Notificaciones"
-          subtitle="Mantente al día con tu aprendizaje"
-          japaneseText="通知"
-          statusBadge={
-            unreadCount > 0 ? (
-              <span className="rounded-full bg-[#993331]/10 px-2.5 py-0.5 text-[10px] font-bold text-[#993331]">
-                {unreadCount} sin leer
-              </span>
-            ) : null
-          }
-          rightContent={
-            unreadCount > 0 ? (
-              <button
-                onClick={markAllRead}
-                className="hidden items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-[#993331] transition-colors hover:bg-[#993331]/5 hover:underline sm:flex"
-              >
-                <CheckCheck className="h-4 w-4" />
-                Marcar todo leído
-              </button>
-            ) : null
-          }
-        />
-      }
-    >
+    <DashboardShell>
       <div className="space-y-6 pb-12">
+        {unreadCount > 0 && (
+          <div className="flex items-center justify-between">
+            <span className="rounded-full bg-[#993331]/10 px-2.5 py-0.5 text-xs font-bold text-[#993331]">
+              {unreadCount} sin leer
+            </span>
+            <button
+              onClick={markAllRead}
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-[#993331] transition-colors hover:bg-[#993331]/5 hover:underline"
+            >
+              <CheckCheck className="h-4 w-4" />
+              Marcar todo leído
+            </button>
+          </div>
+        )}
+
         <AnimatedEntrance
           index={0}
           disabled={!animationsEnabled}
