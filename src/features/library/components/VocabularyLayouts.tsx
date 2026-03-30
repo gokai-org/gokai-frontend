@@ -58,7 +58,7 @@ export function GradientCardLayout({
         <span
           className={[
             "-translate-y-2 translate-x-6 text-[100px] font-black leading-none",
-            "text-[#993331]/[0.06] group-hover:text-white/[0.08]",
+            "text-accent/[0.06] group-hover:text-white/[0.08]",
             hoverTransition,
           ].join(" ")}
         >
@@ -102,7 +102,7 @@ export function GradientCardLayout({
         <h3
           className={[
             "line-clamp-2 text-[17px] font-black leading-tight",
-            "text-gray-900 group-hover:text-white",
+            "text-content-primary group-hover:text-content-inverted",
             hoverTransition,
           ].join(" ")}
         >
@@ -113,7 +113,7 @@ export function GradientCardLayout({
           <p
             className={[
               "mt-1 line-clamp-1 text-[12px] font-medium",
-              "text-gray-400 group-hover:text-white/60",
+              "text-content-muted group-hover:text-white/60",
               hoverTransition,
             ].join(" ")}
           >
@@ -125,7 +125,7 @@ export function GradientCardLayout({
           <div className="mt-2.5 flex justify-end">
             <ChevronRight
               className={[
-                "h-4 w-4 text-[#993331]/30 group-hover:translate-x-0.5 group-hover:text-white/75",
+                "h-4 w-4 text-accent/30 group-hover:translate-x-0.5 group-hover:text-white/75",
                 hoverTransition,
               ].join(" ")}
             />
@@ -191,7 +191,7 @@ export function WordCardLayout({
           <span
             className={[
               "-translate-y-4 text-[75px] font-black leading-none select-none",
-              "text-[#993331]/[0.22] group-hover:text-white/[0.16] group-hover:scale-110",
+              "text-accent/[0.22] group-hover:text-white/[0.16] group-hover:scale-110",
               hoverTransition,
             ].join(" ")}
           >
@@ -218,7 +218,7 @@ export function WordCardLayout({
         <h3
           className={[
             "line-clamp-2 text-[15px] font-black leading-tight",
-            "text-gray-900 group-hover:text-white",
+            "text-content-primary group-hover:text-content-inverted",
             hoverTransition,
           ].join(" ")}
         >
@@ -229,7 +229,7 @@ export function WordCardLayout({
           <p
             className={[
               "mt-1 line-clamp-2 text-[11px] font-medium",
-              "text-gray-400 group-hover:text-white/60",
+              "text-content-muted group-hover:text-white/60",
               hoverTransition,
             ].join(" ")}
           >
@@ -241,7 +241,7 @@ export function WordCardLayout({
           <div className="mt-2.5 flex justify-end">
             <ChevronRight
               className={[
-                "h-4 w-4 text-[#993331]/30 group-hover:translate-x-0.5 group-hover:text-white/75",
+                "h-4 w-4 text-accent/30 group-hover:translate-x-0.5 group-hover:text-white/75",
                 hoverTransition,
               ].join(" ")}
             />

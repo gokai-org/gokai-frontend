@@ -44,10 +44,10 @@ export function AuthHeader({
 
       {mode === "login" ? (
         <>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-content-primary">
             Iniciar sesión
           </h2>
-          <p className="mt-1 text-sm font-medium text-neutral-500">
+          <p className="mt-1 text-sm font-medium text-content-tertiary">
             Bienvenido de nuevo, estudiante de japonés.
           </p>
         </>
@@ -59,7 +59,7 @@ export function AuthHeader({
 
           <h2
             className={[
-              "text-2xl font-semibold tracking-tight text-neutral-900",
+              "text-2xl font-semibold tracking-tight text-content-primary",
               intent === "premium" && registerStep === "form" ? "mt-5" : "mt-3",
             ].join(" ")}
           >
@@ -70,7 +70,7 @@ export function AuthHeader({
                 : "Registrarse"}
           </h2>
 
-          <p className="mt-1 text-sm font-medium text-neutral-500">
+          <p className="mt-1 text-sm font-medium text-content-tertiary">
             {registerStep === "verify-email"
               ? `Ingresa el código que enviamos a ${regEmail || "tu correo"}.`
               : intent === "premium"
@@ -79,7 +79,7 @@ export function AuthHeader({
           </p>
 
           {intent === "premium" && registerStep === "form" && (
-            <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-neutral-400">
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-content-muted">
               <svg
                 className="h-3.5 w-3.5"
                 fill="none"
@@ -99,10 +99,10 @@ export function AuthHeader({
         </>
       ) : (
         <>
-          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-content-primary">
             Recuperar contraseña
           </h2>
-          <p className="mt-1 text-sm font-medium text-neutral-500">
+          <p className="mt-1 text-sm font-medium text-content-tertiary">
             {forgotStep === "email" && "Ingresa tu correo para recibir el código."}
             {forgotStep === "code" && "Ingresa el código de verificación."}
             {forgotStep === "password" && "Crea tu nueva contraseña."}

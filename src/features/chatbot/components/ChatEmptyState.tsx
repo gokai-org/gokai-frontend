@@ -9,10 +9,10 @@ interface ChatEmptyStateProps {
 export function ChatEmptyState({ onReset }: ChatEmptyStateProps) {
   return (
     <div className="flex flex-1 items-center justify-center py-10">
-      <div className="w-full max-w-xl rounded-[28px] border border-dashed border-gray-200 bg-white p-8 text-center shadow-sm">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-[#993331]/10">
+      <div className="w-full max-w-xl rounded-[28px] border border-dashed border-border-default bg-surface-primary p-8 text-center shadow-sm">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10">
           <svg
-            className="h-7 w-7 text-[#993331]"
+            className="h-7 w-7 text-accent"
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
@@ -26,10 +26,10 @@ export function ChatEmptyState({ onReset }: ChatEmptyStateProps) {
           </svg>
         </div>
 
-        <h3 className="text-xl font-extrabold text-gray-900">
+        <h3 className="text-xl font-extrabold text-content-primary">
           No hay mensajes todavía
         </h3>
-        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-gray-500">
+        <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-content-tertiary">
           Inicia una conversación con Sensei AI para practicar frases, repasar
           vocabulario o simular una interacción rápida.
         </p>

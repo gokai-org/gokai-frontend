@@ -36,10 +36,10 @@ export function SkillRadarChart({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
-        <div className="h-5 w-32 bg-gray-200 rounded mb-2" />
-        <div className="h-3 w-48 bg-gray-100 rounded mb-6" />
-        <div className="h-[280px] bg-gray-50 rounded-xl" />
+      <div className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle animate-pulse">
+        <div className="h-5 w-32 bg-surface-tertiary rounded mb-2" />
+        <div className="h-3 w-48 bg-surface-tertiary rounded mb-6" />
+        <div className="h-[280px] bg-surface-secondary rounded-xl" />
       </div>
     );
   }
@@ -57,11 +57,11 @@ export function SkillRadarChart({
               },
             }
           : {})}
-        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+        className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
       >
         <div className="mb-4">
-          <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-          <p className="text-xs text-gray-500">{subtitle}</p>
+          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="flex flex-col items-center justify-center py-12 gap-3">
           <div className="relative w-24 h-24">
@@ -69,22 +69,22 @@ export function SkillRadarChart({
               <polygon
                 points="50,10 90,35 80,80 20,80 10,35"
                 fill="none"
-                stroke="#e5e7eb"
+                stroke="var(--border-primary)"
                 strokeWidth="1.5"
                 strokeDasharray="4 3"
               />
               <polygon
                 points="50,25 75,40 70,70 30,70 25,40"
                 fill="none"
-                stroke="#f3f4f6"
+                stroke="var(--border-secondary)"
                 strokeWidth="1"
               />
             </svg>
           </div>
-          <p className="text-sm font-semibold text-gray-500">
+          <p className="text-sm font-semibold text-content-tertiary">
             Tus habilidades se mostrarán aquí
           </p>
-          <p className="text-xs text-gray-400 text-center max-w-[200px]">
+          <p className="text-xs text-content-muted text-center max-w-[200px]">
             Practica kanji, kana, vocabulario y gramática para ver tu radar de
             dominio.
           </p>
@@ -104,31 +104,31 @@ export function SkillRadarChart({
             },
           }
         : {})}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
     >
       <div className="mb-4">
-        <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-        <p className="text-xs text-gray-500">{subtitle}</p>
+        <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+        <p className="text-xs text-content-tertiary">{subtitle}</p>
       </div>
 
       <div className="w-full h-[280px]">
         <ResponsiveContainer width="100%" height="100%">
           <RadarChart cx="50%" cy="50%" outerRadius="75%" data={chartData}>
-            <PolarGrid stroke="#e5e7eb" strokeDasharray="3 3" />
+            <PolarGrid stroke="var(--border-primary)" strokeDasharray="3 3" />
             <PolarAngleAxis
               dataKey="skill"
-              tick={{ fontSize: 11, fill: "#6b7280", fontWeight: 600 }}
+              tick={{ fontSize: 11, fill: "var(--text-tertiary)", fontWeight: 600 }}
             />
             <PolarRadiusAxis
               angle={30}
               domain={[0, 100]}
-              tick={{ fontSize: 10, fill: "#9ca3af" }}
+              tick={{ fontSize: 10, fill: "var(--text-muted)" }}
               axisLine={false}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#fff",
-                border: "1px solid #e5e7eb",
+                backgroundColor: "var(--surface-elevated)",
+                border: "1px solid var(--border-primary)",
                 borderRadius: "12px",
                 fontSize: "12px",
                 fontWeight: 600,
@@ -139,13 +139,13 @@ export function SkillRadarChart({
             <Radar
               name="Habilidades"
               dataKey="value"
-              stroke="#993331"
-              fill="#993331"
+              stroke="var(--accent)"
+              fill="var(--accent)"
               fillOpacity={0.2}
               strokeWidth={2}
               dot={{
                 r: 4,
-                fill: "#993331",
+                fill: "var(--accent)",
                 strokeWidth: 0,
               }}
               animationDuration={animationsEnabled ? 1200 : 0}
@@ -160,7 +160,7 @@ export function SkillRadarChart({
         {chartData.map((d) => (
           <span
             key={d.skill}
-            className="text-xs font-bold px-3 py-1 rounded-full bg-[#993331]/8 text-[#993331]"
+            className="text-xs font-bold px-3 py-1 rounded-full bg-accent/8 text-accent"
           >
             {d.skill}: {d.value}%
           </span>

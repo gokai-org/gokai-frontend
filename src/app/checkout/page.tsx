@@ -165,9 +165,10 @@ export default function CheckoutPage() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-neutral-50">
+    <div className="force-light">
+    <main className="relative min-h-screen overflow-hidden bg-surface-secondary">
       <AnimatedGraphBackground />
-      <div className="absolute inset-0 bg-linear-to-b from-white/20 via-white/10 to-white/30" />
+      <div className="absolute inset-0 bg-linear-to-b from-surface-primary/20 via-surface-primary/10 to-surface-primary/30" />
 
       <div className="relative z-10 flex min-h-screen items-center justify-center overflow-y-auto px-4 py-8 sm:px-6 sm:py-12">
         <motion.div
@@ -176,11 +177,11 @@ export default function CheckoutPage() {
           animate={ready ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <div className="overflow-hidden rounded-2xl bg-white/95 shadow-xl ring-1 ring-black/5 backdrop-blur flex flex-col md:flex-row">
-            <div className="relative flex flex-col justify-between bg-gradient-to-br from-[#993331] to-[#BA5149] text-white overflow-hidden md:w-[340px] md:min-h-[480px] flex-shrink-0">
-              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10" />
-              <div className="pointer-events-none absolute -left-6 bottom-8 h-20 w-20 rounded-full bg-white/5" />
-              <div className="pointer-events-none absolute right-4 bottom-4 h-14 w-14 rounded-full bg-white/5" />
+          <div className="overflow-hidden rounded-2xl bg-surface-primary/95 shadow-xl ring-1 ring-border-subtle backdrop-blur flex flex-col md:flex-row">
+            <div className="relative flex flex-col justify-between bg-gradient-to-br from-accent to-accent-hover text-content-inverted overflow-hidden md:w-[340px] md:min-h-[480px] flex-shrink-0">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-surface-primary/10" />
+              <div className="pointer-events-none absolute -left-6 bottom-8 h-20 w-20 rounded-full bg-surface-primary/5" />
+              <div className="pointer-events-none absolute right-4 bottom-4 h-14 w-14 rounded-full bg-surface-primary/5" />
 
               <div className="relative z-[1] px-6 pt-6 pb-6 md:pb-0 md:pt-8 md:px-7">
                 <div className="flex flex-col items-center md:items-start">
@@ -200,7 +201,7 @@ export default function CheckoutPage() {
                   </a>
 
                   <motion.span
-                    className="mt-3 inline-flex items-center rounded-full bg-white/20 px-3 py-1 text-xs font-bold backdrop-blur-sm"
+                    className="mt-3 inline-flex items-center rounded-full bg-surface-primary/20 px-3 py-1 text-xs font-bold backdrop-blur-sm"
                     initial={{ opacity: 0, y: 10 }}
                     animate={ready ? { opacity: 1, y: 0 } : {}}
                     transition={{ delay: 0.15, duration: 0.4 }}
@@ -215,8 +216,8 @@ export default function CheckoutPage() {
                   animate={ready ? { opacity: 1, x: 0 } : {}}
                   transition={{ delay: 0.1, duration: 0.4 }}
                 >
-                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                    <Crown size={24} className="text-white" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-primary/20 backdrop-blur-sm">
+                    <Crown size={24} className="text-content-inverted" />
                   </div>
                   <div>
                     <h1 className="text-2xl font-extrabold tracking-tight">
@@ -275,7 +276,7 @@ export default function CheckoutPage() {
 
             <div className="flex flex-1 flex-col min-w-0">
               <div className="px-5 py-5 md:px-6 md:pt-6 md:pb-4 flex-1">
-                <p className="text-sm font-semibold text-gray-900 mb-3">
+                <p className="text-sm font-semibold text-content-primary mb-3">
                   Todo lo que incluye GOKAI+:
                 </p>
                 <div className="grid grid-cols-1 gap-2">
@@ -285,16 +286,16 @@ export default function CheckoutPage() {
                       initial={{ opacity: 0, x: -15 }}
                       animate={ready ? { opacity: 1, x: 0 } : {}}
                       transition={{ delay: 0.15 + idx * 0.06, duration: 0.35 }}
-                      className="flex items-start gap-3 rounded-xl p-2 hover:bg-gray-50 transition-colors"
+                      className="flex items-start gap-3 rounded-xl p-2 hover:bg-surface-secondary transition-colors"
                     >
-                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#993331]/10">
-                        <feature.icon size={16} className="text-[#993331]" />
+                      <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                        <feature.icon size={16} className="text-accent" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-content-primary">
                           {feature.title}
                         </p>
-                        <p className="text-xs text-gray-500 leading-relaxed">
+                        <p className="text-xs text-content-tertiary leading-relaxed">
                           {feature.description}
                         </p>
                       </div>
@@ -303,9 +304,9 @@ export default function CheckoutPage() {
                 </div>
               </div>
 
-              <div className="border-t border-gray-100 px-5 py-4 md:px-6 md:py-5 space-y-3 bg-gray-50/50">
+              <div className="border-t border-border-subtle px-5 py-4 md:px-6 md:py-5 space-y-3 bg-surface-secondary/50">
                 <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">
+                  <label className="block text-xs font-medium text-content-tertiary mb-1.5">
                     ¿Tienes un cupón?
                   </label>
                   <div className="flex gap-2">
@@ -314,13 +315,13 @@ export default function CheckoutPage() {
                       value={coupon}
                       onChange={(e) => setCoupon(e.target.value)}
                       placeholder="Código de cupón"
-                      className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#993331]/30 focus:border-[#993331]/40 transition-all"
+                      className="flex-1 rounded-lg border border-border-default px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                     />
                     <button
                       type="button"
                       onClick={handleApplyCoupon}
                       disabled={couponLoading || !coupon.trim()}
-                      className="rounded-lg bg-[#993331]/10 px-4 py-2 text-sm font-semibold text-[#993331] hover:bg-[#993331]/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      className="rounded-lg bg-accent/10 px-4 py-2 text-sm font-semibold text-accent hover:bg-accent/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                     >
                       {couponLoading ? "Aplicando..." : "Aplicar"}
                     </button>
@@ -336,10 +337,10 @@ export default function CheckoutPage() {
                 </div>
 
                 <div className="flex items-center justify-between px-1">
-                  <span className="text-sm font-semibold text-gray-700">
+                  <span className="text-sm font-semibold text-content-secondary">
                     Total hoy
                   </span>
-                  <span className="text-lg font-extrabold text-gray-900">
+                  <span className="text-lg font-extrabold text-content-primary">
                     $229 MXN
                   </span>
                 </div>
@@ -350,7 +351,7 @@ export default function CheckoutPage() {
                   onClick={handleCheckout}
                   whileHover={{ scale: loading ? 1 : 1.02 }}
                   whileTap={{ scale: loading ? 1 : 0.98 }}
-                  className="w-full rounded-xl bg-gradient-to-r from-[#993331] to-[#BA5149] py-3.5 text-base font-bold text-white shadow-lg shadow-[#993331]/20 transition-all hover:shadow-xl hover:shadow-[#993331]/30 disabled:cursor-not-allowed disabled:opacity-70"
+                  className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-base font-bold text-content-inverted shadow-lg shadow-accent/20 transition-all hover:shadow-xl hover:shadow-accent/30 disabled:cursor-not-allowed disabled:opacity-70"
                 >
                   {loading ? (
                     <span className="flex items-center justify-center gap-2">
@@ -388,17 +389,17 @@ export default function CheckoutPage() {
                   <p className="text-center text-sm text-red-600">{error}</p>
                 )}
 
-                <p className="text-center text-xs text-gray-400">
+                <p className="text-center text-xs text-content-muted">
                   Serás redirigido a Stripe para completar el pago de forma
                   segura.
                   <br />
                   Puedes cancelar en cualquier momento.
                 </p>
 
-                <div className="border-t border-gray-100 pt-3 text-center">
+                <div className="border-t border-border-subtle pt-3 text-center">
                   <a
                     href="/onboarding/interests"
-                    className="text-sm font-medium text-gray-400 transition hover:text-gray-600"
+                    className="text-sm font-medium text-content-muted transition hover:text-content-secondary"
                   >
                     Continuar con plan gratuito →
                   </a>
@@ -408,7 +409,7 @@ export default function CheckoutPage() {
           </div>
 
           <motion.div
-            className="mt-5 flex md:hidden items-center justify-center gap-4 text-xs text-neutral-400"
+            className="mt-5 flex md:hidden items-center justify-center gap-4 text-xs text-content-muted"
             initial={{ opacity: 0 }}
             animate={ready ? { opacity: 1 } : {}}
             transition={{ delay: 0.6, duration: 0.4 }}
@@ -423,5 +424,6 @@ export default function CheckoutPage() {
         </motion.div>
       </div>
     </main>
+    </div>
   );
 }

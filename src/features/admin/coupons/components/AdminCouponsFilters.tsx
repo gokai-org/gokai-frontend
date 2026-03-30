@@ -30,16 +30,16 @@ export function AdminCouponsFilters({
   onCreateClick,
 }: AdminCouponsFiltersProps) {
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+    <section className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div className="w-full lg:max-w-md">
-          <div className="flex h-11 items-center gap-2 rounded-xl border border-gray-200 bg-[#FCFCFC] px-3 transition-colors focus-within:border-[#993331]/40">
-            <Search className="h-4 w-4 shrink-0 text-gray-400" />
+          <div className="flex h-11 items-center gap-2 rounded-xl border border-border-default bg-surface-elevated px-3 transition-colors focus-within:border-accent/40">
+            <Search className="h-4 w-4 shrink-0 text-content-muted" />
             <input
               value={query}
               onChange={(e) => onQueryChange(e.target.value)}
               placeholder="Buscar por codigo, descripcion o meses"
-              className="h-full w-full bg-transparent text-sm leading-none text-gray-700 outline-none placeholder:text-gray-400"
+              className="h-full w-full bg-transparent text-sm leading-none text-content-secondary outline-none placeholder:text-content-muted"
             />
           </div>
         </div>
@@ -47,7 +47,7 @@ export function AdminCouponsFilters({
         <button
           type="button"
           onClick={onCreateClick}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-[#882d2d]"
+          className="inline-flex items-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted shadow-sm transition-colors hover:bg-accent-hover"
         >
           <Plus className="h-4 w-4" />
           Nuevo cupon
@@ -65,8 +65,8 @@ export function AdminCouponsFilters({
               className={[
                 "rounded-full border px-3 py-1.5 text-xs font-semibold transition-all",
                 active
-                  ? "border-[#993331]/30 bg-[#993331] text-white"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-[#993331]/25 hover:text-[#993331]",
+                  ? "border-accent/30 bg-accent text-content-inverted"
+                  : "border-border-default bg-surface-primary text-content-secondary hover:border-accent/25 hover:text-accent",
               ].join(" ")}
             >
               {option.label}

@@ -155,7 +155,7 @@ export function GuideTourOverlay() {
               ease: "easeInOut",
             }}
           >
-            <div className="w-full h-full rounded-full bg-[#993331] blur-[100px]" />
+            <div className="w-full h-full rounded-full bg-accent blur-[100px]" />
           </motion.div>
 
           {/* ── Contenedor: Card + Step dots a la derecha ── */}
@@ -167,12 +167,12 @@ export function GuideTourOverlay() {
             className="relative z-10 flex items-stretch gap-4 w-full max-w-[560px]"
           >
             {/* ════════ Card principal (no se recrea, solo el contenido interno transiciona) ════════ */}
-            <div className="flex-1 bg-white rounded-3xl shadow-2xl shadow-black/25 overflow-hidden border border-gray-100/80 flex flex-col">
+            <div className="flex-1 bg-surface-primary rounded-3xl shadow-2xl shadow-black/25 overflow-hidden border border-border-subtle/80 flex flex-col">
               {/* ── Header ── */}
-              <div className="relative bg-gradient-to-br from-[#993331] via-[#8a2e2c] to-[#7a2927] px-6 pt-5 pb-4 text-white overflow-hidden flex-shrink-0">
+              <div className="relative bg-gradient-to-br from-accent via-[#8a2e2c] to-accent-hover px-6 pt-5 pb-4 text-content-inverted overflow-hidden flex-shrink-0">
                 {/* Decorativos */}
-                <div className="absolute top-[-20px] right-[-10px] w-28 h-28 bg-white/[0.04] rounded-full" />
-                <div className="absolute bottom-[-12px] left-[55%] w-16 h-16 bg-white/[0.04] rounded-full" />
+                <div className="absolute top-[-20px] right-[-10px] w-28 h-28 bg-surface-primary/[0.04] rounded-full" />
+                <div className="absolute bottom-[-12px] left-[55%] w-16 h-16 bg-surface-primary/[0.04] rounded-full" />
 
                 <div className="relative z-10">
                   {/* Título + cerrar */}
@@ -196,16 +196,16 @@ export function GuideTourOverlay() {
                       whileHover={{ scale: 1.15, rotate: 90 }}
                       whileTap={{ scale: 0.85 }}
                       onClick={closeTour}
-                      className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors duration-200"
+                      className="w-7 h-7 rounded-full bg-surface-primary/10 hover:bg-surface-primary/20 flex items-center justify-center transition-colors duration-200"
                     >
                       <X className="w-3.5 h-3.5" />
                     </motion.button>
                   </div>
 
                   {/* Barra de progreso */}
-                  <div className="w-full h-[3px] bg-white/10 rounded-full overflow-hidden">
+                  <div className="w-full h-[3px] bg-surface-primary/10 rounded-full overflow-hidden">
                     <motion.div
-                      className="h-full bg-white/90 rounded-full"
+                      className="h-full bg-surface-primary/90 rounded-full"
                       animate={{ width: `${progress}%` }}
                       transition={{ duration: 0.6, ease }}
                     />
@@ -243,7 +243,7 @@ export function GuideTourOverlay() {
                         initial={{ scale: 0.5, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ duration: 0.4, ease, delay: 0.1 }}
-                        className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#993331]/10 to-[#993331]/5 flex items-center justify-center flex-shrink-0 text-[#993331] border border-[#993331]/10"
+                        className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center flex-shrink-0 text-accent border border-accent/10"
                       >
                         {step.icon}
                       </motion.div>
@@ -253,7 +253,7 @@ export function GuideTourOverlay() {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.08 }}
-                        className="text-base font-extrabold text-gray-900 mb-1.5"
+                        className="text-base font-extrabold text-content-primary mb-1.5"
                       >
                         {step.title}
                       </motion.h3>
@@ -261,7 +261,7 @@ export function GuideTourOverlay() {
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.15 }}
-                        className="text-sm text-gray-500 leading-relaxed"
+                        className="text-sm text-content-tertiary leading-relaxed"
                       >
                         {step.description}
                       </motion.p>
@@ -279,8 +279,8 @@ export function GuideTourOverlay() {
                   whileTap={isFirst ? {} : { scale: 0.95 }}
                   className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ${
                     isFirst
-                      ? "text-gray-300 cursor-not-allowed"
-                      : "text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                      ? "text-content-muted cursor-not-allowed"
+                      : "text-content-tertiary hover:bg-surface-tertiary hover:text-content-primary"
                   }`}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -294,8 +294,8 @@ export function GuideTourOverlay() {
                   layout
                   className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold shadow-lg transition-all duration-300 ${
                     isLast
-                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-emerald-500/25"
-                      : "bg-gradient-to-r from-[#993331] to-[#BA5149] text-white shadow-[#993331]/25"
+                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-content-inverted shadow-emerald-500/25"
+                      : "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-accent/25"
                   }`}
                 >
                   <AnimatePresence mode="wait">

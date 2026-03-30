@@ -55,6 +55,11 @@ export function KanjiWritingCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
+    const cs = getComputedStyle(document.documentElement);
+    const gridColor = cs.getPropertyValue("--border-primary").trim() || "#e5e7eb";
+    const strokeColor = cs.getPropertyValue("--text-primary").trim() || "#1a1a1a";
+    const accentColor = cs.getPropertyValue("--accent").trim() || "#993331";
+
     const w = canvas.width;
     const h = canvas.height;
     const sx = w / vbWidth;
@@ -65,7 +70,7 @@ export function KanjiWritingCanvas({
     // Grid guides
     ctx.save();
     ctx.setLineDash([6, 6]);
-    ctx.strokeStyle = "#e5e7eb";
+    ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.moveTo(w / 2, 0);
@@ -84,12 +89,16 @@ export function KanjiWritingCanvas({
     for (let i = 0; i < guideStrokes.length; i++) {
       try {
         const p2d = new Path2D(scaleSvgPath(guideStrokes[i], sx, sy));
-        ctx.strokeStyle =
-          i < activeStrokeIndex
-            ? "rgba(26,26,26,0.15)"
-            : i === activeStrokeIndex
-              ? "rgba(153,51,49,0.25)"
-              : "rgba(209,213,219,0.3)";
+        if (i < activeStrokeIndex) {
+          ctx.strokeStyle = strokeColor;
+          ctx.globalAlpha = 0.15;
+        } else if (i === activeStrokeIndex) {
+          ctx.strokeStyle = accentColor;
+          ctx.globalAlpha = 0.25;
+        } else {
+          ctx.strokeStyle = gridColor;
+          ctx.globalAlpha = 0.3;
+        }
         ctx.lineWidth = lw;
         ctx.stroke(p2d);
       } catch {
@@ -100,7 +109,7 @@ export function KanjiWritingCanvas({
 
     // Completed user strokes
     ctx.save();
-    ctx.strokeStyle = "#1a1a1a";
+    ctx.strokeStyle = strokeColor;
     ctx.lineWidth = lw;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -119,7 +128,7 @@ export function KanjiWritingCanvas({
     const pts = currentPoints.current;
     if (pts.length > 1) {
       ctx.save();
-      ctx.strokeStyle = "#993331";
+      ctx.strokeStyle = accentColor;
       ctx.lineWidth = 3.5 * Math.min(sx, sy);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
@@ -226,8 +235,8 @@ export function KanjiWritingCanvas({
       ref={canvasRef}
       width={canvasPx}
       height={canvasPx}
-      className={`touch-none rounded-xl border-2 bg-white transition-colors duration-200 ${
-        flashError ? "border-red-400" : "border-neutral-200"
+      className={`touch-none rounded-xl border-2 bg-surface-primary transition-colors duration-200 ${
+        flashError ? "border-red-400" : "border-border-default"
       }`}
       style={{
         width: size,

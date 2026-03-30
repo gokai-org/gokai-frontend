@@ -82,7 +82,7 @@ export function AdminCouponDetailModal({
           />
 
           <motion.div
-            className="relative z-10 flex w-full max-w-5xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:rounded-[28px]"
+            className="relative z-10 flex w-full max-w-5xl flex-col overflow-hidden rounded-[24px] bg-surface-primary shadow-2xl sm:rounded-[28px]"
             style={{ maxHeight: "min(94dvh, 840px)" }}
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -90,17 +90,17 @@ export function AdminCouponDetailModal({
             transition={{ duration: 0.3, ease: EASE }}
           >
             {/* Header */}
-            <div className="relative shrink-0 overflow-hidden bg-gradient-to-r from-[#993331] to-[#7a2927] px-6 pb-6 pt-6 sm:px-8 sm:pb-7 sm:pt-7">
-              <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/5" />
-              <div className="absolute bottom-[-16px] left-[28%] h-20 w-20 rounded-full bg-white/5" />
+            <div className="relative shrink-0 overflow-hidden bg-gradient-to-r from-accent to-accent-hover px-6 pb-6 pt-6 sm:px-8 sm:pb-7 sm:pt-7">
+              <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-surface-primary/5" />
+              <div className="absolute bottom-[-16px] left-[28%] h-20 w-20 rounded-full bg-surface-primary/5" />
 
               <div className="relative z-10 flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm sm:h-14 sm:w-14">
-                    <Ticket className="h-6 w-6 text-white" />
+                  <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface-primary/15 backdrop-blur-sm sm:h-14 sm:w-14">
+                    <Ticket className="h-6 w-6 text-content-inverted" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-extrabold text-white sm:text-2xl">
+                    <h2 className="text-xl font-extrabold text-content-inverted sm:text-2xl">
                       Detalle del cupon
                     </h2>
                     <p className="mt-1 text-sm text-white/70">
@@ -115,7 +115,7 @@ export function AdminCouponDetailModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-primary/10 text-white/70 transition-colors hover:bg-surface-primary/20 hover:text-content-inverted"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -127,12 +127,12 @@ export function AdminCouponDetailModal({
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.3fr_1fr]">
                 {/* Left column - Form */}
                 <section className="space-y-5">
-                  <div className="rounded-2xl border border-gray-100 bg-[#FCFAF9] p-4 sm:p-5">
-                    <h3 className="mb-4 text-sm font-bold text-gray-900">Informacion del cupon</h3>
+                  <div className="rounded-2xl border border-border-subtle bg-surface-secondary p-4 sm:p-5">
+                    <h3 className="mb-4 text-sm font-bold text-content-primary">Informacion del cupon</h3>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                           Codigo
                         </label>
                         <input
@@ -140,12 +140,12 @@ export function AdminCouponDetailModal({
                           value={code}
                           onChange={(e) => setCode(e.target.value.toUpperCase())}
                           maxLength={20}
-                          className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold tracking-wider text-gray-800 uppercase outline-none transition-colors hover:border-gray-300 focus:border-[#993331]/40"
+                          className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm font-semibold tracking-wider text-content-primary uppercase outline-none transition-colors hover:border-border-default focus:border-accent/40"
                         />
                       </div>
 
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                           Descripcion
                         </label>
                         <textarea
@@ -153,13 +153,13 @@ export function AdminCouponDetailModal({
                           onChange={(e) => setDescription(e.target.value)}
                           rows={3}
                           placeholder="Descripcion opcional del cupon"
-                          className="w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition-colors hover:border-gray-300 focus:border-[#993331]/40"
+                          className="w-full resize-y rounded-xl border border-border-default bg-surface-primary px-4 py-3 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                         />
                       </div>
 
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                             Meses de suscripcion
                           </label>
                           <input
@@ -167,12 +167,12 @@ export function AdminCouponDetailModal({
                             value={months}
                             onChange={(e) => setMonths(Math.max(1, Number(e.target.value)))}
                             min={1}
-                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors hover:border-gray-300 focus:border-[#993331]/40"
+                            className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                           />
                         </div>
 
                         <div>
-                          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                          <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                             Limite de canjes
                           </label>
                           <input
@@ -180,13 +180,13 @@ export function AdminCouponDetailModal({
                             value={claimLimit}
                             onChange={(e) => setClaimLimit(Math.max(1, Number(e.target.value)))}
                             min={1}
-                            className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors hover:border-gray-300 focus:border-[#993331]/40"
+                            className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                           />
                         </div>
                       </div>
 
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                           Vigencia
                         </label>
                         <DatePicker
@@ -200,8 +200,8 @@ export function AdminCouponDetailModal({
 
                 {/* Right column - Actions & Summary */}
                 <section className="space-y-5">
-                  <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
-                    <h3 className="mb-4 text-sm font-bold text-gray-900">Acciones</h3>
+                  <div className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm sm:p-5">
+                    <h3 className="mb-4 text-sm font-bold text-content-primary">Acciones</h3>
 
                     <div className="space-y-4">
                       {error && (
@@ -223,7 +223,7 @@ export function AdminCouponDetailModal({
                             })
                           }
                           disabled={saving || deleting || !hasChanges || !isValid}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#882d2d] disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {saving ? (
                             <>
@@ -240,7 +240,7 @@ export function AdminCouponDetailModal({
                         <button
                           type="button"
                           onClick={onClose}
-                          className="w-full rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                          className="w-full rounded-xl border border-border-default px-4 py-2.5 text-sm font-semibold text-content-secondary transition-colors hover:bg-surface-secondary"
                         >
                           Cerrar
                         </button>
@@ -248,7 +248,7 @@ export function AdminCouponDetailModal({
                           type="button"
                           onClick={onDelete}
                           disabled={saving || deleting}
-                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5 text-xs font-semibold text-red-700 transition-colors hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-2.5 text-xs font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {deleting ? (
                             <>
@@ -266,20 +266,20 @@ export function AdminCouponDetailModal({
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-gray-100 bg-[#FCFAF9] p-4 sm:p-5">
-                    <h4 className="text-sm font-bold text-gray-900">Resumen rapido</h4>
-                    <ul className="mt-3 space-y-2 text-sm text-gray-600">
+                  <div className="rounded-2xl border border-border-subtle bg-surface-secondary p-4 sm:p-5">
+                    <h4 className="text-sm font-bold text-content-primary">Resumen rapido</h4>
+                    <ul className="mt-3 space-y-2 text-sm text-content-secondary">
                       <li className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-[#993331]" /> Codigo: {coupon.code}
+                        <Tag className="h-4 w-4 text-accent" /> Codigo: {coupon.code}
                       </li>
                       <li className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-[#993331]" /> Meses: {coupon.months}
+                        <Calendar className="h-4 w-4 text-accent" /> Meses: {coupon.months}
                       </li>
                       <li className="flex items-center gap-2">
-                        <Hash className="h-4 w-4 text-[#993331]" /> Limite: {coupon.claimLimit} canjes
+                        <Hash className="h-4 w-4 text-accent" /> Limite: {coupon.claimLimit} canjes
                       </li>
                       <li className="flex items-center gap-2">
-                        <Ticket className="h-4 w-4 text-[#993331]" /> Estado: {coupon.status === "active" ? "Activo" : "Expirado"}
+                        <Ticket className="h-4 w-4 text-accent" /> Estado: {coupon.status === "active" ? "Activo" : "Expirado"}
                       </li>
                     </ul>
                   </div>

@@ -69,7 +69,7 @@ export function AdminCouponCreateModal({
           />
 
           <motion.div
-            className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:rounded-[28px]"
+            className="relative z-10 flex w-full max-w-xl flex-col overflow-hidden rounded-[24px] bg-surface-primary shadow-2xl sm:rounded-[28px]"
             style={{ maxHeight: "min(94dvh, 700px)" }}
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -77,16 +77,16 @@ export function AdminCouponCreateModal({
             transition={{ duration: 0.3, ease: EASE }}
           >
             {/* Header */}
-            <div className="relative shrink-0 overflow-hidden bg-gradient-to-r from-[#993331] to-[#7a2927] px-6 pb-5 pt-6 sm:px-8 sm:pb-6 sm:pt-7">
-              <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/5" />
+            <div className="relative shrink-0 overflow-hidden bg-gradient-to-r from-accent to-accent-hover px-6 pb-5 pt-6 sm:px-8 sm:pb-6 sm:pt-7">
+              <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-surface-primary/5" />
 
               <div className="relative z-10 flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
-                    <Plus className="h-6 w-6 text-white" />
+                  <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface-primary/15 backdrop-blur-sm">
+                    <Plus className="h-6 w-6 text-content-inverted" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-extrabold text-white sm:text-2xl">
+                    <h2 className="text-xl font-extrabold text-content-inverted sm:text-2xl">
                       Crear nuevo cupon
                     </h2>
                     <p className="mt-1 text-sm text-white/70">
@@ -98,7 +98,7 @@ export function AdminCouponCreateModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-primary/10 text-white/70 transition-colors hover:bg-surface-primary/20 hover:text-content-inverted"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -109,7 +109,7 @@ export function AdminCouponCreateModal({
             <div className="flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
               <div className="space-y-4">
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                     Codigo *
                   </label>
                   <input
@@ -118,12 +118,12 @@ export function AdminCouponCreateModal({
                     onChange={(e) => setCode(e.target.value.toUpperCase())}
                     maxLength={20}
                     placeholder="Ej: GOKAI2026"
-                    className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-semibold tracking-wider text-gray-800 uppercase outline-none transition-colors hover:border-gray-300 focus:border-[#993331]/40 placeholder:font-normal placeholder:normal-case placeholder:tracking-normal"
+                    className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm font-semibold tracking-wider text-content-primary uppercase outline-none transition-colors hover:border-border-default focus:border-accent/40 placeholder:font-normal placeholder:normal-case placeholder:tracking-normal"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                     Descripcion
                   </label>
                   <textarea
@@ -131,13 +131,13 @@ export function AdminCouponCreateModal({
                     onChange={(e) => setDescription(e.target.value)}
                     rows={2}
                     placeholder="Descripcion opcional del cupon"
-                    className="w-full resize-y rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition-colors hover:border-gray-300 focus:border-[#993331]/40"
+                    className="w-full resize-y rounded-xl border border-border-default bg-surface-primary px-4 py-3 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                   />
                 </div>
 
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                       Meses de suscripcion *
                     </label>
                     <input
@@ -145,12 +145,12 @@ export function AdminCouponCreateModal({
                       value={months}
                       onChange={(e) => setMonths(Math.max(1, Number(e.target.value)))}
                       min={1}
-                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors hover:border-gray-300 focus:border-[#993331]/40"
+                      className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                       Limite de canjes *
                     </label>
                     <input
@@ -158,13 +158,13 @@ export function AdminCouponCreateModal({
                       value={claimLimit}
                       onChange={(e) => setClaimLimit(Math.max(1, Number(e.target.value)))}
                       min={1}
-                      className="w-full rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm text-gray-800 outline-none transition-colors hover:border-gray-300 focus:border-[#993331]/40"
+                      className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                  <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                     Vigencia *
                   </label>
                   <DatePicker
@@ -183,7 +183,7 @@ export function AdminCouponCreateModal({
                   <button
                     type="button"
                     onClick={onClose}
-                    className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                    className="rounded-xl border border-border-default px-4 py-2.5 text-sm font-semibold text-content-secondary transition-colors hover:bg-surface-secondary"
                   >
                     Cancelar
                   </button>
@@ -191,7 +191,7 @@ export function AdminCouponCreateModal({
                     type="button"
                     onClick={handleCreate}
                     disabled={saving || !isValid}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#882d2d] disabled:cursor-not-allowed disabled:opacity-60"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {saving ? (
                       <>

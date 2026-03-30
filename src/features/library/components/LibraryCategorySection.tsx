@@ -22,8 +22,8 @@ export function LibraryCategorySection({
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-bold text-gray-900">{title}</h2>
-        <span className="text-sm text-gray-600">{countLabel}</span>
+        <h2 className="text-xl font-bold text-content-primary">{title}</h2>
+        <span className="text-sm text-content-secondary">{countLabel}</span>
       </div>
 
       {loading ? (
@@ -36,10 +36,10 @@ export function LibraryCategorySection({
         children
       ) : (
         <div className="flex flex-col items-center justify-center py-16">
-          <h3 className="mb-2 text-xl font-bold text-gray-900">
+          <h3 className="mb-2 text-xl font-bold text-content-primary">
             {emptyTitle}
           </h3>
-          <p className="max-w-md text-center text-gray-600">
+          <p className="max-w-md text-center text-content-secondary">
             {emptyDescription}
           </p>
         </div>

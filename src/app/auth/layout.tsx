@@ -11,7 +11,9 @@ export default function AuthLayout({
 }) {
   return (
     <GoogleOAuthProvider clientId={authConfig.publicGoogleClientId}>
-      <ToastProvider>{children}</ToastProvider>
+      <ToastProvider>
+        <div className="force-light">{children}</div>
+      </ToastProvider>
     </GoogleOAuthProvider>
   );
 }

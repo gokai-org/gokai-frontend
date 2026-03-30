@@ -9,7 +9,7 @@ export function GoogleLoginButton({ onClick }: Props) {
     <button
       type="button"
       onClick={onClick}
-      className="group relative w-full flex items-center justify-center gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
+      className="group relative w-full flex items-center justify-center gap-3 rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm font-semibold text-content-secondary shadow-sm transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
     >
       <svg className="h-5 w-5" viewBox="0 0 48 48">
         <path
@@ -30,7 +30,7 @@ export function GoogleLoginButton({ onClick }: Props) {
         />
       </svg>
 
-      <span className="transition-colors duration-200 group-hover:text-neutral-900">
+      <span className="transition-colors duration-200 group-hover:text-content-primary">
         Continuar con Google
       </span>
     </button>

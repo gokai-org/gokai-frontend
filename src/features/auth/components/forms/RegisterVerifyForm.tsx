@@ -39,9 +39,9 @@ export function RegisterVerifyForm({
       transition={{ duration: 0.3 }}
     >
       <div className="text-center">
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-content-tertiary">
           Ingresa el código enviado a{" "}
-          <span className="font-semibold text-neutral-700">
+          <span className="font-semibold text-content-secondary">
             {regEmail || "tu correo"}
           </span>
         </p>
@@ -58,7 +58,7 @@ export function RegisterVerifyForm({
         <button
           type="button"
           onClick={onResend}
-          className="text-sm font-medium text-neutral-600 hover:text-[#993331] transition"
+          className="text-sm font-medium text-content-secondary hover:text-accent transition"
         >
           ¿No recibiste el código? <span className="font-semibold">Reenviar</span>
         </button>
@@ -68,7 +68,7 @@ export function RegisterVerifyForm({
         type="submit"
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
-        className="w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200"
+        className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted shadow-sm transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-red-200"
       >
         Verificar correo
       </motion.button>
@@ -76,7 +76,7 @@ export function RegisterVerifyForm({
       <button
         type="button"
         onClick={onBack}
-        className="w-full text-center text-sm font-medium text-neutral-600 hover:text-neutral-900 transition"
+        className="w-full text-center text-sm font-medium text-content-secondary hover:text-content-primary transition"
       >
         Volver
       </button>

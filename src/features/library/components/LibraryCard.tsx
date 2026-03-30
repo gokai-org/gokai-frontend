@@ -29,10 +29,10 @@ export function LibraryCard({ item, onClick }: LibraryCardProps) {
       type="button"
       onClick={onClick}
       className={[
-        "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] border border-gray-100 bg-white text-left",
+        "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] border border-border-subtle/40 dark:border-border-subtle/20 bg-surface-primary text-left",
         "shadow-[0_2px_14px_-6px_rgba(0,0,0,0.06)] transition-all duration-300",
-        "hover:-translate-y-1 hover:border-[#993331]/15 hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.10)]",
-        "focus:outline-none focus:ring-2 focus:ring-[#993331]/20",
+        "hover:-translate-y-1 hover:border-accent/15 hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.10)]",
+        "focus:outline-none focus:ring-2 focus:ring-accent/20",
       ].join(" ")}
     >
       <div className="p-4 pb-0">
@@ -41,13 +41,13 @@ export function LibraryCard({ item, onClick }: LibraryCardProps) {
 
       <div className="flex min-h-0 flex-1 flex-col p-4">
         <div className="mb-2 flex items-start justify-between gap-2">
-          <h3 className="line-clamp-2 text-[16px] font-extrabold leading-snug text-gray-900 transition-colors group-hover:text-[#993331]">
+          <h3 className="line-clamp-2 text-[16px] font-extrabold leading-snug text-content-primary transition-colors group-hover:text-accent">
             {item.title}
           </h3>
         </div>
 
         {item.description ? (
-          <p className="mb-3 line-clamp-2 text-[13px] font-medium text-gray-500">
+          <p className="mb-3 line-clamp-2 text-[13px] font-medium text-content-tertiary">
             {item.description}
           </p>
         ) : (

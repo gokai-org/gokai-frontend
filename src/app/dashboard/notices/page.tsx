@@ -47,12 +47,12 @@ export default function Page() {
       <div className="space-y-6 pb-12">
         {unreadCount > 0 && (
           <div className="flex items-center justify-between">
-            <span className="rounded-full bg-[#993331]/10 px-2.5 py-0.5 text-xs font-bold text-[#993331]">
+            <span className="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-bold text-accent">
               {unreadCount} sin leer
             </span>
             <button
               onClick={markAllRead}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-[#993331] transition-colors hover:bg-[#993331]/5 hover:underline"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold text-accent transition-colors hover:bg-accent/5 hover:underline"
             >
               <CheckCheck className="h-4 w-4" />
               Marcar todo leído

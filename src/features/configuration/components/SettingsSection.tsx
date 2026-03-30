@@ -17,14 +17,14 @@ export function SettingsSection({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.28, ease: "easeOut" }}
-      className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:p-6"
+      className="rounded-2xl border border-border-default bg-surface-elevated p-4 shadow-sm md:p-6"
     >
       <div className="mb-4 md:mb-5">
-        <h3 className="text-base md:text-lg font-semibold text-gray-900">
+        <h3 className="text-base md:text-lg font-semibold text-content-primary">
           {title}
         </h3>
         {description && (
-          <p className="mt-1 text-xs md:text-sm text-gray-500 leading-relaxed">
+          <p className="mt-1 text-xs md:text-sm text-content-tertiary leading-relaxed">
             {description}
           </p>
         )}

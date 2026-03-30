@@ -247,14 +247,15 @@ export default function InterestsPage() {
   };
 
   return (
-    <main className="relative min-h-screen bg-neutral-50 overflow-hidden">
+    <div className="force-light">
+    <main className="relative min-h-screen bg-surface-secondary overflow-hidden">
       <AnimatedGraphBackground
         variant="dimmed"
         density={0.00006}
         maxDist={200}
         speed={0.18}
       />
-      <div className="absolute inset-0 bg-gradient-to-b from-white/20 via-white/10 to-white/30" />
+      <div className="absolute inset-0 bg-gradient-to-b from-surface-primary/20 via-surface-primary/10 to-surface-primary/30" />
 
       {/* Pantalla de introducción */}
       <AnimatePresence>
@@ -267,7 +268,7 @@ export default function InterestsPage() {
             onAnimationComplete={() => {
               setTimeout(() => setShowIntro(false), 3000);
             }}
-            className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-white/40"
+            className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-surface-primary/40"
           >
             <div className="max-w-5xl mx-auto px-6 text-center">
               <motion.div
@@ -275,14 +276,14 @@ export default function InterestsPage() {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.3, duration: 0.6, type: "spring" }}
               >
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-neutral-900 mb-6 leading-tight px-4">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-content-primary mb-6 leading-tight px-4">
                   Crearemos un camino de aprendizaje perfecto para ti
                 </h1>
                 <motion.p
                   initial={{ y: 20, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.8, duration: 0.5 }}
-                  className="text-xl sm:text-2xl md:text-3xl text-neutral-700 font-medium px-4"
+                  className="text-xl sm:text-2xl md:text-3xl text-content-secondary font-medium px-4"
                 >
                   Selecciona un interés en cada categoría
                 </motion.p>
@@ -292,7 +293,7 @@ export default function InterestsPage() {
                   transition={{ delay: 1.3, duration: 0.4 }}
                   className="mt-8 inline-block"
                 >
-                  <div className="w-16 h-16 border-4 border-[#993331] border-t-transparent rounded-full animate-spin" />
+                  <div className="w-16 h-16 border-4 border-accent border-t-transparent rounded-full animate-spin" />
                 </motion.div>
               </motion.div>
             </div>
@@ -311,8 +312,8 @@ export default function InterestsPage() {
               height={48}
               priority
             />
-            <span className="text-2xl font-bold text-neutral-900">GOKAI</span>
-            <span className="text-sm text-neutral-500">語界</span>
+            <span className="text-2xl font-bold text-content-primary">GOKAI</span>
+            <span className="text-sm text-content-tertiary">語界</span>
           </div>
         </header>
 
@@ -320,27 +321,27 @@ export default function InterestsPage() {
         <div className="px-6 lg:px-16 xl:px-20 mb-6">
           <div className="max-w-[1600px] mx-auto">
             <div className="flex items-center gap-4 mb-3">
-              <div className="flex-1 h-2 bg-neutral-200 rounded-full overflow-hidden">
+              <div className="flex-1 h-2 bg-surface-tertiary rounded-full overflow-hidden">
                 <motion.div
-                  className="h-full bg-gradient-to-r from-[#993331] to-[#C17B6F]"
+                  className="h-full bg-gradient-to-r from-accent to-[#C17B6F]"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
                 />
               </div>
-              <div className="text-sm font-semibold text-neutral-700 whitespace-nowrap">
+              <div className="text-sm font-semibold text-content-secondary whitespace-nowrap">
                 {currentSectionIndex + 1} / {totalSections}
               </div>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-600">
+              <span className="text-content-secondary">
                 Categoría:{" "}
-                <span className="font-semibold text-neutral-900">
+                <span className="font-semibold text-content-primary">
                   {currentSection.title}
                 </span>
               </span>
               <span
-                className={`font-semibold ${currentSectionHasSelection ? "text-green-600" : "text-[#993331]"}`}
+                className={`font-semibold ${currentSectionHasSelection ? "text-green-600" : "text-accent"}`}
               >
                 {currentSectionHasSelection
                   ? "✓ Seleccionado"
@@ -368,10 +369,10 @@ export default function InterestsPage() {
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ duration: 0.4 }}
                   >
-                    <h1 className="text-3xl md:text-4xl font-bold text-neutral-900 leading-tight">
+                    <h1 className="text-3xl md:text-4xl font-bold text-content-primary leading-tight">
                       {currentSection.title}
                     </h1>
-                    <p className="text-lg text-neutral-600 mt-1">
+                    <p className="text-lg text-content-secondary mt-1">
                       {currentSection.description}
                     </p>
                   </motion.div>
@@ -395,10 +396,10 @@ export default function InterestsPage() {
                           onClick={() => handleInterestToggle(interest.id)}
                           className={`
                             relative rounded-lg sm:rounded-xl p-3 sm:p-4 w-full aspect-[3/4] transition-all duration-300
-                            ${interest.color} text-white flex items-center justify-center
+                            ${interest.color} text-content-inverted flex items-center justify-center
                             ${
                               isSelected
-                                ? "ring-2 sm:ring-4 ring-[#993331] scale-105 shadow-2xl"
+                                ? "ring-2 sm:ring-4 ring-accent scale-105 shadow-2xl"
                                 : "hover:scale-105 hover:shadow-xl"
                             }
                           `}
@@ -413,10 +414,10 @@ export default function InterestsPage() {
                             <motion.div
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
-                              className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 bg-white rounded-full flex items-center justify-center shadow-lg"
+                              className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-5 h-5 sm:w-6 sm:h-6 bg-surface-primary rounded-full flex items-center justify-center shadow-lg"
                             >
                               <svg
-                                className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#993331]"
+                                className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-accent"
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -430,7 +431,7 @@ export default function InterestsPage() {
                           )}
                         </button>
 
-                        <p className="mt-3 sm:mt-4 md:mt-6 text-xs sm:text-sm md:text-base font-semibold text-neutral-800 text-center leading-tight">
+                        <p className="mt-3 sm:mt-4 md:mt-6 text-xs sm:text-sm md:text-base font-semibold text-content-primary text-center leading-tight">
                           {interest.meaning}
                         </p>
                       </motion.div>
@@ -446,10 +447,10 @@ export default function InterestsPage() {
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="inline-block bg-white/80 backdrop-blur-sm px-5 py-2 rounded-full shadow-lg"
+                        className="inline-block bg-surface-primary/80 backdrop-blur-sm px-5 py-2 rounded-full shadow-lg"
                       >
-                        <p className="text-sm text-neutral-600">
-                          <span className="font-bold text-[#993331] text-base">
+                        <p className="text-sm text-content-secondary">
+                          <span className="font-bold text-accent text-base">
                             {selectedCount}
                           </span>{" "}
                           de {MAX_FREE_SELECTIONS} categorías completadas
@@ -469,8 +470,8 @@ export default function InterestsPage() {
                         transition-all duration-300
                         ${
                           currentSectionIndex > 0
-                            ? "bg-neutral-200 text-neutral-700 hover:bg-neutral-300"
-                            : "bg-neutral-100 text-neutral-400 cursor-not-allowed"
+                            ? "bg-surface-tertiary text-content-secondary hover:bg-surface-tertiary"
+                            : "bg-surface-tertiary text-content-muted cursor-not-allowed"
                         }
                       `}
                     >
@@ -481,7 +482,7 @@ export default function InterestsPage() {
                     {currentSectionIndex < totalSections - 1 ? (
                       <button
                         onClick={handleNext}
-                        className="px-4 sm:px-6 py-2.5 rounded-full text-sm sm:text-base font-semibold bg-[#993331] text-white hover:bg-[#882d2d] shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+                        className="px-4 sm:px-6 py-2.5 rounded-full text-sm sm:text-base font-semibold bg-accent text-content-inverted hover:bg-accent-hover shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
                       >
                         Siguiente →
                       </button>
@@ -494,8 +495,8 @@ export default function InterestsPage() {
                           transition-all duration-300
                           ${
                             selectedCount > 0 && !loading
-                              ? "bg-[#993331] text-white hover:bg-[#882d2d] shadow-lg hover:shadow-xl scale-100 hover:scale-105"
-                              : "bg-neutral-200 text-neutral-400 cursor-not-allowed"
+                              ? "bg-accent text-content-inverted hover:bg-accent-hover shadow-lg hover:shadow-xl scale-100 hover:scale-105"
+                              : "bg-surface-tertiary text-content-muted cursor-not-allowed"
                           }
                         `}
                       >
@@ -514,15 +515,15 @@ export default function InterestsPage() {
               transition={{ delay: 0.5 }}
               className="mt-4 text-center max-w-2xl mx-auto"
             >
-              <div className="bg-white/60 backdrop-blur-sm px-5 py-3 rounded-xl shadow-md">
-                <p className="text-xs leading-relaxed text-neutral-600">
+              <div className="bg-surface-primary/60 backdrop-blur-sm px-5 py-3 rounded-xl shadow-md">
+                <p className="text-xs leading-relaxed text-content-secondary">
                   Con la suscripción{" "}
                   <span className="font-semibold">gratuita</span> puedes elegir{" "}
-                  <span className="font-bold text-[#993331]">
+                  <span className="font-bold text-accent">
                     un interés por categoría
                   </span>
                   .{" "}
-                  <span className="text-[#993331] font-semibold cursor-pointer hover:underline">
+                  <span className="text-accent font-semibold cursor-pointer hover:underline">
                     Actualiza a Premium
                   </span>{" "}
                   para acceder a todos los intereses y contenido exclusivo.
@@ -533,5 +534,6 @@ export default function InterestsPage() {
         </div>
       </div>
     </main>
+    </div>
   );
 }

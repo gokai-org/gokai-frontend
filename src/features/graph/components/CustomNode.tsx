@@ -33,27 +33,27 @@ function CustomNode({ data, isConnectable }: CustomNodeProps) {
   const getNodeStyles = () => {
     if (data.status === "completed") {
       return {
-        bg: "bg-gradient-to-br from-[#993331] to-[#7a2826]",
-        icon: "text-white",
-        ring: "ring-4 ring-[#993331]/20",
-        shadow: "shadow-xl shadow-[#993331]/30",
-        glow: "before:absolute before:inset-0 before:rounded-full before:bg-[#993331]/20 before:blur-xl",
+        bg: "bg-gradient-to-br from-accent to-accent-hover",
+        icon: "text-content-inverted",
+        ring: "ring-4 ring-accent/20",
+        shadow: "shadow-xl shadow-accent/30",
+        glow: "before:absolute before:inset-0 before:rounded-full before:bg-accent/20 before:blur-xl",
       };
     }
     if (data.status === "available") {
       return {
-        bg: "bg-gradient-to-br from-[#993331]/70 to-[#7a2826]/60",
-        icon: "text-white",
-        ring: "ring-2 ring-[#993331]/15",
-        shadow: "shadow-lg shadow-[#993331]/20",
-        glow: "before:absolute before:inset-0 before:rounded-full before:bg-[#993331]/10 before:blur-lg",
+        bg: "bg-gradient-to-br from-accent/70 to-accent-hover/60",
+        icon: "text-content-inverted",
+        ring: "ring-2 ring-accent/15",
+        shadow: "shadow-lg shadow-accent/20",
+        glow: "before:absolute before:inset-0 before:rounded-full before:bg-accent/10 before:blur-lg",
       };
     }
     return {
-      bg: "bg-gradient-to-br from-gray-100 to-gray-200",
-      icon: "text-gray-400",
-      ring: "ring-2 ring-gray-200",
-      shadow: "shadow-md shadow-gray-300/30",
+      bg: "bg-gradient-to-br from-surface-tertiary to-surface-tertiary",
+      icon: "text-content-muted",
+      ring: "ring-2 ring-border-default",
+      shadow: "shadow-md shadow-border-default/30",
       glow: "",
     };
   };
@@ -153,7 +153,7 @@ function CustomNode({ data, isConnectable }: CustomNodeProps) {
           `}
         >
           {data.type === "writing" && data.symbol ? (
-            <span className="text-4xl font-bold text-white leading-none">
+            <span className="text-4xl font-bold text-content-inverted leading-none">
               {data.symbol}
             </span>
           ) : (
@@ -165,10 +165,10 @@ function CustomNode({ data, isConnectable }: CustomNodeProps) {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center shadow-md"
+              className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-surface-primary flex items-center justify-center shadow-md"
             >
               <svg
-                className="w-3 h-3 text-white"
+                className="w-3 h-3 text-content-inverted"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
@@ -186,10 +186,10 @@ function CustomNode({ data, isConnectable }: CustomNodeProps) {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 w-6 h-6 bg-gray-400 rounded-full border-2 border-white flex items-center justify-center shadow-md"
+              className="absolute -top-1 -right-1 w-6 h-6 bg-content-muted rounded-full border-2 border-surface-primary flex items-center justify-center shadow-md"
             >
               <svg
-                className="w-3 h-3 text-white"
+                className="w-3 h-3 text-content-inverted"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >

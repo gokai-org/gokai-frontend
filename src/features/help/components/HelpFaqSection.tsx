@@ -24,13 +24,13 @@ export function HelpFaqSection({
         animate={{ opacity: 1, scale: 1 }}
         className="py-16 text-center"
       >
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
-          <Search className="h-7 w-7 text-gray-400" />
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-surface-tertiary">
+          <Search className="h-7 w-7 text-content-muted" />
         </div>
-        <h3 className="mb-1 font-bold text-gray-900">
+        <h3 className="mb-1 font-bold text-content-primary">
           No se encontraron resultados
         </h3>
-        <p className="text-sm text-gray-500">
+        <p className="text-sm text-content-tertiary">
           No hubo coincidencias para “{searchQuery}”.
         </p>
       </motion.div>

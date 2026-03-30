@@ -19,9 +19,9 @@ function getUrgency(lastPracticed: string): "high" | "medium" | "low" {
 }
 
 const urgencyStyles = {
-  high: { dot: "bg-red-500", text: "text-red-600", bg: "bg-red-50" },
-  medium: { dot: "bg-amber-500", text: "text-amber-600", bg: "bg-amber-50" },
-  low: { dot: "bg-emerald-500", text: "text-emerald-600", bg: "bg-emerald-50" },
+  high: { dot: "bg-red-500", text: "text-red-600 dark:text-red-400", bg: "bg-red-50 dark:bg-red-950/30" },
+  medium: { dot: "bg-amber-500", text: "text-amber-600 dark:text-amber-400", bg: "bg-amber-50 dark:bg-amber-950/30" },
+  low: { dot: "bg-emerald-500", text: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-50 dark:bg-emerald-950/30" },
 };
 
 const urgencyLabel = {
@@ -48,12 +48,12 @@ export function ReviewUrgencyPanel({ items }: ReviewUrgencyPanelProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
     >
-      <h3 className="text-lg font-extrabold text-gray-900 mb-1">
+      <h3 className="text-lg font-extrabold text-content-primary mb-1">
         Prioridad de repaso
       </h3>
-      <p className="text-xs text-gray-500 mb-5">
+      <p className="text-xs text-content-tertiary mb-5">
         Kanji organizados por tiempo sin practicar
       </p>
 
@@ -79,10 +79,10 @@ export function ReviewUrgencyPanel({ items }: ReviewUrgencyPanelProps) {
                       whileHover={{ scale: 1.08 }}
                       className={`${style.bg} px-3 py-1.5 rounded-xl flex items-center gap-2 cursor-default`}
                     >
-                      <span className="text-base font-bold text-gray-900">
+                      <span className="text-base font-bold text-content-primary">
                         {item.kanji.symbol}
                       </span>
-                      <span className="text-xs text-gray-500 hidden sm:inline">
+                      <span className="text-xs text-content-tertiary hidden sm:inline">
                         {meaning}
                       </span>
                     </motion.div>

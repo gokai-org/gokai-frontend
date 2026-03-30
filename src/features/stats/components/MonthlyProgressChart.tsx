@@ -35,10 +35,10 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white px-4 py-3 rounded-xl border border-gray-100 shadow-lg">
-      <p className="text-xs text-gray-500 font-medium mb-1">{label}</p>
+    <div className="bg-surface-primary px-4 py-3 rounded-xl border border-border-subtle shadow-lg">
+      <p className="text-xs text-content-tertiary font-medium mb-1">{label}</p>
       {payload.map((p) => (
-        <p key={p.dataKey} className="text-sm font-bold text-gray-900">
+        <p key={p.dataKey} className="text-sm font-bold text-content-primary">
           {p.dataKey === "score"
             ? `Precisión: ${p.value}%`
             : `Repasos: ${p.value}`}
@@ -61,10 +61,10 @@ export function MonthlyProgressChart({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
-        <div className="h-5 w-40 bg-gray-200 rounded mb-2" />
-        <div className="h-3 w-56 bg-gray-100 rounded mb-6" />
-        <div className="h-[220px] bg-gray-50 rounded-xl" />
+      <div className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle animate-pulse">
+        <div className="h-5 w-40 bg-surface-tertiary rounded mb-2" />
+        <div className="h-3 w-56 bg-surface-tertiary rounded mb-6" />
+        <div className="h-[220px] bg-surface-secondary rounded-xl" />
       </div>
     );
   }
@@ -83,14 +83,14 @@ export function MonthlyProgressChart({
               },
             }
           : {})}
-        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+        className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
       >
-        <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-        <p className="text-xs text-gray-500 mb-6">{subtitle}</p>
+        <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+        <p className="text-xs text-content-tertiary mb-6">{subtitle}</p>
         <div className="flex flex-col items-center justify-center py-10 gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-surface-tertiary flex items-center justify-center">
             <svg
-              className="w-7 h-7 text-gray-300"
+              className="w-7 h-7 text-content-muted"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -103,10 +103,10 @@ export function MonthlyProgressChart({
               />
             </svg>
           </div>
-          <p className="text-sm font-semibold text-gray-500">
+          <p className="text-sm font-semibold text-content-tertiary">
             Sin datos mensuales aún
           </p>
-          <p className="text-xs text-gray-400 text-center max-w-[220px]">
+          <p className="text-xs text-content-muted text-center max-w-[220px]">
             Tu evolución mes a mes aparecerá aquí conforme vayas estudiando.
           </p>
         </div>
@@ -130,12 +130,12 @@ export function MonthlyProgressChart({
             },
           }
         : {})}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
     >
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-          <p className="text-xs text-gray-500">{subtitle}</p>
+          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-50">
           <svg
@@ -160,26 +160,26 @@ export function MonthlyProgressChart({
           <AreaChart data={data}>
             <defs>
               <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#993331" stopOpacity={0.2} />
-                <stop offset="100%" stopColor="#993331" stopOpacity={0} />
+                <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.2} />
+                <stop offset="100%" stopColor="var(--accent)" stopOpacity={0} />
               </linearGradient>
             </defs>
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
-              stroke="#f3f4f6"
+              stroke="var(--border-secondary)"
             />
             <XAxis
               dataKey="month"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "#6b7280", fontWeight: 600 }}
+              tick={{ fontSize: 12, fill: "var(--text-tertiary)", fontWeight: 600 }}
             />
             <YAxis
               domain={[50, 100]}
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 11, fill: "#9ca3af" }}
+              tick={{ fontSize: 11, fill: "var(--text-muted)" }}
               tickFormatter={(v) => `${v}%`}
               width={40}
             />
@@ -187,14 +187,14 @@ export function MonthlyProgressChart({
             <Area
               type="monotone"
               dataKey="score"
-              stroke="#993331"
+              stroke="var(--accent)"
               strokeWidth={2.5}
               fill="url(#scoreGradient)"
-              dot={{ r: 4, fill: "#993331", strokeWidth: 0 }}
+              dot={{ r: 4, fill: "var(--accent)", strokeWidth: 0 }}
               activeDot={{
                 r: 6,
-                fill: "#993331",
-                stroke: "#fff",
+                fill: "var(--accent)",
+                stroke: "var(--surface-primary)",
                 strokeWidth: 2,
               }}
               animationDuration={animationsEnabled ? 1200 : 0}
@@ -207,8 +207,8 @@ export function MonthlyProgressChart({
       {/* Legend */}
       <div className="flex items-center gap-4 mt-2">
         <div className="flex items-center gap-1.5">
-          <div className="w-3 h-3 rounded-full bg-[#993331]" />
-          <span className="text-xs text-gray-500 font-medium">Precisión</span>
+          <div className="w-3 h-3 rounded-full bg-accent" />
+          <span className="text-xs text-content-tertiary font-medium">Precisión</span>
         </div>
       </div>
     </Wrapper>

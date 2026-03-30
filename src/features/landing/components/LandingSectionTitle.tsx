@@ -18,7 +18,7 @@ export function LandingSectionTitle({
   if (id === "experiencia") {
     return (
       <div className="text-center">
-        <p className="text-2xl font-extrabold text-[#993331] md:text-4xl">
+        <p className="text-2xl font-extrabold text-accent md:text-4xl">
           Más que una app de idiomas
         </p>
         <h2 className="mt-2 text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl">
@@ -31,11 +31,11 @@ export function LandingSectionTitle({
   if (id === "planes") {
     return (
       <div className="text-center">
-        <p className="text-3xl font-extrabold text-[#993331] md:text-5xl">
+        <p className="text-3xl font-extrabold text-accent md:text-5xl">
           Empieza gratis
         </p>
         <h2 className="mt-2 text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl">
-          Desbloquea todo con <span className="text-[#993331]">GOKAI+</span>
+          Desbloquea todo con <span className="text-accent">GOKAI+</span>
         </h2>
       </div>
     );
@@ -45,10 +45,10 @@ export function LandingSectionTitle({
     return (
       <div className="text-center">
         <h2 className="text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl">
-          <span className="block text-[#993331]">{titleA}</span>
+          <span className="block text-accent">{titleA}</span>
           <span className="block">{titleB}</span>
         </h2>
-        <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-neutral-700 md:text-xl">
+        <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-content-secondary md:text-xl">
           {desc}
         </p>
       </div>
@@ -71,8 +71,8 @@ export function LandingSectionTitle({
         <span
           className={
             isCenter
-              ? "block text-[#993331] lg:ml-3 lg:inline"
-              : "block text-[#993331]"
+              ? "block text-accent lg:ml-3 lg:inline"
+              : "block text-accent"
           }
         >
           {titleB}
@@ -81,7 +81,7 @@ export function LandingSectionTitle({
 
       <p
         className={[
-          "leading-relaxed text-neutral-700",
+          "leading-relaxed text-content-secondary",
           isCenter
             ? "mx-auto mt-3 max-w-3xl text-base md:text-xl"
             : "mt-6 text-lg md:text-2xl",

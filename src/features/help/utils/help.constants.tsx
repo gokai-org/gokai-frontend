@@ -65,8 +65,8 @@ export const HELP_GUIDES: GuideCardItem[] = [
     title: "Primeros pasos",
     description:
       "Configura tu perfil, elige tu nivel y comienza tu primera lección de japonés.",
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-50 dark:bg-blue-950/40",
     tourIndex: 0,
   },
   {
@@ -74,8 +74,8 @@ export const HELP_GUIDES: GuideCardItem[] = [
     title: "Explorar la biblioteca",
     description:
       "Descubre kanji organizados por nivel con ejemplos interactivos.",
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-50 dark:bg-purple-950/40",
     tourIndex: 1,
   },
   {
@@ -83,8 +83,8 @@ export const HELP_GUIDES: GuideCardItem[] = [
     title: "Sistema de revisiones",
     description:
       "Aprende cómo funciona el SRS y cómo maximizar tu retención.",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
     tourIndex: 2,
   },
   {
@@ -92,8 +92,8 @@ export const HELP_GUIDES: GuideCardItem[] = [
     title: "Chatbot de conversación",
     description:
       "Practica japonés con IA, escenarios reales y correcciones.",
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor: "bg-amber-50 dark:bg-amber-950/40",
     tourIndex: 3,
   },
   {
@@ -101,8 +101,8 @@ export const HELP_GUIDES: GuideCardItem[] = [
     title: "Estadísticas y progreso",
     description:
       "Interpreta tus métricas, detecta patrones y mejora tu rutina.",
-    color: "text-rose-600",
-    bgColor: "bg-rose-50",
+    color: "text-rose-600 dark:text-rose-400",
+    bgColor: "bg-rose-50 dark:bg-rose-950/40",
     tourIndex: 4,
   },
   {
@@ -110,8 +110,8 @@ export const HELP_GUIDES: GuideCardItem[] = [
     title: "Personalización",
     description:
       "Ajusta notificaciones, metas diarias, apariencia y accesibilidad.",
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
+    color: "text-indigo-600 dark:text-indigo-400",
+    bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
     tourIndex: 5,
   },
 ];

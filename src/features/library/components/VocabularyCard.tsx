@@ -44,7 +44,7 @@ export function VocabularyCard({
     ? [
         "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] p-5 text-left",
         "min-h-[210px]",
-        "bg-white border border-[#E8E3E1]",
+        "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
         "shadow-[0_2px_14px_-6px_rgba(0,0,0,0.06)]",
         config.shadowHover,
         cardTransition,
@@ -57,7 +57,7 @@ export function VocabularyCard({
     : [
         "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] p-5 text-left",
         "min-h-[190px]",
-        "bg-white border border-[#E8E3E1]",
+        "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
         "shadow-[0_2px_14px_-6px_rgba(0,0,0,0.06)]",
         config.shadowHover,
         cardTransition,

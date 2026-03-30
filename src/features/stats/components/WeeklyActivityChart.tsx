@@ -37,9 +37,9 @@ function CustomTooltip({
 }) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white px-4 py-2 rounded-xl border border-gray-100 shadow-lg">
-      <p className="text-xs text-gray-500 font-medium">{label}</p>
-      <p className="text-sm font-extrabold text-gray-900">
+    <div className="bg-surface-primary px-4 py-2 rounded-xl border border-border-subtle shadow-lg">
+      <p className="text-xs text-content-tertiary font-medium">{label}</p>
+      <p className="text-sm font-extrabold text-content-primary">
         {payload[0].value} min
       </p>
     </div>
@@ -60,10 +60,10 @@ export function WeeklyActivityChart({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
-        <div className="h-5 w-40 bg-gray-200 rounded mb-2" />
-        <div className="h-3 w-56 bg-gray-100 rounded mb-6" />
-        <div className="h-[220px] bg-gray-50 rounded-xl" />
+      <div className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle animate-pulse">
+        <div className="h-5 w-40 bg-surface-tertiary rounded mb-2" />
+        <div className="h-3 w-56 bg-surface-tertiary rounded mb-6" />
+        <div className="h-[220px] bg-surface-secondary rounded-xl" />
       </div>
     );
   }
@@ -82,14 +82,14 @@ export function WeeklyActivityChart({
               },
             }
           : {})}
-        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+        className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
       >
-        <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-        <p className="text-xs text-gray-500 mb-6">{subtitle}</p>
+        <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+        <p className="text-xs text-content-tertiary mb-6">{subtitle}</p>
         <div className="flex flex-col items-center justify-center py-10 gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-surface-tertiary flex items-center justify-center">
             <svg
-              className="w-7 h-7 text-gray-300"
+              className="w-7 h-7 text-content-muted"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -102,10 +102,10 @@ export function WeeklyActivityChart({
               />
             </svg>
           </div>
-          <p className="text-sm font-semibold text-gray-500">
+          <p className="text-sm font-semibold text-content-tertiary">
             Sin actividad esta semana
           </p>
-          <p className="text-xs text-gray-400 text-center max-w-[220px]">
+          <p className="text-xs text-content-muted text-center max-w-[220px]">
             Completa lecciones de kanji, kana o gramática y tu progreso
             aparecerá aquí.
           </p>
@@ -135,27 +135,27 @@ export function WeeklyActivityChart({
             },
           }
         : {})}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
     >
       <div className="flex items-start justify-between mb-1">
         <div>
-          <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-          <p className="text-xs text-gray-500">{subtitle}</p>
+          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="text-right">
-          <p className="text-2xl font-extrabold text-[#993331]">
+          <p className="text-2xl font-extrabold text-accent">
             +{((maxDay.minutes / avgMinutes - 1) * 100).toFixed(1)}%
           </p>
-          <p className="text-xs text-gray-500">vs promedio</p>
+          <p className="text-xs text-content-tertiary">vs promedio</p>
         </div>
       </div>
 
       {/* Summary pills */}
       <div className="flex gap-3 my-4">
-        <span className="text-xs font-bold px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-surface-tertiary text-content-secondary">
           Total: {totalMinutes} min
         </span>
-        <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#993331]/10 text-[#993331]">
+        <span className="text-xs font-bold px-3 py-1 rounded-full bg-accent/10 text-accent">
           Promedio: {avgMinutes} min/día
         </span>
       </div>
@@ -166,18 +166,18 @@ export function WeeklyActivityChart({
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
-              stroke="#f3f4f6"
+              stroke="var(--border-secondary)"
             />
             <XAxis
               dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "#6b7280", fontWeight: 600 }}
+              tick={{ fontSize: 12, fill: "var(--text-tertiary)", fontWeight: 600 }}
             />
             <YAxis
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 11, fill: "#9ca3af" }}
+              tick={{ fontSize: 11, fill: "var(--text-muted)" }}
               tickFormatter={(v) => `${v}`}
               width={35}
             />
@@ -194,7 +194,7 @@ export function WeeklyActivityChart({
               {data.map((entry) => (
                 <Cell
                   key={entry.day}
-                  fill={entry.day === highlightDay ? "#993331" : "#1f2937"}
+                  fill={entry.day === highlightDay ? "var(--accent)" : "var(--text-primary)"}
                   opacity={entry.day === highlightDay ? 1 : 0.85}
                 />
               ))}

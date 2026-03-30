@@ -23,14 +23,14 @@ export function LandingNavItem({
       className={[
         "relative inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold transition-colors duration-300",
         active
-          ? "text-[#993331]"
-          : "text-neutral-700 hover:text-neutral-950",
+          ? "text-accent"
+          : "text-content-secondary hover:text-content-primary",
       ].join(" ")}
     >
       {active && (
         <motion.span
           layoutId="landing-nav-pill"
-          className="absolute inset-0 rounded-full border border-black/8 bg-white shadow-[0_6px_18px_-8px_rgba(0,0,0,0.18)]"
+          className="absolute inset-0 rounded-full border border-black/8 bg-surface-primary shadow-[0_6px_18px_-8px_rgba(0,0,0,0.18)]"
           transition={{
             type: "spring",
             stiffness: 280,

@@ -59,7 +59,7 @@ export function RegisterForm({
     >
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+          <label className="mb-1.5 block text-sm font-semibold text-content-secondary">
             Nombre
           </label>
           <input
@@ -67,14 +67,14 @@ export function RegisterForm({
             onChange={(e) => onFirstNameChange(e.target.value)}
             type="text"
             placeholder="Nombre"
-            className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+            className="w-full rounded-lg border border-border-default bg-surface-primary px-3 py-2 text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-red-300 focus:ring-4 focus:ring-red-100"
             required
             autoComplete="given-name"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+          <label className="mb-1.5 block text-sm font-semibold text-content-secondary">
             Apellido
           </label>
           <input
@@ -82,7 +82,7 @@ export function RegisterForm({
             onChange={(e) => onLastNameChange(e.target.value)}
             type="text"
             placeholder="Apellido"
-            className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+            className="w-full rounded-lg border border-border-default bg-surface-primary px-3 py-2 text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-red-300 focus:ring-4 focus:ring-red-100"
             required
             autoComplete="family-name"
           />
@@ -91,7 +91,7 @@ export function RegisterForm({
 
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+          <label className="mb-1.5 block text-sm font-semibold text-content-secondary">
             Correo
           </label>
           <input
@@ -100,7 +100,7 @@ export function RegisterForm({
             type="email"
             placeholder="correo@ejemplo.com"
             disabled={fromGoogle}
-            className={`w-full rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition ${
+            className={`w-full rounded-lg border border-border-default bg-surface-primary px-3 py-2 text-sm text-content-primary outline-none transition ${
               fromGoogle ? "opacity-80 cursor-not-allowed" : ""
             }`}
             required
@@ -109,7 +109,7 @@ export function RegisterForm({
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+          <label className="mb-1.5 block text-sm font-semibold text-content-secondary">
             Fecha de nacimiento
           </label>
           <DatePicker
@@ -147,7 +147,7 @@ export function RegisterForm({
         disabled={loading}
         whileHover={{ scale: loading ? 1 : 1.02 }}
         whileTap={{ scale: loading ? 1 : 0.98 }}
-        className="w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
+        className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted shadow-sm transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {loading ? "Creando cuenta..." : "Continuar"}
       </motion.button>

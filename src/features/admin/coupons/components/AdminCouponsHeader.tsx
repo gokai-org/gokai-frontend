@@ -10,16 +10,16 @@ interface AdminCouponsHeaderProps {
 export function AdminCouponsHeader({ totalCoupons }: AdminCouponsHeaderProps) {
   return (
     <AdminPageHeader
-      icon={<Ticket className="h-7 w-7 text-white" strokeWidth={2.5} />}
+      icon={<Ticket className="h-7 w-7 text-content-inverted" strokeWidth={2.5} />}
       title="Cupones"
       japaneseText="割引"
       subtitle="Gestion de cupones, creacion y seguimiento de canjes"
       rightContent={
         <div className="flex items-center gap-2">
-          <span className="text-xs font-medium text-gray-500">
+          <span className="text-xs font-medium text-content-tertiary">
             {totalCoupons} cupones totales
           </span>
-          <div className="h-2 w-2 rounded-full bg-[#993331] animate-pulse" />
+          <div className="h-2 w-2 rounded-full bg-accent animate-pulse" />
         </div>
       }
     />

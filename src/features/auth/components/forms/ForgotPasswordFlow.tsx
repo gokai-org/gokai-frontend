@@ -74,7 +74,7 @@ export function ForgotPasswordFlow({
             className="space-y-4"
           >
             <div>
-              <label className="mb-2 block text-sm font-semibold text-neutral-700">
+              <label className="mb-2 block text-sm font-semibold text-content-secondary">
                 Correo electrónico
               </label>
               <input
@@ -82,7 +82,7 @@ export function ForgotPasswordFlow({
                 onChange={(e) => onForgotEmailChange(e.target.value)}
                 type="email"
                 placeholder="correo@ejemplo.com"
-                className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+                className="w-full rounded-lg border border-border-default bg-surface-primary px-3 py-2.5 text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-red-300 focus:ring-4 focus:ring-red-100"
                 required
                 autoComplete="email"
               />
@@ -92,7 +92,7 @@ export function ForgotPasswordFlow({
               type="submit"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200"
+              className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted shadow-sm transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-red-200"
             >
               Enviar código
             </motion.button>
@@ -100,7 +100,7 @@ export function ForgotPasswordFlow({
             <button
               type="button"
               onClick={onBackToLogin}
-              className="w-full text-center text-sm font-medium text-neutral-600 hover:text-neutral-900 transition"
+              className="w-full text-center text-sm font-medium text-content-secondary hover:text-content-primary transition"
             >
               Volver a inicio de sesión
             </button>
@@ -128,7 +128,7 @@ export function ForgotPasswordFlow({
               type="submit"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200"
+              className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted shadow-sm transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-red-200"
             >
               Verificar código
             </motion.button>
@@ -136,7 +136,7 @@ export function ForgotPasswordFlow({
             <button
               type="button"
               onClick={onBackToEmail}
-              className="w-full text-center text-sm font-medium text-neutral-600 hover:text-neutral-900 transition"
+              className="w-full text-center text-sm font-medium text-content-secondary hover:text-content-primary transition"
             >
               Volver
             </button>
@@ -177,7 +177,7 @@ export function ForgotPasswordFlow({
               type="submit"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200"
+              className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted shadow-sm transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-red-200"
             >
               Cambiar contraseña
             </motion.button>

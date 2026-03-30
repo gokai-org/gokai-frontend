@@ -70,14 +70,14 @@ export function AudioPlayer({
         className={[
           "flex h-11 w-11 shrink-0 items-center justify-center rounded-full transition-colors",
           isUserMessage
-            ? "bg-white/18 hover:bg-white/28"
-            : "bg-[#993331] hover:bg-[#882d2d]",
+            ? "bg-surface-primary/18 hover:bg-surface-primary/28"
+            : "bg-accent hover:bg-accent-hover",
         ].join(" ")}
         aria-label={isPlaying ? "Pausar audio" : "Reproducir audio"}
       >
         {isPlaying ? (
           <svg
-            className="h-4 w-4 text-white"
+            className="h-4 w-4 text-content-inverted"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -85,7 +85,7 @@ export function AudioPlayer({
           </svg>
         ) : (
           <svg
-            className="ml-0.5 h-4 w-4 text-white"
+            className="ml-0.5 h-4 w-4 text-content-inverted"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -98,7 +98,7 @@ export function AudioPlayer({
         <div className="mb-1 flex items-center justify-end">
           <span
             className={`text-xs font-bold ${
-              isUserMessage ? "text-white/90" : "text-gray-500"
+              isUserMessage ? "text-white/90" : "text-content-tertiary"
             }`}
           >
             {duration}
@@ -110,7 +110,7 @@ export function AudioPlayer({
             <div
               key={index}
               className={`w-[3px] shrink-0 rounded-full ${
-                isUserMessage ? "bg-white/78" : "bg-[#993331]/58"
+                isUserMessage ? "bg-surface-primary/78" : "bg-accent/58"
               }`}
               style={{
                 height: `${Math.max(5, Math.min(height, 26))}px`,

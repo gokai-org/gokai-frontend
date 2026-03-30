@@ -70,24 +70,24 @@ function AdminSupportTicketTableBase({
         });
 
   return (
-    <section className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
+    <section className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-bold text-gray-900">Todos los tickets de soporte</h3>
-          <p className="text-xs text-gray-500">
+          <h3 className="text-base font-bold text-content-primary">Todos los tickets de soporte</h3>
+          <p className="text-xs text-content-tertiary">
             Ultimos tickets ({tickets.length} de {totalTickets} tickets)
           </p>
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="hidden text-xs text-gray-500 sm:inline">
+          <span className="hidden text-xs text-content-tertiary sm:inline">
             Actualizado: {updatedLabel}
           </span>
           <button
             type="button"
             onClick={onReload}
             disabled={refreshing || loading}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 transition-colors hover:border-[#993331]/25 hover:text-[#993331] disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-primary px-3 py-1.5 text-xs font-semibold text-content-secondary transition-colors hover:border-accent/25 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             {refreshing ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -99,18 +99,18 @@ function AdminSupportTicketTableBase({
         </div>
       </div>
 
-      <div className="overflow-x-auto xl:overflow-visible rounded-xl border border-gray-100">
-        <table className="min-w-[780px] md:min-w-[880px] xl:min-w-0 w-full table-fixed bg-white">
+      <div className="overflow-x-auto xl:overflow-visible rounded-xl border border-border-subtle">
+        <table className="min-w-[780px] md:min-w-[880px] xl:min-w-0 w-full table-fixed bg-surface-primary">
           <thead className="bg-[#F8F6F4] text-left">
             <tr>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-gray-500 sm:px-3 lg:px-4">ID</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-gray-500 sm:px-3 lg:px-4">Nombre</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-gray-500 sm:px-3 lg:px-4">Correo</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-gray-500 sm:px-3 lg:px-4">Asunto</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-gray-500 sm:px-3 lg:px-4">Categoria</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-gray-500 sm:px-3 lg:px-4">Estado</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-gray-500 sm:px-3 lg:px-4">Fecha de creacion</th>
-              <th className="px-2.5 py-2.5 text-center text-[11px] font-semibold tracking-wide text-gray-500 sm:px-3 lg:px-4">Acciones</th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">ID</th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Nombre</th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Correo</th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Asunto</th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Categoria</th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Estado</th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Fecha de creacion</th>
+              <th className="px-2.5 py-2.5 text-center text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -127,12 +127,12 @@ function AdminSupportTicketTableBase({
 
       {tickets.length > 0 && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-gray-500">
+          <p className="text-xs text-content-tertiary">
             Mostrando {visibleTickets.length} tickets (pagina {page} de {totalPages})
           </p>
 
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-500">Filas</label>
+            <label className="text-xs text-content-tertiary">Filas</label>
             <AdminFilterDropdown
               value={pageSize}
               options={pageSizeOptions}
@@ -146,7 +146,7 @@ function AdminSupportTicketTableBase({
               type="button"
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
               disabled={page <= 1}
-              className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Anterior
             </button>
@@ -154,7 +154,7 @@ function AdminSupportTicketTableBase({
               type="button"
               onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
               disabled={page >= totalPages}
-              className="rounded-md border border-gray-200 px-2.5 py-1 text-xs font-semibold text-gray-700 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Siguiente
             </button>
@@ -163,8 +163,8 @@ function AdminSupportTicketTableBase({
       )}
 
       {tickets.length === 0 && (
-        <div className="mt-4 rounded-xl border border-dashed border-gray-200 bg-[#FCFAF9] p-6 text-center">
-          <p className="text-sm font-medium text-gray-600">
+        <div className="mt-4 rounded-xl border border-dashed border-border-default bg-surface-secondary p-6 text-center">
+          <p className="text-sm font-medium text-content-secondary">
             No hay tickets con los filtros seleccionados.
           </p>
         </div>

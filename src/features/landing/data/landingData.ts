@@ -81,7 +81,7 @@ export const SECTIONS: Section[] = [
     titleA: "Aprende",
     titleB: "Japonés",
     desc: "Con GOKAI, domina el japonés a tu ritmo mediante IA, gamificación y rutas dinámicas de aprendizaje que se adaptan a ti.",
-    cta: { label: "Empieza gratis", href: "/auth/login" },
+    cta: { label: "Empieza gratis", href: "/auth/membership" },
     layout: "split",
   },
   {

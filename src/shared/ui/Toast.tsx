@@ -22,31 +22,31 @@ export function Toast({ id, type, message, onClose }: ToastProps) {
 
   const colors = {
     success: {
-      bg: "from-[#F5D076]/20 to-[#F5D076]/30",
-      border: "border-[#F5D076]/40",
-      text: "text-gray-800",
-      icon: "text-[#F5D076]",
-      accent: "from-[#F5D076] to-[#E5C066]",
+      bg: "from-emerald-50 to-green-50 dark:from-emerald-950/50 dark:to-green-900/40",
+      border: "border-emerald-200 dark:border-emerald-700/40",
+      text: "text-emerald-800 dark:text-emerald-200",
+      icon: "text-emerald-600 dark:text-emerald-400",
+      accent: "from-emerald-500 to-green-500",
     },
     error: {
-      bg: "from-red-50 to-red-100",
-      border: "border-red-200",
-      text: "text-red-800",
-      icon: "text-red-600",
+      bg: "from-red-50 to-red-100 dark:from-red-950/50 dark:to-red-900/40",
+      border: "border-red-200 dark:border-red-700/40",
+      text: "text-red-800 dark:text-red-200",
+      icon: "text-red-600 dark:text-red-400",
       accent: "from-red-500 to-red-600",
     },
     warning: {
-      bg: "from-amber-50 to-amber-100",
-      border: "border-amber-200",
-      text: "text-amber-800",
-      icon: "text-amber-600",
+      bg: "from-amber-50 to-amber-100 dark:from-amber-950/50 dark:to-amber-900/40",
+      border: "border-amber-200 dark:border-amber-700/40",
+      text: "text-amber-800 dark:text-amber-200",
+      icon: "text-amber-600 dark:text-amber-400",
       accent: "from-amber-500 to-amber-600",
     },
     info: {
-      bg: "from-blue-50 to-blue-100",
-      border: "border-blue-200",
-      text: "text-blue-800",
-      icon: "text-blue-600",
+      bg: "from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/40",
+      border: "border-blue-200 dark:border-blue-700/40",
+      text: "text-blue-800 dark:text-blue-200",
+      icon: "text-blue-600 dark:text-blue-400",
       accent: "from-blue-500 to-blue-600",
     },
   };
@@ -76,6 +76,7 @@ export function Toast({ id, type, message, onClose }: ToastProps) {
         relative bg-gradient-to-br ${color.bg} 
         border ${color.border} 
         rounded-lg shadow-lg backdrop-blur-sm
+        dark:shadow-black/40
         p-4
         min-w-[320px] max-w-md
       `}

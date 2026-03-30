@@ -11,7 +11,7 @@ interface AdminDashboardShellProps {
   useContainer?: boolean;
 }
 
-const baseContentClassName = "flex-1 overflow-y-auto bg-white";
+const baseContentClassName = "flex-1 overflow-y-auto bg-surface-primary";
 const baseContainerClassName = "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6";
 
 const joinClassNames = (...classes: Array<string | false | undefined>) =>
@@ -26,7 +26,7 @@ export function AdminDashboardShell({
   useContainer = true,
 }: AdminDashboardShellProps) {
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-surface-primary">
       {header}
       <div className={joinClassNames(baseContentClassName, contentClassName)}>
         {useContainer ? (

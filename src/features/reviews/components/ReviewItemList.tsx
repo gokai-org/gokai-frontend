@@ -44,8 +44,8 @@ const typeBadge: Record<
 > = {
   kanji: {
     label: "Escritura",
-    bg: "bg-[#993331]/10",
-    text: "text-[#993331]",
+    bg: "bg-accent/10",
+    text: "text-accent",
     icon: PenTool,
   },
   grammar: {
@@ -71,7 +71,7 @@ const typeBadge: Record<
 /* ── Icon square (left side of every card) ────────────── */
 
 const iconGradients: Record<ReviewItem["type"], string> = {
-  kanji: "from-[#993331] to-[#BA5149]",
+  kanji: "from-accent to-accent-hover",
   grammar: "from-[#6B5B95] to-[#8B7BB5]",
   listening: "from-[#C4863B] to-[#D4A65B]",
   speaking: "from-[#3B8A7A] to-[#5BAA9A]",
@@ -95,7 +95,7 @@ function KanjiCard({
     <CardShell type="kanji" lastPracticed={item.lastPracticed}>
       {/* Symbol */}
       <IconSquare type="kanji">
-        <span className="text-3xl font-bold text-white select-none">
+        <span className="text-3xl font-bold text-content-inverted select-none">
           {item.kanji.symbol}
         </span>
       </IconSquare>
@@ -103,12 +103,12 @@ function KanjiCard({
       {/* Info */}
       <div className="flex-1 min-w-0">
         <BadgeRow type="kanji" lastPracticed={item.lastPracticed} />
-        <h3 className="text-lg font-extrabold text-gray-900 truncate">
+        <h3 className="text-lg font-extrabold text-content-primary truncate">
           {item.kanji.symbol}{" "}
-          <span className="text-gray-500 font-bold text-base">({reading})</span>
-          <span className="text-[#993331] ml-2 text-base">— {meaning}</span>
+          <span className="text-content-tertiary font-bold text-base">({reading})</span>
+          <span className="text-accent ml-2 text-base">— {meaning}</span>
         </h3>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-content-tertiary mt-1">
           Practica el trazado de este kanji
         </p>
       </div>
@@ -138,19 +138,19 @@ function GrammarCard({
   return (
     <CardShell type="grammar" lastPracticed={item.lastPracticed}>
       <IconSquare type="grammar">
-        <BookText className="w-7 h-7 text-white" />
+        <BookText className="w-7 h-7 text-content-inverted" />
       </IconSquare>
 
       <div className="flex-1 min-w-0">
         <BadgeRow type="grammar" lastPracticed={item.lastPracticed} />
-        <h3 className="text-lg font-extrabold text-gray-900 truncate">
+        <h3 className="text-lg font-extrabold text-content-primary truncate">
           {item.title}
         </h3>
-        <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+        <p className="text-xs text-content-tertiary mt-1 line-clamp-1">
           {item.description}
         </p>
         {item.examples && (
-          <p className="text-xs text-gray-400 mt-0.5 font-mono truncate">
+          <p className="text-xs text-content-muted mt-0.5 font-mono truncate">
             {item.examples}
           </p>
         )}
@@ -180,15 +180,15 @@ function ListeningCard({
   return (
     <CardShell type="listening" lastPracticed={item.lastPracticed}>
       <IconSquare type="listening">
-        <Headphones className="w-7 h-7 text-white" />
+        <Headphones className="w-7 h-7 text-content-inverted" />
       </IconSquare>
 
       <div className="flex-1 min-w-0">
         <BadgeRow type="listening" lastPracticed={item.lastPracticed} />
-        <h3 className="text-lg font-extrabold text-gray-900 truncate">
+        <h3 className="text-lg font-extrabold text-content-primary truncate">
           {item.title}
         </h3>
-        <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+        <p className="text-xs text-content-tertiary mt-1 line-clamp-1">
           {item.description}
         </p>
         <p className="text-sm font-bold text-[#C4863B] mt-0.5">{item.kana}</p>
@@ -218,15 +218,15 @@ function SpeakingCard({
   return (
     <CardShell type="speaking" lastPracticed={item.lastPracticed}>
       <IconSquare type="speaking">
-        <Mic className="w-7 h-7 text-white" />
+        <Mic className="w-7 h-7 text-content-inverted" />
       </IconSquare>
 
       <div className="flex-1 min-w-0">
         <BadgeRow type="speaking" lastPracticed={item.lastPracticed} />
-        <h3 className="text-lg font-extrabold text-gray-900 truncate">
+        <h3 className="text-lg font-extrabold text-content-primary truncate">
           {item.title}
         </h3>
-        <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+        <p className="text-xs text-content-tertiary mt-1 line-clamp-1">
           {item.description}
         </p>
         <p className="text-sm font-bold text-[#3B8A7A] mt-0.5">
@@ -258,7 +258,7 @@ function CardShell({
   children: React.ReactNode;
 }) {
   const borderHover: Record<ReviewItem["type"], string> = {
-    kanji: "hover:border-[#993331]/20",
+    kanji: "hover:border-accent/20",
     grammar: "hover:border-[#6B5B95]/20",
     listening: "hover:border-[#C4863B]/20",
     speaking: "hover:border-[#3B8A7A]/20",
@@ -271,7 +271,7 @@ function CardShell({
         y: -2,
         boxShadow: "0 8px 24px -4px rgba(0,0,0,0.08)",
       }}
-      className={`bg-white rounded-2xl p-5 shadow-sm border border-gray-100 transition-colors ${borderHover[type]}`}
+      className={`bg-surface-primary rounded-2xl p-5 shadow-sm border border-border-subtle transition-colors ${borderHover[type]}`}
     >
       <div className="flex items-center gap-5">{children}</div>
     </motion.div>
@@ -311,7 +311,7 @@ function BadgeRow({
         <Icon className="w-3 h-3" />
         {badge.label}
       </span>
-      <span className="text-xs text-gray-400">
+      <span className="text-xs text-content-muted">
         Último repaso: {lastPracticed}
       </span>
     </div>
@@ -330,7 +330,7 @@ function ActionButton({
   onClick: () => void;
 }) {
   const colors: Record<ReviewItem["type"], string> = {
-    kanji: "bg-[#993331] hover:bg-[#7a2927]",
+    kanji: "bg-accent hover:bg-[#7a2927]",
     grammar: "bg-[#6B5B95] hover:bg-[#5A4A84]",
     listening: "bg-[#C4863B] hover:bg-[#A8722F]",
     speaking: "bg-[#3B8A7A] hover:bg-[#2D7466]",
@@ -341,7 +341,7 @@ function ActionButton({
       whileHover={{ scale: 1.05 }}
       whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={`flex-shrink-0 ${colors[type]} text-white px-6 py-2.5 rounded-full font-bold transition-colors shadow-md hover:shadow-lg text-sm flex items-center gap-2`}
+      className={`flex-shrink-0 ${colors[type]} text-content-inverted px-6 py-2.5 rounded-full font-bold transition-colors shadow-md hover:shadow-lg text-sm flex items-center gap-2`}
     >
       {icon}
       {label}
@@ -364,15 +364,15 @@ export function ReviewItemList({ items, onStart }: ReviewItemListProps) {
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="bg-white rounded-2xl p-10 shadow-sm border border-gray-100 text-center"
+        className="bg-surface-primary rounded-2xl p-10 shadow-sm border border-border-subtle text-center"
       >
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
-          <BookOpen className="w-8 h-8 text-gray-400" />
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-surface-tertiary flex items-center justify-center">
+          <BookOpen className="w-8 h-8 text-content-muted" />
         </div>
-        <p className="text-lg font-bold text-gray-700">
+        <p className="text-lg font-bold text-content-secondary">
           No hay lecciones para repasar
         </p>
-        <p className="text-sm text-gray-500 mt-1">
+        <p className="text-sm text-content-tertiary mt-1">
           Completa más lecciones para desbloquear repasos
         </p>
       </motion.div>

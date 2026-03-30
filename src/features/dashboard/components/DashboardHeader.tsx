@@ -26,11 +26,11 @@ export function DashboardHeader({
   rightContent,
 }: DashboardHeaderProps) {
   return (
-    <header className="bg-white px-6 h-20 flex items-center justify-between sticky top-0 z-10 relative">
+    <header className="bg-surface-primary px-6 h-20 flex items-center justify-between sticky top-0 z-10 relative">
       <div className="flex items-center gap-4">
         {/* Icon */}
         <div className="relative">
-          <div className="w-12 h-12 rounded-full bg-[#993331] flex items-center justify-center shadow-md">
+          <div className="w-12 h-12 rounded-full bg-accent flex items-center justify-center shadow-md">
             {icon}
           </div>
         </div>
@@ -39,12 +39,12 @@ export function DashboardHeader({
         <div className="flex items-center gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-extrabold tracking-tight text-[#993331]">
+              <h1 className="text-xl font-extrabold tracking-tight text-accent">
                 {title}
               </h1>
               {japaneseText && (
                 <span
-                  className="text-sm font-bold text-[#993331]"
+                  className="text-sm font-bold text-accent"
                   style={{
                     writingMode: "vertical-rl",
                     textOrientation: "upright",
@@ -57,7 +57,7 @@ export function DashboardHeader({
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-xs text-gray-500">{subtitle}</p>
+              <p className="text-xs text-content-tertiary">{subtitle}</p>
               {statusBadge}
             </div>
           </div>
@@ -67,9 +67,9 @@ export function DashboardHeader({
       <div className="flex items-center gap-2">
         {/* Buscador */}
         {showSearch && (
-          <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-full border border-gray-200">
+          <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-surface-secondary rounded-full border border-border-default">
             <svg
-              className="w-4 h-4 text-gray-400"
+              className="w-4 h-4 text-content-muted"
               fill="none"
               stroke="currentColor"
               strokeWidth={2}
@@ -85,14 +85,14 @@ export function DashboardHeader({
               type="text"
               placeholder={searchPlaceholder}
               onChange={(e) => onSearchChange?.(e.target.value)}
-              className="bg-transparent text-sm outline-none w-32 lg:w-48"
+              className="bg-transparent text-sm outline-none w-32 lg:w-48 text-content-primary placeholder:text-content-muted"
             />
           </div>
         )}
 
         {/* Contenido personalizado */}
         {rightContent || (
-          <button className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-50 rounded-lg">
+          <button className="text-content-muted hover:text-content-secondary transition-colors p-2 hover:bg-surface-secondary rounded-lg">
             <svg
               className="w-5 h-5"
               fill="none"
@@ -112,7 +112,7 @@ export function DashboardHeader({
 
       {/* Línea */}
       <div
-        className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200"
+        className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-border-default via-border-default to-border-default"
         style={{ marginLeft: "-200px", width: "calc(100% + 200px)" }}
       />
     </header>

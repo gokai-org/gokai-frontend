@@ -69,8 +69,8 @@ const STEP_CONFIG = {
     gradient: "from-amber-500 to-orange-500",
     gradientLight: "from-amber-50 to-orange-50",
     icon: AlertTriangle,
-    iconBg: "bg-white/20",
-    iconColor: "text-white",
+    iconBg: "bg-surface-primary/20",
+    iconColor: "text-content-inverted",
     title: "¿Cancelar tu suscripción?",
     subtitle: "Antes de irte, queremos asegurarnos",
     accent: "amber",
@@ -79,8 +79,8 @@ const STEP_CONFIG = {
     gradient: "from-rose-500 to-red-500",
     gradientLight: "from-rose-50 to-red-50",
     icon: HeartCrack,
-    iconBg: "bg-white/20",
-    iconColor: "text-white",
+    iconBg: "bg-surface-primary/20",
+    iconColor: "text-content-inverted",
     title: "Esto es lo que perderás",
     subtitle: "Funciones exclusivas de GOKAI+",
     accent: "red",
@@ -89,8 +89,8 @@ const STEP_CONFIG = {
     gradient: "from-gray-600 to-gray-500",
     gradientLight: "from-gray-100 to-gray-50",
     icon: ShieldAlert,
-    iconBg: "bg-white/20",
-    iconColor: "text-white",
+    iconBg: "bg-surface-primary/20",
+    iconColor: "text-content-inverted",
     title: "Última oportunidad",
     subtitle: "Esta acción no se puede deshacer fácilmente",
     accent: "gray",
@@ -152,22 +152,22 @@ export function CancelSubscriptionModal({
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="relative w-full max-w-lg md:max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 my-4 flex flex-col md:flex-row"
+              className="relative w-full max-w-lg md:max-w-3xl overflow-hidden rounded-2xl bg-surface-primary shadow-2xl ring-1 ring-border-subtle my-4 flex flex-col md:flex-row"
             >
               {/* ═══ PANEL IZQUIERDO — Gradiente dinámico ═══ */}
               <motion.div
-                className={`relative flex flex-col justify-between bg-gradient-to-br ${cfg.gradient} text-white overflow-hidden md:w-[320px] md:min-h-[460px] flex-shrink-0`}
+                className={`relative flex flex-col justify-between bg-gradient-to-br ${cfg.gradient} text-content-inverted overflow-hidden md:w-[320px] md:min-h-[460px] flex-shrink-0`}
                 layout
                 transition={{ duration: 0.4, ease: "easeInOut" }}
               >
                 {/* Elementos decorativos */}
-                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10" />
-                <div className="pointer-events-none absolute -left-6 bottom-8 h-20 w-20 rounded-full bg-white/5" />
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-surface-primary/10" />
+                <div className="pointer-events-none absolute -left-6 bottom-8 h-20 w-20 rounded-full bg-surface-primary/5" />
 
                 {/* Cerrar (móvil) */}
                 <button
                   onClick={handleClose}
-                  className="absolute top-3 right-3 md:hidden rounded-full p-1.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors z-10"
+                  className="absolute top-3 right-3 md:hidden rounded-full p-1.5 text-white/70 hover:text-content-inverted hover:bg-surface-primary/10 transition-colors z-10"
                 >
                   <X size={18} />
                 </button>
@@ -181,7 +181,7 @@ export function CancelSubscriptionModal({
                       onClick={() =>
                         goTo(step === "final" ? "losing" : "confirm")
                       }
-                      className="mb-4 flex items-center gap-1 text-xs text-white/70 hover:text-white transition-colors"
+                      className="mb-4 flex items-center gap-1 text-xs text-white/70 hover:text-content-inverted transition-colors"
                     >
                       <ArrowLeft size={14} /> Volver
                     </motion.button>
@@ -232,8 +232,8 @@ export function CancelSubscriptionModal({
                         key={s}
                         className={`h-1.5 rounded-full transition-all duration-400 ${
                           STEP_ORDER.indexOf(step) >= idx
-                            ? "bg-white w-8"
-                            : "bg-white/30 w-4"
+                            ? "bg-surface-primary w-8"
+                            : "bg-surface-primary/30 w-4"
                         }`}
                         layout
                       />
@@ -245,7 +245,7 @@ export function CancelSubscriptionModal({
 
                   {/* Stat persuasiva (solo desktop) */}
                   <motion.div
-                    className="mt-6 hidden md:block rounded-xl bg-white/10 backdrop-blur-sm p-4"
+                    className="mt-6 hidden md:block rounded-xl bg-surface-primary/10 backdrop-blur-sm p-4"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.4, duration: 0.4 }}
@@ -279,7 +279,7 @@ export function CancelSubscriptionModal({
                 {/* Cerrar (desktop) */}
                 <button
                   onClick={handleClose}
-                  className="absolute top-4 right-4 hidden md:flex rounded-full p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors z-10"
+                  className="absolute top-4 right-4 hidden md:flex rounded-full p-1.5 text-content-muted hover:text-content-secondary hover:bg-surface-tertiary transition-colors z-10"
                 >
                   <X size={18} />
                 </button>
@@ -299,12 +299,12 @@ export function CancelSubscriptionModal({
                     >
                       <div className="flex-1 px-5 py-5 md:px-6 md:pt-8 md:pb-4 space-y-4">
                         <motion.div
-                          className="rounded-xl bg-amber-50 border border-amber-200/80 p-4"
+                          className="rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-800/50 p-4"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.15, duration: 0.35 }}
                         >
-                          <p className="text-sm text-amber-800 font-medium leading-relaxed">
+                          <p className="text-sm text-amber-800 dark:text-amber-300 font-medium leading-relaxed">
                             Tu suscripción GOKAI+ seguirá activa hasta el final
                             de tu período de facturación actual. Después de eso,
                             perderás acceso a todas las funciones premium.
@@ -312,7 +312,7 @@ export function CancelSubscriptionModal({
                         </motion.div>
 
                         <motion.p
-                          className="text-sm text-gray-600"
+                          className="text-sm text-content-secondary"
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           transition={{ delay: 0.25 }}
@@ -323,12 +323,12 @@ export function CancelSubscriptionModal({
 
                         {/* Quick summary of what you have */}
                         <motion.div
-                          className="rounded-xl bg-[#993331]/5 border border-[#993331]/10 p-4"
+                          className="rounded-xl bg-accent/5 border border-accent/10 p-4"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.3, duration: 0.35 }}
                         >
-                          <p className="text-xs font-semibold text-gray-700 mb-2.5">
+                          <p className="text-xs font-semibold text-content-secondary mb-2.5">
                             Actualmente disfrutas de:
                           </p>
                           <div className="grid grid-cols-2 gap-1.5">
@@ -341,11 +341,11 @@ export function CancelSubscriptionModal({
                                   delay: 0.35 + idx * 0.05,
                                   duration: 0.25,
                                 }}
-                                className="flex items-center gap-1.5 text-xs text-gray-600"
+                                className="flex items-center gap-1.5 text-xs text-content-secondary"
                               >
                                 <CheckCircle2
                                   size={12}
-                                  className="text-[#993331] flex-shrink-0"
+                                  className="text-accent flex-shrink-0"
                                 />
                                 <span className="truncate">
                                   {f.label.split(" ").slice(0, 2).join(" ")}
@@ -356,18 +356,18 @@ export function CancelSubscriptionModal({
                         </motion.div>
                       </div>
 
-                      <div className="border-t border-gray-100 px-5 py-4 md:px-6 md:py-5 bg-gray-50/50 space-y-2.5">
+                      <div className="border-t border-border-subtle px-5 py-4 md:px-6 md:py-5 bg-surface-secondary/50 space-y-2.5">
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleKeepPlan}
-                          className="w-full rounded-xl bg-gradient-to-r from-[#993331] to-[#BA5149] py-3 text-base font-bold text-white shadow-lg shadow-[#993331]/20 transition-all"
+                          className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-hover py-3 text-base font-bold text-content-inverted shadow-lg shadow-accent/20 transition-all"
                         >
                           Mantener mi plan GOKAI+
                         </motion.button>
                         <button
                           onClick={() => goTo("losing")}
-                          className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                          className="w-full rounded-xl border border-border-default py-2.5 text-sm font-medium text-content-tertiary hover:bg-surface-secondary transition-colors"
                         >
                           Quiero cancelar de todas formas
                         </button>
@@ -399,15 +399,15 @@ export function CancelSubscriptionModal({
                                 duration: 0.35,
                                 ease: "easeOut",
                               }}
-                              className="group flex items-center gap-3 rounded-xl p-2.5 bg-red-50/50 hover:bg-red-50 transition-colors ring-1 ring-red-100/80"
+                              className="group flex items-center gap-3 rounded-xl p-2.5 bg-red-50/50 dark:bg-red-950/20 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors ring-1 ring-red-100/80 dark:ring-red-800/40"
                             >
                               <motion.div
-                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-red-100/80"
+                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-red-100/80 dark:bg-red-900/40"
                                 whileHover={{ rotate: -8 }}
                               >
                                 <f.icon size={15} className="text-red-400" />
                               </motion.div>
-                              <span className="text-sm text-gray-600 line-through decoration-red-300/70 flex-1">
+                              <span className="text-sm text-content-secondary line-through decoration-red-300/70 flex-1">
                                 {f.label}
                               </span>
                               <motion.div
@@ -427,33 +427,33 @@ export function CancelSubscriptionModal({
 
                         {/* Stat card (solo móvil) */}
                         <motion.div
-                          className="md:hidden rounded-xl bg-[#993331]/5 border border-[#993331]/10 p-3.5 text-center"
+                          className="md:hidden rounded-xl bg-accent/5 border border-accent/10 p-3.5 text-center"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.5 }}
                         >
                           <Crown
                             size={18}
-                            className="mx-auto mb-1.5 text-[#993331]"
+                            className="mx-auto mb-1.5 text-accent"
                           />
-                          <p className="text-xs font-semibold text-gray-900">
+                          <p className="text-xs font-semibold text-content-primary">
                             Tu progreso de aprendizaje se verá afectado
                           </p>
                         </motion.div>
                       </div>
 
-                      <div className="border-t border-gray-100 px-5 py-4 md:px-6 md:py-5 bg-gray-50/50 space-y-2.5">
+                      <div className="border-t border-border-subtle px-5 py-4 md:px-6 md:py-5 bg-surface-secondary/50 space-y-2.5">
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleKeepPlan}
-                          className="w-full rounded-xl bg-gradient-to-r from-[#993331] to-[#BA5149] py-3 text-base font-bold text-white shadow-lg shadow-[#993331]/20 transition-all"
+                          className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-hover py-3 text-base font-bold text-content-inverted shadow-lg shadow-accent/20 transition-all"
                         >
                           ¡Me quedo con GOKAI+!
                         </motion.button>
                         <button
                           onClick={() => goTo("final")}
-                          className="w-full rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors"
+                          className="w-full rounded-xl border border-border-default py-2.5 text-sm font-medium text-content-tertiary hover:bg-surface-secondary transition-colors"
                         >
                           Continuar con la cancelación
                         </button>
@@ -475,12 +475,12 @@ export function CancelSubscriptionModal({
                     >
                       <div className="flex-1 px-5 py-5 md:px-6 md:pt-8 md:pb-4 space-y-4">
                         <motion.div
-                          className="rounded-xl bg-red-50 border border-red-200/80 p-4 text-center"
+                          className="rounded-xl bg-red-50 dark:bg-red-950/30 border border-red-200/80 dark:border-red-800/50 p-4 text-center"
                           initial={{ opacity: 0, scale: 0.95 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: 0.1, duration: 0.35 }}
                         >
-                          <p className="text-sm text-red-800 font-medium leading-relaxed">
+                          <p className="text-sm text-red-800 dark:text-red-300 font-medium leading-relaxed">
                             Al confirmar, tu suscripción se cancelará al final
                             del período actual. Regresarás al plan gratuito con
                             funciones limitadas.
@@ -488,12 +488,12 @@ export function CancelSubscriptionModal({
                         </motion.div>
 
                         <motion.div
-                          className="rounded-xl bg-gray-50 border border-gray-200 p-4 space-y-2.5"
+                          className="rounded-xl bg-surface-secondary border border-border-default p-4 space-y-2.5"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.2, duration: 0.35 }}
                         >
-                          <p className="text-xs font-semibold text-gray-700">
+                          <p className="text-xs font-semibold text-content-secondary">
                             Resumen de la cancelación:
                           </p>
                           <ul className="space-y-1.5">
@@ -523,7 +523,7 @@ export function CancelSubscriptionModal({
                                   delay: 0.3 + idx * 0.06,
                                   duration: 0.25,
                                 }}
-                                className="flex items-center gap-2 text-xs text-gray-600"
+                                className="flex items-center gap-2 text-xs text-content-secondary"
                               >
                                 {item.ok ? (
                                   <CheckCircle2
@@ -549,12 +549,12 @@ export function CancelSubscriptionModal({
                         )}
                       </div>
 
-                      <div className="border-t border-gray-100 px-5 py-4 md:px-6 md:py-5 bg-gray-50/50 space-y-2.5">
+                      <div className="border-t border-border-subtle px-5 py-4 md:px-6 md:py-5 bg-surface-secondary/50 space-y-2.5">
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleKeepPlan}
-                          className="w-full rounded-xl bg-gradient-to-r from-[#993331] to-[#BA5149] py-3 text-base font-bold text-white shadow-lg shadow-[#993331]/20 transition-all"
+                          className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-hover py-3 text-base font-bold text-content-inverted shadow-lg shadow-accent/20 transition-all"
                         >
                           No cancelar, mantener GOKAI+
                         </motion.button>
@@ -563,7 +563,7 @@ export function CancelSubscriptionModal({
                           whileTap={{ scale: loading ? 1 : 0.99 }}
                           onClick={onConfirmCancel}
                           disabled={loading}
-                          className="w-full rounded-xl border-2 border-red-200 bg-red-50 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-100 hover:border-red-300 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full rounded-xl border-2 border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 py-2.5 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50 hover:border-red-300 dark:hover:border-red-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {loading ? (
                             <span className="flex items-center justify-center gap-2">

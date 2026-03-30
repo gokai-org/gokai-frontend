@@ -68,8 +68,8 @@ export function LandingHowSection({
             className={[
               "relative min-w-[210px] rounded-full px-8 py-4 text-base font-bold transition-all duration-300 md:min-w-[250px] md:px-10 md:py-4 md:text-[1.05rem]",
               tab.id === howTab
-                ? "bg-gradient-to-r from-[#993331] to-[#7a2927] text-white shadow-[0_16px_34px_-14px_rgba(153,51,49,0.55)]"
-                : "border border-black/5 bg-white/85 text-neutral-700 shadow-sm hover:border-[#993331]/10 hover:text-[#993331]",
+                ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-[0_16px_34px_-14px_rgba(153,51,49,0.55)]"
+                : "border border-border-subtle bg-surface-primary/85 text-content-secondary shadow-sm hover:border-accent/10 hover:text-accent",
             ].join(" ")}
           >
             {tab.label}

@@ -26,10 +26,10 @@ export function ReviewPendingSection({
         className="mb-5"
         title={
           <>
-            Repasos <span className="text-[#993331]">Pendientes</span>
+            Repasos <span className="text-accent">Pendientes</span>
           </>
         }
-        titleClassName="text-2xl font-extrabold tracking-tight text-gray-900"
+        titleClassName="text-2xl font-extrabold tracking-tight text-content-primary"
         subtitle="Una lección de cada tipo lista para reforzar"
       />
 
@@ -38,15 +38,15 @@ export function ReviewPendingSection({
           {[1, 2, 3, 4].map((i) => (
             <div
               key={i}
-              className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-pulse"
+              className="bg-surface-primary rounded-2xl p-5 shadow-sm border border-border-subtle animate-pulse"
             >
               <div className="flex items-center gap-5">
-                <div className="w-[72px] h-[72px] rounded-2xl bg-gray-200" />
+                <div className="w-[72px] h-[72px] rounded-2xl bg-surface-tertiary" />
                 <div className="flex-1 space-y-3">
-                  <div className="h-4 bg-gray-200 rounded w-1/3" />
-                  <div className="h-3 bg-gray-200 rounded w-2/3" />
+                  <div className="h-4 bg-surface-tertiary rounded w-1/3" />
+                  <div className="h-3 bg-surface-tertiary rounded w-2/3" />
                 </div>
-                <div className="w-24 h-10 bg-gray-200 rounded-full" />
+                <div className="w-24 h-10 bg-surface-tertiary rounded-full" />
               </div>
             </div>
           ))}
@@ -55,7 +55,7 @@ export function ReviewPendingSection({
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="bg-red-50 border border-red-200 rounded-2xl p-6 text-center"
+          className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-2xl p-6 text-center"
         >
           <p className="text-red-600 font-bold">{error}</p>
           <p className="text-red-500 text-sm mt-1">

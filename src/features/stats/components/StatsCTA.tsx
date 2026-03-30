@@ -14,13 +14,13 @@ export function StatsCTA({
 }: StatsCTAProps) {
   return (
     <AnimatedEntrance index={5} disabled={!animationsEnabled}>
-      <div className="rounded-3xl border border-gray-100 bg-white p-8 text-center shadow-sm">
-        <div className="mb-4 inline-block rounded-full bg-[#993331]/10 px-8 py-4">
-          <p className="text-xl font-bold text-[#993331]">
+      <div className="rounded-3xl border border-border-subtle bg-surface-primary p-8 text-center shadow-sm">
+        <div className="mb-4 inline-block rounded-full bg-accent/10 px-8 py-4">
+          <p className="text-xl font-bold text-accent">
             毎日の努力が大きな成果につながります
           </p>
         </div>
-        <p className="mb-6 text-sm text-gray-500">
+        <p className="mb-6 text-sm text-content-tertiary">
           El esfuerzo de cada día se convierte en grandes logros. ¡Sigue así!
         </p>
         <PrimaryActionButton onClick={onStartStudy}>

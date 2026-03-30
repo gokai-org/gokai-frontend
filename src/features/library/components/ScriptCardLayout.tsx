@@ -16,7 +16,7 @@ export function HeartIcon({ isFavorite, config, hoverTransition }: HeartProps) {
         hoverTransition,
         isFavorite
           ? `fill-current ${config.heartColor} group-hover:text-white`
-          : `text-gray-300 group-hover:text-white/70`,
+          : `text-content-muted group-hover:text-white/70`,
       ].join(" ")}
       viewBox="0 0 24 24"
       stroke="currentColor"
@@ -45,7 +45,7 @@ export function ScriptSymbolBox({ symbol, gradient, hoverTransition }: ScriptSym
     <div
       className={[
         "inline-flex h-14 w-14 items-center justify-center overflow-hidden",
-        "rounded-2xl bg-gradient-to-br font-black text-white shadow-lg",
+        "rounded-2xl bg-gradient-to-br font-black text-content-inverted shadow-lg",
         "ring-2 ring-transparent",
         "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
         "text-[30px] leading-none",
@@ -155,7 +155,7 @@ export function ScriptCardLayout({
         <h3
           className={[
             "line-clamp-2 text-[17px] font-black leading-tight",
-            "text-gray-900 group-hover:text-white",
+            "text-content-primary group-hover:text-content-inverted",
             hoverTransition,
           ].join(" ")}
         >
@@ -166,7 +166,7 @@ export function ScriptCardLayout({
           <p
             className={[
               "mt-1 line-clamp-1 text-[12px] font-medium",
-              "text-gray-400 group-hover:text-white/60",
+              "text-content-muted group-hover:text-white/60",
               hoverTransition,
             ].join(" ")}
           >
@@ -190,7 +190,7 @@ export function ScriptCardLayout({
             hoverTransition,
             isFavorite
               ? `opacity-100 ${config.heartBg}`
-              : "border-gray-100 bg-white opacity-0 group-hover:border-white/25 group-hover:bg-white/15 group-hover:opacity-100",
+              : "border-border-subtle bg-surface-primary opacity-0 group-hover:border-white/25 group-hover:bg-surface-primary/15 group-hover:opacity-100",
           ].join(" ")}
         >
           <HeartIcon

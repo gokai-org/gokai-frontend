@@ -50,14 +50,14 @@ export function BaseNoticeCard({
     >
       <div
         className={cls(
-          "group relative rounded-[24px] border bg-white transition-all duration-300",
+          "group relative rounded-[24px] border bg-surface-primary transition-all duration-300",
           notice.read
-            ? "border-gray-100 hover:border-gray-200"
-            : "border-[#993331]/15 shadow-sm shadow-[#993331]/5 hover:shadow-md hover:shadow-[#993331]/10",
+            ? "border-border-subtle hover:border-border-default"
+            : "border-accent/15 shadow-sm shadow-accent/5 hover:shadow-md hover:shadow-accent/10",
         )}
       >
         {!notice.read && (
-          <div className="absolute left-0 top-0 h-full w-1 rounded-l-[24px] bg-gradient-to-b from-[#993331] to-[#7a2927]" />
+          <div className="absolute left-0 top-0 h-full w-1 rounded-l-[24px] bg-gradient-to-b from-accent to-accent-hover" />
         )}
 
         <div className="p-5 pl-6">
@@ -76,7 +76,7 @@ export function BaseNoticeCard({
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   {eyebrow && (
-                    <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-[#993331]">
+                    <p className="mb-1 text-[11px] font-bold uppercase tracking-wide text-accent">
                       {eyebrow}
                     </p>
                   )}
@@ -85,14 +85,14 @@ export function BaseNoticeCard({
                     <h3
                       className={cls(
                         "text-sm font-bold leading-snug",
-                        notice.read ? "text-gray-700" : "text-gray-900",
+                        notice.read ? "text-content-secondary" : "text-content-primary",
                       )}
                     >
                       {notice.title}
                     </h3>
 
                     {notice.pinned && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-[#993331]/10 px-2 py-0.5 text-[10px] font-bold text-[#993331]">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">
                         <Pin className="h-3 w-3" />
                         Fijada
                       </span>
@@ -110,7 +110,7 @@ export function BaseNoticeCard({
                       {config.label}
                     </span>
 
-                    <span className="flex items-center gap-1 text-[11px] text-gray-400">
+                    <span className="flex items-center gap-1 text-[11px] text-content-muted">
                       <Clock className="h-3 w-3" />
                       {timeAgo(notice.createdAt)}
                     </span>
@@ -120,7 +120,7 @@ export function BaseNoticeCard({
                 <div className="flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                   <button
                     onClick={() => onToggleRead(notice.id)}
-                    className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-[#993331]/5 hover:text-[#993331]"
+                    className="rounded-lg p-1.5 text-content-muted transition-colors hover:bg-accent/5 hover:text-accent"
                     title={
                       notice.read ? "Marcar como no leída" : "Marcar como leída"
                     }
@@ -134,7 +134,7 @@ export function BaseNoticeCard({
 
                   <button
                     onClick={() => onTogglePin(notice.id)}
-                    className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-[#993331]/5 hover:text-[#993331]"
+                    className="rounded-lg p-1.5 text-content-muted transition-colors hover:bg-accent/5 hover:text-accent"
                     title={notice.pinned ? "Desfijar" : "Fijar"}
                   >
                     {notice.pinned ? (
@@ -146,7 +146,7 @@ export function BaseNoticeCard({
 
                   <button
                     onClick={() => onDelete(notice.id)}
-                    className="rounded-lg p-1.5 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+                    className="rounded-lg p-1.5 text-content-muted transition-colors hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 dark:hover:text-red-400"
                     title="Eliminar"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -161,7 +161,7 @@ export function BaseNoticeCard({
                 <p
                   className={cls(
                     "text-xs leading-relaxed",
-                    notice.read ? "text-gray-400" : "text-gray-500",
+                    notice.read ? "text-content-muted" : "text-content-tertiary",
                   )}
                 >
                   {expanded || !longText
@@ -170,7 +170,7 @@ export function BaseNoticeCard({
                 </p>
 
                 {longText && (
-                  <span className="mt-1 inline-flex items-center gap-0.5 text-[11px] font-bold text-[#993331]">
+                  <span className="mt-1 inline-flex items-center gap-0.5 text-[11px] font-bold text-accent">
                     {expanded ? "Ver menos" : "Ver más"}
                     <ChevronDown
                       className={`h-3 w-3 transition-transform ${expanded ? "rotate-180" : ""}`}
@@ -182,7 +182,7 @@ export function BaseNoticeCard({
               {notice.actionLabel && (
                 <a
                   href={notice.actionHref}
-                  className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#993331] to-[#7a2927] px-4 py-2 text-xs font-bold text-white shadow-sm shadow-[#993331]/15 transition-shadow duration-200 hover:shadow-md hover:shadow-[#993331]/20 active:scale-[0.98]"
+                  className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-accent to-accent-hover px-4 py-2 text-xs font-bold text-content-inverted shadow-sm shadow-accent/15 transition-shadow duration-200 hover:shadow-md hover:shadow-accent/20 active:scale-[0.98]"
                 >
                   {notice.actionLabel}
                 </a>

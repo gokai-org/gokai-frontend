@@ -26,7 +26,7 @@ function CustomEdge({
 
   // Determinar el color basado en el estado
   const isCompleted = data?.status === "completed";
-  const strokeColor = isCompleted ? "#993331" : "#6b7280";
+  const strokeColor = isCompleted ? "var(--accent)" : "var(--text-tertiary)";
   const strokeWidth = isCompleted ? 2.5 : 2;
   const opacity = isCompleted ? 0.5 : 0.35;
 

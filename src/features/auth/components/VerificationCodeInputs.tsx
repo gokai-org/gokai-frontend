@@ -28,7 +28,7 @@ export function VerificationCodeInputs({
           onKeyDown={(e) => onKeyDown(index, e)}
           inputMode="numeric"
           maxLength={1}
-          className="h-12 w-12 rounded-xl border border-neutral-200 bg-white text-center text-lg font-semibold text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+          className="h-12 w-12 rounded-xl border border-border-default bg-surface-primary text-center text-lg font-semibold text-content-primary outline-none transition placeholder:text-content-muted focus:border-red-300 focus:ring-4 focus:ring-red-100"
         />
       ))}
     </div>

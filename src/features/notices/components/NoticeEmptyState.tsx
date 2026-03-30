@@ -17,11 +17,11 @@ export default function NoticeEmptyState({
   return (
     <AnimatedEntrance className="py-20">
       <div className="flex flex-col items-center justify-center">
-        <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-gray-100">
-          <BellOff className="h-9 w-9 text-gray-300" />
+        <div className="mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-surface-tertiary">
+          <BellOff className="h-9 w-9 text-content-muted" />
         </div>
 
-        <h3 className="mb-1 text-lg font-bold text-gray-900">
+        <h3 className="mb-1 text-lg font-bold text-content-primary">
           {searchQuery
             ? "Sin resultados"
             : showUnreadOnly
@@ -29,7 +29,7 @@ export default function NoticeEmptyState({
               : "Sin notificaciones"}
         </h3>
 
-        <p className="max-w-sm text-center text-sm text-gray-500">
+        <p className="max-w-sm text-center text-sm text-content-tertiary">
           {searchQuery
             ? "No encontramos notificaciones que coincidan con tu búsqueda. Intenta con otros términos."
             : showUnreadOnly
@@ -40,7 +40,7 @@ export default function NoticeEmptyState({
         {(searchQuery || showUnreadOnly) && (
           <button
             onClick={onReset}
-            className="mt-4 text-xs font-bold text-[#993331] hover:underline"
+            className="mt-4 text-xs font-bold text-accent hover:underline"
           >
             Ver todas las notificaciones
           </button>

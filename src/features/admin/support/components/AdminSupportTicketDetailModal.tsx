@@ -116,24 +116,24 @@ export function AdminSupportTicketDetailModal({
           />
 
           <motion.div
-            className="support-modal-panel relative z-10 flex w-full max-w-6xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:rounded-[28px]"
+            className="support-modal-panel relative z-10 flex w-full max-w-6xl flex-col overflow-hidden rounded-[24px] bg-surface-primary shadow-2xl sm:rounded-[28px]"
             style={{ maxHeight: "min(94dvh, 940px)" }}
             initial={{ opacity: 0, scale: 0.96, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.98, y: 8 }}
             transition={{ duration: 0.3, ease: EASE }}
           >
-            <div className="relative shrink-0 overflow-hidden bg-gradient-to-r from-[#993331] to-[#7a2927] px-6 pb-6 pt-6 sm:px-8 sm:pb-7 sm:pt-7">
-              <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-white/5" />
-              <div className="absolute bottom-[-16px] left-[28%] h-20 w-20 rounded-full bg-white/5" />
+            <div className="relative shrink-0 overflow-hidden bg-gradient-to-r from-accent to-accent-hover px-6 pb-6 pt-6 sm:px-8 sm:pb-7 sm:pt-7">
+              <div className="absolute -right-10 -top-12 h-40 w-40 rounded-full bg-surface-primary/5" />
+              <div className="absolute bottom-[-16px] left-[28%] h-20 w-20 rounded-full bg-surface-primary/5" />
 
               <div className="relative z-10 flex items-start justify-between gap-4">
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm sm:h-14 sm:w-14">
-                    <Headphones className="h-6 w-6 text-white" />
+                  <div className="mt-0.5 flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface-primary/15 backdrop-blur-sm sm:h-14 sm:w-14">
+                    <Headphones className="h-6 w-6 text-content-inverted" />
                   </div>
                   <div>
-                    <h2 className="text-xl font-extrabold text-white sm:text-2xl">
+                    <h2 className="text-xl font-extrabold text-content-inverted sm:text-2xl">
                       Detalle completo del ticket
                     </h2>
                     <p className="mt-1 text-sm text-white/70">
@@ -148,7 +148,7 @@ export function AdminSupportTicketDetailModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-surface-primary/10 text-white/70 transition-colors hover:bg-surface-primary/20 hover:text-content-inverted"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -158,38 +158,38 @@ export function AdminSupportTicketDetailModal({
             <div className="support-modal-scroll flex-1 overflow-y-auto px-6 py-6 sm:px-8 sm:py-7">
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.45fr_1fr]">
                 <section className="space-y-5">
-                  <div className="rounded-2xl border border-gray-100 bg-[#FCFAF9] p-4 sm:p-5">
-                    <h3 className="mb-4 text-sm font-bold text-gray-900">Informacion del ticket</h3>
+                  <div className="rounded-2xl border border-border-subtle bg-surface-secondary p-4 sm:p-5">
+                    <h3 className="mb-4 text-sm font-bold text-content-primary">Informacion del ticket</h3>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div className="rounded-xl border border-gray-200 bg-white p-3">
-                        <p className="text-xs font-semibold text-gray-500">Nombre</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">{ticket.name}</p>
+                      <div className="rounded-xl border border-border-default bg-surface-primary p-3">
+                        <p className="text-xs font-semibold text-content-tertiary">Nombre</p>
+                        <p className="mt-1 text-sm font-semibold text-content-primary">{ticket.name}</p>
                       </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-3">
-                        <p className="text-xs font-semibold text-gray-500">Correo</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">{ticket.email}</p>
+                      <div className="rounded-xl border border-border-default bg-surface-primary p-3">
+                        <p className="text-xs font-semibold text-content-tertiary">Correo</p>
+                        <p className="mt-1 text-sm font-semibold text-content-primary">{ticket.email}</p>
                       </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-3">
-                        <p className="text-xs font-semibold text-gray-500">Categoria</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">
+                      <div className="rounded-xl border border-border-default bg-surface-primary p-3">
+                        <p className="text-xs font-semibold text-content-tertiary">Categoria</p>
+                        <p className="mt-1 text-sm font-semibold text-content-primary">
                           {CATEGORY_LABEL[normalizedCategory]}
                         </p>
                       </div>
-                      <div className="rounded-xl border border-gray-200 bg-white p-3">
-                        <p className="text-xs font-semibold text-gray-500">Fecha</p>
-                        <p className="mt-1 text-sm font-semibold text-gray-900">{ticket.createdAt}</p>
+                      <div className="rounded-xl border border-border-default bg-surface-primary p-3">
+                        <p className="text-xs font-semibold text-content-tertiary">Fecha</p>
+                        <p className="mt-1 text-sm font-semibold text-content-primary">{ticket.createdAt}</p>
                       </div>
                     </div>
 
-                    <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-                      <p className="text-xs font-semibold text-gray-500">Asunto</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-900">{ticket.subject}</p>
+                    <div className="mt-4 rounded-xl border border-border-default bg-surface-primary p-4">
+                      <p className="text-xs font-semibold text-content-tertiary">Asunto</p>
+                      <p className="mt-1 text-sm font-semibold text-content-primary">{ticket.subject}</p>
                     </div>
 
-                    <div className="mt-4 rounded-xl border border-gray-200 bg-white p-4">
-                      <p className="text-xs font-semibold text-gray-500">Mensaje del usuario</p>
-                      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
+                    <div className="mt-4 rounded-xl border border-border-default bg-surface-primary p-4">
+                      <p className="text-xs font-semibold text-content-tertiary">Mensaje del usuario</p>
+                      <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-content-secondary">
                         {ticket.message}
                       </p>
                     </div>
@@ -197,12 +197,12 @@ export function AdminSupportTicketDetailModal({
                 </section>
 
                 <section className="space-y-5">
-                  <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm sm:p-5">
-                    <h3 className="mb-4 text-sm font-bold text-gray-900">Gestion administrativa</h3>
+                  <div className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm sm:p-5">
+                    <h3 className="mb-4 text-sm font-bold text-content-primary">Gestion administrativa</h3>
 
                     <div className="space-y-4">
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                           Estado del ticket
                         </label>
                         <AdminFilterDropdown
@@ -215,7 +215,7 @@ export function AdminSupportTicketDetailModal({
                       </div>
 
                       <div>
-                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-gray-500">
+                        <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                           Nota / respuesta del admin
                         </label>
                         <textarea
@@ -223,9 +223,9 @@ export function AdminSupportTicketDetailModal({
                           onChange={(e) => setNote(e.target.value)}
                           rows={8}
                           placeholder="Escribe aqui la respuesta interna o el mensaje que se enviara al usuario al cerrar el ticket."
-                          className="w-full resize-y rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-800 outline-none transition-colors hover:border-gray-300 focus:border-[#993331]/40"
+                          className="w-full resize-y rounded-2xl border border-border-default bg-surface-primary px-4 py-3 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                         />
-                        <p className="mt-2 text-xs text-gray-500">
+                        <p className="mt-2 text-xs text-content-tertiary">
                           Si cambias el estado a <span className="font-semibold">cerrado</span>, se envia un correo con esta nota al usuario.
                         </p>
                       </div>
@@ -240,7 +240,7 @@ export function AdminSupportTicketDetailModal({
                         <button
                           type="button"
                           onClick={onClose}
-                          className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+                          className="rounded-xl border border-border-default px-4 py-2.5 text-sm font-semibold text-content-secondary transition-colors hover:bg-surface-secondary"
                         >
                           Cerrar
                         </button>
@@ -248,7 +248,7 @@ export function AdminSupportTicketDetailModal({
                           type="button"
                           onClick={() => onSave({ status, note: note.trim() ? note.trim() : null })}
                           disabled={saving || !hasChanges}
-                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#882d2d] disabled:cursor-not-allowed disabled:opacity-60"
+                          className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {saving ? (
                             <>
@@ -266,20 +266,20 @@ export function AdminSupportTicketDetailModal({
                     </div>
                   </div>
 
-                  <div className="rounded-2xl border border-gray-100 bg-[#FCFAF9] p-4 sm:p-5">
-                    <h4 className="text-sm font-bold text-gray-900">Resumen rapido</h4>
-                    <ul className="mt-3 space-y-2 text-sm text-gray-600">
+                  <div className="rounded-2xl border border-border-subtle bg-surface-secondary p-4 sm:p-5">
+                    <h4 className="text-sm font-bold text-content-primary">Resumen rapido</h4>
+                    <ul className="mt-3 space-y-2 text-sm text-content-secondary">
                       <li className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-[#993331]" /> {ticket.name}
+                        <User className="h-4 w-4 text-accent" /> {ticket.name}
                       </li>
                       <li className="flex items-center gap-2">
-                        <Mail className="h-4 w-4 text-[#993331]" /> {ticket.email}
+                        <Mail className="h-4 w-4 text-accent" /> {ticket.email}
                       </li>
                       <li className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-[#993331]" /> Estado actual: {STATUS_LABEL[normalizeStatus(ticket.status)]}
+                        <Tag className="h-4 w-4 text-accent" /> Estado actual: {STATUS_LABEL[normalizeStatus(ticket.status)]}
                       </li>
                       <li className="flex items-center gap-2">
-                        <MessageSquareText className="h-4 w-4 text-[#993331]" /> Asunto: {ticket.subject}
+                        <MessageSquareText className="h-4 w-4 text-accent" /> Asunto: {ticket.subject}
                       </li>
                     </ul>
                   </div>

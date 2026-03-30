@@ -18,8 +18,8 @@ export function IntegrationButton({
         flex items-center gap-2 px-4 py-2 rounded-lg border transition-all
         ${
           connected
-            ? "bg-[#993331]/10 border-[#993331]/20 text-[#993331]"
-            : "bg-white border-gray-200 text-gray-700 hover:border-gray-300"
+            ? "bg-accent-subtle border-accent/20 text-accent"
+            : "bg-surface-primary border-border-default text-content-secondary hover:border-content-muted"
         }
       `}
     >

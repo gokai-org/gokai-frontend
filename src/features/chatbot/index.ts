@@ -17,7 +17,6 @@ export type {
   MessageRole,
   ReviewChat,
   ChatbotState,
-  ChatbotPreferences,
   MockChatResponse,
   SendMockMessagePayload,
 } from "./types";

@@ -29,7 +29,7 @@ export function LandingHeroSection({
         className="text-5xl font-extrabold leading-[1.02] tracking-tight md:text-7xl"
       >
         <span className="block">{titleA}</span>
-        <span className="block text-[#993331]">{titleB}</span>
+        <span className="block text-accent">{titleB}</span>
       </motion.h2>
 
       {desc && (
@@ -38,7 +38,7 @@ export function LandingHeroSection({
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-100px" }}
           transition={{ duration: 0.5, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 text-lg leading-relaxed text-neutral-700 md:text-2xl"
+          className="mt-6 text-lg leading-relaxed text-content-secondary md:text-2xl"
         >
           {desc}
         </motion.p>
@@ -55,7 +55,7 @@ export function LandingHeroSection({
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
             <Link
               href={cta.href}
-              className="inline-flex rounded-full bg-gradient-to-r from-[#993331] to-[#7a2927] px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-[#993331]/20 transition-all duration-300 hover:shadow-xl"
+              className="inline-flex rounded-full bg-gradient-to-r from-accent to-accent-hover px-8 py-4 text-lg font-semibold text-content-inverted shadow-lg shadow-accent/20 transition-all duration-300 hover:shadow-xl"
             >
               {cta.label}
             </Link>
@@ -68,7 +68,7 @@ export function LandingHeroSection({
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ delay: 0.35, duration: 0.4 }}
-        className="mt-14 flex items-center gap-2 text-xs text-neutral-400"
+        className="mt-14 flex items-center gap-2 text-xs text-content-muted"
       >
         <span>Desliza para ver más</span>
         <span className="translate-y-[1px]">↓</span>

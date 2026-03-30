@@ -13,7 +13,7 @@ import {
   MailOpen,
 } from "lucide-react";
 import type { Notice } from "../types";
-import { categoryConfig, timeAgo, cls } from "../lib/constants";
+import { noticeCategoryConfig as categoryConfig, timeAgo, cls } from "../utils/noticeConfig";
 
 interface NoticeCardProps {
   notice: Notice;
@@ -41,15 +41,15 @@ export default function NoticeCard({
       exit={{ opacity: 0, scale: 0.97 }}
       transition={{ type: "spring", stiffness: 500, damping: 40 }}
       className={cls(
-        "group relative bg-white rounded-2xl border transition-colors duration-200",
+        "group relative bg-surface-primary rounded-2xl border transition-colors duration-200",
         notice.read
-          ? "border-gray-100 hover:border-gray-200"
-          : "border-[#993331]/15 shadow-sm shadow-[#993331]/5 hover:shadow-md hover:shadow-[#993331]/8",
+          ? "border-border-subtle hover:border-border-default"
+          : "border-accent/15 shadow-sm shadow-accent/5 hover:shadow-md hover:shadow-accent/8",
       )}
     >
       {/* unread accent */}
       {!notice.read && (
-        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#993331] to-[#7a2927] rounded-l-2xl" />
+        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-accent to-accent-hover rounded-l-2xl" />
       )}
 
       <div className="p-5 pl-6">
@@ -74,13 +74,13 @@ export default function NoticeCard({
                   <h3
                     className={cls(
                       "text-sm font-bold leading-snug",
-                      notice.read ? "text-gray-700" : "text-gray-900",
+                      notice.read ? "text-content-secondary" : "text-content-primary",
                     )}
                   >
                     {notice.title}
                   </h3>
                   {notice.pinned && (
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#993331]/10 text-[#993331] text-[10px] font-bold">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-accent/10 text-accent text-[10px] font-bold">
                       <Pin className="w-3 h-3" />
                       Fijada
                     </span>
@@ -97,7 +97,7 @@ export default function NoticeCard({
                   >
                     {cfg.label}
                   </span>
-                  <span className="text-[11px] text-gray-400 flex items-center gap-1">
+                  <span className="text-[11px] text-content-muted flex items-center gap-1">
                     <Clock className="w-3 h-3" />
                     {timeAgo(notice.createdAt)}
                   </span>
@@ -111,7 +111,7 @@ export default function NoticeCard({
                   title={
                     notice.read ? "Marcar como no leída" : "Marcar como leída"
                   }
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-[#993331] hover:bg-[#993331]/5 transition-colors"
+                  className="p-1.5 rounded-lg text-content-muted hover:text-accent hover:bg-accent/5 transition-colors"
                 >
                   {notice.read ? (
                     <MailOpen className="w-4 h-4" />
@@ -122,7 +122,7 @@ export default function NoticeCard({
                 <button
                   onClick={() => onTogglePin(notice.id)}
                   title={notice.pinned ? "Desfijar" : "Fijar"}
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-[#993331] hover:bg-[#993331]/5 transition-colors"
+                  className="p-1.5 rounded-lg text-content-muted hover:text-accent hover:bg-accent/5 transition-colors"
                 >
                   {notice.pinned ? (
                     <PinOff className="w-4 h-4" />
@@ -133,7 +133,7 @@ export default function NoticeCard({
                 <button
                   onClick={() => onDelete(notice.id)}
                   title="Eliminar"
-                  className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                  className="p-1.5 rounded-lg text-content-muted hover:text-red-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -151,7 +151,7 @@ export default function NoticeCard({
               <p
                 className={cls(
                   "text-xs leading-relaxed",
-                  notice.read ? "text-gray-400" : "text-gray-500",
+                  notice.read ? "text-content-muted" : "text-content-tertiary",
                 )}
               >
                 {expanded || !longText
@@ -159,7 +159,7 @@ export default function NoticeCard({
                   : notice.description.slice(0, 120) + "…"}
               </p>
               {longText && (
-                <span className="text-[11px] font-bold text-[#993331] mt-1 inline-flex items-center gap-0.5">
+                <span className="text-[11px] font-bold text-accent mt-1 inline-flex items-center gap-0.5">
                   {expanded ? "Ver menos" : "Ver más"}
                   <motion.span
                     animate={{ rotate: expanded ? 180 : 0 }}
@@ -175,7 +175,7 @@ export default function NoticeCard({
             {notice.actionLabel && (
               <a
                 href={notice.actionHref}
-                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-[#993331] to-[#7a2927] text-white shadow-sm shadow-[#993331]/15 hover:shadow-md hover:shadow-[#993331]/20 transition-shadow duration-200 active:scale-[0.98]"
+                className="inline-flex items-center gap-1.5 mt-3 px-4 py-2 rounded-full text-xs font-bold bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-sm shadow-accent/15 hover:shadow-md hover:shadow-accent/20 transition-shadow duration-200 active:scale-[0.98]"
               >
                 {notice.actionLabel}
               </a>

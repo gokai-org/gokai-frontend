@@ -33,10 +33,10 @@ export function StatsSkillsSection({
         className="mb-5"
         title={
           <>
-            Desglose de <span className="text-[#993331]">Habilidades</span>
+            Desglose de <span className="text-accent">Habilidades</span>
           </>
         }
-        titleClassName="text-2xl font-extrabold tracking-tight text-gray-900"
+        titleClassName="text-2xl font-extrabold tracking-tight text-content-primary"
         subtitle="Tu dominio por área y actividad reciente"
       />
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">

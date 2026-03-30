@@ -7,9 +7,9 @@ export function MetaInfo({ duration, itemCount }: MetaInfoProps) {
   if (!duration && !itemCount) return null;
 
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-medium text-gray-500">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] font-medium text-content-tertiary">
       {duration && (
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-surface-secondary px-2.5 py-1">
           <svg
             className="h-3.5 w-3.5"
             fill="none"
@@ -28,7 +28,7 @@ export function MetaInfo({ duration, itemCount }: MetaInfoProps) {
       )}
 
       {itemCount !== undefined && (
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 px-2.5 py-1">
+        <div className="inline-flex items-center gap-1.5 rounded-full bg-surface-secondary px-2.5 py-1">
           <svg
             className="h-3.5 w-3.5"
             fill="none"

@@ -114,7 +114,7 @@ export default function LessonDrawer({
           {/* Drawer: desktop floating right | mobile bottom sheet */}
           <motion.aside
             className={[
-              "fixed z-50 bg-white shadow-2xl flex flex-col border border-gray-200/60",
+              "fixed z-50 bg-surface-primary shadow-2xl flex flex-col border border-border-default/60",
 
               // Desktop (panel flotante a la derecha)
               "right-3 top-3 bottom-3 w-[440px] max-w-[90vw] rounded-3xl",
@@ -129,31 +129,31 @@ export default function LessonDrawer({
             transition={{ type: "spring", stiffness: 260, damping: 26 }}
           >
             {/* Header sticky */}
-            <div className="sticky top-0 z-10 bg-white/90 backdrop-blur-md border-b border-gray-100 rounded-t-3xl">
+            <div className="sticky top-0 z-10 bg-surface-primary/90 backdrop-blur-md border-b border-border-subtle rounded-t-3xl">
               <div className="px-6 pt-6 pb-4 flex items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <div className="text-[13px] font-semibold tracking-wide text-gray-500">
+                  <div className="text-[13px] font-semibold tracking-wide text-content-tertiary">
                     Lección
                   </div>
 
                   <div className="mt-1 flex items-center gap-2">
-                    <div className="text-xl font-extrabold text-gray-900 truncate">
+                    <div className="text-xl font-extrabold text-content-primary truncate">
                       {header.title}
                     </div>
 
                     {header.pill ? (
-                      <span className="shrink-0 rounded-full bg-[#993331]/10 px-3 py-1 text-xs font-bold text-[#993331]">
+                      <span className="shrink-0 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
                         {header.pill}
                       </span>
                     ) : null}
                   </div>
 
                   {header.subtitle ? (
-                    <div className="mt-1 text-sm text-gray-600">
+                    <div className="mt-1 text-sm text-content-secondary">
                       {header.subtitle}
                     </div>
                   ) : (
-                    <div className="mt-1 text-sm text-gray-600">
+                    <div className="mt-1 text-sm text-content-secondary">
                       {modeTitle[mode]}
                     </div>
                   )}
@@ -161,7 +161,7 @@ export default function LessonDrawer({
 
                 <button
                   onClick={onClose}
-                  className="shrink-0 rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+                  className="shrink-0 rounded-xl px-3 py-2 text-sm font-semibold text-content-secondary hover:bg-surface-tertiary"
                 >
                   Cerrar
                 </button>
@@ -178,8 +178,8 @@ export default function LessonDrawer({
                         className={[
                           "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border",
                           idx === activeIndex
-                            ? "bg-[#993331] text-white border-[#993331]"
-                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-50",
+                            ? "bg-accent text-content-inverted border-accent"
+                            : "bg-surface-primary text-content-secondary border-border-default hover:bg-surface-secondary",
                         ].join(" ")}
                       >
                         {l.kind.toUpperCase()} {idx + 1}
@@ -195,7 +195,7 @@ export default function LessonDrawer({
               {loading && <SkeletonDrawerContent />}
 
               {!loading && !active && (
-                <div className="rounded-3xl border border-gray-100 p-5 text-gray-600">
+                <div className="rounded-3xl border border-border-subtle p-5 text-content-secondary">
                   No hay lecciones para este nodo todavía.
                 </div>
               )}

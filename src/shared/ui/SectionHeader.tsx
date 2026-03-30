@@ -32,7 +32,7 @@ export function SectionHeader({
       <div className="min-w-0">
         <h2
           className={joinClassNames(
-            "text-xl font-bold text-gray-900",
+            "text-xl font-bold text-content-primary",
             titleClassName,
           )}
         >
@@ -41,7 +41,7 @@ export function SectionHeader({
         {subtitle && (
           <p
             className={joinClassNames(
-              "text-sm text-gray-500",
+              "text-sm text-content-tertiary",
               subtitleClassName,
             )}
           >

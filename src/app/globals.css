@@ -1,27 +1,236 @@
 @import "tailwindcss";
 
+/* ── Dark-mode: class-based strategy ────────────────── */
+/* .force-light subtrees are excluded so dark: utilities never apply inside them */
+@custom-variant dark (&:where(.dark, .dark *):not(:where(.force-light, .force-light *)));
+
+/* ── Semantic color tokens ──────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Surfaces */
+  --surface-primary: #ffffff;
+  --surface-secondary: #f9fafb;
+  --surface-tertiary: #f3f4f6;
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(0, 0, 0, 0.35);
+  --surface-inset: #f0f1f3;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+  --text-inverted: #ffffff;
+
+  /* Borders */
+  --border-primary: #e5e7eb;
+  --border-secondary: #f3f4f6;
+  --border-focus: rgba(153, 51, 49, 0.3);
+
+  /* Accent (brand red) */
+  --accent: #993331;
+  --accent-hover: #ba5149;
+  --accent-subtle: rgba(153, 51, 49, 0.10);
+  --accent-muted: rgba(153, 51, 49, 0.06);
+
+  /* Semantic status */
+  --success: #16a34a;
+  --success-subtle: rgba(22, 163, 74, 0.1);
+  --error: #dc2626;
+  --error-subtle: rgba(220, 38, 38, 0.1);
+  --warning: #d97706;
+  --warning-subtle: rgba(217, 119, 6, 0.1);
+  --info: #2563eb;
+  --info-subtle: rgba(37, 99, 235, 0.1);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.13);
+
+  /* Sidebar glass */
+  --sidebar-bg: rgba(247, 247, 247, 0.925);
+  --sidebar-ring: rgba(0, 0, 0, 0.05);
+  --sidebar-icon-stroke: rgba(0, 0, 0, 0.65);
+
+  /* Skeleton */
+  --skeleton-base: rgba(229, 231, 235, 0.7);
+  --skeleton-shine: rgba(255, 255, 255, 0.4);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(153, 51, 49, 0.22);
+  --scrollbar-thumb-hover: rgba(153, 51, 49, 0.38);
+
+  /* Chart / graph */
+  --chart-grid: #e5e7eb;
+  --chart-label: #6b7280;
 }
 
+.dark {
+  /* Surfaces */
+  --surface-primary: #131313;
+  --surface-secondary: #141414;
+  --surface-tertiary: #1c1c1c;
+  --surface-elevated: #181818;
+  --surface-overlay: rgba(0, 0, 0, 0.6);
+  --surface-inset: #111111;
+
+  /* Text */
+  --text-primary: #f0f0f0;
+  --text-secondary: #a0a0a0;
+  --text-tertiary: #737373;
+  --text-muted: #525252;
+  --text-inverted: #ffffff;
+
+  /* Borders */
+  --border-primary: #262626;
+  --border-secondary: #1e1e1e;
+  --border-focus: rgba(196, 68, 66, 0.4);
+
+  /* Accent (slightly brighter for contrast on dark) */
+  --accent: #993331;
+  --accent-hover: #d4524f;
+  --accent-subtle: rgba(196, 68, 66, 0.16);
+  --accent-muted: rgba(196, 68, 66, 0.08);
+
+  /* Status */
+  --success: #22c55e;
+  --success-subtle: rgba(34, 197, 94, 0.12);
+  --error: #ef4444;
+  --error-subtle: rgba(239, 68, 68, 0.12);
+  --warning: #f59e0b;
+  --warning-subtle: rgba(245, 158, 11, 0.12);
+  --info: #3b82f6;
+  --info-subtle: rgba(59, 130, 246, 0.12);
+
+  /* Shadows */
+  --shadow-color: 0 0 0;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.5);
+  --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.55);
+
+  /* Sidebar glass */
+  --sidebar-bg: rgba(22, 22, 22, 0.945);
+  --sidebar-ring: rgba(255, 255, 255, 0.06);
+  --sidebar-icon-stroke: rgba(255, 255, 255, 0.65);
+
+  /* Skeleton */
+  --skeleton-base: rgba(38, 38, 38, 0.8);
+  --skeleton-shine: rgba(255, 255, 255, 0.05);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(196, 68, 66, 0.3);
+  --scrollbar-thumb-hover: rgba(196, 68, 66, 0.5);
+
+  /* Chart / graph */
+  --chart-grid: #262626;
+  --chart-label: #737373;
+}
+
+/* ── Force light: overrides .dark vars back to light values ── */
+.force-light {
+  /* Surfaces */
+  --surface-primary: #ffffff;
+  --surface-secondary: #f9fafb;
+  --surface-tertiary: #f3f4f6;
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(0, 0, 0, 0.35);
+  --surface-inset: #f0f1f3;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #4b5563;
+  --text-tertiary: #6b7280;
+  --text-muted: #9ca3af;
+  --text-inverted: #ffffff;
+
+  /* Borders */
+  --border-primary: #e5e7eb;
+  --border-secondary: #f3f4f6;
+  --border-focus: rgba(153, 51, 49, 0.3);
+
+  /* Accent */
+  --accent: #993331;
+  --accent-hover: #ba5149;
+  --accent-subtle: rgba(153, 51, 49, 0.10);
+  --accent-muted: rgba(153, 51, 49, 0.06);
+
+  /* Status */
+  --success: #16a34a;
+  --success-subtle: rgba(22, 163, 74, 0.1);
+  --error: #dc2626;
+  --error-subtle: rgba(220, 38, 38, 0.1);
+  --warning: #d97706;
+  --warning-subtle: rgba(217, 119, 6, 0.1);
+  --info: #2563eb;
+  --info-subtle: rgba(37, 99, 235, 0.1);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.10);
+  --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.13);
+
+  /* Sidebar glass */
+  --sidebar-bg: rgba(255, 255, 255, 0.95);
+  --sidebar-ring: rgba(0, 0, 0, 0.05);
+  --sidebar-icon-stroke: rgba(0, 0, 0, 0.65);
+
+  /* Skeleton */
+  --skeleton-base: rgba(229, 231, 235, 0.7);
+  --skeleton-shine: rgba(255, 255, 255, 0.4);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(153, 51, 49, 0.22);
+  --scrollbar-thumb-hover: rgba(153, 51, 49, 0.38);
+
+  /* Chart / graph */
+  --chart-grid: #e5e7eb;
+  --chart-label: #6b7280;
+}
+
+/* ── Expose tokens to Tailwind v4 ──────────────────── */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-surface-primary: var(--surface-primary);
+  --color-surface-secondary: var(--surface-secondary);
+  --color-surface-tertiary: var(--surface-tertiary);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-inset: var(--surface-inset);
+
+  --color-content-primary: var(--text-primary);
+  --color-content-secondary: var(--text-secondary);
+  --color-content-tertiary: var(--text-tertiary);
+  --color-content-muted: var(--text-muted);
+  --color-content-inverted: var(--text-inverted);
+
+  --color-border-default: var(--border-primary);
+  --color-border-subtle: var(--border-secondary);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-subtle: var(--accent-subtle);
+  --color-accent-muted: var(--accent-muted);
+
+  --color-status-success: var(--success);
+  --color-status-success-subtle: var(--success-subtle);
+  --color-status-error: var(--error);
+  --color-status-error-subtle: var(--error-subtle);
+  --color-status-warning: var(--warning);
+  --color-status-warning-subtle: var(--warning-subtle);
+  --color-status-info: var(--info);
+  --color-status-info-subtle: var(--info-subtle);
+
+  --color-skeleton-base: var(--skeleton-base);
+  --color-skeleton-shine: var(--skeleton-shine);
+
   --font-sans: var(--font-montserrat);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #ffffff;
-    --foreground: #171717;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--surface-primary);
+  color: var(--text-primary);
   font-family:
     var(--font-montserrat),
     ui-sans-serif,
@@ -38,13 +247,14 @@ body {
 }
 
 html {
-  background: var(--background);
+  background: var(--surface-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ── Custom scrollbar for KanjiDetailModal ── */
 .kanji-detail-scroll {
   scrollbar-width: thin;
-  scrollbar-color: rgba(153, 51, 49, 0.25) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
 }
 .kanji-detail-scroll::-webkit-scrollbar {
   width: 6px;
@@ -54,12 +264,12 @@ html {
   margin: 8px 0;
 }
 .kanji-detail-scroll::-webkit-scrollbar-thumb {
-  background: rgba(153, 51, 49, 0.2);
+  background: var(--scrollbar-thumb);
   border-radius: 999px;
   transition: background 0.2s;
 }
 .kanji-detail-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(153, 51, 49, 0.4);
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* ── Skeleton shimmer ── */
@@ -87,7 +297,7 @@ html {
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable;
   scrollbar-width: thin;
-  scrollbar-color: rgba(153, 51, 49, 0.22) transparent;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
   will-change: scroll-position;
 }
 
@@ -100,10 +310,10 @@ html {
 }
 
 .support-modal-scroll::-webkit-scrollbar-thumb {
-  background: rgba(153, 51, 49, 0.24);
+  background: var(--scrollbar-thumb);
   border-radius: 999px;
 }
 
 .support-modal-scroll::-webkit-scrollbar-thumb:hover {
-  background: rgba(153, 51, 49, 0.35);
+  background: var(--scrollbar-thumb-hover);
 }

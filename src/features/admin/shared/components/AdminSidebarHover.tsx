@@ -221,7 +221,7 @@ export default function AdminSidebar() {
                 setMobileOpen(true);
               }
             }}
-            className="h-12 w-12 rounded-2xl bg-white/95 ring-1 ring-black/5 shadow-[0_16px_40px_rgba(0,0,0,0.18)] backdrop-blur grid place-items-center"
+            className="h-12 w-12 rounded-2xl bg-surface-primary/95 ring-1 ring-border-subtle shadow-[0_16px_40px_rgba(0,0,0,0.18)] backdrop-blur grid place-items-center"
             aria-label="Abrir menu"
             aria-expanded="false"
             whileHover={{ scale: 1.05 }}
@@ -257,7 +257,7 @@ export default function AdminSidebar() {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             className={[
-              "h-full rounded-[28px] bg-white/95 ring-1 ring-black/5 backdrop-blur",
+              "h-full rounded-[28px] bg-surface-primary/95 ring-1 ring-border-subtle backdrop-blur",
               "shadow-[0_20px_70px_rgba(0,0,0,0.18)]",
               "flex flex-col overflow-hidden",
               "w-[320px] md:w-[78px]",
@@ -355,7 +355,7 @@ export default function AdminSidebar() {
             <motion.aside
               className={[
                 "md:hidden fixed left-4 top-4 z-[55] h-[calc(100dvh-32px)]",
-                "bg-white/96 ring-1 ring-black/5 backdrop-blur",
+                "bg-surface-primary/96 ring-1 ring-border-subtle backdrop-blur",
                 "shadow-[0_30px_90px_rgba(0,0,0,0.25)]",
                 "rounded-[28px] overflow-hidden flex flex-col",
                 "w-[calc(86vw-16px)] max-w-[360px]",
@@ -380,7 +380,7 @@ export default function AdminSidebar() {
                 <motion.button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="h-11 w-11 rounded-2xl bg-white/70 ring-1 ring-black/5 grid place-items-center"
+                  className="h-11 w-11 rounded-2xl bg-surface-primary/70 ring-1 ring-border-subtle grid place-items-center"
                   aria-label="Cerrar menu"
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
@@ -526,14 +526,14 @@ function Header({ expanded }: { expanded: boolean }) {
           <div className="hidden md:block">
             <div className="flex items-start gap-3">
               <div>
-                <div className="text-[28px] font-extrabold tracking-[0.06em] text-neutral-900 leading-none">
+                <div className="text-[28px] font-extrabold tracking-[0.06em] text-content-primary leading-none">
                   GOKAI
                 </div>
-                <div className="text-[11px] font-semibold tracking-[0.18em] text-neutral-500">
+                <div className="text-[11px] font-semibold tracking-[0.18em] text-content-tertiary">
                   ADMIN
                 </div>
               </div>
-              <span className="jp-vertical text-[12px] font-black text-neutral-700 select-none">
+              <span className="jp-vertical text-[12px] font-black text-content-secondary select-none">
                 語界
               </span>
             </div>
@@ -541,14 +541,14 @@ function Header({ expanded }: { expanded: boolean }) {
         )}
 
         <div className="md:hidden">
-          <div className="text-[28px] font-extrabold tracking-[0.06em] text-neutral-900 leading-none">
+          <div className="text-[28px] font-extrabold tracking-[0.06em] text-content-primary leading-none">
             GOKAI
           </div>
         </div>
       </div>
 
       <div
-        className={["mt-4 h-px w-full bg-black/5", expanded ? "" : "mx-2"].join(
+        className={["mt-4 h-px w-full bg-surface-tertiary", expanded ? "" : "mx-2"].join(
           " ",
         )}
       />
@@ -565,7 +565,7 @@ function SectionLabel({
 }) {
   return (
     <div
-      className="px-3 pt-2 text-[11px] font-semibold tracking-[0.24em] text-neutral-400"
+      className="px-3 pt-2 text-[11px] font-semibold tracking-[0.24em] text-content-muted"
       style={{ opacity: expanded ? 1 : 0 }}
     >
       {label}
@@ -616,7 +616,7 @@ function SidebarItem({
         {active && (
           <motion.div
             className="absolute left-0 top-1/2 h-10 w-3 -translate-y-1/2 rounded-r-full"
-            style={{ background: "#993331" }}
+            style={{ background: "var(--accent)" }}
             initial={{ scaleY: 0 }}
             animate={{ scaleY: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -642,7 +642,7 @@ function SidebarItem({
     <motion.button
       type="button"
       onClick={onClick}
-      className="group relative w-full flex items-center gap-4 rounded-2xl h-14 px-4 ring-1 ring-transparent hover:ring-black/5 transition-colors"
+      className="group relative w-full flex items-center gap-4 rounded-2xl h-14 px-4 ring-1 ring-transparent hover:ring-border-subtle transition-colors"
       style={{ background: active ? accentBg : "transparent" }}
       whileHover={{ scale: 1.02, x: 4 }}
       whileTap={{ scale: 0.98 }}
@@ -676,7 +676,7 @@ function SidebarItem({
       {active && (
         <motion.div
           className="absolute -left-3 top-1/2 h-10 w-3 -translate-y-1/2 rounded-r-full"
-          style={{ background: "#993331" }}
+          style={{ background: "var(--accent)" }}
           initial={{ scaleY: 0 }}
           animate={{ scaleY: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}

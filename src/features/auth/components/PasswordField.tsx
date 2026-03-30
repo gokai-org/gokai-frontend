@@ -21,7 +21,7 @@ export function PasswordField({
 }: Props) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+      <label className="mb-1.5 block text-sm font-semibold text-content-secondary">
         {label}
       </label>
 
@@ -31,7 +31,7 @@ export function PasswordField({
           onChange={(e) => onChange(e.target.value)}
           type={show ? "text" : "password"}
           placeholder={placeholder}
-          className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 pr-12 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+          className="w-full rounded-lg border border-border-default bg-surface-primary px-3 py-2.5 pr-12 text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-red-300 focus:ring-4 focus:ring-red-100"
           required
           autoComplete={autoComplete}
         />
@@ -39,7 +39,7 @@ export function PasswordField({
         <button
           type="button"
           onClick={onToggle}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-2 text-neutral-500 transition hover:bg-neutral-100"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-2 text-content-tertiary transition hover:bg-surface-tertiary"
           aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
           title={show ? "Ocultar" : "Mostrar"}
         >

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
+import { useTheme } from "@/shared/hooks/useTheme";
 
 type ItemKey =
   | "mapa"
@@ -26,8 +27,8 @@ type NavItem = {
   danger?: boolean;
 };
 
-const ACCENT = "#1C1C1C";
-const MUTED = "rgba(0,0,0,0.38)";
+const ACCENT = "var(--text-primary)";
+const MUTED = "var(--text-muted)";
 
 export default function SidebarOnly() {
   const router = useRouter();
@@ -258,7 +259,7 @@ export default function SidebarOnly() {
                 setMobileOpen(true);
               }
             }}
-            className="h-12 w-12 rounded-2xl bg-white/95 ring-1 ring-black/5 shadow-[0_16px_40px_rgba(0,0,0,0.18)] backdrop-blur grid place-items-center"
+            className="h-12 w-12 rounded-2xl bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] shadow-[var(--shadow-lg)] backdrop-blur grid place-items-center"
             aria-label="Abrir menú"
             aria-expanded="false"
             whileHover={{ scale: 1.05 }}
@@ -267,19 +268,19 @@ export default function SidebarOnly() {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 7h14"
-                stroke="rgba(0,0,0,0.65)"
+                stroke="var(--sidebar-icon-stroke)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
               <path
                 d="M5 12h14"
-                stroke="rgba(0,0,0,0.65)"
+                stroke="var(--sidebar-icon-stroke)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
               <path
                 d="M5 17h14"
-                stroke="rgba(0,0,0,0.65)"
+                stroke="var(--sidebar-icon-stroke)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
@@ -295,8 +296,8 @@ export default function SidebarOnly() {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             className={[
-              "h-full rounded-[28px] bg-white/95 ring-1 ring-black/5 backdrop-blur",
-              "shadow-[0_20px_70px_rgba(0,0,0,0.18)]",
+              "h-full rounded-[28px] bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] backdrop-blur",
+              "shadow-[var(--shadow-lg)]",
               "flex flex-col overflow-hidden",
               "w-[320px] md:w-[78px]",
             ].join(" ")}
@@ -308,7 +309,7 @@ export default function SidebarOnly() {
               mass: 0.7,
             }}
             whileHover={{
-              boxShadow: "0 25px 80px rgba(0,0,0,0.22)",
+              boxShadow: "var(--shadow-xl)",
             }}
           >
             <motion.div animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
@@ -396,7 +397,7 @@ export default function SidebarOnly() {
         {mobileOpen && (
           <>
             <motion.div
-              className="md:hidden fixed inset-0 z-50 bg-black/35 backdrop-blur-sm"
+              className="md:hidden fixed inset-0 z-50 bg-surface-overlay backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -407,8 +408,8 @@ export default function SidebarOnly() {
             <motion.aside
               className={[
                 "md:hidden fixed left-4 top-4 z-[55] h-[calc(100dvh-32px)]",
-                "bg-white/96 ring-1 ring-black/5 backdrop-blur",
-                "shadow-[0_30px_90px_rgba(0,0,0,0.25)]",
+                "bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] backdrop-blur",
+                "shadow-[var(--shadow-xl)]",
                 "rounded-[28px] overflow-hidden flex flex-col",
                 "w-[calc(86vw-16px)] max-w-[360px]",
               ].join(" ")}
@@ -437,7 +438,7 @@ export default function SidebarOnly() {
                 <motion.button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="h-11 w-11 rounded-2xl bg-white/70 ring-1 ring-black/5 grid place-items-center"
+                  className="h-11 w-11 rounded-2xl bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] grid place-items-center"
                   aria-label="Cerrar menú"
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
@@ -446,13 +447,13 @@ export default function SidebarOnly() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M6 6l12 12"
-                      stroke="rgba(0,0,0,0.65)"
+                      stroke="var(--sidebar-icon-stroke)"
                       strokeWidth="2"
                       strokeLinecap="round"
                     />
                     <path
                       d="M18 6 6 18"
-                      stroke="rgba(0,0,0,0.65)"
+                      stroke="var(--sidebar-icon-stroke)"
                       strokeWidth="2"
                       strokeLinecap="round"
                     />
@@ -561,6 +562,10 @@ function GlobalStyles() {
 }
 
 function Header({ expanded }: { expanded: boolean }) {
+  const { theme } = useTheme();
+  const logoSrc =
+    theme === "dark" ? "/logos/gokai-logo-dark.svg" : "/logos/gokai-logo.svg";
+
   return (
     <div className={["py-4", expanded ? "px-4" : "px-2"].join(" ")}>
       <div
@@ -570,7 +575,7 @@ function Header({ expanded }: { expanded: boolean }) {
         ].join(" ")}
       >
         <motion.img
-          src="/icons/logo-gokai.svg"
+          src={logoSrc}
           alt="Gokai"
           draggable={false}
           className="select-none h-10 w-10"
@@ -581,13 +586,11 @@ function Header({ expanded }: { expanded: boolean }) {
 
         {expanded && (
           <div className="hidden md:block">
-            <div className="flex items-start gap-3">
-              <div>
-                <div className="text-[28px] font-extrabold tracking-[0.06em] text-neutral-900 leading-none">
-                  GOKAI
-                </div>
+            <div className="flex items-center gap-4">
+              <div className="text-[28px] font-extrabold tracking-[0.09em] text-content-primary leading-none">
+                GOKAI
               </div>
-              <span className="jp-vertical text-[12px] font-black text-neutral-700 select-none">
+              <span className="jp-vertical text-[13px] font-black text-content-secondary dark:text-content-tertiary select-none" style={{ lineHeight: 1.15 }}>
                 語界
               </span>
             </div>
@@ -595,14 +598,14 @@ function Header({ expanded }: { expanded: boolean }) {
         )}
 
         <div className="md:hidden">
-          <div className="text-[28px] font-extrabold tracking-[0.06em] text-neutral-900 leading-none">
+          <div className="text-[28px] font-extrabold tracking-[0.06em] text-content-primary leading-none">
             GOKAI
           </div>
         </div>
       </div>
 
       <div
-        className={["mt-4 h-px w-full bg-black/5", expanded ? "" : "mx-2"].join(
+        className={["mt-4 h-px w-full bg-border-subtle", expanded ? "" : "mx-2"].join(
           " ",
         )}
       />
@@ -619,7 +622,7 @@ function SectionLabel({
 }) {
   return (
     <div
-      className="px-3 pt-2 text-[11px] font-semibold tracking-[0.24em] text-neutral-400"
+      className="px-3 pt-2 text-[11px] font-semibold tracking-[0.24em] text-content-muted"
       style={{ opacity: expanded ? 1 : 0 }}
     >
       {label}
@@ -645,8 +648,8 @@ function SidebarItem({
   disabled?: boolean;
   onClick: () => void;
 }) {
-  const accentBg = danger ? "rgba(220,38,38,0.10)" : "rgba(153,51,49,0.10)";
-  const hoverBg = danger ? "rgba(220,38,38,0.08)" : "rgba(153,51,49,0.07)";
+  const accentBg = danger ? "rgba(220,38,38,0.10)" : "var(--accent-subtle)";
+  const hoverBg = danger ? "rgba(220,38,38,0.08)" : "var(--accent-muted)";
   const textColor = active ? (danger ? "rgb(220,38,38)" : ACCENT) : MUTED;
   const iconSrc = active ? iconActive : iconInactive;
 
@@ -671,7 +674,7 @@ function SidebarItem({
         {active && (
           <motion.div
             className="absolute left-0 top-1/2 h-10 w-3 -translate-y-1/2 rounded-r-full"
-            style={{ background: "#993331" }}
+            style={{ background: "var(--accent)" }}
             initial={{ scaleY: 0 }}
             animate={{ scaleY: 1 }}
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -697,7 +700,7 @@ function SidebarItem({
     <motion.button
       type="button"
       onClick={onClick}
-      className="group relative w-full flex items-center gap-4 rounded-2xl h-14 px-4 ring-1 ring-transparent hover:ring-black/5 transition-colors"
+      className="group relative w-full flex items-center gap-4 rounded-2xl h-14 px-4 ring-1 ring-transparent hover:ring-[var(--sidebar-ring)] transition-colors"
       style={{ background: active ? accentBg : "transparent" }}
       whileHover={{ scale: 1.02, x: 4 }}
       whileTap={{ scale: 0.98 }}
@@ -731,7 +734,7 @@ function SidebarItem({
       {active && (
         <motion.div
           className="absolute -left-3 top-1/2 h-10 w-3 -translate-y-1/2 rounded-r-full"
-          style={{ background: "#993331" }}
+          style={{ background: "var(--accent)" }}
           initial={{ scaleY: 0 }}
           animate={{ scaleY: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 20 }}

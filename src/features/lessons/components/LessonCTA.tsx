@@ -24,13 +24,13 @@ export default function LessonCTA({
       : variant === "disabled"
         ? {
             text: label ?? "Bloqueado",
-            className: "bg-gray-200 text-gray-400 shadow-none",
+            className: "bg-surface-tertiary text-content-muted shadow-none",
             disabled: true,
           }
         : {
             text: label ?? "Comenzar",
             className:
-              "bg-gradient-to-r from-[#993331] to-[#7a2826] shadow-[#993331]/30",
+              "bg-gradient-to-r from-accent to-accent-hover shadow-accent/30",
             disabled: false,
           };
 
@@ -40,7 +40,7 @@ export default function LessonCTA({
       onClick={!config.disabled ? onClick : undefined}
       disabled={config.disabled}
       className={[
-        "w-full rounded-2xl py-4 text-[16px] font-extrabold text-white",
+        "w-full rounded-2xl py-4 text-[16px] font-extrabold text-content-inverted",
         "shadow-xl transition-all duration-200",
         config.className,
         config.disabled ? "cursor-not-allowed" : "hover:brightness-110",

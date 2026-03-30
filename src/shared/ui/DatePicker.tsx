@@ -85,6 +85,13 @@ export function DatePicker({
     top: number;
     left: number;
   } | null>(null);
+  const [insideForceLight, setInsideForceLight] = useState(false);
+
+  useEffect(() => {
+    if (containerRef.current?.closest(".force-light")) {
+      setInsideForceLight(true);
+    }
+  }, []);
 
   useEffect(() => {
     if (!open || !triggerRef.current) return;
@@ -232,17 +239,17 @@ export function DatePicker({
           setOpen((o) => !o);
         }}
         className={[
-          "w-full flex items-center justify-between rounded-lg border bg-white px-3 py-2 text-sm outline-none transition",
+          "w-full flex items-center justify-between rounded-lg border bg-surface-primary px-3 py-2 text-sm outline-none transition",
           open
-            ? "border-[#993331]/40 ring-4 ring-[#993331]/10"
-            : "border-neutral-200 hover:border-neutral-300",
-          value ? "text-neutral-900" : "text-neutral-400",
+            ? "border-accent/40 ring-4 ring-accent/10"
+            : "border-border-default hover:border-border-default",
+          value ? "text-content-primary" : "text-content-muted",
         ].join(" ")}
       >
         <span>{parsed ? formatDisplay(parsed) : placeholder}</span>
         {/* Calendar icon */}
         <svg
-          className="h-4 w-4 text-neutral-400"
+          className="h-4 w-4 text-content-muted"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -280,7 +287,7 @@ export function DatePicker({
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -8, scale: 0.96 }}
                 transition={{ duration: 0.18, ease: "easeOut" }}
-                className="fixed z-[9999] w-[280px] rounded-xl border border-neutral-100 bg-white p-3 shadow-lg shadow-neutral-900/10 ring-1 ring-black/5"
+                className={`fixed z-[9999] w-[280px] rounded-xl border border-border-subtle bg-surface-primary p-3 shadow-lg shadow-neutral-900/10 ring-1 ring-border-subtle${insideForceLight ? " force-light" : ""}`}
                 style={{ top: dropdownPos.top, left: dropdownPos.left }}
               >
                 <AnimatePresence mode="wait">
@@ -298,7 +305,7 @@ export function DatePicker({
                         <button
                           type="button"
                           onClick={prevMonth}
-                          className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-content-tertiary transition hover:bg-surface-tertiary hover:text-content-primary"
                         >
                           <svg
                             className="h-4 w-4"
@@ -318,7 +325,7 @@ export function DatePicker({
                         <button
                           type="button"
                           onClick={() => setViewMode("months")}
-                          className="rounded-md px-2 py-1 text-sm font-semibold text-neutral-800 transition hover:bg-[#993331]/10 hover:text-[#993331]"
+                          className="rounded-md px-2 py-1 text-sm font-semibold text-content-primary transition hover:bg-accent/10 hover:text-accent"
                         >
                           {MONTHS[viewMonth]} {viewYear}
                         </button>
@@ -326,7 +333,7 @@ export function DatePicker({
                         <button
                           type="button"
                           onClick={nextMonth}
-                          className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-content-tertiary transition hover:bg-surface-tertiary hover:text-content-primary"
                         >
                           <svg
                             className="h-4 w-4"
@@ -349,7 +356,7 @@ export function DatePicker({
                         {DAYS.map((d) => (
                           <div
                             key={d}
-                            className="py-1 text-center text-[11px] font-semibold uppercase tracking-wider text-neutral-400"
+                            className="py-1 text-center text-[11px] font-semibold uppercase tracking-wider text-content-muted"
                           >
                             {d}
                           </div>
@@ -372,17 +379,17 @@ export function DatePicker({
                               className={[
                                 "relative mx-auto flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium transition-all duration-150",
                                 disabled
-                                  ? "cursor-not-allowed text-neutral-200"
+                                  ? "cursor-not-allowed text-content-muted"
                                   : selected
-                                    ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/30"
+                                    ? "bg-accent text-content-inverted shadow-sm shadow-accent/30"
                                     : todayMark
-                                      ? "bg-[#993331]/10 text-[#993331] font-bold"
-                                      : "text-neutral-700 hover:bg-[#993331]/8 hover:text-[#993331]",
+                                      ? "bg-accent/10 text-accent font-bold"
+                                      : "text-content-secondary hover:bg-accent/8 hover:text-accent",
                               ].join(" ")}
                             >
                               {day}
                               {todayMark && !selected && (
-                                <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-[#993331]" />
+                                <span className="absolute bottom-0.5 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-accent" />
                               )}
                             </button>
                           );
@@ -398,7 +405,7 @@ export function DatePicker({
                             setViewMonth(today.getMonth());
                             handleSelect(today.getDate());
                           }}
-                          className="rounded-md px-3 py-1 text-xs font-semibold text-[#993331] transition hover:bg-[#993331]/10"
+                          className="rounded-md px-3 py-1 text-xs font-semibold text-accent transition hover:bg-accent/10"
                         >
                           Hoy
                         </button>
@@ -419,7 +426,7 @@ export function DatePicker({
                         <button
                           type="button"
                           onClick={() => setViewMode("years")}
-                          className="rounded-md px-3 py-1 text-sm font-semibold text-neutral-800 transition hover:bg-[#993331]/10 hover:text-[#993331]"
+                          className="rounded-md px-3 py-1 text-sm font-semibold text-content-primary transition hover:bg-accent/10 hover:text-accent"
                         >
                           {viewYear}
                         </button>
@@ -437,8 +444,8 @@ export function DatePicker({
                               className={[
                                 "rounded-lg py-2 text-sm font-medium transition-all duration-150",
                                 isCurrent
-                                  ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/25"
-                                  : "text-neutral-600 hover:bg-[#993331]/8 hover:text-[#993331]",
+                                  ? "bg-accent text-content-inverted shadow-sm shadow-accent/25"
+                                  : "text-content-secondary hover:bg-accent/8 hover:text-accent",
                               ].join(" ")}
                             >
                               {m.slice(0, 3)}
@@ -464,7 +471,7 @@ export function DatePicker({
                           onClick={() =>
                             setYearsPage((p) => Math.max(0, p - 1))
                           }
-                          className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100"
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-content-tertiary transition hover:bg-surface-tertiary"
                         >
                           <svg
                             className="h-4 w-4"
@@ -480,13 +487,13 @@ export function DatePicker({
                             />
                           </svg>
                         </button>
-                        <span className="text-sm font-semibold text-neutral-700">
+                        <span className="text-sm font-semibold text-content-secondary">
                           {yearsGrid[0]} – {yearsGrid[yearsGrid.length - 1]}
                         </span>
                         <button
                           type="button"
                           onClick={() => setYearsPage((p) => p + 1)}
-                          className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition hover:bg-neutral-100"
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-content-tertiary transition hover:bg-surface-tertiary"
                         >
                           <svg
                             className="h-4 w-4"
@@ -514,8 +521,8 @@ export function DatePicker({
                               className={[
                                 "rounded-lg py-2 text-sm font-medium transition-all duration-150",
                                 isCurrent
-                                  ? "bg-[#993331] text-white shadow-sm shadow-[#993331]/25"
-                                  : "text-neutral-600 hover:bg-[#993331]/8 hover:text-[#993331]",
+                                  ? "bg-accent text-content-inverted shadow-sm shadow-accent/25"
+                                  : "text-content-secondary hover:bg-accent/8 hover:text-accent",
                               ].join(" ")}
                             >
                               {y}

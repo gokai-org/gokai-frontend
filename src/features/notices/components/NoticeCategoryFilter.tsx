@@ -64,9 +64,9 @@ export function NoticeCategoryFilter({
   const baseButtonClass =
     "inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-300";
   const activeButtonClass =
-    "border-[#993331] bg-gradient-to-r from-[#993331] to-[#7a2927] text-white shadow-md shadow-[#993331]/15";
+    "border-accent bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-md shadow-accent/15";
   const inactiveButtonClass =
-    "border-gray-200 bg-white text-gray-700 hover:border-[#993331]/20 hover:text-[#993331] hover:shadow-sm";
+    "border-border-default bg-surface-primary text-content-secondary hover:border-accent/20 hover:text-accent hover:shadow-sm";
 
   return (
     <div className="no-scrollbar -mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2">
@@ -106,8 +106,8 @@ export function NoticeCategoryFilter({
                 className={[
                   "rounded-full px-2 py-0.5 text-[11px] font-bold",
                   selectedCategory === category.id
-                    ? "bg-white/15 text-white"
-                    : "bg-[#993331]/8 text-[#993331]",
+                    ? "bg-surface-primary/15 text-content-inverted"
+                    : "bg-accent/8 text-accent",
                 ].join(" ")}
               >
                 {category.count}

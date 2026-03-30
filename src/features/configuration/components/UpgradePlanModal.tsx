@@ -116,19 +116,19 @@ export function UpgradePlanModal({
               initial="hidden"
               animate="visible"
               exit="exit"
-              className="relative w-full max-w-lg md:max-w-3xl overflow-hidden rounded-2xl bg-white shadow-2xl ring-1 ring-black/5 my-4 flex flex-col md:flex-row"
+              className="relative w-full max-w-lg md:max-w-3xl overflow-hidden rounded-2xl bg-surface-primary shadow-2xl ring-1 ring-border-subtle my-4 flex flex-col md:flex-row"
             >
               {/* ═══ PANEL IZQUIERDO — Gradiente + info ═══ */}
-              <div className="relative flex flex-col justify-between bg-gradient-to-br from-[#993331] to-[#BA5149] text-white overflow-hidden md:w-[340px] md:min-h-[480px] flex-shrink-0">
+              <div className="relative flex flex-col justify-between bg-gradient-to-br from-accent to-accent-hover text-content-inverted overflow-hidden md:w-[340px] md:min-h-[480px] flex-shrink-0">
                 {/* Elementos decorativos */}
-                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-white/10" />
-                <div className="pointer-events-none absolute -left-6 bottom-8 h-20 w-20 rounded-full bg-white/5" />
-                <div className="pointer-events-none absolute right-4 bottom-4 h-14 w-14 rounded-full bg-white/5" />
+                <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-surface-primary/10" />
+                <div className="pointer-events-none absolute -left-6 bottom-8 h-20 w-20 rounded-full bg-surface-primary/5" />
+                <div className="pointer-events-none absolute right-4 bottom-4 h-14 w-14 rounded-full bg-surface-primary/5" />
 
                 {/* Cerrar solo visible en móvil */}
                 <button
                   onClick={onClose}
-                  className="absolute top-3 right-3 md:hidden rounded-full p-1.5 text-white/70 hover:text-white hover:bg-white/10 transition-colors z-10"
+                  className="absolute top-3 right-3 md:hidden rounded-full p-1.5 text-white/70 hover:text-content-inverted hover:bg-surface-primary/10 transition-colors z-10"
                 >
                   <X size={18} />
                 </button>
@@ -140,8 +140,8 @@ export function UpgradePlanModal({
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1, duration: 0.4 }}
                   >
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
-                      <Crown size={24} className="text-white" />
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-surface-primary/20 backdrop-blur-sm">
+                      <Crown size={24} className="text-content-inverted" />
                     </div>
                     <div>
                       <h2 className="text-2xl font-extrabold tracking-tight">
@@ -205,14 +205,14 @@ export function UpgradePlanModal({
                 {/* Cerrar (solo desktop) */}
                 <button
                   onClick={onClose}
-                  className="absolute top-4 right-4 hidden md:flex rounded-full p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors z-10"
+                  className="absolute top-4 right-4 hidden md:flex rounded-full p-1.5 text-content-muted hover:text-content-secondary hover:bg-surface-tertiary transition-colors z-10"
                 >
                   <X size={18} />
                 </button>
 
                 {/* Features detalladas */}
                 <div className="px-5 py-5 md:px-6 md:pt-6 md:pb-4 flex-1">
-                  <p className="text-sm font-semibold text-gray-900 mb-3">
+                  <p className="text-sm font-semibold text-content-primary mb-3">
                     Todo lo que incluye GOKAI+:
                   </p>
                   <div className="grid grid-cols-1 gap-2">
@@ -225,16 +225,16 @@ export function UpgradePlanModal({
                           delay: 0.15 + idx * 0.06,
                           duration: 0.35,
                         }}
-                        className="flex items-start gap-3 rounded-xl p-2 hover:bg-gray-50 transition-colors"
+                        className="flex items-start gap-3 rounded-xl p-2 hover:bg-surface-secondary transition-colors"
                       >
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#993331]/10">
-                          <feature.icon size={16} className="text-[#993331]" />
+                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-accent/10">
+                          <feature.icon size={16} className="text-accent" />
                         </div>
                         <div className="min-w-0">
-                          <p className="text-sm font-semibold text-gray-900">
+                          <p className="text-sm font-semibold text-content-primary">
                             {feature.title}
                           </p>
-                          <p className="text-xs text-gray-500 leading-relaxed">
+                          <p className="text-xs text-content-tertiary leading-relaxed">
                             {feature.description}
                           </p>
                         </div>
@@ -244,11 +244,11 @@ export function UpgradePlanModal({
                 </div>
 
                 {/* Cupón + CTA */}
-                <div className="border-t border-gray-100 px-5 py-4 md:px-6 md:py-5 space-y-3 bg-gray-50/50">
+                <div className="border-t border-border-subtle px-5 py-4 md:px-6 md:py-5 space-y-3 bg-surface-secondary/50">
                   {/* Cupón */}
                   {onCouponChange && (
                     <div>
-                      <label className="block text-xs font-medium text-gray-600 mb-1.5">
+                      <label className="block text-xs font-medium text-content-secondary mb-1.5">
                         ¿Tienes un cupón?
                       </label>
                       <div className="flex gap-2">
@@ -257,14 +257,14 @@ export function UpgradePlanModal({
                           value={coupon}
                           onChange={(e) => onCouponChange(e.target.value)}
                           placeholder="Código de cupón"
-                          className="flex-1 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#993331]/30 focus:border-[#993331]/40 transition-all"
+                          className="flex-1 rounded-lg border border-border-default px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/40 transition-all"
                         />
                         <motion.button
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={onApplyCoupon}
                           disabled={couponLoading || !coupon.trim()}
-                          className="rounded-lg bg-[#993331]/10 px-4 py-2 text-sm font-semibold text-[#993331] hover:bg-[#993331]/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                          className="rounded-lg bg-accent/10 px-4 py-2 text-sm font-semibold text-accent hover:bg-accent/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
                           {couponLoading ? "..." : "Aplicar"}
                         </motion.button>
@@ -283,7 +283,7 @@ export function UpgradePlanModal({
                     whileTap={{ scale: loading ? 1 : 0.98 }}
                     onClick={onUpgrade}
                     disabled={loading}
-                    className="w-full rounded-xl bg-gradient-to-r from-[#993331] to-[#BA5149] py-3.5 text-base font-bold text-white shadow-lg shadow-[#993331]/20 transition-all hover:shadow-xl hover:shadow-[#993331]/30 disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-base font-bold text-content-inverted shadow-lg shadow-accent/20 transition-all hover:shadow-xl hover:shadow-accent/30 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     {loading ? (
                       <span className="flex items-center justify-center gap-2">
@@ -319,7 +319,7 @@ export function UpgradePlanModal({
                     <p className="text-center text-xs text-red-600">{error}</p>
                   )}
 
-                  <p className="text-center text-xs text-gray-400">
+                  <p className="text-center text-xs text-content-muted">
                     Pago seguro con Stripe · Cancela cuando quieras
                   </p>
                 </div>

@@ -134,7 +134,7 @@ function LearningGraphInner({
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="flex gap-2 bg-white/90 backdrop-blur-md rounded-xl p-1.5 shadow-lg border border-gray-100"
+          className="flex gap-2 bg-surface-primary/90 backdrop-blur-md rounded-xl p-1.5 shadow-lg border border-border-subtle"
         >
           <button
             onClick={() => setActiveTab("explore")}
@@ -142,8 +142,8 @@ function LearningGraphInner({
               px-8 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200
               ${
                 activeTab === "explore"
-                  ? "bg-gradient-to-r from-[#993331] to-[#7a2826] text-white shadow-md shadow-[#993331]/30"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-md shadow-accent/30"
+                  : "text-content-secondary hover:bg-surface-tertiary"
               }
             `}
           >
@@ -156,8 +156,8 @@ function LearningGraphInner({
               px-8 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200
               ${
                 activeTab === "grammar"
-                  ? "bg-gradient-to-r from-[#993331] to-[#7a2826] text-white shadow-md shadow-[#993331]/30"
-                  : "text-gray-600 hover:bg-gray-100"
+                  ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-md shadow-accent/30"
+                  : "text-content-secondary hover:bg-surface-tertiary"
               }
             `}
           >
@@ -192,12 +192,12 @@ function LearningGraphInner({
           variant={BackgroundVariant.Dots}
           gap={24}
           size={1.5}
-          color="#993331"
+          color="var(--accent)"
           className="opacity-[0.08]"
         />
 
         <Controls
-          className="bg-white/90 backdrop-blur-md border border-gray-200 rounded-xl shadow-xl overflow-hidden !m-4 z-10"
+          className="bg-surface-primary/90 backdrop-blur-md border border-border-default rounded-xl shadow-xl overflow-hidden !m-4 z-10"
           showInteractive={false}
         />
       </ReactFlow>

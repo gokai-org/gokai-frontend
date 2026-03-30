@@ -24,10 +24,10 @@ interface ProgressRingProps {
 /* ── Color map para categorías ── */
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Kanji: "#993331",
+  Kanji: "var(--accent)",
   Hiragana: "#b45309",
   Katakana: "#0369a1",
-  Vocabulario: "#6b7280",
+  Vocabulario: "var(--text-tertiary)",
   Gramática: "#059669",
 };
 
@@ -86,7 +86,7 @@ function Ring({
         cy={center}
         r={radius}
         fill="none"
-        stroke="#f3f4f6"
+        stroke="var(--border-secondary)"
         strokeWidth={strokeWidth}
       />
       {/* Segments */}
@@ -131,10 +131,10 @@ export function ProgressRing({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
-        <div className="h-5 w-32 bg-gray-200 rounded mb-2" />
-        <div className="h-3 w-48 bg-gray-100 rounded mb-6" />
-        <div className="h-[180px] w-[180px] mx-auto bg-gray-50 rounded-full" />
+      <div className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle animate-pulse">
+        <div className="h-5 w-32 bg-surface-tertiary rounded mb-2" />
+        <div className="h-3 w-48 bg-surface-tertiary rounded mb-6" />
+        <div className="h-[180px] w-[180px] mx-auto bg-surface-secondary rounded-full" />
       </div>
     );
   }
@@ -153,11 +153,11 @@ export function ProgressRing({
               },
             }
           : {})}
-        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+        className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
       >
         <div className="mb-4">
-          <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-          <p className="text-xs text-gray-500">{subtitle}</p>
+          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="flex flex-col items-center justify-center py-6 gap-3">
           <div className="relative w-[140px] h-[140px]">
@@ -167,7 +167,7 @@ export function ProgressRing({
                 cy="70"
                 r="55"
                 fill="none"
-                stroke="#f3f4f6"
+                stroke="var(--border-secondary)"
                 strokeWidth="16"
               />
               <circle
@@ -175,21 +175,21 @@ export function ProgressRing({
                 cy="70"
                 r="55"
                 fill="none"
-                stroke="#e5e7eb"
+                stroke="var(--border-primary)"
                 strokeWidth="16"
                 strokeDasharray="12 8"
                 opacity={0.5}
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-extrabold text-gray-300">0</span>
-              <span className="text-xs text-gray-300">items</span>
+              <span className="text-2xl font-extrabold text-content-muted">0</span>
+              <span className="text-xs text-content-muted">items</span>
             </div>
           </div>
-          <p className="text-sm font-semibold text-gray-500">
+          <p className="text-sm font-semibold text-content-tertiary">
             Sin distribución aún
           </p>
-          <p className="text-xs text-gray-400 text-center max-w-[200px]">
+          <p className="text-xs text-content-muted text-center max-w-[200px]">
             A medida que estudies, verás aquí cómo se distribuye tu progreso
             entre categorías.
           </p>
@@ -212,11 +212,11 @@ export function ProgressRing({
             },
           }
         : {})}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
     >
       <div className="mb-4">
-        <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-        <p className="text-xs text-gray-500">{subtitle}</p>
+        <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+        <p className="text-xs text-content-tertiary">{subtitle}</p>
       </div>
 
       <div className="flex items-center justify-center">
@@ -224,7 +224,7 @@ export function ProgressRing({
           <Ring categories={colored} animationsEnabled={animationsEnabled} />
           {/* Center label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xs text-gray-500 font-medium">Total</span>
+            <span className="text-xs text-content-tertiary font-medium">Total</span>
             <TotalWrapper
               {...(animationsEnabled
                 ? {
@@ -233,11 +233,11 @@ export function ProgressRing({
                     transition: { delay: 0.5, duration: 0.4 },
                   }
                 : {})}
-              className="text-2xl font-extrabold text-gray-900"
+              className="text-2xl font-extrabold text-content-primary"
             >
               {total}
             </TotalWrapper>
-            <span className="text-xs text-gray-400">items</span>
+            <span className="text-xs text-content-muted">items</span>
           </div>
         </div>
       </div>
@@ -251,11 +251,11 @@ export function ProgressRing({
                 className="w-3 h-3 rounded-full"
                 style={{ backgroundColor: cat.color }}
               />
-              <span className="text-sm font-medium text-gray-700">
+              <span className="text-sm font-medium text-content-secondary">
                 {cat.label}
               </span>
             </div>
-            <span className="text-sm font-bold text-gray-900">
+            <span className="text-sm font-bold text-content-primary">
               {cat.value}%
             </span>
           </div>

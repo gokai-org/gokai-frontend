@@ -45,7 +45,7 @@ export function LoginForm({
       transition={{ delay: 0.1, duration: 0.3 }}
     >
       <div>
-        <label className="mb-1.5 block text-sm font-semibold text-neutral-700">
+        <label className="mb-1.5 block text-sm font-semibold text-content-secondary">
           Correo
         </label>
         <input
@@ -53,7 +53,7 @@ export function LoginForm({
           onChange={(e) => onEmailChange(e.target.value)}
           type="email"
           placeholder="correo@ejemplo.com"
-          className="w-full rounded-lg border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-300 focus:border-red-300 focus:ring-4 focus:ring-red-100"
+          className="w-full rounded-lg border border-border-default bg-surface-primary px-3 py-2.5 text-sm text-content-primary outline-none transition placeholder:text-content-muted focus:border-red-300 focus:ring-4 focus:ring-red-100"
           required
           autoComplete="email"
         />
@@ -80,7 +80,7 @@ export function LoginForm({
         <button
           type="button"
           onClick={onForgotPassword}
-          className="text-sm font-semibold text-[#993331] hover:underline transition"
+          className="text-sm font-semibold text-accent hover:underline transition"
         >
           ¿Olvidaste tu contraseña?
         </button>
@@ -91,27 +91,27 @@ export function LoginForm({
         disabled={loading}
         whileHover={{ scale: loading ? 1 : 1.02 }}
         whileTap={{ scale: loading ? 1 : 0.98 }}
-        className="w-full rounded-lg bg-[#993331] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#882d2d] focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
+        className="w-full rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted shadow-sm transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-red-200 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {loading ? "Iniciando..." : "Iniciar sesión"}
       </motion.button>
 
       <div className="flex items-center gap-3">
-        <div className="h-px flex-1 bg-neutral-200" />
-        <span className="text-xs font-semibold uppercase tracking-wider text-neutral-400">
+        <div className="h-px flex-1 bg-surface-tertiary" />
+        <span className="text-xs font-semibold uppercase tracking-wider text-content-muted">
           or
         </span>
-        <div className="h-px flex-1 bg-neutral-200" />
+        <div className="h-px flex-1 bg-surface-tertiary" />
       </div>
 
       <GoogleLoginButton onClick={onGoogleLogin} />
 
-      <p className="pt-1 text-center text-sm font-medium text-neutral-600">
+      <p className="pt-1 text-center text-sm font-medium text-content-secondary">
         ¿Necesitas una cuenta?{" "}
         <button
           type="button"
           onClick={onGoToMembership}
-          className="font-semibold text-[#993331] hover:underline"
+          className="font-semibold text-accent hover:underline"
         >
           Crear una cuenta
         </button>

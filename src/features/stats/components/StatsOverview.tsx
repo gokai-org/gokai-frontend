@@ -152,13 +152,13 @@ function AnimatedCounter({
 
 function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 animate-pulse">
+    <div className="bg-surface-primary rounded-2xl p-5 shadow-sm border border-border-subtle animate-pulse">
       <div className="flex items-center justify-between mb-3">
-        <div className="w-11 h-11 rounded-xl bg-gray-200" />
-        <div className="w-12 h-5 rounded-full bg-gray-200" />
+        <div className="w-11 h-11 rounded-xl bg-surface-tertiary" />
+        <div className="w-12 h-5 rounded-full bg-surface-tertiary" />
       </div>
-      <div className="h-7 w-20 bg-gray-200 rounded mb-2" />
-      <div className="h-3 w-24 bg-gray-100 rounded" />
+      <div className="h-7 w-20 bg-surface-tertiary rounded mb-2" />
+      <div className="h-3 w-24 bg-surface-tertiary rounded" />
     </div>
   );
 }
@@ -203,10 +203,10 @@ function StatOverviewCard({
             },
           }
         : {})}
-      className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 cursor-default select-none"
+      className="bg-surface-primary rounded-2xl p-5 shadow-sm border border-border-subtle cursor-default select-none"
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="w-11 h-11 rounded-xl bg-[#993331]/10 flex items-center justify-center text-[#993331]">
+        <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
           {stat.icon}
         </div>
 
@@ -231,7 +231,7 @@ function StatOverviewCard({
         )}
       </div>
 
-      <p className="text-2xl font-extrabold text-gray-900 tracking-tight">
+      <p className="text-2xl font-extrabold text-content-primary tracking-tight">
         {stat.formatter ? (
           stat.formatter(stat.value)
         ) : (
@@ -244,7 +244,7 @@ function StatOverviewCard({
         )}
       </p>
 
-      <p className="text-xs text-gray-500 font-medium mt-1">{stat.label}</p>
+      <p className="text-xs text-content-tertiary font-medium mt-1">{stat.label}</p>
     </CardWrapper>
   );
 }

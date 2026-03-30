@@ -37,8 +37,8 @@ export function VocabThumbnail({
     const imgDim = size === "lg" ? "h-8 w-8" : "h-6 w-6";
     const bgClass =
       iconColor === "white"
-        ? "bg-white/15"
-        : "bg-[#993331]/8 group-hover:bg-[#993331]/14";
+        ? "bg-surface-primary/15"
+        : "bg-accent/8 group-hover:bg-accent/14";
     const filterStyle =
       iconColor === "white" ? WHITE_ICON_FILTER : RED_ICON_FILTER;
 
@@ -62,7 +62,7 @@ export function VocabThumbnail({
       <div
         className={[
           base,
-          "overflow-hidden bg-gradient-to-br font-bold text-white shadow-lg",
+          "overflow-hidden bg-gradient-to-br font-bold text-content-inverted shadow-lg",
           textSize,
           gradient,
         ].join(" ")}
@@ -79,7 +79,7 @@ export function VocabThumbnail({
       <div
         className={[
           base,
-          "overflow-hidden bg-gradient-to-br font-bold text-white shadow-lg",
+          "overflow-hidden bg-gradient-to-br font-bold text-content-inverted shadow-lg",
           textSize,
           gradient,
         ].join(" ")}
@@ -95,7 +95,7 @@ export function VocabThumbnail({
     <div
       className={[
         base,
-        "overflow-hidden bg-gradient-to-br font-bold text-white shadow-lg",
+        "overflow-hidden bg-gradient-to-br font-bold text-content-inverted shadow-lg",
         "px-1 py-0.5",
         textSize,
         gradient,

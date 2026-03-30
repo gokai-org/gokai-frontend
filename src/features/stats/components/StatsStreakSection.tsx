@@ -26,10 +26,10 @@ export function StatsStreakSection({
         className="mb-5"
         title={
           <>
-            Racha de <span className="text-[#993331]">Estudio</span>
+            Racha de <span className="text-accent">Estudio</span>
           </>
         }
-        titleClassName="text-2xl font-extrabold tracking-tight text-gray-900"
+        titleClassName="text-2xl font-extrabold tracking-tight text-content-primary"
         subtitle="Tu consistencia a lo largo del tiempo"
       />
       <StudyStreakCalendar

@@ -37,16 +37,16 @@ export default function KanjiLesson({
   return (
     <div className="space-y-5">
       {/* Card */}
-      <div className="rounded-[20px] sm:rounded-[28px] border border-gray-100 bg-gradient-to-b from-white to-[#fff7f7] p-4 sm:p-5 shadow-sm">
+      <div className="rounded-[20px] sm:rounded-[28px] border border-border-subtle bg-gradient-to-b from-surface-elevated to-surface-secondary p-4 sm:p-5 shadow-sm">
         {/* Top row */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-[#993331]/10 px-3 py-1 text-xs font-bold text-[#993331]">
+            <span className="inline-flex items-center rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
               Kanji • {modeTitle[mode]}
             </span>
 
             {k.pointsToUnlock > 0 && (
-              <span className="inline-flex items-center rounded-full bg-black/5 px-3 py-1 text-xs font-semibold text-gray-700">
+              <span className="inline-flex items-center rounded-full bg-surface-tertiary px-3 py-1 text-xs font-semibold text-content-secondary">
                 {k.pointsToUnlock} pts
               </span>
             )}
@@ -54,7 +54,7 @@ export default function KanjiLesson({
         </div>
 
         {/* Description */}
-        <p className="mt-3 text-[15px] leading-relaxed text-gray-600">
+        <p className="mt-3 text-[15px] leading-relaxed text-content-secondary">
           {data.lesson.description}
         </p>
 
@@ -66,35 +66,35 @@ export default function KanjiLesson({
             transition={{ type: "spring", stiffness: 240, damping: 20 }}
             className="relative"
           >
-            <div className="absolute -inset-3 rounded-3xl bg-[#993331]/10 blur-2xl" />
-            <div className="relative text-[72px] sm:text-[96px] font-black leading-none text-[#993331] drop-shadow-sm">
+            <div className="absolute -inset-3 rounded-3xl bg-accent/10 blur-2xl" />
+            <div className="relative text-[72px] sm:text-[96px] font-black leading-none text-accent drop-shadow-sm">
               {k.symbol}
             </div>
           </motion.div>
 
           <div className="text-center sm:text-right sm:min-w-[140px]">
-            <div className="text-xs font-bold text-gray-900">Lecturas</div>
+            <div className="text-xs font-bold text-content-primary">Lecturas</div>
 
-            <div className="mt-1 text-sm text-gray-600">
-              <span className="font-semibold text-gray-800">On: </span>
+            <div className="mt-1 text-sm text-content-secondary">
+              <span className="font-semibold text-content-primary">On: </span>
               {on.length ? on.join(" ・ ") : "—"}
             </div>
 
-            <div className="mt-1 text-sm text-gray-600">
-              <span className="font-semibold text-gray-800">Kun: </span>
+            <div className="mt-1 text-sm text-content-secondary">
+              <span className="font-semibold text-content-primary">Kun: </span>
               {kun.length ? kun.join(" ・ ") : "—"}
             </div>
           </div>
         </div>
 
         {/* Meanings */}
-        <div className="mt-5 rounded-2xl border border-gray-100 bg-white/70 p-4">
-          <div className="text-xs font-bold text-gray-900">Significados</div>
+        <div className="mt-5 rounded-2xl border border-border-subtle bg-surface-tertiary p-4">
+          <div className="text-xs font-bold text-content-primary">Significados</div>
           <div className="mt-2 flex flex-wrap gap-2">
             {(meanings.length ? meanings : ["—"]).map((w) => (
               <span
                 key={w}
-                className="rounded-full bg-[#993331]/10 px-3 py-1 text-sm font-semibold text-[#7a2826]"
+                className="rounded-full bg-accent/10 px-3 py-1 text-sm font-semibold text-accent"
               >
                 {w}
               </span>

@@ -97,8 +97,8 @@ const guides: GuideCard[] = [
     title: "Primeros pasos",
     description:
       "Configura tu perfil, elige tu nivel y comienza tu primera lección de japonés.",
-    color: "text-blue-600",
-    bgColor: "bg-blue-50",
+    color: "text-blue-600 dark:text-blue-400",
+    bgColor: "bg-blue-50 dark:bg-blue-950/30",
     tourIndex: 0,
   },
   {
@@ -106,8 +106,8 @@ const guides: GuideCard[] = [
     title: "Explorar la biblioteca",
     description:
       "Descubre miles de kanji organizados por nivel de dificultad con ejemplos interactivos.",
-    color: "text-purple-600",
-    bgColor: "bg-purple-50",
+    color: "text-purple-600 dark:text-purple-400",
+    bgColor: "bg-purple-50 dark:bg-purple-950/30",
     tourIndex: 1,
   },
   {
@@ -115,8 +115,8 @@ const guides: GuideCard[] = [
     title: "Sistema de revisiones",
     description:
       "Aprende cómo funciona el SRS y cómo maximizar tu retención de vocabulario.",
-    color: "text-emerald-600",
-    bgColor: "bg-emerald-50",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
     tourIndex: 2,
   },
   {
@@ -124,8 +124,8 @@ const guides: GuideCard[] = [
     title: "Chatbot de conversación",
     description:
       "Practica japonés con IA: escenarios reales, correcciones y audio nativo.",
-    color: "text-amber-600",
-    bgColor: "bg-amber-50",
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor: "bg-amber-50 dark:bg-amber-950/30",
     tourIndex: 3,
   },
   {
@@ -133,8 +133,8 @@ const guides: GuideCard[] = [
     title: "Estadísticas y progreso",
     description:
       "Interpreta tus métricas, identifica patrones y optimiza tu rutina de estudio.",
-    color: "text-rose-600",
-    bgColor: "bg-rose-50",
+    color: "text-rose-600 dark:text-rose-400",
+    bgColor: "bg-rose-50 dark:bg-rose-950/30",
     tourIndex: 4,
   },
   {
@@ -142,8 +142,8 @@ const guides: GuideCard[] = [
     title: "Personalización",
     description:
       "Ajusta notificaciones, metas diarias, temas y preferencias de accesibilidad.",
-    color: "text-indigo-600",
-    bgColor: "bg-indigo-50",
+    color: "text-indigo-600 dark:text-indigo-400",
+    bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
     tourIndex: 5,
   },
 ];
@@ -189,15 +189,15 @@ function FaqAccordion({ item, index }: { item: FaqItem; index: number }) {
         <div
           className={`flex items-start gap-4 p-5 rounded-2xl transition-all duration-300 ${
             open
-              ? "bg-[#993331]/5 border border-[#993331]/15"
-              : "bg-gray-50/80 border border-transparent hover:bg-gray-100/80 hover:border-gray-200"
+              ? "bg-accent/5 border border-accent/15"
+              : "bg-surface-secondary/80 border border-transparent hover:bg-surface-tertiary/80 hover:border-border-default"
           }`}
         >
           <div
             className={`mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-300 ${
               open
-                ? "bg-[#993331] text-white"
-                : "bg-gray-200/80 text-gray-500 group-hover:bg-[#993331]/10 group-hover:text-[#993331]"
+                ? "bg-accent text-content-inverted"
+                : "bg-surface-tertiary/80 text-content-tertiary group-hover:bg-accent/10 group-hover:text-accent"
             }`}
           >
             <HelpCircle className="w-4 h-4" />
@@ -206,7 +206,7 @@ function FaqAccordion({ item, index }: { item: FaqItem; index: number }) {
             <div className="flex items-center justify-between gap-3">
               <h3
                 className={`font-bold text-sm transition-colors duration-300 ${
-                  open ? "text-[#993331]" : "text-gray-900"
+                  open ? "text-accent" : "text-content-primary"
                 }`}
               >
                 {item.question}
@@ -217,7 +217,7 @@ function FaqAccordion({ item, index }: { item: FaqItem; index: number }) {
               >
                 <ChevronDown
                   className={`w-5 h-5 flex-shrink-0 transition-colors duration-300 ${
-                    open ? "text-[#993331]" : "text-gray-400"
+                    open ? "text-accent" : "text-content-muted"
                   }`}
                 />
               </motion.div>
@@ -230,7 +230,7 @@ function FaqAccordion({ item, index }: { item: FaqItem; index: number }) {
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.35, ease }}
                 >
-                  <p className="text-sm text-gray-600 leading-relaxed mt-3 pr-8">
+                  <p className="text-sm text-content-secondary leading-relaxed mt-3 pr-8">
                     {item.answer}
                   </p>
                 </motion.div>
@@ -285,7 +285,7 @@ export default function HelpPage() {
     <DashboardShell
       header={
         <DashboardHeader
-          icon={<HelpCircle className="w-7 h-7 text-white" strokeWidth={2.5} />}
+          icon={<HelpCircle className="w-7 h-7 text-content-inverted" strokeWidth={2.5} />}
           title="Centro de Ayuda"
           subtitle="Todo lo que necesitas para dominar Gokai"
           japaneseText="助け"
@@ -298,18 +298,18 @@ export default function HelpPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease }}
-          className="relative overflow-hidden bg-gradient-to-r from-[#993331] to-[#7a2927] rounded-3xl p-8 md:p-10 text-white shadow-lg"
+          className="relative overflow-hidden bg-gradient-to-r from-accent to-accent-hover rounded-3xl p-8 md:p-10 text-content-inverted shadow-lg"
         >
           {/* decorativas */}
-          <div className="absolute top-[-40px] right-[-20px] w-44 h-44 bg-white/5 rounded-full" />
-          <div className="absolute bottom-[-30px] left-[30%] w-32 h-32 bg-white/5 rounded-full" />
-          <div className="absolute top-[50%] right-[20%] w-20 h-20 bg-white/5 rounded-full" />
+          <div className="absolute top-[-40px] right-[-20px] w-44 h-44 bg-surface-primary/5 rounded-full" />
+          <div className="absolute bottom-[-30px] left-[30%] w-32 h-32 bg-surface-primary/5 rounded-full" />
+          <div className="absolute top-[50%] right-[20%] w-20 h-20 bg-surface-primary/5 rounded-full" />
 
           <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
-                  <Sparkles className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 rounded-2xl bg-surface-primary/15 flex items-center justify-center backdrop-blur-sm">
+                  <Sparkles className="w-6 h-6 text-content-inverted" />
                 </div>
                 <div>
                   <h2 className="text-2xl font-extrabold tracking-tight">
@@ -332,7 +332,7 @@ export default function HelpPage() {
                     setSearchQuery(e.target.value);
                     if (e.target.value.length > 0) setActiveTab("faq");
                   }}
-                  className="w-full pl-12 pr-5 py-3.5 bg-white/10 backdrop-blur-sm rounded-2xl text-sm text-white placeholder-white/50 outline-none border border-white/15 focus:border-white/30 focus:bg-white/15 transition-all duration-300"
+                  className="w-full pl-12 pr-5 py-3.5 bg-surface-primary/10 backdrop-blur-sm rounded-2xl text-sm text-content-inverted placeholder-white/50 outline-none border border-white/15 focus:border-white/30 focus:bg-surface-primary/15 transition-all duration-300"
                 />
               </div>
             </div>
@@ -345,14 +345,14 @@ export default function HelpPage() {
                   Guías
                 </div>
               </div>
-              <div className="w-px bg-white/20" />
+              <div className="w-px bg-surface-primary/20" />
               <div className="text-center">
                 <div className="text-3xl font-extrabold">{faqs.length}</div>
                 <div className="text-xs text-white/60 font-medium mt-0.5">
                   FAQs
                 </div>
               </div>
-              <div className="w-px bg-white/20" />
+              <div className="w-px bg-surface-primary/20" />
               <div className="text-center">
                 <div className="text-3xl font-extrabold">24/7</div>
                 <div className="text-xs text-white/60 font-medium mt-0.5">
@@ -368,7 +368,7 @@ export default function HelpPage() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease, delay: 0.1 }}
-          className="flex items-center gap-2 bg-gray-100 rounded-full p-1.5 w-fit"
+          className="flex items-center gap-2 bg-surface-tertiary rounded-full p-1.5 w-fit"
         >
           {tabs.map((tab) => (
             <button
@@ -376,8 +376,8 @@ export default function HelpPage() {
               onClick={() => setActiveTab(tab.key)}
               className={`relative flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-300 ${
                 activeTab === tab.key
-                  ? "bg-white text-[#993331] shadow-sm"
-                  : "text-gray-500 hover:text-gray-700"
+                  ? "bg-surface-primary text-accent shadow-sm"
+                  : "text-content-tertiary hover:text-content-secondary"
               }`}
             >
               {tab.icon}
@@ -408,7 +408,7 @@ export default function HelpPage() {
                     boxShadow: "0 12px 24px -4px rgba(153,51,49,0.12)",
                   }}
                   onClick={() => handleStartGuide(guide.tourIndex)}
-                  className="group bg-white rounded-2xl p-6 border border-gray-100 shadow-sm cursor-pointer transition-colors duration-300 hover:border-[#993331]/20"
+                  className="group bg-surface-primary rounded-2xl p-6 border border-border-subtle shadow-sm cursor-pointer transition-colors duration-300 hover:border-accent/20"
                 >
                   <div className="flex items-start gap-4">
                     <div
@@ -417,15 +417,15 @@ export default function HelpPage() {
                       {guide.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="font-bold text-gray-900 text-sm mb-1.5 group-hover:text-[#993331] transition-colors duration-300">
+                      <h3 className="font-bold text-content-primary text-sm mb-1.5 group-hover:text-accent transition-colors duration-300">
                         {guide.title}
                       </h3>
-                      <p className="text-xs text-gray-500 leading-relaxed">
+                      <p className="text-xs text-content-tertiary leading-relaxed">
                         {guide.description}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 mt-4 text-xs font-bold text-[#993331] opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <div className="flex items-center gap-1.5 mt-4 text-xs font-bold text-accent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                     <span>Ver más</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </div>
@@ -454,13 +454,13 @@ export default function HelpPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center py-16"
                 >
-                  <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                    <Search className="w-7 h-7 text-gray-400" />
+                  <div className="w-16 h-16 rounded-full bg-surface-tertiary flex items-center justify-center mx-auto mb-4">
+                    <Search className="w-7 h-7 text-content-muted" />
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-1">
+                  <h3 className="font-bold text-content-primary mb-1">
                     No se encontraron resultados
                   </h3>
-                  <p className="text-sm text-gray-500">
+                  <p className="text-sm text-content-tertiary">
                     Intenta con otros términos de búsqueda
                   </p>
                 </motion.div>
@@ -487,16 +487,16 @@ export default function HelpPage() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.5, ease, delay: i * 0.08 }}
                     whileHover={{ y: -2 }}
-                    className="flex items-start gap-4 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm"
+                    className="flex items-start gap-4 bg-surface-primary rounded-2xl p-6 border border-border-subtle shadow-sm"
                   >
-                    <div className="w-11 h-11 rounded-xl bg-[#993331]/10 text-[#993331] flex items-center justify-center flex-shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-accent/10 text-accent flex items-center justify-center flex-shrink-0">
                       {tip.icon}
                     </div>
                     <div>
-                      <h3 className="font-bold text-gray-900 text-sm mb-1">
+                      <h3 className="font-bold text-content-primary text-sm mb-1">
                         {tip.title}
                       </h3>
-                      <p className="text-xs text-gray-500 leading-relaxed">
+                      <p className="text-xs text-content-tertiary leading-relaxed">
                         {tip.description}
                       </p>
                     </div>
@@ -519,10 +519,10 @@ export default function HelpPage() {
                     <Rocket className="w-7 h-7 text-amber-600" />
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-gray-900 mb-2">
+                    <h3 className="font-extrabold text-content-primary mb-2">
                       Consejo del día
                     </h3>
-                    <p className="text-sm text-gray-700 leading-relaxed mb-4">
+                    <p className="text-sm text-content-secondary leading-relaxed mb-4">
                       La mejor forma de aprender kanji es en contexto. En lugar
                       de memorizar caracteres aislados, intenta leer frases
                       completas y asociar cada kanji con situaciones reales. Tu
@@ -547,17 +547,17 @@ export default function HelpPage() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease, delay: 0.4 }}
-          className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm"
+          className="bg-surface-primary rounded-3xl p-8 border border-border-subtle shadow-sm"
         >
           <div className="flex flex-col md:flex-row items-center gap-6 md:gap-8">
-            <div className="w-16 h-16 rounded-2xl bg-[#993331]/10 flex items-center justify-center flex-shrink-0">
-              <MessageCircle className="w-8 h-8 text-[#993331]" />
+            <div className="w-16 h-16 rounded-2xl bg-accent/10 flex items-center justify-center flex-shrink-0">
+              <MessageCircle className="w-8 h-8 text-accent" />
             </div>
             <div className="flex-1 text-center md:text-left">
-              <h3 className="font-extrabold text-gray-900 text-lg mb-1">
+              <h3 className="font-extrabold text-content-primary text-lg mb-1">
                 ¿No encontraste lo que buscabas?
               </h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
+              <p className="text-sm text-content-tertiary leading-relaxed">
                 Nuestro equipo de soporte está aquí para ayudarte. Escríbenos y
                 te responderemos lo antes posible.
               </p>
@@ -566,7 +566,7 @@ export default function HelpPage() {
               whileHover={{ scale: 1.03 }}
               whileTap={{ scale: 0.97 }}
               onClick={() => setSupportOpen(true)}
-              className="bg-gradient-to-r from-[#993331] to-[#7a2927] text-white px-8 py-3.5 rounded-full font-bold text-sm shadow-lg shadow-[#993331]/20 hover:shadow-xl hover:shadow-[#993331]/25 transition-shadow duration-300 flex items-center gap-2 flex-shrih-0"
+              className="bg-gradient-to-r from-accent to-accent-hover text-content-inverted px-8 py-3.5 rounded-full font-bold text-sm shadow-lg shadow-accent/20 hover:shadow-xl hover:shadow-accent/25 transition-shadow duration-300 flex items-center gap-2 flex-shrih-0"
             >
               <Mail className="w-4 h-4" />
               Contactar soporte

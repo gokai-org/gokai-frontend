@@ -61,7 +61,7 @@ export function KanaStrokePlayer({
         y1="0"
         x2="54.5"
         y2="109"
-        stroke="#e5e7eb"
+        stroke="var(--border-primary)"
         strokeWidth="0.5"
         strokeDasharray="3 3"
       />
@@ -70,7 +70,7 @@ export function KanaStrokePlayer({
         y1="54.5"
         x2="109"
         y2="54.5"
-        stroke="#e5e7eb"
+        stroke="var(--border-primary)"
         strokeWidth="0.5"
         strokeDasharray="3 3"
       />
@@ -88,7 +88,7 @@ export function KanaStrokePlayer({
           strokeColor = "#1a1a1a";
           strokeOpacity = 1;
         } else if (i === activeStrokeIndex) {
-          strokeColor = "#993331";
+          strokeColor = "var(--accent)";
           strokeOpacity = 1;
           animate = true;
         } else {
@@ -164,7 +164,7 @@ function StrokeNumber({
         animation: "kana-num-in 220ms ease-out both",
       }}
     >
-      <circle cx={cx} cy={cy} r={5.2} fill="#993331" />
+      <circle cx={cx} cy={cy} r={5.2} fill="var(--accent)" />
       <text
         x={cx}
         y={cy}

@@ -229,12 +229,12 @@ export function WritingPracticeModal({
 
   const resultGrade = useMemo(() => {
     if (scorePercent >= 90)
-      return { label: "Excelente", color: "text-green-600" };
+      return { label: "Excelente", color: "text-green-600 dark:text-green-400" };
     if (scorePercent >= 70)
-      return { label: "Bien hecho", color: "text-blue-600" };
+      return { label: "Bien hecho", color: "text-blue-600 dark:text-blue-400" };
     if (scorePercent >= 50)
-      return { label: "Aceptable", color: "text-amber-600" };
-    return { label: "Sigue practicando", color: "text-orange-600" };
+      return { label: "Aceptable", color: "text-amber-600 dark:text-amber-400" };
+    return { label: "Sigue practicando", color: "text-orange-600 dark:text-orange-400" };
   }, [scorePercent]);
 
   // Submit results to backend when entering result step
@@ -337,7 +337,7 @@ export function WritingPracticeModal({
           animate="visible"
           exit="exit"
           className={[
-            "bg-white w-full shadow-2xl ring-1 ring-black/5 flex flex-col",
+            "bg-surface-primary w-full shadow-2xl ring-1 ring-border-subtle flex flex-col",
             step === "result" ? "max-w-3xl" : "max-w-lg",
             "rounded-3xl max-h-[95dvh]",
             "max-sm:max-w-none max-sm:mx-auto max-sm:w-[calc(100vw-2rem)]",
@@ -347,15 +347,15 @@ export function WritingPracticeModal({
         >
           {/* ── Header with gradient ── */}
           <div className="shrink-0 rounded-t-3xl overflow-hidden">
-            <div className="bg-gradient-to-r from-[#993331] to-[#BA5149] px-5 py-4 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-accent to-accent-hover px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
-                  <span className="text-2xl font-bold text-white select-none">
+                <div className="w-12 h-12 rounded-2xl bg-surface-primary/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
+                  <span className="text-2xl font-bold text-content-inverted select-none">
                     {kanji.symbol}
                   </span>
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-white leading-tight">
+                  <h2 className="text-base font-bold text-content-inverted leading-tight">
                     Práctica de Escritura
                   </h2>
                   {meaning && (
@@ -368,13 +368,13 @@ export function WritingPracticeModal({
 
               <div className="flex items-center gap-2">
                 {usingMock && (
-                  <span className="px-2.5 py-1 bg-white/20 backdrop-blur-sm text-white text-[10px] font-bold rounded-full">
+                  <span className="px-2.5 py-1 bg-surface-primary/20 backdrop-blur-sm text-content-inverted text-[10px] font-bold rounded-full">
                     DEMO
                   </span>
                 )}
                 <button
                   onClick={onClose}
-                  className="w-8 h-8 rounded-xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition"
+                  className="w-8 h-8 rounded-xl bg-surface-primary/15 hover:bg-surface-primary/25 text-content-inverted flex items-center justify-center transition"
                   aria-label="Cerrar"
                 >
                   <svg
@@ -395,21 +395,21 @@ export function WritingPracticeModal({
             </div>
 
             {/* Step indicator bar */}
-            <div className="bg-white border-b border-neutral-100 px-5 py-2.5 flex items-center justify-center gap-3">
+            <div className="bg-surface-primary border-b border-border-subtle px-5 py-2.5 flex items-center justify-center gap-3">
               <StepPill
                 number={1}
                 label="Observar"
                 active={step === "demo"}
                 done={step === "practice" || step === "result"}
               />
-              <div className="w-6 h-px bg-neutral-200" />
+              <div className="w-6 h-px bg-surface-tertiary" />
               <StepPill
                 number={2}
                 label="Practicar"
                 active={step === "practice"}
                 done={step === "result"}
               />
-              <div className="w-6 h-px bg-neutral-200" />
+              <div className="w-6 h-px bg-surface-tertiary" />
               <StepPill
                 number={3}
                 label="Resultado"
@@ -429,10 +429,10 @@ export function WritingPracticeModal({
                 className="flex flex-col items-center justify-center py-20 gap-4"
               >
                 <div className="relative">
-                  <div className="w-14 h-14 border-4 border-neutral-100 rounded-full" />
-                  <div className="absolute inset-0 w-14 h-14 border-4 border-transparent border-t-[#993331] rounded-full animate-spin" />
+                  <div className="w-14 h-14 border-4 border-border-subtle rounded-full" />
+                  <div className="absolute inset-0 w-14 h-14 border-4 border-transparent border-t-accent rounded-full animate-spin" />
                 </div>
-                <p className="text-sm text-neutral-400 font-medium">
+                <p className="text-sm text-content-muted font-medium">
                   Cargando trazos…
                 </p>
               </motion.div>
@@ -449,7 +449,7 @@ export function WritingPracticeModal({
               >
                 {error ? (
                   <div className="text-center py-12">
-                    <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 flex items-center justify-center">
+                    <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
                       <svg
                         className="w-6 h-6 text-red-400"
                         fill="none"
@@ -464,10 +464,10 @@ export function WritingPracticeModal({
                         />
                       </svg>
                     </div>
-                    <p className="text-neutral-500 mb-4">{error}</p>
+                    <p className="text-content-tertiary mb-4">{error}</p>
                     <button
                       onClick={onClose}
-                      className="px-5 py-2.5 bg-neutral-100 hover:bg-neutral-200 rounded-xl text-sm font-semibold transition"
+                      className="px-5 py-2.5 bg-surface-tertiary hover:bg-surface-tertiary rounded-xl text-sm font-semibold transition"
                     >
                       Cerrar
                     </button>
@@ -479,7 +479,7 @@ export function WritingPracticeModal({
                       variants={fadeUp}
                       initial="hidden"
                       animate="visible"
-                      className="text-sm text-neutral-500 text-center max-w-[280px]"
+                      className="text-sm text-content-tertiary text-center max-w-[280px]"
                     >
                       Observa el orden de los trazos. Usa los controles o
                       reproducción automática.
@@ -491,7 +491,7 @@ export function WritingPracticeModal({
                       variants={fadeUp}
                       initial="hidden"
                       animate="visible"
-                      className="relative bg-gradient-to-b from-[#993331]/[0.03] to-transparent rounded-2xl p-4 border border-neutral-100"
+                      className="relative bg-gradient-to-b from-accent/[0.03] to-transparent rounded-2xl p-4 border border-border-subtle"
                     >
                       <KanjiStrokePlayer
                         viewBox={strokeData.viewBox}
@@ -510,9 +510,9 @@ export function WritingPracticeModal({
                       animate="visible"
                       className="w-full max-w-[280px]"
                     >
-                      <div className="h-1.5 bg-neutral-100 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-surface-tertiary rounded-full overflow-hidden">
                         <motion.div
-                          className="h-full bg-gradient-to-r from-[#993331] to-[#BA5149] rounded-full"
+                          className="h-full bg-gradient-to-r from-accent to-accent-hover rounded-full"
                           initial={{ width: 0 }}
                           animate={{
                             width: `${
@@ -526,9 +526,9 @@ export function WritingPracticeModal({
                           transition={{ duration: 0.3, ease: "easeOut" }}
                         />
                       </div>
-                      <p className="text-xs text-neutral-400 text-center mt-1.5 font-medium">
+                      <p className="text-xs text-content-muted text-center mt-1.5 font-medium">
                         Trazo{" "}
-                        <span className="text-[#993331] font-bold">
+                        <span className="text-accent font-bold">
                           {Math.min(demoStrokeIndex, totalStrokes)}
                         </span>{" "}
                         de {totalStrokes}
@@ -598,8 +598,8 @@ export function WritingPracticeModal({
                         }}
                         className={`px-5 py-2.5 rounded-xl text-sm font-semibold transition flex items-center gap-2 ${
                           demoAutoPlay
-                            ? "bg-[#993331] text-white shadow-md shadow-[#993331]/20"
-                            : "bg-[#993331]/10 text-[#993331] hover:bg-[#993331]/20"
+                            ? "bg-accent text-content-inverted shadow-md shadow-accent/20"
+                            : "bg-accent/10 text-accent hover:bg-accent/20"
                         }`}
                       >
                         {demoAutoPlay ? (
@@ -658,7 +658,7 @@ export function WritingPracticeModal({
                       whileHover={{ scale: 1.02, y: -1 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleStartPractice}
-                      className="w-full max-w-[280px] py-3.5 bg-gradient-to-r from-[#993331] to-[#BA5149] text-white rounded-2xl font-bold hover:shadow-xl hover:shadow-[#993331]/20 transition-all shadow-lg shadow-[#993331]/15 flex items-center justify-center gap-2.5 text-[15px]"
+                      className="w-full max-w-[280px] py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold hover:shadow-xl hover:shadow-accent/20 transition-all shadow-lg shadow-accent/15 flex items-center justify-center gap-2.5 text-[15px]"
                     >
                       <svg
                         className="w-5 h-5"
@@ -689,9 +689,9 @@ export function WritingPracticeModal({
                 transition={{ duration: 0.35 }}
                 className="flex flex-col items-center gap-5"
               >
-                <p className="text-sm text-neutral-500 text-center">
+                <p className="text-sm text-content-tertiary text-center">
                   Dibuja el trazo{" "}
-                  <span className="font-bold text-[#993331] text-base">
+                  <span className="font-bold text-accent text-base">
                     #{practiceStrokeIndex + 1}
                   </span>{" "}
                   de {totalStrokes}
@@ -699,7 +699,7 @@ export function WritingPracticeModal({
 
                 {/* Canvas container */}
                 <div className="relative w-full flex justify-center">
-                  <div className="relative rounded-2xl border-2 border-neutral-100 bg-gradient-to-b from-neutral-50/50 to-white p-1 shadow-sm">
+                  <div className="relative rounded-2xl border-2 border-border-subtle bg-gradient-to-b from-surface-secondary to-surface-primary p-1 shadow-sm">
                     <KanjiWritingCanvas
                       viewBox={strokeData.viewBox}
                       guideStrokes={strokeData.strokes}
@@ -737,9 +737,9 @@ export function WritingPracticeModal({
                 </div>
 
                 {/* Running score */}
-                <div className="flex items-center gap-2 bg-neutral-50 rounded-xl px-4 py-2">
+                <div className="flex items-center gap-2 bg-surface-secondary rounded-xl px-4 py-2">
                   <svg
-                    className="w-4 h-4 text-[#993331]"
+                    className="w-4 h-4 text-accent"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -751,10 +751,10 @@ export function WritingPracticeModal({
                       d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
                     />
                   </svg>
-                  <span className="text-sm font-bold text-neutral-700">
+                  <span className="text-sm font-bold text-content-secondary">
                     {totalScore}
                   </span>
-                  <span className="text-xs text-neutral-400">
+                  <span className="text-xs text-content-muted">
                     /{" "}
                     {practiceStrokeIndex * BASE_STROKE_POINTS +
                       BASE_STROKE_POINTS}{" "}
@@ -766,7 +766,7 @@ export function WritingPracticeModal({
                 <div className="flex items-center gap-1.5 flex-wrap justify-center">
                   {strokeData.strokes.map((_, i) => {
                     const sr = strokeResults[i];
-                    let dotClass = "bg-neutral-200";
+                    let dotClass = "bg-surface-tertiary";
                     if (sr) {
                       if (
                         sr.validation.feedback === "perfect" ||
@@ -778,7 +778,7 @@ export function WritingPracticeModal({
                       else dotClass = "bg-red-400";
                     } else if (i === practiceStrokeIndex) {
                       dotClass =
-                        "bg-[#993331] ring-2 ring-[#993331]/30 ring-offset-1";
+                        "bg-accent ring-2 ring-accent/30 ring-offset-1";
                     }
                     return (
                       <motion.div
@@ -797,7 +797,7 @@ export function WritingPracticeModal({
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={handleBackToDemo}
-                    className="px-4 py-2.5 text-sm font-semibold text-neutral-600 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 rounded-xl transition"
+                    className="px-4 py-2.5 text-sm font-semibold text-content-secondary hover:text-content-primary bg-surface-tertiary hover:bg-surface-tertiary rounded-xl transition"
                   >
                     Ver demo
                   </motion.button>
@@ -805,7 +805,7 @@ export function WritingPracticeModal({
                     whileHover={{ scale: 1.03 }}
                     whileTap={{ scale: 0.97 }}
                     onClick={handleRetry}
-                    className="px-4 py-2.5 text-sm font-semibold text-[#993331] bg-[#993331]/10 hover:bg-[#993331]/20 rounded-xl transition"
+                    className="px-4 py-2.5 text-sm font-semibold text-accent bg-accent/10 hover:bg-accent/20 rounded-xl transition"
                   >
                     Reiniciar
                   </motion.button>
@@ -842,7 +842,7 @@ export function WritingPracticeModal({
                           ? "bg-emerald-400/20"
                           : scorePercent >= 50
                             ? "bg-amber-400/20"
-                            : "bg-[#993331]/15"
+                            : "bg-accent/15"
                       }`}
                     />
                     <div className="relative w-28 h-28 rounded-full flex flex-col items-center justify-center">
@@ -855,7 +855,7 @@ export function WritingPracticeModal({
                           cy="56"
                           r="50"
                           fill="none"
-                          stroke="#f3f4f6"
+                          stroke="var(--border-primary)"
                           strokeWidth="6"
                         />
                         <motion.circle
@@ -868,7 +868,7 @@ export function WritingPracticeModal({
                               ? "#10b981"
                               : scorePercent >= 50
                                 ? "#f59e0b"
-                                : "#993331"
+                                : "var(--accent)"
                           }
                           strokeWidth="6"
                           strokeLinecap="round"
@@ -889,7 +889,7 @@ export function WritingPracticeModal({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.6 }}
-                        className="text-3xl font-extrabold text-neutral-900"
+                        className="text-3xl font-extrabold text-content-primary"
                       >
                         {scorePercent}
                       </motion.span>
@@ -897,7 +897,7 @@ export function WritingPracticeModal({
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 0.7 }}
-                        className="text-[10px] text-neutral-400 font-semibold -mt-0.5"
+                        className="text-[10px] text-content-muted font-semibold -mt-0.5"
                       >
                         / 100
                       </motion.span>
@@ -915,9 +915,9 @@ export function WritingPracticeModal({
                     >
                       {resultGrade.label}
                     </h3>
-                    <p className="text-sm text-neutral-500">
+                    <p className="text-sm text-content-tertiary">
                       Completaste los {totalStrokes} trazos de{" "}
-                      <span className="font-bold text-neutral-800">
+                      <span className="font-bold text-content-primary">
                         {kanji.symbol}
                       </span>
                     </p>
@@ -928,31 +928,31 @@ export function WritingPracticeModal({
                     initial={{ opacity: 0, y: 6 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
-                    className="flex items-center gap-0 bg-neutral-50 rounded-2xl overflow-hidden border border-neutral-100"
+                    className="flex items-center gap-0 bg-surface-secondary rounded-2xl overflow-hidden border border-border-subtle"
                   >
                     <div className="text-center px-5 py-3">
-                      <p className="text-lg font-extrabold text-neutral-900">
+                      <p className="text-lg font-extrabold text-content-primary">
                         {totalStrokes}
                       </p>
-                      <p className="text-[10px] text-neutral-400 font-semibold">
+                      <p className="text-[10px] text-content-muted font-semibold">
                         Trazos
                       </p>
                     </div>
-                    <div className="w-px h-10 bg-neutral-200" />
+                    <div className="w-px h-10 bg-surface-tertiary" />
                     <div className="text-center px-5 py-3">
-                      <p className="text-lg font-extrabold text-neutral-900">
+                      <p className="text-lg font-extrabold text-content-primary">
                         {durationSec}s
                       </p>
-                      <p className="text-[10px] text-neutral-400 font-semibold">
+                      <p className="text-[10px] text-content-muted font-semibold">
                         Tiempo
                       </p>
                     </div>
-                    <div className="w-px h-10 bg-neutral-200" />
+                    <div className="w-px h-10 bg-surface-tertiary" />
                     <div className="text-center px-5 py-3">
-                      <p className="text-lg font-extrabold text-neutral-900">
+                      <p className="text-lg font-extrabold text-content-primary">
                         {totalScore}
                       </p>
-                      <p className="text-[10px] text-neutral-400 font-semibold">
+                      <p className="text-[10px] text-content-muted font-semibold">
                         Puntos
                       </p>
                     </div>
@@ -963,7 +963,7 @@ export function WritingPracticeModal({
                     <motion.p
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
-                      className="text-xs text-neutral-400 font-medium"
+                      className="text-xs text-content-muted font-medium"
                     >
                       Guardando resultado…
                     </motion.p>
@@ -980,7 +980,7 @@ export function WritingPracticeModal({
                       whileHover={{ scale: 1.02, y: -1 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleRetry}
-                      className="w-full py-3.5 bg-gradient-to-r from-[#993331] to-[#BA5149] text-white rounded-2xl font-bold shadow-lg shadow-[#993331]/15 hover:shadow-xl hover:shadow-[#993331]/20 transition-all flex items-center justify-center gap-2"
+                      className="w-full py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold shadow-lg shadow-accent/15 hover:shadow-xl hover:shadow-accent/20 transition-all flex items-center justify-center gap-2"
                     >
                       <svg
                         className="w-4 h-4"
@@ -1001,13 +1001,13 @@ export function WritingPracticeModal({
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       onClick={handleBackToDemo}
-                      className="w-full py-3 text-sm font-semibold text-neutral-600 bg-neutral-100 hover:bg-neutral-200 rounded-2xl transition"
+                      className="w-full py-3 text-sm font-semibold text-content-secondary bg-surface-tertiary hover:bg-surface-tertiary rounded-2xl transition"
                     >
                       Ver demostración
                     </motion.button>
                     <button
                       onClick={onClose}
-                      className="w-full py-2.5 text-sm font-medium text-neutral-400 hover:text-neutral-600 transition"
+                      className="w-full py-2.5 text-sm font-medium text-content-muted hover:text-content-secondary transition"
                     >
                       Cerrar
                     </button>
@@ -1021,7 +1021,7 @@ export function WritingPracticeModal({
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.5 }}
-                    className="border border-neutral-100 rounded-2xl p-3 bg-neutral-50/50"
+                    className="border border-border-subtle rounded-2xl p-3 bg-surface-secondary/50"
                   >
                     <KanjiStrokePlayer
                       viewBox={strokeData.viewBox}
@@ -1039,7 +1039,7 @@ export function WritingPracticeModal({
                       transition={{ delay: 0.6 }}
                       className="w-full max-w-[300px]"
                     >
-                      <p className="text-xs font-bold text-neutral-400 mb-2.5 text-center uppercase tracking-wide">
+                      <p className="text-xs font-bold text-content-muted mb-2.5 text-center uppercase tracking-wide">
                         Detalle por trazo
                       </p>
                       <div className="grid grid-cols-2 gap-1.5">
@@ -1090,10 +1090,10 @@ function StepPill({
       <div
         className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold transition-all ${
           active
-            ? "bg-[#993331] text-white shadow-sm"
+            ? "bg-accent text-content-inverted shadow-sm"
             : done
-              ? "bg-[#993331]/20 text-[#993331]"
-              : "bg-neutral-100 text-neutral-400"
+              ? "bg-accent/20 text-accent"
+              : "bg-surface-tertiary text-content-muted"
         }`}
       >
         {done ? (
@@ -1117,10 +1117,10 @@ function StepPill({
       <span
         className={`text-xs font-semibold transition ${
           active
-            ? "text-[#993331]"
+            ? "text-accent"
             : done
-              ? "text-neutral-500"
-              : "text-neutral-400"
+              ? "text-content-tertiary"
+              : "text-content-muted"
         }`}
       >
         {label}
@@ -1145,7 +1145,7 @@ function IconButton({
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className="p-2.5 rounded-xl text-neutral-500 hover:text-neutral-900 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+      className="p-2.5 rounded-xl text-content-tertiary hover:text-content-primary hover:bg-surface-tertiary disabled:opacity-30 disabled:cursor-not-allowed transition"
     >
       {children}
     </button>

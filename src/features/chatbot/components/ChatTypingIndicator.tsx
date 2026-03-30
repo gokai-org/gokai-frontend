@@ -10,13 +10,13 @@ export function ChatTypingIndicator({
   return (
     <div className="mb-4 flex justify-start">
       <div className="max-w-[85%] sm:max-w-[72%]">
-        <div className="mb-2 inline-flex rounded-full bg-[#993331] px-3 py-1 text-[11px] font-extrabold tracking-wide text-white">
+        <div className="mb-2 inline-flex rounded-full bg-accent px-3 py-1 text-[11px] font-extrabold tracking-wide text-content-inverted">
           SEN
         </div>
 
         <div
           className={[
-            "rounded-[24px] border border-gray-100 bg-white px-4 py-3 shadow-sm",
+            "rounded-[24px] border border-border-subtle bg-surface-primary px-4 py-3 shadow-sm",
             compact ? "w-[84px]" : "w-[100px]",
           ].join(" ")}
         >
@@ -24,7 +24,7 @@ export function ChatTypingIndicator({
             {[0, 1, 2].map((dot) => (
               <span
                 key={dot}
-                className="h-2 w-2 animate-bounce rounded-full bg-[#993331]/45"
+                className="h-2 w-2 animate-bounce rounded-full bg-accent/45"
                 style={{ animationDelay: `${dot * 120}ms` }}
               />
             ))}

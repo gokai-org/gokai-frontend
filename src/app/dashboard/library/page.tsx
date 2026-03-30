@@ -138,8 +138,8 @@ export default function LibraryPage() {
       ) : (
         <>
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 rounded-full border border-gray-200 bg-gray-50 px-4 py-2">
-              <Search className="h-4 w-4 text-gray-400" />
+            <div className="flex items-center gap-2 rounded-full border border-border-default bg-surface-secondary px-4 py-2">
+              <Search className="h-4 w-4 text-content-muted" />
               <input
                 type="text"
                 placeholder="Buscar kanjis, hiraganas o katakanas..."
@@ -171,10 +171,10 @@ export default function LibraryPage() {
             >
               <div>
                 <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-2xl font-bold text-content-primary">
                     Resultados para &ldquo;{searchQuery.trim()}&rdquo;
                   </h2>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-content-secondary">
                     {allLibraryItems.length} resultados
                   </span>
                 </div>
@@ -198,10 +198,10 @@ export default function LibraryPage() {
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="mb-2 text-xl font-bold text-gray-900">
+                    <h3 className="mb-2 text-xl font-bold text-content-primary">
                       Sin resultados
                     </h3>
-                    <p className="max-w-md text-center text-gray-600">
+                    <p className="max-w-md text-center text-content-secondary">
                       No encontramos contenido que coincida con &ldquo;
                       {searchQuery.trim()}&rdquo;.
                     </p>
@@ -236,7 +236,7 @@ export default function LibraryPage() {
                   className="mb-4"
                   title="Todo el contenido"
                   action={
-                    <span className="text-sm font-medium text-gray-500">
+                    <span className="text-sm font-medium text-content-tertiary">
                       {totalBaseContentCount} elementos
                     </span>
                   }
@@ -260,10 +260,10 @@ export default function LibraryPage() {
                   />
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="mb-2 text-xl font-bold text-gray-900">
+                    <h3 className="mb-2 text-xl font-bold text-content-primary">
                       No hay contenido
                     </h3>
-                    <p className="max-w-md text-center text-gray-600">
+                    <p className="max-w-md text-center text-content-secondary">
                       No encontramos contenido disponible.
                     </p>
                   </div>
@@ -280,17 +280,17 @@ export default function LibraryPage() {
             >
               <div>
                 <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-gray-900">
+                  <h2 className="text-2xl font-bold text-content-primary">
                     Mis Favoritos
                   </h2>
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-content-secondary">
                     {getTotalFavorites()} elementos
                   </span>
                 </div>
 
                 {favoriteKanjis.size > 0 && (
                   <div className="mb-8">
-                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                    <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Kanjis
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -311,7 +311,7 @@ export default function LibraryPage() {
 
                 {favoriteData.grammar.length > 0 && (
                   <div className="mb-8">
-                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                    <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Gramática
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -332,7 +332,7 @@ export default function LibraryPage() {
 
                 {favoriteData.hiragana.length > 0 && (
                   <div className="mb-8">
-                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                    <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Hiragana
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -359,7 +359,7 @@ export default function LibraryPage() {
 
                 {favoriteData.katakana.length > 0 && (
                   <div className="mb-8">
-                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                    <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Katakana
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -386,7 +386,7 @@ export default function LibraryPage() {
 
                 {favoriteData.word.length > 0 && (
                   <div className="mb-8">
-                    <h3 className="mb-4 text-lg font-semibold text-gray-800">
+                    <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Vocabulario
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
@@ -407,10 +407,10 @@ export default function LibraryPage() {
 
                 {getTotalFavorites() === 0 && (
                   <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="mb-2 text-xl font-bold text-gray-900">
+                    <h3 className="mb-2 text-xl font-bold text-content-primary">
                       No tienes favoritos aún
                     </h3>
-                    <p className="max-w-md text-center text-gray-600">
+                    <p className="max-w-md text-center text-content-secondary">
                       Agrega contenido a favoritos haciendo clic en el corazón en
                       cualquier elemento.
                     </p>
@@ -544,7 +544,7 @@ export default function LibraryPage() {
                           resetVocabularyView();
                         }
                       }}
-                      className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-[#993331]/20 hover:text-[#993331]"
+                      className="rounded-full border border-border-default bg-surface-primary px-4 py-2 text-sm font-semibold text-content-secondary transition-colors hover:border-accent/20 hover:text-accent"
                     >
                       {selectedSubtheme ? "Volver a subtemas" : "Volver a temas"}
                     </button>
@@ -554,7 +554,7 @@ export default function LibraryPage() {
                     <button
                       type="button"
                       onClick={resetVocabularyView}
-                      className="rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:border-[#993331]/20 hover:text-[#993331]"
+                      className="rounded-full border border-border-default bg-surface-primary px-4 py-2 text-sm font-semibold text-content-secondary transition-colors hover:border-accent/20 hover:text-accent"
                     >
                       Ir al inicio
                     </button>

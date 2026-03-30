@@ -552,10 +552,10 @@ export default function LoginPage() {
   ].join(" ");
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-neutral-50">
+    <main className="relative min-h-screen overflow-hidden bg-surface-secondary">
       <LoginHistoryHandler />
       <AnimatedGraphBackground />
-      <div className="absolute inset-0 bg-linear-to-b from-white/20 via-white/10 to-white/30" />
+      <div className="absolute inset-0 bg-linear-to-b from-surface-primary/20 via-surface-primary/10 to-surface-primary/30" />
 
       <AuthHero hero={hero} heroIndex={heroIndex} />
 
@@ -571,7 +571,7 @@ export default function LoginPage() {
                 ease: "easeOut",
                 layout: { duration: 0.4, ease: "easeInOut" },
               }}
-              className="w-full max-w-sm md:max-w-md lg:max-w-lg rounded-2xl bg-white/95 p-6 md:p-7 shadow-xl ring-1 ring-black/5 backdrop-blur overflow-hidden"
+              className="w-full max-w-sm md:max-w-md lg:max-w-lg rounded-2xl bg-surface-primary/95 p-6 md:p-7 shadow-xl ring-1 ring-border-subtle backdrop-blur overflow-hidden"
             >
               <AnimatePresence mode="wait">
                 <motion.div

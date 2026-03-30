@@ -53,10 +53,10 @@ export function AdminMetricCard({
             },
           }
         : {})}
-      className="h-full min-h-[156px] rounded-2xl border border-gray-100 bg-white p-5 shadow-sm cursor-default select-none"
+      className="h-full min-h-[156px] rounded-2xl border border-border-subtle bg-surface-primary p-5 shadow-sm cursor-default select-none"
     >
       <div className="mb-3 flex items-center justify-between">
-        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#993331]/10 text-[#993331]">
+        <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/10 text-accent">
           {icon ?? <span className="text-sm font-bold">数</span>}
         </div>
 
@@ -82,9 +82,9 @@ export function AdminMetricCard({
         )}
       </div>
 
-      <p className="text-2xl font-extrabold tracking-tight text-gray-900">{value}</p>
-      <h2 className="mt-1 text-xs font-medium text-gray-500">{title}</h2>
-      {hint && <p className="mt-1 line-clamp-2 text-xs text-gray-500">{hint}</p>}
+      <p className="text-2xl font-extrabold tracking-tight text-content-primary">{value}</p>
+      <h2 className="mt-1 text-xs font-medium text-content-tertiary">{title}</h2>
+      {hint && <p className="mt-1 line-clamp-2 text-xs text-content-tertiary">{hint}</p>}
     </Wrapper>
   );
 }

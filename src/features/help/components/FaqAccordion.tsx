@@ -26,15 +26,15 @@ export function FaqAccordion({
         <div
           className={`flex items-start gap-4 rounded-2xl border p-5 transition-all duration-300 ${
             open
-              ? "border-[#993331]/15 bg-[#993331]/5"
-              : "border-transparent bg-gray-50/80 hover:border-gray-200 hover:bg-gray-100/80"
+              ? "border-accent/15 bg-accent/5"
+              : "border-transparent bg-surface-secondary/80 hover:border-border-default hover:bg-surface-tertiary/80"
           }`}
         >
           <div
             className={`mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-xl transition-colors duration-300 ${
               open
-                ? "bg-[#993331] text-white"
-                : "bg-gray-200/80 text-gray-500 group-hover:bg-[#993331]/10 group-hover:text-[#993331]"
+                ? "bg-accent text-content-inverted"
+                : "bg-surface-tertiary/80 text-content-tertiary group-hover:bg-accent/10 group-hover:text-accent"
             }`}
           >
             <HelpCircle className="h-4 w-4" />
@@ -44,7 +44,7 @@ export function FaqAccordion({
             <div className="flex items-center justify-between gap-3">
               <h3
                 className={`text-sm font-bold transition-colors duration-300 ${
-                  open ? "text-[#993331]" : "text-gray-900"
+                  open ? "text-accent" : "text-content-primary"
                 }`}
               >
                 {item.question}
@@ -56,7 +56,7 @@ export function FaqAccordion({
               >
                 <ChevronDown
                   className={`h-5 w-5 flex-shrink-0 transition-colors duration-300 ${
-                    open ? "text-[#993331]" : "text-gray-400"
+                    open ? "text-accent" : "text-content-muted"
                   }`}
                 />
               </motion.div>
@@ -70,7 +70,7 @@ export function FaqAccordion({
                   exit={{ height: 0, opacity: 0 }}
                   transition={{ duration: 0.35, ease }}
                 >
-                  <p className="mt-3 pr-8 text-sm leading-relaxed text-gray-600">
+                  <p className="mt-3 pr-8 text-sm leading-relaxed text-content-secondary">
                     {item.answer}
                   </p>
                 </motion.div>

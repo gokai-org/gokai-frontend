@@ -58,17 +58,17 @@ export function RecentCard({ item, index = 0, onClick }: RecentCardProps) {
         onClick={onClick}
         className={[
           "group w-full text-left",
-          "flex items-center gap-4 rounded-2xl border border-gray-100 bg-[#FCFCFC] p-3.5",
+          "flex items-center gap-4 rounded-2xl border border-transparent dark:border-border-subtle/20 bg-surface-elevated p-3.5",
           cardTransition,
-          "hover:-translate-y-[1px] hover:border-[#993331]/15 hover:bg-white hover:shadow-sm",
-          "focus:outline-none focus:ring-2 focus:ring-[#993331]/20",
+          "hover:-translate-y-[1px] hover:border-accent/15 hover:bg-surface-primary hover:shadow-sm",
+          "focus:outline-none focus:ring-2 focus:ring-accent/20",
         ].join(" ")}
       >
         <div
           className={[
             "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
-            "bg-[#993331]/8 text-lg font-bold text-[#993331]",
-            "group-hover:bg-[#993331] group-hover:text-white",
+            "bg-accent/8 text-lg font-bold text-accent",
+            "group-hover:bg-accent group-hover:text-content-inverted",
             hoverTransition,
           ].join(" ")}
         >
@@ -78,29 +78,29 @@ export function RecentCard({ item, index = 0, onClick }: RecentCardProps) {
         <div className="min-w-0 flex-1">
           <h3
             className={[
-              "truncate text-[15px] font-extrabold text-gray-900 group-hover:text-[#993331]",
+              "truncate text-[15px] font-extrabold text-content-primary group-hover:text-accent",
               hoverTransition,
             ].join(" ")}
           >
             {item.title}
           </h3>
 
-          <p className="mt-1 truncate text-[13px] font-medium text-gray-500">
+          <p className="mt-1 truncate text-[13px] font-medium text-content-tertiary">
             {item.description || "Actividad reciente"}
           </p>
         </div>
 
         <div className="shrink-0 text-right">
-          <span className="block text-[11px] font-semibold text-gray-400">
+          <span className="block text-[11px] font-semibold text-content-muted">
             {formatTime(item.lastAccessed)}
           </span>
 
           {item.progress !== undefined ? (
-            <span className="mt-1 block text-[14px] font-extrabold text-[#993331]">
+            <span className="mt-1 block text-[14px] font-extrabold text-accent">
               {item.progress}%
             </span>
           ) : (
-            <span className="mt-1 block text-[14px] font-bold text-gray-300">
+            <span className="mt-1 block text-[14px] font-bold text-content-muted">
               --
             </span>
           )}

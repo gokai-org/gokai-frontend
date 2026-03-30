@@ -13,7 +13,7 @@ export function ChatSkeleton() {
           >
             <div
               className={[
-                "h-20 rounded-[24px] bg-gray-100/80 animate-pulse",
+                "h-20 rounded-[24px] bg-surface-tertiary/80 animate-pulse",
                 isRight ? "w-[58%]" : "w-[66%]",
               ].join(" ")}
             />

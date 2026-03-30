@@ -27,10 +27,10 @@ export function StatsActivitySection({
         className="mb-5"
         title={
           <>
-            Análisis de <span className="text-[#993331]">Actividad</span>
+            Análisis de <span className="text-accent">Actividad</span>
           </>
         }
-        titleClassName="text-2xl font-extrabold tracking-tight text-gray-900"
+        titleClassName="text-2xl font-extrabold tracking-tight text-content-primary"
         subtitle="Tu tiempo de estudio y evolución de rendimiento"
       />
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">

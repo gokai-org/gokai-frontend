@@ -138,7 +138,7 @@ export function ChatInput({
   };
 
   return (
-    <div className="border-t border-gray-200 bg-white/95 px-4 py-3 backdrop-blur-sm sm:px-6 sm:py-4">
+    <div className="border-t border-border-default bg-surface-primary/95 px-4 py-3 backdrop-blur-sm sm:px-6 sm:py-4">
       <div className="mx-auto w-full max-w-5xl">
         <ChatRecordingPanel
           isRecording={isRecording}
@@ -153,7 +153,7 @@ export function ChatInput({
         />
 
         {error && (
-          <div className="mb-3 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-medium text-red-700">
+          <div className="mb-3 rounded-2xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-3 text-sm font-medium text-red-700 dark:text-red-400">
             {error}
           </div>
         )}
@@ -166,8 +166,8 @@ export function ChatInput({
             className={[
               "flex h-11 w-11 shrink-0 items-center justify-center self-center rounded-full border transition-all duration-300",
               isRecording
-                ? "border-[#993331] bg-[#993331] text-white shadow-lg shadow-[#993331]/20"
-                : "border-gray-200 bg-gray-50 text-gray-600 hover:border-[#993331]/15 hover:bg-white hover:text-[#993331]",
+                ? "border-accent bg-accent text-content-inverted shadow-lg shadow-accent/20"
+                : "border-border-default bg-surface-secondary text-content-secondary hover:border-accent/15 hover:bg-surface-primary hover:text-accent",
               "disabled:cursor-not-allowed disabled:opacity-50",
             ].join(" ")}
             aria-label={
@@ -180,7 +180,7 @@ export function ChatInput({
             </svg>
           </button>
 
-          <div className="flex min-w-0 flex-1 items-end rounded-[28px] border border-[#993331]/20 bg-[#FAFAFA] px-4 py-2 shadow-sm transition-all focus-within:border-[#993331]/30 focus-within:bg-white">
+          <div className="flex min-w-0 flex-1 items-end rounded-[28px] border border-accent/20 bg-surface-secondary px-4 py-2 shadow-sm transition-all focus-within:border-accent/30 focus-within:bg-surface-primary">
             <textarea
               id="chat-input"
               ref={textareaRef}
@@ -190,7 +190,7 @@ export function ChatInput({
               placeholder="Escribe un mensaje para practicar..."
               disabled={disabled || isRecording || isPreparing}
               rows={1}
-              className="w-full resize-none overflow-hidden bg-transparent py-[10px] text-sm leading-6 text-gray-800 outline-none placeholder:text-gray-400 disabled:opacity-50"
+              className="w-full resize-none overflow-hidden bg-transparent py-[10px] text-sm leading-6 text-content-primary outline-none placeholder:text-content-muted disabled:opacity-50"
               style={{ height: 44 }}
             />
 
@@ -199,7 +199,7 @@ export function ChatInput({
               disabled={
                 !message.trim() || disabled || isRecording || isPreparing
               }
-              className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full bg-[#993331] text-white transition-all duration-300 hover:bg-[#882d2d] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+              className="ml-3 flex h-10 w-10 shrink-0 items-center justify-center self-center rounded-full bg-accent text-content-inverted transition-all duration-300 hover:bg-accent-hover hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Enviar mensaje"
             >
               <svg

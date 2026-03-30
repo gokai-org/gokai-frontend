@@ -6,13 +6,13 @@ export function PremiumStepIndicator() {
   return (
     <div className="mt-4 w-full max-w-xs mx-auto">
       <div className="flex items-center justify-between mb-1.5">
-        <span className="text-xs font-bold text-[#993331]">Paso 1 de 3</span>
-        <span className="text-xs font-medium text-neutral-400">Crear cuenta</span>
+        <span className="text-xs font-bold text-accent">Paso 1 de 3</span>
+        <span className="text-xs font-medium text-content-muted">Crear cuenta</span>
       </div>
 
-      <div className="h-1.5 w-full rounded-full bg-neutral-100 overflow-hidden">
+      <div className="h-1.5 w-full rounded-full bg-surface-tertiary overflow-hidden">
         <motion.div
-          className="h-full rounded-full bg-[#993331]"
+          className="h-full rounded-full bg-accent"
           initial={{ width: 0 }}
           animate={{ width: "33%" }}
           transition={{
@@ -29,13 +29,13 @@ export function PremiumStepIndicator() {
             <div
               className={[
                 "h-2 w-2 rounded-full transition-colors",
-                i === 0 ? "bg-[#993331]" : "bg-neutral-200",
+                i === 0 ? "bg-accent" : "bg-surface-tertiary",
               ].join(" ")}
             />
             <span
               className={[
                 "text-[10px] font-medium",
-                i === 0 ? "text-[#993331]" : "text-neutral-300",
+                i === 0 ? "text-accent" : "text-content-muted",
               ].join(" ")}
             >
               {label}

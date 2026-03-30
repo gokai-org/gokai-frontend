@@ -32,7 +32,7 @@ const iconMap: Record<RecentActivityEntry["type"], LucideIcon> = {
 };
 
 const colorMap: Record<RecentActivityEntry["type"], string> = {
-  kanji: "bg-[#993331]/10 text-[#993331]",
+  kanji: "bg-accent/10 text-accent",
   hiragana: "bg-amber-50 text-amber-600",
   katakana: "bg-sky-50 text-sky-600",
   vocabulary: "bg-emerald-50 text-emerald-600",
@@ -79,7 +79,7 @@ function ActivityRow({
   return (
     <RowWrapper
       {...(animationsEnabled ? { variants: itemVariants } : {})}
-      className="flex items-center gap-4 py-3 px-2 rounded-xl hover:bg-gray-50 transition-colors cursor-default"
+      className="flex items-center gap-4 py-3 px-2 rounded-xl hover:bg-surface-secondary transition-colors cursor-default"
     >
       <div
         className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${colorClass}`}
@@ -88,16 +88,16 @@ function ActivityRow({
       </div>
 
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-bold text-gray-900 truncate">
+        <p className="text-sm font-bold text-content-primary truncate">
           {activity.title}
         </p>
-        <p className="text-xs text-gray-500 truncate">{activity.description}</p>
+        <p className="text-xs text-content-tertiary truncate">{activity.description}</p>
       </div>
 
       <div className="text-right shrink-0">
-        <p className="text-xs text-gray-400">{timeAgo(activity.createdAt)}</p>
+        <p className="text-xs text-content-muted">{timeAgo(activity.createdAt)}</p>
         {activity.score !== undefined && (
-          <p className="text-sm font-extrabold text-[#993331]">
+          <p className="text-sm font-extrabold text-accent">
             {activity.score}%
           </p>
         )}
@@ -121,14 +121,14 @@ export function RecentActivity({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
-        <div className="h-5 w-36 bg-gray-200 rounded mb-4" />
+      <div className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle animate-pulse">
+        <div className="h-5 w-36 bg-surface-tertiary rounded mb-4" />
         {Array.from({ length: 4 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 py-3">
-            <div className="w-10 h-10 rounded-xl bg-gray-200" />
+            <div className="w-10 h-10 rounded-xl bg-surface-tertiary" />
             <div className="flex-1">
-              <div className="h-4 w-32 bg-gray-200 rounded mb-1" />
-              <div className="h-3 w-48 bg-gray-100 rounded" />
+              <div className="h-4 w-32 bg-surface-tertiary rounded mb-1" />
+              <div className="h-3 w-48 bg-surface-tertiary rounded" />
             </div>
           </div>
         ))}
@@ -150,17 +150,17 @@ export function RecentActivity({
               },
             }
           : {})}
-        className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+        className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
       >
-        <h3 className="text-lg font-extrabold text-gray-900 mb-4">{title}</h3>
+        <h3 className="text-lg font-extrabold text-content-primary mb-4">{title}</h3>
         <div className="flex flex-col items-center py-8 gap-3">
-          <div className="w-14 h-14 rounded-2xl bg-[#993331]/10 flex items-center justify-center">
-            <Zap className="w-7 h-7 text-[#993331]/40" />
+          <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center">
+            <Zap className="w-7 h-7 text-accent/40" />
           </div>
-          <p className="text-sm font-semibold text-gray-500">
+          <p className="text-sm font-semibold text-content-tertiary">
             Nada por aquí todavía
           </p>
-          <p className="text-xs text-gray-400 text-center max-w-[220px]">
+          <p className="text-xs text-content-muted text-center max-w-[220px]">
             Tus lecciones de kanji, kana, gramática y repasos aparecerán aquí en
             tiempo real.
           </p>
@@ -181,10 +181,10 @@ export function RecentActivity({
             },
           }
         : {})}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
+        <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
       </div>
 
       <ListWrapper
@@ -195,7 +195,7 @@ export function RecentActivity({
               animate: "visible" as const,
             }
           : {})}
-        className="divide-y divide-gray-50"
+        className="divide-y divide-border-subtle"
       >
         {items.map((activity) => (
           <ActivityRow

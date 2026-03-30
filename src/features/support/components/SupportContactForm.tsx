@@ -35,33 +35,33 @@ const CATEGORY_META: Record<
 > = {
   technical_issue: {
     icon: <Wrench className="h-4 w-4" />,
-    color: "text-orange-600",
-    bg: "bg-orange-50",
+    color: "text-orange-600 dark:text-orange-400",
+    bg: "bg-orange-50 dark:bg-orange-950/30",
   },
   billing: {
     icon: <CreditCard className="h-4 w-4" />,
-    color: "text-emerald-600",
-    bg: "bg-emerald-50",
+    color: "text-emerald-600 dark:text-emerald-400",
+    bg: "bg-emerald-50 dark:bg-emerald-950/30",
   },
   account_access: {
     icon: <KeyRound className="h-4 w-4" />,
-    color: "text-blue-600",
-    bg: "bg-blue-50",
+    color: "text-blue-600 dark:text-blue-400",
+    bg: "bg-blue-50 dark:bg-blue-950/30",
   },
   bug_report: {
     icon: <Bug className="h-4 w-4" />,
-    color: "text-red-600",
-    bg: "bg-red-50",
+    color: "text-red-600 dark:text-red-400",
+    bg: "bg-red-50 dark:bg-red-950/30",
   },
   feature_request: {
     icon: <Lightbulb className="h-4 w-4" />,
-    color: "text-purple-600",
-    bg: "bg-purple-50",
+    color: "text-purple-600 dark:text-purple-400",
+    bg: "bg-purple-50 dark:bg-purple-950/30",
   },
   other: {
     icon: <MoreHorizontal className="h-4 w-4" />,
-    color: "text-gray-600",
-    bg: "bg-gray-50",
+    color: "text-content-secondary",
+    bg: "bg-surface-secondary",
   },
 };
 
@@ -79,7 +79,7 @@ function FormField({
 }) {
   return (
     <div>
-      <label className="mb-1.5 block text-sm font-semibold text-gray-700">
+      <label className="mb-1.5 block text-sm font-semibold text-content-secondary">
         {label}
       </label>
       {children}
@@ -114,8 +114,8 @@ function FormInput({
       placeholder={placeholder}
       className={`w-full rounded-2xl border px-4 py-3 text-sm outline-none transition-colors duration-200 ${
         hasError
-          ? "border-red-300 bg-red-50/50 focus:border-red-400"
-          : "border-gray-200 bg-white hover:border-gray-300 focus:border-[#993331]/40 focus:bg-[#993331]/[0.02]"
+          ? "border-red-300 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 focus:border-red-400 dark:focus:border-red-600"
+          : "border-border-default bg-surface-primary hover:border-border-default focus:border-accent/40 focus:bg-accent/[0.02]"
       }`}
     />
   );
@@ -152,10 +152,10 @@ function CategoryDropdown({
         onClick={() => setOpen((o) => !o)}
         className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition-colors duration-200 ${
           error
-            ? "border-red-300 bg-red-50/50"
+            ? "border-red-300 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20"
             : open
-              ? "border-[#993331]/30 bg-[#993331]/5"
-              : "border-gray-200 bg-white hover:border-gray-300"
+              ? "border-accent/30 bg-accent/5"
+              : "border-border-default bg-surface-primary hover:border-border-default"
         }`}
       >
         <span
@@ -163,11 +163,11 @@ function CategoryDropdown({
         >
           {meta.icon}
         </span>
-        <span className="flex-1 font-medium text-gray-900">
+        <span className="flex-1 font-medium text-content-primary">
           {SUPPORT_CATEGORY_LABELS[value]}
         </span>
         <ChevronDown
-          className={`h-4 w-4 text-gray-400 transition-transform duration-200 ${
+          className={`h-4 w-4 text-content-muted transition-transform duration-200 ${
             open ? "rotate-180" : ""
           }`}
         />
@@ -180,7 +180,7 @@ function CategoryDropdown({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 mt-1.5 w-full overflow-hidden rounded-2xl border border-gray-200 bg-white py-1 shadow-xl"
+            className="absolute z-50 mt-1.5 w-full overflow-hidden rounded-2xl border border-border-default bg-surface-primary py-1 shadow-xl"
           >
             {CATEGORIES.map((cat) => {
               const m = CATEGORY_META[cat];
@@ -195,8 +195,8 @@ function CategoryDropdown({
                   }}
                   className={`flex w-full items-center gap-3 px-4 py-2.5 text-sm transition-colors ${
                     isSelected
-                      ? "bg-[#993331]/5 text-[#993331]"
-                      : "text-gray-700 hover:bg-gray-50"
+                      ? "bg-accent/5 text-accent"
+                      : "text-content-secondary hover:bg-surface-secondary"
                   }`}
                 >
                   <span
@@ -240,7 +240,7 @@ function SuccessView({ ticketId }: { ticketId: string | null }) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.25, duration: 0.35 }}
-        className="mb-2 text-lg font-extrabold text-gray-900"
+        className="mb-2 text-lg font-extrabold text-content-primary"
       >
         ¡Ticket enviado!
       </motion.h3>
@@ -249,7 +249,7 @@ function SuccessView({ ticketId }: { ticketId: string | null }) {
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.35, duration: 0.35 }}
-        className="mb-1 text-sm text-gray-500"
+        className="mb-1 text-sm text-content-tertiary"
       >
         Tu solicitud ha sido recibida correctamente.
       </motion.p>
@@ -259,7 +259,7 @@ function SuccessView({ ticketId }: { ticketId: string | null }) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.45 }}
-          className="mb-5 text-xs text-gray-400"
+          className="mb-5 text-xs text-content-muted"
         >
           ID: <span className="font-mono font-medium">{ticketId}</span>
         </motion.p>
@@ -269,7 +269,7 @@ function SuccessView({ ticketId }: { ticketId: string | null }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.5 }}
-        className="text-xs text-gray-400"
+        className="text-xs text-content-muted"
       >
         Recibirás una respuesta en tu email.
       </motion.p>
@@ -329,7 +329,7 @@ export default function SupportContactForm({
 
           {/* Panel — siempre modal centrado, responsive con max-w */}
           <motion.div
-            className="support-modal-panel relative z-10 flex w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-white shadow-2xl sm:rounded-[28px]"
+            className="support-modal-panel relative z-10 flex w-full max-w-2xl flex-col overflow-hidden rounded-[24px] bg-surface-primary shadow-2xl sm:rounded-[28px]"
             style={{ maxHeight: "min(92dvh, 720px)" }}
             initial={{ opacity: 0, scale: 0.95, y: 12 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -337,17 +337,17 @@ export default function SupportContactForm({
             transition={{ duration: 0.3, ease: EASE }}
           >
             {/* Header */}
-            <div className="relative shrink-0 overflow-hidden bg-gradient-to-r from-[#993331] to-[#7a2927] px-5 pb-5 pt-5 sm:px-8 sm:pb-6 sm:pt-7">
-              <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-white/5" />
-              <div className="absolute bottom-[-12px] left-[30%] h-16 w-16 rounded-full bg-white/5" />
+            <div className="relative shrink-0 overflow-hidden bg-gradient-to-r from-accent to-accent-hover px-5 pb-5 pt-5 sm:px-8 sm:pb-6 sm:pt-7">
+              <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-surface-primary/5" />
+              <div className="absolute bottom-[-12px] left-[30%] h-16 w-16 rounded-full bg-surface-primary/5" />
 
               <div className="relative z-10 flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm sm:h-14 sm:w-14">
-                    <Headphones className="h-5 w-5 text-white sm:h-6 sm:w-6" />
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-surface-primary/15 backdrop-blur-sm sm:h-14 sm:w-14">
+                    <Headphones className="h-5 w-5 text-content-inverted sm:h-6 sm:w-6" />
                   </div>
                   <div>
-                    <h2 className="text-lg font-extrabold text-white sm:text-xl">
+                    <h2 className="text-lg font-extrabold text-content-inverted sm:text-xl">
                       Contactar soporte
                     </h2>
                     <p className="mt-0.5 text-xs text-white/60 sm:text-sm">
@@ -358,7 +358,7 @@ export default function SupportContactForm({
 
                 <button
                   onClick={handleClose}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-white/10 text-white/70 transition-colors hover:bg-white/20 hover:text-white"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-surface-primary/10 text-white/70 transition-colors hover:bg-surface-primary/20 hover:text-content-inverted"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -366,10 +366,10 @@ export default function SupportContactForm({
 
               {/* Badges */}
               <div className="mt-4 hidden gap-2 sm:flex">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/80 backdrop-blur-sm">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-primary/10 px-3 py-1 text-[11px] font-medium text-white/80 backdrop-blur-sm">
                   <Sparkles className="h-3 w-3" /> Respuesta rápida
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1 text-[11px] font-medium text-white/80 backdrop-blur-sm">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-primary/10 px-3 py-1 text-[11px] font-medium text-white/80 backdrop-blur-sm">
                   <Mail className="h-3 w-3" /> Vía email
                 </span>
               </div>
@@ -428,8 +428,8 @@ export default function SupportContactForm({
                       rows={4}
                       className={`w-full resize-none rounded-2xl border px-4 py-3 text-sm outline-none transition-colors duration-200 ${
                         errors.message
-                          ? "border-red-300 bg-red-50/50 focus:border-red-400"
-                          : "border-gray-200 bg-white hover:border-gray-300 focus:border-[#993331]/40 focus:bg-[#993331]/[0.02]"
+                          ? "border-red-300 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 focus:border-red-400 dark:focus:border-red-600"
+                          : "border-border-default bg-surface-primary hover:border-border-default focus:border-accent/40 focus:bg-accent/[0.02]"
                       }`}
                     />
                   </FormField>
@@ -440,10 +440,10 @@ export default function SupportContactForm({
             </div>
 
             {/* Footer */}
-            <div className="shrink-0 border-t border-gray-100 bg-gray-50/50 px-5 py-4 sm:px-8">
+            <div className="shrink-0 border-t border-border-subtle bg-surface-secondary/50 px-5 py-4 sm:px-8">
               {!submitted ? (
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <p className="hidden text-xs text-gray-400 sm:block">
+                  <p className="hidden text-xs text-content-muted sm:block">
                     Responderemos a tu email en menos de 24 horas.
                   </p>
                   <motion.button
@@ -451,7 +451,7 @@ export default function SupportContactForm({
                     whileTap={{ scale: 0.98 }}
                     onClick={submit}
                     disabled={submitting}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-[#993331] to-[#7a2927] px-6 py-3 text-sm font-bold text-white shadow-lg shadow-[#993331]/20 transition-all duration-200 hover:shadow-xl hover:shadow-[#993331]/25 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-6 py-3 text-sm font-bold text-content-inverted shadow-lg shadow-accent/20 transition-all duration-200 hover:shadow-xl hover:shadow-accent/25 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
                   >
                     {submitting ? (
                       <>
@@ -471,7 +471,7 @@ export default function SupportContactForm({
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={handleClose}
-                  className="w-full rounded-2xl bg-gray-900 px-6 py-3 text-sm font-bold text-white transition-colors hover:bg-gray-800 sm:w-auto"
+                  className="w-full rounded-2xl bg-content-primary px-6 py-3 text-sm font-bold text-content-inverted transition-colors hover:bg-content-secondary sm:w-auto"
                 >
                   Cerrar
                 </motion.button>

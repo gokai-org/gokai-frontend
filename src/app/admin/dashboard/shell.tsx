@@ -22,7 +22,7 @@ export default function AdminContentShell({
     return (
       <main
         className={[
-          "h-screen bg-white overflow-hidden",
+          "h-screen bg-surface-primary overflow-hidden",
           padMd,
           padDesktop,
         ].join(" ")}
@@ -35,7 +35,7 @@ export default function AdminContentShell({
   return (
     <main
       className={[
-        "min-h-dvh bg-white px-4 md:px-6 py-6",
+        "min-h-dvh bg-surface-primary px-4 md:px-6 py-6",
         padMd,
         padDesktop,
       ].join(" ")}

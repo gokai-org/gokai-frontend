@@ -66,7 +66,7 @@ export function AdminFilterDropdown<T extends string = string>({
         type="button"
         onClick={() => setOpen((prev) => !prev)}
         className={[
-          "inline-flex h-10 min-w-[240px] items-center justify-between gap-2 rounded-full border border-gray-200 bg-white px-4 text-sm font-semibold text-gray-700 transition-all hover:border-[#993331]/30 hover:text-[#993331]",
+          "inline-flex h-10 min-w-[240px] items-center justify-between gap-2 rounded-full border border-border-default bg-surface-primary px-4 text-sm font-semibold text-content-secondary transition-all hover:border-accent/30 hover:text-accent",
           fullWidth ? "w-full" : "",
         ].join(" ")}
         aria-haspopup="listbox"
@@ -84,7 +84,7 @@ export function AdminFilterDropdown<T extends string = string>({
       {open && (
         <div
           className={[
-            "absolute z-20 min-w-[280px] overflow-hidden rounded-2xl border border-gray-200 bg-white p-1.5 shadow-xl",
+            "absolute z-20 min-w-[280px] overflow-hidden rounded-2xl border border-border-default bg-surface-primary p-1.5 shadow-xl",
             menuAlign === "left" ? "left-0" : "right-0",
             menuDirection === "up" ? "bottom-full mb-2" : "top-full mt-2",
           ].join(" ")}
@@ -104,8 +104,8 @@ export function AdminFilterDropdown<T extends string = string>({
                 className={[
                   "flex w-full items-center justify-between rounded-xl px-3 py-2 text-sm transition-colors",
                   active
-                    ? "bg-[#993331]/10 text-[#993331]"
-                    : "text-gray-700 hover:bg-gray-50",
+                    ? "bg-accent/10 text-accent"
+                    : "text-content-secondary hover:bg-surface-secondary",
                 ].join(" ")}
               >
                 <span className="whitespace-nowrap font-medium">{option.label}</span>

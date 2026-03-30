@@ -44,8 +44,8 @@ export function Checkbox({
         className={[
           "relative flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-[5px] border-2 transition-all duration-200",
           checked
-            ? "border-[#993331] bg-[#993331] shadow-sm shadow-[#993331]/25"
-            : "border-neutral-300 bg-white hover:border-[#993331]/50",
+            ? "border-accent bg-accent shadow-sm shadow-accent/25"
+            : "border-border-default bg-surface-primary hover:border-accent/50",
         ].join(" ")}
       >
         {/* Checkmark */}
@@ -55,7 +55,7 @@ export function Checkbox({
             checked ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.5 }
           }
           transition={{ duration: 0.15, ease: "easeOut" }}
-          className="h-3 w-3 text-white"
+          className="h-3 w-3 text-content-inverted"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -74,13 +74,13 @@ export function Checkbox({
             initial={{ scale: 0.4, opacity: 0.6 }}
             animate={{ scale: 2.2, opacity: 0 }}
             transition={{ duration: 0.4, ease: "easeOut" }}
-            className="absolute inset-0 rounded-[5px] bg-[#993331]/20"
+            className="absolute inset-0 rounded-[5px] bg-accent/20"
           />
         )}
       </motion.span>
 
       {label && (
-        <span className="text-sm font-medium text-neutral-700">{label}</span>
+        <span className="text-sm font-medium text-content-secondary">{label}</span>
       )}
     </label>
   );

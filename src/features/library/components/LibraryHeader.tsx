@@ -11,7 +11,7 @@ export function LibraryHeader({ onSearchChange }: LibraryHeaderProps) {
     <DashboardHeader
       icon={
         <svg
-          className="h-7 w-7 text-white"
+          className="h-7 w-7 text-content-inverted"
           fill="currentColor"
           viewBox="0 0 24 24"
         >

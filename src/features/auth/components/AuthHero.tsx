@@ -30,10 +30,10 @@ export function AuthHero({ hero, heroIndex }: Props) {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.4 }}
           >
-            <p className="text-2xl font-medium tracking-wide text-neutral-900">
+            <p className="text-2xl font-medium tracking-wide text-content-primary">
               {hero.jp}
             </p>
-            <h1 className="mt-2 text-4xl font-semibold leading-tight tracking-tight text-neutral-900">
+            <h1 className="mt-2 text-4xl font-semibold leading-tight tracking-tight text-content-primary">
               {hero.es}
             </h1>
           </motion.div>

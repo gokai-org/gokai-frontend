@@ -7,7 +7,7 @@ export function ChatHeader() {
     <DashboardHeader
       icon={
         <svg
-          className="h-7 w-7 text-white"
+          className="h-7 w-7 text-content-inverted"
           fill="currentColor"
           viewBox="0 0 24 24"
         >
@@ -20,7 +20,7 @@ export function ChatHeader() {
       subtitle="Practica vocabulario, frases y repaso conversacional"
       japaneseText="先生"
       statusBadge={
-        <span className="hidden items-center gap-2 rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700 sm:inline-flex">
+        <span className="hidden items-center gap-2 rounded-full bg-green-50 dark:bg-green-950/30 px-3 py-1.5 text-xs font-semibold text-green-700 dark:text-green-400 sm:inline-flex">
           <span className="h-2 w-2 rounded-full bg-green-500" />
           Modo demo
         </span>

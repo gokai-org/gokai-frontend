@@ -15,7 +15,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     <div className={`mb-4 flex ${isBot ? "justify-start" : "justify-end"}`}>
       <div className="max-w-[88%] sm:max-w-[74%]">
         {isBot && (
-          <div className="mb-2 inline-flex rounded-full bg-[#993331] px-3 py-1 text-[11px] font-extrabold tracking-wide text-white">
+          <div className="mb-2 inline-flex rounded-full bg-accent px-3 py-1 text-[11px] font-extrabold tracking-wide text-content-inverted">
             SEN
           </div>
         )}
@@ -27,14 +27,14 @@ export function MessageBubble({ message }: MessageBubbleProps) {
               ? [
                   "rounded-[28px] px-4 py-3",
                   isBot
-                    ? "border border-gray-100 bg-white text-gray-800"
-                    : "bg-gradient-to-br from-[#993331] to-[#7f2a28] text-white",
+                    ? "border border-border-subtle bg-surface-primary text-content-primary"
+                    : "bg-gradient-to-br from-accent to-accent-hover text-content-inverted",
                 ].join(" ")
               : [
                   "rounded-[26px] px-4 py-3.5",
                   isBot
-                    ? "border border-gray-100 bg-white text-gray-800"
-                    : "bg-gradient-to-br from-[#993331] to-[#7f2a28] text-white",
+                    ? "border border-border-subtle bg-surface-primary text-content-primary"
+                    : "bg-gradient-to-br from-accent to-accent-hover text-content-inverted",
                 ].join(" "),
           ].join(" ")}
         >
@@ -49,7 +49,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
               <div
                 className={`mt-2 text-[11px] font-medium ${
-                  isBot ? "text-gray-400" : "text-white/78"
+                  isBot ? "text-content-muted" : "text-white/78"
                 }`}
               >
                 {message.timestamp.toLocaleTimeString("es-MX", {
@@ -66,7 +66,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
 
               <div
                 className={`mt-2 text-[11px] font-medium ${
-                  isBot ? "text-gray-400" : "text-white/75"
+                  isBot ? "text-content-muted" : "text-white/75"
                 }`}
               >
                 {message.timestamp.toLocaleTimeString("es-MX", {

@@ -37,16 +37,16 @@ export function PlanCard({
       className={[
         "relative flex h-full min-h-[650px] flex-col overflow-hidden rounded-[40px] border p-8 transition-all duration-300 lg:min-h-[690px] lg:p-10",
         highlighted
-          ? "border-[#993331]/15 bg-gradient-to-b from-white via-[#fffaf9] to-[#fff5f3] shadow-[0_30px_70px_-26px_rgba(153,51,49,0.22)]"
-          : "border-black/5 bg-white shadow-[0_22px_50px_-22px_rgba(0,0,0,0.18)]",
+          ? "border-accent/15 bg-gradient-to-b from-white via-[#fffaf9] to-[#fff5f3] shadow-[0_30px_70px_-26px_rgba(153,51,49,0.22)]"
+          : "border-border-subtle bg-surface-primary shadow-[0_22px_50px_-22px_rgba(0,0,0,0.18)]",
       ].join(" ")}
     >
       {/* decorativos */}
-      <div className="absolute right-[-16px] top-[-16px] h-28 w-28 rounded-full bg-[#993331]/[0.05]" />
-      <div className="absolute bottom-[-20px] left-[72%] h-20 w-20 rounded-full bg-[#993331]/[0.04]" />
+      <div className="absolute right-[-16px] top-[-16px] h-28 w-28 rounded-full bg-accent/[0.05]" />
+      <div className="absolute bottom-[-20px] left-[72%] h-20 w-20 rounded-full bg-accent/[0.04]" />
 
       {/* kanji vertical decorativo */}
-      <div className="pointer-events-none absolute right-7 top-8 z-0 flex flex-col items-center leading-none text-[#993331]/12 select-none">
+      <div className="pointer-events-none absolute right-7 top-8 z-0 flex flex-col items-center leading-none text-accent/12 select-none">
         {jp.split("").map((char, index) => (
           <span
             key={`${char}-${index}`}
@@ -60,7 +60,7 @@ export function PlanCard({
       {/* espacio fijo para badge */}
       <div className="relative z-10 mb-6 min-h-[44px]">
         {badge ? (
-          <div className="w-fit rounded-full bg-gradient-to-r from-[#993331] to-[#7a2927] px-4 py-2 text-sm font-bold text-white shadow-lg shadow-[#993331]/20">
+          <div className="w-fit rounded-full bg-gradient-to-r from-accent to-accent-hover px-4 py-2 text-sm font-bold text-content-inverted shadow-lg shadow-accent/20">
             {badge}
           </div>
         ) : (
@@ -71,11 +71,11 @@ export function PlanCard({
       {/* header */}
       <div className="relative z-10 flex min-h-[175px] flex-col text-left">
         <div className="max-w-[82%]">
-          <h3 className="text-[2.15rem] font-extrabold leading-[1.02] tracking-tight text-neutral-950 lg:text-[2.45rem]">
+          <h3 className="text-[2.15rem] font-extrabold leading-[1.02] tracking-tight text-content-primary lg:text-[2.45rem]">
             {title}
           </h3>
 
-          <p className="mt-4 text-lg leading-relaxed text-neutral-600">
+          <p className="mt-4 text-lg leading-relaxed text-content-secondary">
             {description}
           </p>
         </div>
@@ -95,7 +95,7 @@ export function PlanCard({
             {price}
           </p>
 
-          <p className="mt-2 text-sm font-semibold uppercase tracking-[0.18em] text-neutral-400">
+          <p className="mt-2 text-sm font-semibold uppercase tracking-[0.18em] text-content-muted">
             {highlighted ? "Plan premium" : "Plan inicial"}
           </p>
         </div>
@@ -109,14 +109,14 @@ export function PlanCard({
               className={[
                 "mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full shadow-sm",
                 highlighted
-                  ? "bg-[#993331]/10 text-[#993331]"
-                  : "bg-neutral-100 text-[#993331]",
+                  ? "bg-accent/10 text-accent"
+                  : "bg-surface-tertiary text-accent",
               ].join(" ")}
             >
               <Check className="h-5 w-5" />
             </div>
 
-            <p className="text-lg leading-relaxed text-neutral-700">
+            <p className="text-lg leading-relaxed text-content-secondary">
               {feature}
             </p>
           </div>
@@ -130,8 +130,8 @@ export function PlanCard({
           className={[
             "inline-flex w-full items-center justify-center rounded-full px-6 py-5 text-xl font-extrabold transition-all duration-300",
             highlighted
-              ? "bg-gradient-to-r from-[#993331] to-[#7a2927] text-white shadow-[0_18px_38px_-16px_rgba(153,51,49,0.52)] hover:shadow-[0_22px_48px_-18px_rgba(153,51,49,0.60)]"
-              : "bg-neutral-100 text-neutral-950 hover:bg-neutral-200",
+              ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-[0_18px_38px_-16px_rgba(153,51,49,0.52)] hover:shadow-[0_22px_48px_-18px_rgba(153,51,49,0.60)]"
+              : "bg-surface-tertiary text-content-primary hover:bg-surface-tertiary",
           ].join(" ")}
         >
           {ctaLabel}

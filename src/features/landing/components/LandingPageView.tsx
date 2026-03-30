@@ -30,7 +30,7 @@ export function LandingPageView() {
   } = useLandingPage();
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#f6f4f3] pt-[76px] text-neutral-900">
+    <main className="relative min-h-screen overflow-x-hidden bg-[#f6f4f3] pt-[76px] text-content-primary">
       <div className="pointer-events-none fixed inset-0 z-0">
         <AnimatedGraphBackground
           className={[
@@ -114,7 +114,7 @@ export function LandingPageView() {
                         <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
                           <Link
                             href={section.cta.href}
-                            className="inline-flex rounded-full bg-gradient-to-r from-[#993331] to-[#7a2927] px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-[#993331]/20 transition-all duration-300 hover:shadow-xl"
+                            className="inline-flex rounded-full bg-gradient-to-r from-accent to-accent-hover px-8 py-4 text-lg font-semibold text-content-inverted shadow-lg shadow-accent/20 transition-all duration-300 hover:shadow-xl"
                           >
                             {section.cta.label}
                           </Link>
@@ -123,7 +123,7 @@ export function LandingPageView() {
                     )}
 
                     {section.id === "inicio" && (
-                      <div className="mt-14 flex items-center gap-2 text-xs text-neutral-400">
+                      <div className="mt-14 flex items-center gap-2 text-xs text-content-muted">
                         <span>Desliza para ver más</span>
                         <span className="translate-y-[1px]">↓</span>
                       </div>

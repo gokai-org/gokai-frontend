@@ -31,11 +31,11 @@ function generateEmptyData(weeks: number): Record<string, number> {
 }
 
 function getIntensity(minutes: number): string {
-  if (minutes === 0) return "bg-gray-100";
-  if (minutes < 20) return "bg-[#993331]/20";
-  if (minutes < 40) return "bg-[#993331]/40";
-  if (minutes < 60) return "bg-[#993331]/60";
-  return "bg-[#993331]";
+  if (minutes === 0) return "bg-surface-tertiary";
+  if (minutes < 20) return "bg-accent/20";
+  if (minutes < 40) return "bg-accent/40";
+  if (minutes < 60) return "bg-accent/60";
+  return "bg-accent";
 }
 
 const dayLabels = ["", "Lun", "", "Mié", "", "Vie", ""];
@@ -82,10 +82,10 @@ export function StudyStreakCalendar({
 
   if (loading) {
     return (
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
-        <div className="h-5 w-40 bg-gray-200 rounded mb-2" />
-        <div className="h-3 w-56 bg-gray-100 rounded mb-6" />
-        <div className="h-[120px] bg-gray-50 rounded-xl" />
+      <div className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle animate-pulse">
+        <div className="h-5 w-40 bg-surface-tertiary rounded mb-2" />
+        <div className="h-3 w-56 bg-surface-tertiary rounded mb-6" />
+        <div className="h-[120px] bg-surface-secondary rounded-xl" />
       </div>
     );
   }
@@ -105,18 +105,18 @@ export function StudyStreakCalendar({
             },
           }
         : {})}
-      className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100"
+      className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
     >
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h3 className="text-lg font-extrabold text-gray-900">{title}</h3>
-          <p className="text-xs text-gray-500">{subtitle}</p>
+          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="flex gap-3">
-          <span className="text-xs font-bold px-3 py-1 rounded-full bg-[#993331]/10 text-[#993331]">
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-accent/10 text-accent">
             {totalDays} días activos
           </span>
-          <span className="text-xs font-bold px-3 py-1 rounded-full bg-gray-100 text-gray-700">
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-surface-tertiary text-content-secondary">
             {Math.round(totalMinutes / 60)}h totales
           </span>
         </div>
@@ -127,7 +127,7 @@ export function StudyStreakCalendar({
         <div className="flex flex-col gap-1 pr-2 shrink-0">
           {dayLabels.map((label, i) => (
             <div key={i} className="w-8 h-[14px] flex items-center justify-end">
-              <span className="text-[10px] text-gray-400 font-medium">
+              <span className="text-[10px] text-content-muted font-medium">
                 {label}
               </span>
             </div>
@@ -153,7 +153,7 @@ export function StudyStreakCalendar({
                 title={`${cell.date}: ${cell.minutes} min`}
                 className={`w-[14px] h-[14px] rounded-[3px] ${getIntensity(
                   cell.minutes,
-                )} hover:ring-2 hover:ring-[#993331]/30 transition-all cursor-default`}
+                )} hover:ring-2 hover:ring-accent/30 transition-all cursor-default`}
               />
             ))}
           </div>
@@ -162,25 +162,25 @@ export function StudyStreakCalendar({
 
       {/* Legend */}
       <div className="flex items-center gap-2 mt-3 justify-end">
-        <span className="text-[10px] text-gray-400">Menos</span>
+        <span className="text-[10px] text-content-muted">Menos</span>
         {[
-          "bg-gray-100",
-          "bg-[#993331]/20",
-          "bg-[#993331]/40",
-          "bg-[#993331]/60",
-          "bg-[#993331]",
+          "bg-surface-tertiary",
+          "bg-accent/20",
+          "bg-accent/40",
+          "bg-accent/60",
+          "bg-accent",
         ].map((cls, i) => (
           <div key={i} className={`w-3 h-3 rounded-[2px] ${cls}`} />
         ))}
-        <span className="text-[10px] text-gray-400">Más</span>
+        <span className="text-[10px] text-content-muted">Más</span>
       </div>
 
       {!hasActivity && (
-        <div className="mt-4 text-center border-t border-gray-50 pt-4">
-          <p className="text-sm font-semibold text-gray-500">
+        <div className="mt-4 text-center border-t border-border-subtle pt-4">
+          <p className="text-sm font-semibold text-content-tertiary">
             Tu calendario está esperando por ti
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-content-muted mt-1">
             Cada sesión de estudio iluminará un cuadro. ¡Comienza hoy!
           </p>
         </div>

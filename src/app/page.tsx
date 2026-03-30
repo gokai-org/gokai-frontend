@@ -3,5 +3,9 @@
 import { LandingPageView } from "@/features/landing";
 
 export default function Page() {
-  return <LandingPageView />;
+  return (
+    <div className="force-light">
+      <LandingPageView />
+    </div>
+  );
 }

@@ -16,7 +16,7 @@ export function AdminLessonsPanel() {
     <AdminDashboardShell
       header={
         <AdminPageHeader
-          icon={<BookOpen className="h-7 w-7 text-white" strokeWidth={2.5} />}
+          icon={<BookOpen className="h-7 w-7 text-content-inverted" strokeWidth={2.5} />}
           title="Lessons"
           japaneseText="課程"
           subtitle="Administracion de contenido y estado de lecciones"

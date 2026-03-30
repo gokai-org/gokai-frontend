@@ -19,6 +19,7 @@ import type { UserSettings } from "@/features/configuration/types";
 import { UpgradePlanModal } from "@/features/configuration/components/UpgradePlanModal";
 import { CancelSubscriptionModal } from "@/features/configuration/components/CancelSubscriptionModal";
 import { billingConfig } from "@/shared/config";
+import { useTheme } from "@/shared/hooks/useTheme";
 
 const sectionTitles: Record<string, string> = {
   general: "Configuración General",
@@ -46,6 +47,7 @@ export default function ConfigurationPage() {
     error: settingsError,
     updateSection,
   } = useSettings();
+  const { setTheme } = useTheme();
 
   useEffect(() => {
     async function loadUser() {
@@ -56,8 +58,15 @@ export default function ConfigurationPage() {
     loadUser();
   }, []);
 
+  // Sync theme from backend settings when they load
+  useEffect(() => {
+    if (!settingsLoading) {
+      setTheme(settings.appearance.darkMode ? "dark" : "light");
+    }
+  }, [settingsLoading, settings.appearance.darkMode, setTheme]);
+
   return (
-    <div className="flex h-full bg-white">
+    <div className="flex h-full bg-surface-primary">
       <SettingsSidebar
         activeItem={activeSection}
         onItemChange={setActiveSection}
@@ -68,15 +77,15 @@ export default function ConfigurationPage() {
           <div className="mb-6 md:mb-8">
             <div className="flex items-center justify-between">
               <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+                <h1 className="text-2xl md:text-3xl font-bold text-content-primary">
                   {sectionTitles[activeSection] || "Configuración"}
                 </h1>
-                <p className="mt-2 text-xs md:text-sm text-gray-600">
+                <p className="mt-2 text-xs md:text-sm text-content-secondary">
                   Personaliza tu experiencia de aprendizaje de japonés
                 </p>
               </div>
               {saving && (
-                <span className="text-xs text-gray-400 animate-pulse">
+                <span className="text-xs text-content-muted animate-pulse">
                   Guardando...
                 </span>
               )}
@@ -88,7 +97,7 @@ export default function ConfigurationPage() {
 
           {settingsLoading && activeSection !== "account" ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-gray-500">Cargando configuración...</div>
+              <div className="text-content-tertiary">Cargando configuración...</div>
             </div>
           ) : (
             <div className="space-y-6 md:space-y-8">
@@ -280,6 +289,7 @@ function AppearanceSettings({
   updateSection: UpdateSectionFn;
 }) {
   const a = settings.appearance;
+  const { setTheme } = useTheme();
   return (
     <>
       <SettingsSection
@@ -290,7 +300,10 @@ function AppearanceSettings({
           label="Modo oscuro"
           description="Activa el tema oscuro para reducir la fatiga visual"
           enabled={a.darkMode}
-          onChange={(v) => updateSection("appearance", { darkMode: v })}
+          onChange={(v) => {
+            updateSection("appearance", { darkMode: v });
+            setTheme(v ? "dark" : "light");
+          }}
         />
       </SettingsSection>
 
@@ -604,7 +617,7 @@ function AccountSettings({
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
-        <div className="text-gray-500 animate-pulse">
+        <div className="text-content-tertiary animate-pulse">
           Cargando tu información...
         </div>
       </div>
@@ -838,22 +851,22 @@ function AccountSettings({
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl border border-gray-200 bg-white overflow-hidden shadow-sm"
+          className="rounded-2xl border border-border-default bg-surface-elevated overflow-hidden shadow-sm"
         >
-          <div className="bg-gradient-to-r from-gray-50 to-white p-6 border-b border-gray-100 flex flex-col sm:flex-row items-center sm:items-start gap-5">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#993331] to-[#BA5149] flex items-center justify-center text-white text-3xl font-bold shadow-md">
+          <div className="bg-gradient-to-r from-surface-secondary to-surface-primary p-6 border-b border-border-subtle flex flex-col sm:flex-row items-center sm:items-start gap-5">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-accent to-accent-hover flex items-center justify-center text-content-inverted text-3xl font-bold shadow-md">
               {user?.firstName?.charAt(0).toUpperCase() ||
                 user?.email?.charAt(0).toUpperCase() ||
                 "U"}
             </div>
             <div className="flex-1 text-center sm:text-left mt-2 sm:mt-0">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-content-primary">
                 {user?.firstName
                   ? `${user.firstName} ${user.lastName || ""}`
                   : "Tu cuenta"}
               </h3>
-              <p className="text-sm text-gray-500">{user?.email}</p>
-              <div className="mt-3 inline-flex items-center rounded-full bg-[#993331]/10 px-3 py-1 text-xs font-medium text-[#993331]">
+              <p className="text-sm text-content-tertiary">{user?.email}</p>
+              <div className="mt-3 inline-flex items-center rounded-full bg-accent-subtle px-3 py-1 text-xs font-medium text-accent">
                 {user?.createdAt
                   ? `Miembro desde ${formatDateEs(user.createdAt)}`
                   : "Perfil activo"}
@@ -862,7 +875,7 @@ function AccountSettings({
             {!isEditingProfile && (
               <button
                 onClick={() => setIsEditingProfile(true)}
-                className="mt-4 sm:mt-0 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm focus:ring-2 focus:ring-[#993331] focus:outline-none"
+                className="mt-4 sm:mt-0 px-4 py-2 text-sm font-medium text-content-secondary bg-surface-primary border border-border-default rounded-lg hover:bg-surface-secondary transition-colors shadow-sm focus:ring-2 focus:ring-accent focus:outline-none"
               >
                 Editar Perfil
               </button>
@@ -872,7 +885,7 @@ function AccountSettings({
           <form onSubmit={handleSaveProfile} className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-content-secondary mb-1">
                   Nombre
                 </label>
                 {isEditingProfile ? (
@@ -885,17 +898,17 @@ function AccountSettings({
                         firstName: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#993331] focus:border-[#993331] outline-none transition-all"
+                    className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
                     placeholder="Tu nombre"
                     autoFocus
                   />
                 ) : (
-                  <p className="text-gray-900 py-2">{user?.firstName || "—"}</p>
+                  <p className="text-content-primary py-2">{user?.firstName || "—"}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-content-secondary mb-1">
                   Apellido
                 </label>
                 {isEditingProfile ? (
@@ -908,19 +921,19 @@ function AccountSettings({
                         lastName: e.target.value,
                       })
                     }
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#993331] focus:border-[#993331] outline-none transition-all"
+                    className="w-full px-4 py-2 border border-border-default rounded-lg focus:ring-2 focus:ring-accent focus:border-accent outline-none transition-all"
                     placeholder="Tu apellido"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2">{user?.lastName || "—"}</p>
+                  <p className="text-content-primary py-2">{user?.lastName || "—"}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <label className="block text-sm font-medium text-content-secondary mb-1 flex items-center gap-2">
                   Correo electrónico
                   {isEditingProfile && (
-                    <span className="text-xs text-gray-400 font-normal">
+                    <span className="text-xs text-content-muted font-normal">
                       (No editable)
                     </span>
                   )}
@@ -930,18 +943,18 @@ function AccountSettings({
                     type="email"
                     value={profileData.email}
                     disabled
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-border-default rounded-lg bg-surface-secondary text-content-tertiary cursor-not-allowed"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2">{user?.email || "—"}</p>
+                  <p className="text-content-primary py-2">{user?.email || "—"}</p>
                 )}
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+                <label className="block text-sm font-medium text-content-secondary mb-1 flex items-center gap-2">
                   Fecha de nacimiento
                   {isEditingProfile && (
-                    <span className="text-xs text-gray-400 font-normal">
+                    <span className="text-xs text-content-muted font-normal">
                       (No editable)
                     </span>
                   )}
@@ -951,10 +964,10 @@ function AccountSettings({
                     type="date"
                     value={profileData.birthdate}
                     disabled
-                    className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-500 cursor-not-allowed"
+                    className="w-full px-4 py-2 border border-border-default rounded-lg bg-surface-secondary text-content-tertiary cursor-not-allowed"
                   />
                 ) : (
-                  <p className="text-gray-900 py-2">
+                  <p className="text-content-primary py-2">
                     {formatBirthdateForDisplay(user?.birthdate)}
                   </p>
                 )}
@@ -965,24 +978,24 @@ function AccountSettings({
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
-                className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-gray-100"
+                className="flex items-center justify-end gap-3 mt-8 pt-6 border-t border-border-subtle"
               >
                 <button
                   type="button"
                   onClick={handleCancelEdit}
                   disabled={isSaving}
-                  className="px-5 py-2 text-sm font-medium text-gray-600 bg-white hover:bg-gray-50 rounded-lg transition-colors disabled:opacity-50"
+                  className="px-5 py-2 text-sm font-medium text-content-secondary bg-surface-primary hover:bg-surface-secondary rounded-lg transition-colors disabled:opacity-50"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-5 py-2 text-sm font-medium text-white bg-[#993331] rounded-lg hover:bg-[#802a28] shadow-sm transition-colors disabled:opacity-70 flex items-center gap-2"
+                  className="px-5 py-2 text-sm font-medium text-content-inverted bg-accent rounded-lg hover:bg-accent-hover shadow-sm transition-colors disabled:opacity-70 flex items-center gap-2"
                 >
                   {isSaving ? (
                     <>
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                      <span className="w-4 h-4 border-2 border-content-inverted/30 border-t-content-inverted rounded-full animate-spin"></span>
                       Guardando...
                     </>
                   ) : (
@@ -999,18 +1012,18 @@ function AccountSettings({
         title="Suscripción y Facturación"
         description="Administra tu plan actual y beneficios"
       >
-        <div className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm">
+        <div className="bg-surface-elevated rounded-2xl border border-border-default p-6 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
             <div>
-              <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <h4 className="text-lg font-semibold text-content-primary flex items-center gap-2">
                 {userPlanLabel}
                 {isSubscriptionActive && (
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-status-success-subtle text-status-success">
                     Activo
                   </span>
                 )}
               </h4>
-              <p className="text-sm text-gray-500 mt-1">
+              <p className="text-sm text-content-tertiary mt-1">
                 {isCouponBasedSubscription
                   ? "Suscripción activa mediante cupón promocional."
                   : "Obtén acceso total a todas las herramientas de estudio."}
@@ -1020,7 +1033,7 @@ function AccountSettings({
             {!isSubscriptionActive && (
               <button
                 onClick={() => setShowUpgradeModal(true)}
-                className="px-5 py-2.5 text-sm font-medium text-white bg-gradient-to-r from-[#993331] to-[#BA5149] rounded-lg hover:shadow-md transition-all whitespace-nowrap"
+                className="px-5 py-2.5 text-sm font-medium text-content-inverted bg-gradient-to-r from-accent to-accent-hover rounded-lg hover:shadow-md transition-all whitespace-nowrap"
               >
                 Mejorar Plan
               </button>
@@ -1028,24 +1041,24 @@ function AccountSettings({
           </div>
 
           {(isSubscriptionActive || hasActiveWindow || subscriptionLoading) && (
-            <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-surface-secondary rounded-xl p-4 border border-border-subtle grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <span className="block text-xs text-gray-500 mb-1">
+                <span className="block text-xs text-content-tertiary mb-1">
                   Fecha de inicio
                 </span>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-content-primary">
                   {subscriptionLoading
                     ? "Cargando..."
                     : formatDateEs(subscriptionStartDate)}
                 </span>
               </div>
               <div>
-                <span className="block text-xs text-gray-500 mb-1">
+                <span className="block text-xs text-content-tertiary mb-1">
                   {isCouponBasedSubscription
                     ? "Expira el"
                     : "Próxima renovación"}
                 </span>
-                <span className="text-sm font-medium text-gray-900">
+                <span className="text-sm font-medium text-content-primary">
                   {subscriptionLoading
                     ? "Cargando..."
                     : formatDateEs(subscriptionEndDate)}
@@ -1055,10 +1068,10 @@ function AccountSettings({
           )}
 
           {isSubscriptionActive && hasRecurringPayment && (
-            <div className="mt-6 pt-6 border-t border-gray-100 flex justify-end">
+            <div className="mt-6 pt-6 border-t border-border-subtle flex justify-end">
               <button
                 onClick={() => setShowCancelModal(true)}
-                className="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
+                className="text-sm font-medium text-content-tertiary hover:text-status-error transition-colors"
               >
                 Cancelar mi suscripción
               </button>
@@ -1072,26 +1085,26 @@ function AccountSettings({
         description="Actualiza tus credenciales o elimina tu cuenta definitivamente."
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm">
+          <div className="flex items-center justify-between p-4 bg-surface-elevated border border-border-default rounded-xl shadow-sm">
             <div>
-              <p className="font-medium text-gray-900">Contraseña</p>
-              <p className="text-sm text-gray-500">
+              <p className="font-medium text-content-primary">Contraseña</p>
+              <p className="text-sm text-content-tertiary">
                 Mantén tu cuenta segura actualizando tu contraseña regularmente.
               </p>
             </div>
             <button
               onClick={() => setShowPasswordModal(true)}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 text-sm font-medium text-content-secondary bg-surface-primary border border-border-default rounded-lg hover:bg-surface-secondary transition-colors"
             >
               Cambiar
             </button>
           </div>
 
-          <div className="p-5 mt-8 border border-red-200 bg-red-50/50 rounded-xl">
-            <h4 className="text-base font-semibold text-red-700">
+          <div className="p-5 mt-8 border border-status-error/20 bg-status-error-subtle rounded-xl">
+            <h4 className="text-base font-semibold text-status-error">
               Zona de peligro
             </h4>
-            <p className="text-sm text-red-600/80 mt-1 mb-4">
+            <p className="text-sm text-status-error/80 mt-1 mb-4">
               Una vez que elimines tu cuenta, no hay vuelta atrás. Por favor,
               asegúrate de estar seguro.
             </p>
@@ -1104,13 +1117,13 @@ function AccountSettings({
               >
                 <button
                   onClick={handleDeleteAccount}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-content-inverted bg-status-error rounded-lg hover:bg-status-error/90 transition-colors"
                 >
                   Sí, eliminar mi cuenta definitivamente
                 </button>
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="px-4 py-2 text-sm font-medium text-content-secondary bg-surface-primary border border-border-default rounded-lg hover:bg-surface-secondary transition-colors"
                 >
                   Cancelar
                 </button>
@@ -1118,7 +1131,7 @@ function AccountSettings({
             ) : (
               <button
                 onClick={() => setShowDeleteConfirm(true)}
-                className="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 hover:border-red-300 transition-colors"
+                className="px-4 py-2 text-sm font-medium text-status-error bg-surface-primary border border-status-error/20 rounded-lg hover:bg-status-error-subtle hover:border-status-error/30 transition-colors"
               >
                 Eliminar cuenta
               </button>

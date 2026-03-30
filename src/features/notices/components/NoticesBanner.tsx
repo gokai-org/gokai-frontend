@@ -20,16 +20,16 @@ export default function NoticesBanner({
   ];
 
   return (
-    <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-[#993331] to-[#7a2927] p-6 text-white shadow-lg sm:p-8 lg:p-10">
-      <div className="absolute right-[-20px] top-[-40px] h-44 w-44 rounded-full bg-white/5" />
-      <div className="absolute bottom-[-30px] left-[30%] h-32 w-32 rounded-full bg-white/5" />
-      <div className="absolute right-[12%] top-[50%] h-20 w-20 rounded-full bg-white/5" />
+    <section className="relative overflow-hidden rounded-[32px] bg-gradient-to-r from-accent to-accent-hover p-6 text-content-inverted shadow-lg sm:p-8 lg:p-10">
+      <div className="absolute right-[-20px] top-[-40px] h-44 w-44 rounded-full bg-surface-primary/5" />
+      <div className="absolute bottom-[-30px] left-[30%] h-32 w-32 rounded-full bg-surface-primary/5" />
+      <div className="absolute right-[12%] top-[50%] h-20 w-20 rounded-full bg-surface-primary/5" />
 
       <div className="relative z-10 grid gap-6 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
         <div className="min-w-0">
           <div className="flex items-start gap-4">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 backdrop-blur-sm">
-              <Sparkles className="h-7 w-7 text-white" />
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-surface-primary/15 backdrop-blur-sm">
+              <Sparkles className="h-7 w-7 text-content-inverted" />
             </div>
 
             <div className="min-w-0">
@@ -37,7 +37,7 @@ export default function NoticesBanner({
                 Panel general
               </p>
 
-              <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-white sm:text-3xl">
+              <h2 className="text-2xl font-extrabold leading-tight tracking-tight text-content-inverted sm:text-3xl">
                 Centro de notificaciones
               </h2>
 
@@ -49,13 +49,13 @@ export default function NoticesBanner({
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3 rounded-[24px] border border-white/10 bg-white/8 p-3 backdrop-blur-sm sm:gap-4 sm:p-4">
+        <div className="grid grid-cols-3 gap-3 rounded-[24px] border border-white/10 bg-surface-primary/8 p-3 backdrop-blur-sm sm:gap-4 sm:p-4">
           {stats.map((stat) => (
             <div
               key={stat.label}
-              className="min-w-[72px] rounded-2xl bg-white/6 px-3 py-3 text-center"
+              className="min-w-[72px] rounded-2xl bg-surface-primary/6 px-3 py-3 text-center"
             >
-              <div className="text-2xl font-extrabold leading-none text-white sm:text-3xl">
+              <div className="text-2xl font-extrabold leading-none text-content-inverted sm:text-3xl">
                 {stat.value}
               </div>
               <div className="mt-1 text-[11px] font-semibold text-white/70 sm:text-xs">

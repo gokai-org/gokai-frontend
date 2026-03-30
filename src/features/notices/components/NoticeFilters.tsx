@@ -14,20 +14,20 @@ export function NoticeSearchBar({
 }: NoticeSearchBarProps) {
   return (
     <div className="relative w-full max-w-md flex-1">
-      <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+      <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-content-muted" />
 
       <input
         type="text"
         placeholder="Buscar notificación..."
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-xl border border-gray-200 bg-gray-50 py-2.5 pl-10 pr-9 text-sm outline-none transition-all duration-200 focus:border-[#993331]/30 focus:bg-white"
+        className="w-full rounded-xl border border-border-default bg-surface-secondary py-2.5 pl-10 pr-9 text-sm outline-none transition-all duration-200 focus:border-accent/30 focus:bg-surface-primary"
       />
 
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-content-muted transition-colors hover:text-content-secondary"
           aria-label="Limpiar búsqueda"
         >
           <X className="h-4 w-4" />
@@ -57,8 +57,8 @@ export function NoticeToolbar({
         className={cls(
           "flex items-center gap-2 rounded-xl border px-4 py-2.5 text-xs font-bold transition-all duration-200",
           showUnreadOnly
-            ? "border-[#993331]/20 bg-[#993331]/10 text-[#993331]"
-            : "border-gray-200 bg-gray-50 text-gray-500 hover:border-gray-300",
+            ? "border-accent/20 bg-accent/10 text-accent"
+            : "border-border-default bg-surface-secondary text-content-tertiary hover:border-border-default",
         )}
       >
         <Filter className="h-4 w-4" />
@@ -68,7 +68,7 @@ export function NoticeToolbar({
       {hasReadNotices && (
         <button
           onClick={onClearRead}
-          className="flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50 px-4 py-2.5 text-xs font-bold text-gray-500 transition-all duration-200 hover:border-red-200 hover:bg-red-50 hover:text-red-500"
+          className="flex items-center gap-2 rounded-xl border border-border-default bg-surface-secondary px-4 py-2.5 text-xs font-bold text-content-tertiary transition-all duration-200 hover:border-red-200 dark:hover:border-red-800 hover:bg-red-50 dark:hover:bg-red-950/30 hover:text-red-500 dark:hover:text-red-400"
         >
           <Archive className="h-4 w-4" />
           Limpiar leídas

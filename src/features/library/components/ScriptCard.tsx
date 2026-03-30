@@ -43,7 +43,7 @@ export function ScriptCard({
   const cardClassName = [
     "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] p-5 text-left",
     "min-h-[190px]",
-    "bg-white border border-[#E8E3E1]",
+    "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
     config.shadowCard,
     config.shadowHover,
     cardTransition,
