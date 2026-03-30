@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { createPortal } from "react-dom";
 
 interface DropdownProps {
   value: string;
@@ -17,17 +18,49 @@ export function Dropdown({
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedValue, setSelectedValue] = useState(value);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownPos, setDropdownPos] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+  const [insideForceLight, setInsideForceLight] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSelectedValue(value);
   }, [value]);
 
   useEffect(() => {
+    if (containerRef.current?.closest(".force-light")) {
+      setInsideForceLight(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setDropdownPos(null);
+      return;
+    }
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPos({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      });
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
       if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
+        triggerRef.current &&
+        !triggerRef.current.contains(target) &&
+        listRef.current &&
+        !listRef.current.contains(target)
       ) {
         setIsOpen(false);
       }
@@ -43,9 +76,41 @@ export function Dropdown({
     setIsOpen(false);
   };
 
+  const dropdownList =
+    isOpen && dropdownPos
+      ? createPortal(
+          <div
+            ref={listRef}
+            className={`fixed z-[9999] bg-surface-elevated border border-border-default rounded-lg shadow-lg max-h-60 overflow-auto${insideForceLight ? " force-light" : ""}`}
+            style={{
+              top: dropdownPos.top,
+              left: dropdownPos.left,
+              width: dropdownPos.width,
+            }}
+          >
+            {options.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => handleSelect(option)}
+                className={`w-full px-3 py-2 text-sm text-left hover:bg-surface-tertiary transition-colors ${
+                  selectedValue === option
+                    ? "bg-accent-subtle text-accent font-medium"
+                    : "text-content-secondary"
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>,
+          document.body,
+        )
+      : null;
+
   return (
-    <div ref={dropdownRef} className={`relative ${className}`}>
+    <div ref={containerRef} className={`relative ${className}`}>
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full px-3 py-2 text-sm bg-surface-primary border border-border-default rounded-lg hover:border-content-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30 transition-all"
@@ -66,24 +131,7 @@ export function Dropdown({
         </svg>
       </button>
 
-      {isOpen && (
-        <div className="absolute z-20 w-full mt-1 bg-surface-elevated border border-border-default rounded-lg shadow-lg max-h-60 overflow-auto">
-          {options.map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => handleSelect(option)}
-              className={`w-full px-3 py-2 text-sm text-left hover:bg-surface-tertiary transition-colors ${
-                selectedValue === option
-                  ? "bg-accent-subtle text-accent font-medium"
-                  : "text-content-secondary"
-              }`}
-            >
-              {option}
-            </button>
-          ))}
-        </div>
-      )}
+      {dropdownList}
     </div>
   );
 }

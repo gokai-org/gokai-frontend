@@ -9,10 +9,12 @@ export default function AdminDashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Providers>
-      <AdminHistoryProtection />
-      <AdminSidebar />
-      <AdminContentShell>{children}</AdminContentShell>
-    </Providers>
+    <div className="force-light">
+      <Providers>
+        <AdminHistoryProtection />
+        <AdminSidebar />
+        <AdminContentShell>{children}</AdminContentShell>
+      </Providers>
+    </div>
   );
 }

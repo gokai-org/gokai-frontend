@@ -18,7 +18,7 @@ export function SettingsItem({
     <motion.div
       whileHover={{ y: -1 }}
       transition={{ duration: 0.18 }}
-      className="flex flex-col gap-3 rounded-xl border border-border-subtle bg-gradient-to-r from-surface-elevated to-accent-muted p-4 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
+      className="flex flex-col gap-3 rounded-xl border border-border-subtle bg-surface-elevated p-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
     >
       <div className="flex items-start gap-3 flex-1">
         {icon && (

@@ -17,8 +17,8 @@ type NavItem = {
   danger?: boolean;
 };
 
-const ACCENT = "#1C1C1C";
-const MUTED = "rgba(0,0,0,0.38)";
+const ACCENT = "var(--text-primary)";
+const MUTED = "var(--text-muted)";
 
 export default function AdminSidebar() {
   const router = useRouter();
@@ -221,7 +221,7 @@ export default function AdminSidebar() {
                 setMobileOpen(true);
               }
             }}
-            className="h-12 w-12 rounded-2xl bg-surface-primary/95 ring-1 ring-border-subtle shadow-[0_16px_40px_rgba(0,0,0,0.18)] backdrop-blur grid place-items-center"
+            className="h-12 w-12 rounded-2xl bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] shadow-[var(--shadow-lg)] backdrop-blur grid place-items-center"
             aria-label="Abrir menu"
             aria-expanded="false"
             whileHover={{ scale: 1.05 }}
@@ -230,19 +230,19 @@ export default function AdminSidebar() {
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
               <path
                 d="M5 7h14"
-                stroke="rgba(0,0,0,0.65)"
+                stroke="var(--sidebar-icon-stroke)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
               <path
                 d="M5 12h14"
-                stroke="rgba(0,0,0,0.65)"
+                stroke="var(--sidebar-icon-stroke)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
               <path
                 d="M5 17h14"
-                stroke="rgba(0,0,0,0.65)"
+                stroke="var(--sidebar-icon-stroke)"
                 strokeWidth="2"
                 strokeLinecap="round"
               />
@@ -257,14 +257,14 @@ export default function AdminSidebar() {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             className={[
-              "h-full rounded-[28px] bg-surface-primary/95 ring-1 ring-border-subtle backdrop-blur",
-              "shadow-[0_20px_70px_rgba(0,0,0,0.18)]",
+              "h-full rounded-[28px] bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] backdrop-blur",
+              "shadow-[var(--shadow-lg)]",
               "flex flex-col overflow-hidden",
               "w-[320px] md:w-[78px]",
             ].join(" ")}
             animate={{ width: expanded ? 320 : 78 }}
             transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.7 }}
-            whileHover={{ boxShadow: "0 25px 80px rgba(0,0,0,0.22)" }}
+            whileHover={{ boxShadow: "var(--shadow-xl)" }}
           >
             <motion.div animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
               <Header expanded={expanded} />
@@ -344,7 +344,7 @@ export default function AdminSidebar() {
         {mobileOpen && (
           <>
             <motion.div
-              className="md:hidden fixed inset-0 z-50 bg-black/35 backdrop-blur-sm"
+              className="md:hidden fixed inset-0 z-50 bg-surface-overlay backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -355,8 +355,8 @@ export default function AdminSidebar() {
             <motion.aside
               className={[
                 "md:hidden fixed left-4 top-4 z-[55] h-[calc(100dvh-32px)]",
-                "bg-surface-primary/96 ring-1 ring-border-subtle backdrop-blur",
-                "shadow-[0_30px_90px_rgba(0,0,0,0.25)]",
+                "bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] backdrop-blur",
+                "shadow-[var(--shadow-xl)]",
                 "rounded-[28px] overflow-hidden flex flex-col",
                 "w-[calc(86vw-16px)] max-w-[360px]",
               ].join(" ")}
@@ -380,7 +380,7 @@ export default function AdminSidebar() {
                 <motion.button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="h-11 w-11 rounded-2xl bg-surface-primary/70 ring-1 ring-border-subtle grid place-items-center"
+                  className="h-11 w-11 rounded-2xl bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] grid place-items-center"
                   aria-label="Cerrar menu"
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
@@ -389,13 +389,13 @@ export default function AdminSidebar() {
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path
                       d="M6 6l12 12"
-                      stroke="rgba(0,0,0,0.65)"
+                      stroke="var(--sidebar-icon-stroke)"
                       strokeWidth="2"
                       strokeLinecap="round"
                     />
                     <path
                       d="M18 6 6 18"
-                      stroke="rgba(0,0,0,0.65)"
+                      stroke="var(--sidebar-icon-stroke)"
                       strokeWidth="2"
                       strokeLinecap="round"
                     />
@@ -505,53 +505,50 @@ function GlobalStyles() {
 
 function Header({ expanded }: { expanded: boolean }) {
   return (
-    <div className={["py-4", expanded ? "px-4" : "px-2"].join(" ")}>
-      <div
-        className={[
-          "flex items-center",
-          expanded ? "gap-3" : "justify-center",
-        ].join(" ")}
-      >
-        <motion.img
-          src="/icons/logo-gokai.svg"
-          alt="Gokai"
-          draggable={false}
-          className="select-none h-10 w-10"
-          initial={false}
-          animate={{ rotate: expanded ? 180 : -180 }}
-          transition={{ duration: 0.45, ease: "easeInOut" }}
-        />
+    <div className="pt-4 pb-0">
+      <div className={[expanded ? "px-4" : "px-2"].join(" ")}>
+        <div
+          className={[
+            "flex items-center",
+            expanded ? "gap-3" : "justify-center",
+          ].join(" ")}
+        >
+          <motion.img
+            src="/logos/gokai-logo.svg"
+            alt="Gokai"
+            draggable={false}
+            className="select-none h-10 w-10"
+            initial={false}
+            animate={{ rotate: expanded ? 180 : -180 }}
+            transition={{ duration: 0.45, ease: "easeInOut" }}
+          />
 
-        {expanded && (
-          <div className="hidden md:block">
-            <div className="flex items-start gap-3">
-              <div>
-                <div className="text-[28px] font-extrabold tracking-[0.06em] text-content-primary leading-none">
-                  GOKAI
+          {expanded && (
+            <div className="hidden md:block">
+              <div className="flex items-center gap-4">
+                <div>
+                  <div className="text-[28px] font-extrabold tracking-[0.09em] text-content-primary leading-none">
+                    GOKAI
+                  </div>
+                  <div className="text-[11px] font-semibold tracking-[0.18em] text-content-tertiary mt-0.5">
+                    ADMIN
+                  </div>
                 </div>
-                <div className="text-[11px] font-semibold tracking-[0.18em] text-content-tertiary">
-                  ADMIN
-                </div>
+                <span className="jp-vertical text-[13px] font-black text-content-secondary select-none" style={{ lineHeight: 1.15 }}>
+                  語界
+                </span>
               </div>
-              <span className="jp-vertical text-[12px] font-black text-content-secondary select-none">
-                語界
-              </span>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="md:hidden">
-          <div className="text-[28px] font-extrabold tracking-[0.06em] text-content-primary leading-none">
-            GOKAI
+          <div className="md:hidden">
+            <div className="text-[28px] font-extrabold tracking-[0.09em] text-content-primary leading-none">
+              GOKAI
+            </div>
           </div>
         </div>
       </div>
-
-      <div
-        className={["mt-4 h-px w-full bg-surface-tertiary", expanded ? "" : "mx-2"].join(
-          " ",
-        )}
-      />
+      <div className="mt-4 h-px w-full bg-border-default" />
     </div>
   );
 }

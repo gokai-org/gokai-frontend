@@ -567,48 +567,45 @@ function Header({ expanded }: { expanded: boolean }) {
     theme === "dark" ? "/logos/gokai-logo-dark.svg" : "/logos/gokai-logo.svg";
 
   return (
-    <div className={["py-4", expanded ? "px-4" : "px-2"].join(" ")}>
-      <div
-        className={[
-          "flex items-center",
-          expanded ? "gap-3" : "justify-center",
-        ].join(" ")}
-      >
-        <motion.img
-          src={logoSrc}
-          alt="Gokai"
-          draggable={false}
-          className="select-none h-10 w-10"
-          initial={false}
-          animate={{ rotate: expanded ? 180 : -180 }}
-          transition={{ duration: 0.45, ease: "easeInOut" }}
-        />
+    <div className="pt-4 pb-0">
+      <div className={[expanded ? "px-4" : "px-2"].join(" ")}>
+        <div
+          className={[
+            "flex items-center",
+            expanded ? "gap-3" : "justify-center",
+          ].join(" ")}
+        >
+          <motion.img
+            src={logoSrc}
+            alt="Gokai"
+            draggable={false}
+            className="select-none h-10 w-10"
+            initial={false}
+            animate={{ rotate: expanded ? 180 : -180 }}
+            transition={{ duration: 0.45, ease: "easeInOut" }}
+          />
 
-        {expanded && (
-          <div className="hidden md:block">
-            <div className="flex items-center gap-4">
-              <div className="text-[28px] font-extrabold tracking-[0.09em] text-content-primary leading-none">
-                GOKAI
+          {expanded && (
+            <div className="hidden md:block">
+              <div className="flex items-center gap-4">
+                <div className="text-[28px] font-extrabold tracking-[0.09em] text-content-primary leading-none">
+                  GOKAI
+                </div>
+                <span className="jp-vertical text-[13px] font-black text-content-secondary dark:text-content-tertiary select-none" style={{ lineHeight: 1.15 }}>
+                  語界
+                </span>
               </div>
-              <span className="jp-vertical text-[13px] font-black text-content-secondary dark:text-content-tertiary select-none" style={{ lineHeight: 1.15 }}>
-                語界
-              </span>
             </div>
-          </div>
-        )}
+          )}
 
-        <div className="md:hidden">
-          <div className="text-[28px] font-extrabold tracking-[0.06em] text-content-primary leading-none">
-            GOKAI
+          <div className="md:hidden">
+            <div className="text-[28px] font-extrabold tracking-[0.06em] text-content-primary leading-none">
+              GOKAI
+            </div>
           </div>
         </div>
       </div>
-
-      <div
-        className={["mt-4 h-px w-full bg-border-subtle", expanded ? "" : "mx-2"].join(
-          " ",
-        )}
-      />
+      <div className="mt-4 h-px w-full bg-border-default" />
     </div>
   );
 }
