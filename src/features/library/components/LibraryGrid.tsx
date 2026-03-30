@@ -1,13 +1,13 @@
 "use client";
 
-import { ContentCard } from "@/features/library/components/ContentCard";
+import { ScriptCard } from "@/features/library/components/ScriptCard";
 import type { CombinedLibraryItem } from "@/features/library/hooks/useLibraryContent";
 import type { Kanji } from "@/features/kanji/types";
 import type { Kana } from "@/features/kana/types";
 import {
-  kanjiToCard,
-  katakanaToCard,
-  hiraganaToCard,
+  kanjiToScriptCard,
+  katakanaToScriptCard,
+  hiraganaToScriptCard,
 } from "@/features/library/utils/libraryMappers";
 
 interface LibraryGridProps {
@@ -37,35 +37,31 @@ export function LibraryGrid({
 }: LibraryGridProps) {
   return (
     <div className={className}>
-      {items.map((item) => {
+      {items.map((item, i) => {
         if (item.type === "kanji") {
           return (
-            <ContentCard
+            <ScriptCard
               key={item.data.id}
-              {...kanjiToCard(item.data)}
+              {...kanjiToScriptCard(item.data, favoriteKanjis.has(item.data.id))}
+              index={i}
               onClick={() => onKanjiClick(item.data)}
               onFavoriteToggle={toggleFavoriteKanji}
-              isFavorite={favoriteKanjis.has(item.data.id)}
             />
           );
         }
 
         return (
-          <ContentCard
+          <ScriptCard
             key={item.data.id}
             {...(item.type === "hiragana"
-              ? hiraganaToCard(item.data)
-              : katakanaToCard(item.data))}
+              ? hiraganaToScriptCard(item.data, favoriteHiraganas.has(item.data.id))
+              : katakanaToScriptCard(item.data, favoriteKatakanas.has(item.data.id)))}
+            index={i}
             onClick={() => onKanaClick(item.data)}
             onFavoriteToggle={
               item.type === "hiragana"
                 ? toggleFavoriteHiragana
                 : toggleFavoriteKatakana
-            }
-            isFavorite={
-              item.type === "hiragana"
-                ? favoriteHiraganas.has(item.data.id)
-                : favoriteKatakanas.has(item.data.id)
             }
           />
         );

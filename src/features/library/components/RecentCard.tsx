@@ -1,6 +1,8 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { LibraryItem } from "@/features/library/types";
+import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
 
 export interface RecentItemProps {
   id: string;
@@ -15,10 +17,13 @@ export interface RecentItemProps {
 
 interface RecentCardProps {
   item: LibraryItem | RecentItemProps;
+  index?: number;
   onClick?: () => void;
 }
 
-export function RecentCard({ item, onClick }: RecentCardProps) {
+export function RecentCard({ item, index = 0, onClick }: RecentCardProps) {
+  const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
+    useCardAnimation(index);
   const formatTime = (timeInfo?: string | Date) => {
     if (!timeInfo) return "Hace un momento";
 
@@ -47,46 +52,60 @@ export function RecentCard({ item, onClick }: RecentCardProps) {
   };
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        "group w-full text-left",
-        "flex items-center gap-4 rounded-2xl border border-gray-100 bg-[#FCFCFC] p-3.5",
-        "transition-all duration-300",
-        "hover:-translate-y-[1px] hover:border-[#993331]/15 hover:bg-white hover:shadow-sm",
-        "focus:outline-none focus:ring-2 focus:ring-[#993331]/20",
-      ].join(" ")}
-    >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#993331]/8 text-lg font-bold text-[#993331] transition-colors duration-300 group-hover:bg-[#993331] group-hover:text-white">
-        {item.thumbnail}
-      </div>
+    <motion.div className="w-full" {...(animationsEnabled ? motionProps : {})}>
+      <button
+        type="button"
+        onClick={onClick}
+        className={[
+          "group w-full text-left",
+          "flex items-center gap-4 rounded-2xl border border-gray-100 bg-[#FCFCFC] p-3.5",
+          cardTransition,
+          "hover:-translate-y-[1px] hover:border-[#993331]/15 hover:bg-white hover:shadow-sm",
+          "focus:outline-none focus:ring-2 focus:ring-[#993331]/20",
+        ].join(" ")}
+      >
+        <div
+          className={[
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
+            "bg-[#993331]/8 text-lg font-bold text-[#993331]",
+            "group-hover:bg-[#993331] group-hover:text-white",
+            hoverTransition,
+          ].join(" ")}
+        >
+          {item.thumbnail}
+        </div>
 
-      <div className="min-w-0 flex-1">
-        <h3 className="truncate text-[15px] font-extrabold text-gray-900 transition-colors group-hover:text-[#993331]">
-          {item.title}
-        </h3>
+        <div className="min-w-0 flex-1">
+          <h3
+            className={[
+              "truncate text-[15px] font-extrabold text-gray-900 group-hover:text-[#993331]",
+              hoverTransition,
+            ].join(" ")}
+          >
+            {item.title}
+          </h3>
 
-        <p className="mt-1 truncate text-[13px] font-medium text-gray-500">
-          {item.description || "Actividad reciente"}
-        </p>
-      </div>
+          <p className="mt-1 truncate text-[13px] font-medium text-gray-500">
+            {item.description || "Actividad reciente"}
+          </p>
+        </div>
 
-      <div className="shrink-0 text-right">
-        <span className="block text-[11px] font-semibold text-gray-400">
-          {formatTime(item.lastAccessed)}
-        </span>
-
-        {item.progress !== undefined ? (
-          <span className="mt-1 block text-[14px] font-extrabold text-[#993331]">
-            {item.progress}%
+        <div className="shrink-0 text-right">
+          <span className="block text-[11px] font-semibold text-gray-400">
+            {formatTime(item.lastAccessed)}
           </span>
-        ) : (
-          <span className="mt-1 block text-[14px] font-bold text-gray-300">
-            --
-          </span>
-        )}
-      </div>
-    </button>
+
+          {item.progress !== undefined ? (
+            <span className="mt-1 block text-[14px] font-extrabold text-[#993331]">
+              {item.progress}%
+            </span>
+          ) : (
+            <span className="mt-1 block text-[14px] font-bold text-gray-300">
+              --
+            </span>
+          )}
+        </div>
+      </button>
+    </motion.div>
   );
 }

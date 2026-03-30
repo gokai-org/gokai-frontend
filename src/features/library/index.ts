@@ -1,6 +1,13 @@
 export { CategoryFilter } from "./components/CategoryFilter";
-export { ContentCard } from "./components/ContentCard";
 export { LibraryCard } from "./components/LibraryCard";
+export { VocabularyCard } from "./components/VocabularyCard";
+export type { VocabularyCardProps } from "./components/VocabularyCard";
+export { VocabThumbnail } from "./components/VocabThumbnail";
+export type { VocabThumbnailProps } from "./components/VocabThumbnail";
+export { ScriptCard } from "./components/ScriptCard";
+export type { ScriptCardProps } from "./components/ScriptCard";
+export type { VocabularyVariant, VariantConfig } from "./utils/vocabularyCardConfig";
+export type { ScriptVariant, ScriptCardConfig } from "./utils/scriptCardConfig";
 export { LibraryHeader } from "./components/LibraryHeader";
 export { LibraryRecentPanel } from "./components/LibraryRecentPanel";
 export { LibraryGrid } from "./components/LibraryGrid";

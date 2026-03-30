@@ -1,7 +1,6 @@
 "use client";
 
 import { SkeletonCard } from "@/shared/ui/Skeleton";
-import { ContentCard } from "@/features/library/components/ContentCard";
 
 interface LibraryCategorySectionProps {
   title: string;

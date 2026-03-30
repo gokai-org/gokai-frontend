@@ -63,10 +63,29 @@ export function CategoryFilter({
 
   const baseButtonClass =
     "inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-300";
-  const activeButtonClass =
-    "border-[#993331] bg-gradient-to-r from-[#993331] to-[#7a2927] text-white shadow-md shadow-[#993331]/15";
-  const inactiveButtonClass =
-    "border-gray-200 bg-white text-gray-700 hover:border-[#993331]/20 hover:text-[#993331] hover:shadow-sm";
+
+  function getActiveClass(id: string) {
+    if (id === "hiragana")
+      return "border-[#7B3F8A] bg-gradient-to-r from-[#7B3F8A] to-[#5C2E69] text-white shadow-md shadow-[#7B3F8A]/15";
+    if (id === "katakana")
+      return "border-[#1B5078] bg-gradient-to-r from-[#1B5078] to-[#0D2E4A] text-white shadow-md shadow-[#1B5078]/15";
+    return "border-[#993331] bg-gradient-to-r from-[#993331] to-[#7a2927] text-white shadow-md shadow-[#993331]/15";
+  }
+
+  function getInactiveClass(id: string) {
+    if (id === "hiragana")
+      return "border-gray-200 bg-white text-gray-700 hover:border-[#7B3F8A]/20 hover:text-[#7B3F8A] hover:shadow-sm";
+    if (id === "katakana")
+      return "border-gray-200 bg-white text-gray-700 hover:border-[#1B5078]/20 hover:text-[#1B5078] hover:shadow-sm";
+    return "border-gray-200 bg-white text-gray-700 hover:border-[#993331]/20 hover:text-[#993331] hover:shadow-sm";
+  }
+
+  function getBadgeClass(categoryId: string, isActive: boolean) {
+    if (isActive) return "bg-white/15 text-white";
+    if (categoryId === "hiragana") return "bg-[#7B3F8A]/10 text-[#7B3F8A]";
+    if (categoryId === "katakana") return "bg-[#1B5078]/10 text-[#1B5078]";
+    return "bg-[#993331]/8 text-[#993331]";
+  }
 
   return (
     <div className="no-scrollbar -mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2">
@@ -74,7 +93,7 @@ export function CategoryFilter({
         onClick={() => onSelectCategory(null)}
         className={[
           baseButtonClass,
-          selectedCategory === null ? activeButtonClass : inactiveButtonClass,
+          selectedCategory === null ? getActiveClass("todos") : getInactiveClass("todos"),
         ].join(" ")}
       >
         <span>Todos</span>
@@ -97,17 +116,15 @@ export function CategoryFilter({
               className={[
                 baseButtonClass,
                 selectedCategory === category.id
-                  ? activeButtonClass
-                  : inactiveButtonClass,
+                  ? getActiveClass(category.id)
+                  : getInactiveClass(category.id),
               ].join(" ")}
             >
               <span>{category.name}</span>
               <span
                 className={[
                   "rounded-full px-2 py-0.5 text-[11px] font-bold",
-                  selectedCategory === category.id
-                    ? "bg-white/15 text-white"
-                    : "bg-[#993331]/8 text-[#993331]",
+                  getBadgeClass(category.id, selectedCategory === category.id),
                 ].join(" ")}
               >
                 {category.count}

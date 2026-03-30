@@ -60,10 +60,11 @@ export function LibraryRecentPanel({
         {recentItems.length > 0 ? (
           <>
             <div className="space-y-3">
-              {recentItems.slice(0, 4).map((item) => (
+              {recentItems.slice(0, 4).map((item, i) => (
                 <RecentCard
                   key={item.id}
                   item={recentToCardProps(item, kanjis)}
+                  index={i}
                   onClick={() => {
                     if (item.type === "kanji") {
                       const kanji = kanjis.find((k) => k.id === item.id);

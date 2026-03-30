@@ -11,6 +11,7 @@ import {
   getPrimaryReading,
 } from "@/features/kanji/utils/kanjiText";
 import type { Theme, Subtheme, Word } from "@/features/library/types";
+import type { ScriptCardProps } from "@/features/library/components/ScriptCard";
 
 const RED_THEME = {
   primary: "#993331",
@@ -113,6 +114,60 @@ export function hiraganaToCard(hiragana: Kana) {
     favoriteButtonThemeClassName: "border-[#8F2F2D]/30 bg-[#8F2F2D]/10",
     favoriteIconThemeClassName: "text-[#8F2F2D]",
     favoriteIconHoverClassName: "hover:text-[#B84C45]",
+  };
+}
+
+// ─── ScriptCard mappers ───────────────────────────────────────────────────────
+
+export function kanjiToScriptCard(
+  kanji: Kanji,
+  isFavorite = false,
+): Omit<ScriptCardProps, "index" | "onClick" | "onFavoriteToggle"> & {
+  id: string;
+} {
+  const meaning = getPrimaryMeaning(kanji.meanings) || kanji.symbol;
+  const reading = getPrimaryReading(kanji.readings);
+
+  return {
+    id: kanji.id,
+    symbol: kanji.symbol,
+    title: meaning,
+    subtitle: reading ? `Lectura: ${reading}` : undefined,
+    pointsBadge: `${kanji.pointsToUnlock} pts`,
+    variant: "kanji",
+    isFavorite,
+  };
+}
+
+export function hiraganaToScriptCard(
+  kana: Kana,
+  isFavorite = false,
+): Omit<ScriptCardProps, "index" | "onClick" | "onFavoriteToggle"> & {
+  id: string;
+} {
+  return {
+    id: kana.id,
+    symbol: kana.symbol,
+    title: kana.romaji?.trim() || kana.symbol,
+    pointsBadge: `${kana.pointsToUnlock} pts`,
+    variant: "hiragana",
+    isFavorite,
+  };
+}
+
+export function katakanaToScriptCard(
+  kana: Kana,
+  isFavorite = false,
+): Omit<ScriptCardProps, "index" | "onClick" | "onFavoriteToggle"> & {
+  id: string;
+} {
+  return {
+    id: kana.id,
+    symbol: kana.symbol,
+    title: kana.romaji?.trim() || kana.symbol,
+    pointsBadge: `${kana.pointsToUnlock} pts`,
+    variant: "katakana",
+    isFavorite,
   };
 }
 
@@ -263,15 +318,13 @@ export function themeToCard(theme: Theme) {
     title: theme.meaning,
     subtitle: japanesePreview || "Tema de vocabulario",
     thumbnail: compactKanji || theme.kana || "題",
-    badge: "Tema",
-    accentClassName: "text-[#993331]",
-    surfaceClassName: RED_THEME.surface,
-    badgeClassName:
-      "bg-[#993331]/10 text-[#993331] border border-[#993331]/10",
+    topRightBadge: "Tema",
+    topRightBadgeClassName:
+      "border border-[#993331]/20 bg-[#993331]/10 text-[#993331] backdrop-blur-sm",
     thumbnailClassName:
       compactKanji && compactKanji.length > 2
-        ? "min-h-[64px] min-w-[64px] max-w-[86px] px-3 py-2 text-[12px] font-extrabold leading-tight bg-[#993331]/8 text-[#993331]"
-        : "h-14 w-14 text-[24px] font-bold bg-[#993331]/10 text-[#993331]",
+        ? "min-h-[64px] min-w-[64px] max-w-[86px] px-3 py-2 text-[13px] font-extrabold leading-tight rounded-2xl bg-gradient-to-br from-[#993331] to-[#BA5149] text-white shadow-lg"
+        : "w-[72px] h-[72px] text-[32px] rounded-2xl bg-gradient-to-br from-[#993331] to-[#BA5149] text-white shadow-lg",
   };
 }
 
@@ -284,16 +337,13 @@ export function subthemeToCard(subtheme: Subtheme) {
     title: subtheme.meaning,
     subtitle: japanesePreview || "Subtema",
     thumbnail: compactKanji || subtheme.kana || "章",
-    badge: "Subtema",
-    accentClassName: "text-[#A63B38]",
-    surfaceClassName:
-      "border-[#E7D8D8] bg-gradient-to-br from-white via-[#FFF8F7] to-[#FAEEEC]",
-    badgeClassName:
-      "bg-[#A63B38]/10 text-[#A63B38] border border-[#A63B38]/10",
+    topRightBadge: "Subtema",
+    topRightBadgeClassName:
+      "border border-[#A63B38]/20 bg-[#A63B38]/10 text-[#A63B38] backdrop-blur-sm",
     thumbnailClassName:
       compactKanji && compactKanji.length > 2
-        ? "min-h-[64px] min-w-[64px] max-w-[86px] px-3 py-2 text-[12px] font-extrabold leading-tight bg-[#A63B38]/10 text-[#A63B38]"
-        : "h-14 w-14 text-[24px] font-bold bg-[#A63B38]/10 text-[#A63B38]",
+        ? "min-h-[64px] min-w-[64px] max-w-[86px] px-3 py-2 text-[13px] font-extrabold leading-tight rounded-2xl bg-gradient-to-br from-[#A63B38] to-[#C85B52] text-white shadow-lg"
+        : "w-[72px] h-[72px] text-[32px] rounded-2xl bg-gradient-to-br from-[#A63B38] to-[#C85B52] text-white shadow-lg",
   };
 }
 
@@ -304,19 +354,20 @@ export function wordToCard(word: Word) {
     .filter(Boolean)
     .join(" • ");
 
+  const thumb = pickWordThumbnail(word);
+  const thumbIsUrl = /^https?:\/\//i.test(thumb);
+
   return {
     id: word.id,
     title: mainTitle,
     subtitle: subtitle || "Vocabulario",
-    thumbnail: pickWordThumbnail(word),
-    badge: "Palabra",
-    accentClassName: "text-[#B84C45]",
-    surfaceClassName:
-      "border-[#E9D7D6] bg-gradient-to-br from-white via-[#FFF9F8] to-[#FBEFEE]",
-    badgeClassName:
-      "bg-[#B84C45]/10 text-[#B84C45] border border-[#B84C45]/10",
-    thumbnailClassName:
-      "h-14 w-14 text-[20px] font-bold bg-[#B84C45]/10 text-[#B84C45]",
+    thumbnail: thumb,
+    topRightBadge: "Palabra",
+    topRightBadgeClassName:
+      "border border-[#B84C45]/20 bg-[#B84C45]/10 text-[#B84C45] backdrop-blur-sm",
+    thumbnailClassName: thumbIsUrl
+      ? "w-[72px] h-[72px] rounded-2xl bg-gradient-to-br from-[#B84C45]/10 to-[#D06A61]/10 shadow-sm"
+      : "w-[72px] h-[72px] text-[28px] rounded-2xl bg-gradient-to-br from-[#B84C45] to-[#D06A61] text-white shadow-lg",
   };
 }
 

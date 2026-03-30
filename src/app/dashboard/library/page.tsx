@@ -7,7 +7,8 @@ import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
 import { Search } from "lucide-react";
 import { CategoryFilter } from "@/features/library/components/CategoryFilter";
-import { ContentCard } from "@/features/library/components/ContentCard";
+import { VocabularyCard } from "@/features/library/components/VocabularyCard";
+import { ScriptCard } from "@/features/library/components/ScriptCard";
 import { LibraryGrid } from "@/features/library/components/LibraryGrid";
 import { LibraryRecentPanel } from "@/features/library/components/LibraryRecentPanel";
 import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
@@ -26,15 +27,11 @@ import type { Kana } from "@/features/kana/types";
 import { getKana } from "@/features/kana/api/kanaApi";
 import {
   buildLibraryCategories,
-  grammarFavToCard,
-  hiraganaFavToCard,
-  hiraganaToCard,
-  katakanaFavToCard,
-  kanjiToCard,
-  katakanaToCard,
+  kanjiToScriptCard,
+  hiraganaToScriptCard,
+  katakanaToScriptCard,
   subthemeToCard,
   themeToCard,
-  wordFavToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
 
@@ -109,7 +106,6 @@ export default function LibraryPage() {
       const detail = await getKana(kana.id);
       setSelectedKana(detail);
     } catch {
-      // Fallback to list item so the modal can still open.
       setSelectedKana(kana);
     }
   };
@@ -300,13 +296,13 @@ export default function LibraryPage() {
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                       {kanjis
                         .filter((kanji) => favoriteKanjis.has(kanji.id))
-                        .map((kanji) => (
-                          <ContentCard
+                        .map((kanji, i) => (
+                          <ScriptCard
                             key={kanji.id}
-                            {...kanjiToCard(kanji)}
+                            {...kanjiToScriptCard(kanji, true)}
+                            index={i}
                             onClick={() => handleKanjiClick(kanji)}
                             onFavoriteToggle={toggleFavoriteKanji}
-                            isFavorite
                           />
                         ))}
                     </div>
@@ -319,14 +315,15 @@ export default function LibraryPage() {
                       Gramática
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {favoriteData.grammar.map((fav) => (
-                        <ContentCard
+                      {favoriteData.grammar.map((fav, i) => (
+                        <VocabularyCard
                           key={fav.id}
-                          {...grammarFavToCard(fav)}
-                          onFavoriteToggle={(id) =>
-                            toggleFavorite(id, "grammar")
-                          }
-                          isFavorite
+                          id={fav.id}
+                          title={fav.title || "Gramática"}
+                          subtitle={fav.description || undefined}
+                          thumbnail="文"
+                          variant="word"
+                          index={i}
                         />
                       ))}
                     </div>
@@ -339,16 +336,23 @@ export default function LibraryPage() {
                       Hiragana
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {favoriteData.hiragana.map((fav) => (
-                        <ContentCard
-                          key={fav.id}
-                          {...hiraganaFavToCard(fav)}
-                          onFavoriteToggle={(id) =>
-                            void toggleFavorite(id, "hiragana")
-                          }
-                          isFavorite
-                        />
-                      ))}
+                      {favoriteData.hiragana.map((fav, i) => {
+                        const kana = hiraganas.find((h) => h.id === fav.id);
+                        if (kana) {
+                          return (
+                            <ScriptCard
+                              key={fav.id}
+                              {...hiraganaToScriptCard(kana, true)}
+                              index={i}
+                              onClick={() => handleKanaClick(kana)}
+                              onFavoriteToggle={(id) =>
+                                void toggleFavorite(id, "hiragana")
+                              }
+                            />
+                          );
+                        }
+                        return null;
+                      })}
                     </div>
                   </div>
                 )}
@@ -359,16 +363,23 @@ export default function LibraryPage() {
                       Katakana
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {favoriteData.katakana.map((fav) => (
-                        <ContentCard
-                          key={fav.id}
-                          {...katakanaFavToCard(fav)}
-                          onFavoriteToggle={(id) =>
-                            void toggleFavorite(id, "katakana")
-                          }
-                          isFavorite
-                        />
-                      ))}
+                      {favoriteData.katakana.map((fav, i) => {
+                        const kana = katakanas.find((k) => k.id === fav.id);
+                        if (kana) {
+                          return (
+                            <ScriptCard
+                              key={fav.id}
+                              {...katakanaToScriptCard(kana, true)}
+                              index={i}
+                              onClick={() => handleKanaClick(kana)}
+                              onFavoriteToggle={(id) =>
+                                void toggleFavorite(id, "katakana")
+                              }
+                            />
+                          );
+                        }
+                        return null;
+                      })}
                     </div>
                   </div>
                 )}
@@ -379,12 +390,15 @@ export default function LibraryPage() {
                       Vocabulario
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {favoriteData.word.map((fav) => (
-                        <ContentCard
+                      {favoriteData.word.map((fav, i) => (
+                        <VocabularyCard
                           key={fav.id}
-                          {...wordFavToCard(fav)}
-                          onFavoriteToggle={(id) => toggleFavorite(id, "word")}
-                          isFavorite
+                          id={fav.id}
+                          title={fav.kanjiWord || fav.hiragana || "Palabra"}
+                          subtitle={fav.hiragana || undefined}
+                          thumbnail={fav.kanjiWord || fav.hiragana || "言"}
+                          variant="word"
+                          index={i}
                         />
                       ))}
                     </div>
@@ -421,13 +435,13 @@ export default function LibraryPage() {
               >
                 {kanjis.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {kanjis.map((kanji) => (
-                      <ContentCard
+                    {kanjis.map((kanji, i) => (
+                      <ScriptCard
                         key={kanji.id}
-                        {...kanjiToCard(kanji)}
+                        {...kanjiToScriptCard(kanji, favoriteKanjis.has(kanji.id))}
+                        index={i}
                         onClick={() => handleKanjiClick(kanji)}
                         onFavoriteToggle={toggleFavoriteKanji}
-                        isFavorite={favoriteKanjis.has(kanji.id)}
                       />
                     ))}
                   </div>
@@ -451,15 +465,15 @@ export default function LibraryPage() {
               >
                 {katakanas.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {katakanas.map((katakana) => (
-                      <ContentCard
+                    {katakanas.map((katakana, i) => (
+                      <ScriptCard
                         key={katakana.id}
-                        {...katakanaToCard(katakana)}
+                        {...katakanaToScriptCard(katakana, favoriteKatakanas.has(katakana.id))}
+                        index={i}
                         onClick={() => handleKanaClick(katakana)}
                         onFavoriteToggle={(id) =>
                           void toggleFavorite(id, "katakana")
                         }
-                        isFavorite={favoriteKatakanas.has(katakana.id)}
                       />
                     ))}
                   </div>
@@ -483,15 +497,15 @@ export default function LibraryPage() {
               >
                 {hiraganas.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {hiraganas.map((hiragana) => (
-                      <ContentCard
+                    {hiraganas.map((hiragana, i) => (
+                      <ScriptCard
                         key={hiragana.id}
-                        {...hiraganaToCard(hiragana)}
+                        {...hiraganaToScriptCard(hiragana, favoriteHiraganas.has(hiragana.id))}
+                        index={i}
                         onClick={() => handleKanaClick(hiragana)}
                         onFavoriteToggle={(id) =>
                           void toggleFavorite(id, "hiragana")
                         }
-                        isFavorite={favoriteHiraganas.has(hiragana.id)}
                       />
                     ))}
                   </div>
@@ -548,15 +562,19 @@ export default function LibraryPage() {
                 </div>
 
                 {!selectedTheme && filteredThemes.length > 0 && (
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {filteredThemes.map((theme) => {
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+                    {filteredThemes.map((theme, i) => {
                       const card = themeToCard(theme);
 
                       return (
-                        <ContentCard
+                        <VocabularyCard
                           key={theme.id}
-                          {...card}
-                          thumbnailClassName={card.thumbnailClassName}
+                          id={theme.id}
+                          title={card.title}
+                          subtitle={card.subtitle}
+                          thumbnail={card.thumbnail}
+                          variant="theme"
+                          index={i}
                           onClick={() => void openTheme(theme)}
                         />
                       );
@@ -567,15 +585,19 @@ export default function LibraryPage() {
                 {selectedTheme &&
                   !selectedSubtheme &&
                   filteredSubthemes.length > 0 && (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {filteredSubthemes.map((subtheme) => {
+                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+                      {filteredSubthemes.map((subtheme, i) => {
                         const card = subthemeToCard(subtheme);
 
                         return (
-                          <ContentCard
+                          <VocabularyCard
                             key={subtheme.id}
-                            {...card}
-                            thumbnailClassName={card.thumbnailClassName}
+                            id={subtheme.id}
+                            title={card.title}
+                            subtitle={card.subtitle}
+                            thumbnail={card.thumbnail}
+                            variant="subtheme"
+                            index={i}
                             onClick={() => void openSubtheme(subtheme)}
                           />
                         );
@@ -585,14 +607,18 @@ export default function LibraryPage() {
 
                   {selectedSubtheme && filteredWords.length > 0 && (
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {filteredWords.map((word) => {
+                      {filteredWords.map((word, i) => {
                         const card = wordToCard(word);
 
                         return (
-                          <ContentCard
+                          <VocabularyCard
                             key={word.id}
-                            {...card}
-                            thumbnailClassName={card.thumbnailClassName}
+                            id={word.id}
+                            title={card.title}
+                            subtitle={card.subtitle}
+                            thumbnail={card.thumbnail}
+                            variant="word"
+                            index={i}
                           />
                         );
                       })}
@@ -616,34 +642,32 @@ export default function LibraryPage() {
               >
                 {recentItems.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {recentItems.map((r) => {
+                    {recentItems.map((r, i) => {
                       if (r.type === "kanji") {
                         const kanji = kanjis.find((k) => k.id === r.id);
                         if (!kanji) return null;
 
                         return (
-                          <ContentCard
+                          <ScriptCard
                             key={r.id}
-                            {...kanjiToCard(kanji)}
+                            {...kanjiToScriptCard(kanji, favoriteKanjis.has(kanji.id))}
+                            index={i}
                             onClick={() => handleKanjiClick(kanji)}
                             onFavoriteToggle={toggleFavoriteKanji}
-                            isFavorite={favoriteKanjis.has(kanji.id)}
                           />
                         );
                       }
 
                       if (r.type === "grammar_lesson" || r.type === "grammar") {
                         return (
-                          <ContentCard
+                          <VocabularyCard
                             key={r.id}
                             id={r.id}
                             title={r.title || "Gramática"}
                             subtitle={r.description || undefined}
                             thumbnail="文"
-                            onFavoriteToggle={(id) =>
-                              toggleFavorite(id, "grammar")
-                            }
-                            isFavorite={isFavorite(r.id)}
+                            variant="word"
+                            index={i}
                           />
                         );
                       }
@@ -654,16 +678,14 @@ export default function LibraryPage() {
                           : undefined;
 
                         return (
-                          <ContentCard
+                          <VocabularyCard
                             key={r.id}
                             id={r.id}
                             title={r.kanjiWord || r.hiragana || "Palabra"}
                             subtitle={meanings}
                             thumbnail={r.kanjiWord || r.hiragana || "言"}
-                            onFavoriteToggle={(id) =>
-                              toggleFavorite(id, "word")
-                            }
-                            isFavorite={isFavorite(r.id)}
+                            variant="word"
+                            index={i}
                           />
                         );
                       }
