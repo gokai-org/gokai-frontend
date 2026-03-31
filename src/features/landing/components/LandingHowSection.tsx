@@ -6,6 +6,7 @@ import {
   HOW_TABS,
   type HowTabId,
 } from "@/features/landing/data/landingData";
+import { staggerContainer, fadeUpSoft, EASE_BRAND } from "@/features/landing/lib/motionVariants";
 
 interface LandingHowSectionProps {
   howTab: HowTabId;
@@ -20,58 +21,59 @@ export function LandingHowSection({
 }: LandingHowSectionProps) {
   return (
     <div className="mt-8">
+      {/* Imagen con transición al cambiar tab */}
       <motion.div
-        initial={{ opacity: 0, y: 18, scale: 0.985 }}
-        whileInView={{ opacity: 1, y: 0, scale: 1 }}
-        viewport={{ once: true }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+        variants={fadeUpSoft}
         className="mx-auto w-full max-w-[1280px]"
       >
         <AnimatePresence mode="wait">
           <motion.div
             key={howTab}
-            initial={{ opacity: 0, y: 18, scale: 0.985 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -18, scale: 0.985 }}
-            transition={{ duration: 0.35 }}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.96, y: -12 }}
+            transition={{ duration: 0.35, ease: EASE_BRAND }}
             className="relative mx-auto aspect-[16/10] w-full overflow-visible"
           >
             <Image
               src={how.img}
               alt={how.label}
               fill
-              className="object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.18)]"
+              className="object-contain drop-shadow-[0_24px_48px_rgba(0,0,0,0.20)]"
               priority
             />
           </motion.div>
         </AnimatePresence>
       </motion.div>
 
+      {/* Tabs con stagger */}
       <motion.div
         className="mt-8 flex flex-wrap items-center justify-center gap-4 md:gap-5"
-        initial={{ opacity: 0, y: 18 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.12, duration: 0.45 }}
+        variants={staggerContainer(0.08, 0.1)}
       >
-        {HOW_TABS.map((tab, idx) => (
+        {HOW_TABS.map((tab) => (
           <motion.button
             key={tab.id}
             type="button"
             onClick={() => setHowTab(tab.id)}
-            initial={{ opacity: 0, y: 14 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: 0.18 + idx * 0.07, duration: 0.35 }}
-            whileHover={{ y: -2, scale: 1.02 }}
-            whileTap={{ scale: 0.97 }}
+            variants={fadeUpSoft}
+            whileHover={{ y: -3, scale: 1.03 }}
+            whileTap={{ scale: 0.96 }}
             className={[
               "relative min-w-[210px] rounded-full px-8 py-4 text-base font-bold transition-all duration-300 md:min-w-[250px] md:px-10 md:py-4 md:text-[1.05rem]",
               tab.id === howTab
                 ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-[0_16px_34px_-14px_rgba(153,51,49,0.55)]"
-                : "border border-border-subtle bg-surface-primary/85 text-content-secondary shadow-sm hover:border-accent/10 hover:text-accent",
+                : "border border-border-subtle bg-surface-primary/85 text-content-secondary shadow-sm hover:border-accent/15 hover:text-accent hover:shadow-md",
             ].join(" ")}
           >
+            {tab.id === howTab && (
+              <motion.span
+                layoutId="how-tab-indicator"
+                className="absolute inset-0 rounded-full bg-gradient-to-r from-accent to-accent-hover"
+                style={{ zIndex: -1 }}
+                transition={{ type: "spring", stiffness: 380, damping: 36 }}
+              />
+            )}
             {tab.label}
           </motion.button>
         ))}

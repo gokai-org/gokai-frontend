@@ -35,7 +35,7 @@ export function PlanCard({
       transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
       whileHover={{ y: -8, scale: 1.01 }}
       className={[
-        "relative flex h-full min-h-[650px] flex-col overflow-hidden rounded-[40px] border p-8 transition-all duration-300 lg:min-h-[690px] lg:p-10",
+        "relative flex h-full min-h-[480px] flex-col overflow-hidden rounded-[40px] border p-6 transition-all duration-300 lg:min-h-[520px] lg:p-8",
         highlighted
           ? "border-accent/15 bg-gradient-to-b from-white via-[#fffaf9] to-[#fff5f3] shadow-[0_30px_70px_-26px_rgba(153,51,49,0.22)]"
           : "border-border-subtle bg-surface-primary shadow-[0_22px_50px_-22px_rgba(0,0,0,0.18)]",
@@ -58,38 +58,38 @@ export function PlanCard({
       </div>
 
       {/* espacio fijo para badge */}
-      <div className="relative z-10 mb-6 min-h-[44px]">
+      <div className="relative z-10 mb-4 min-h-[36px]">
         {badge ? (
           <div className="w-fit rounded-full bg-gradient-to-r from-accent to-accent-hover px-4 py-2 text-sm font-bold text-content-inverted shadow-lg shadow-accent/20">
             {badge}
           </div>
         ) : (
-          <div className="h-[44px]" />
+          <div className="h-[36px]" />
         )}
       </div>
 
       {/* header */}
-      <div className="relative z-10 flex min-h-[175px] flex-col text-left">
+      <div className="relative z-10 flex min-h-[120px] flex-col text-left">
         <div className="max-w-[82%]">
-          <h3 className="text-[2.15rem] font-extrabold leading-[1.02] tracking-tight text-content-primary lg:text-[2.45rem]">
+          <h3 className="text-[1.75rem] font-extrabold leading-[1.02] tracking-tight text-content-primary lg:text-[2rem]">
             {title}
           </h3>
 
-          <p className="mt-4 text-lg leading-relaxed text-content-secondary">
+          <p className="mt-2 text-base leading-relaxed text-content-secondary">
             {description}
           </p>
         </div>
       </div>
 
       {/* precio */}
-      <div className="relative z-10 my-8 flex min-h-[120px] items-center">
+      <div className="relative z-10 my-5 flex min-h-[80px] items-center">
         <div className="text-left">
           <p
             className={[
               "font-black tracking-tight",
               highlighted
-                ? "text-6xl text-[#b33c37] lg:text-7xl"
-                : "text-6xl text-[#b33c37] lg:text-7xl",
+                ? "text-5xl text-[#b33c37] lg:text-6xl"
+                : "text-5xl text-[#b33c37] lg:text-6xl",
             ].join(" ")}
           >
             {price}
@@ -102,12 +102,12 @@ export function PlanCard({
       </div>
 
       {/* lista */}
-      <div className="relative z-10 flex-1 space-y-5">
+      <div className="relative z-10 flex-1 space-y-3">
         {features.map((feature) => (
-          <div key={feature} className="flex items-start gap-4">
+          <div key={feature} className="flex items-start gap-3">
             <div
               className={[
-                "mt-0.5 flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full shadow-sm",
+                "mt-0.5 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full shadow-sm",
                 highlighted
                   ? "bg-accent/10 text-accent"
                   : "bg-surface-tertiary text-accent",
@@ -116,7 +116,7 @@ export function PlanCard({
               <Check className="h-5 w-5" />
             </div>
 
-            <p className="text-lg leading-relaxed text-content-secondary">
+            <p className="text-base leading-relaxed text-content-secondary">
               {feature}
             </p>
           </div>
@@ -124,11 +124,11 @@ export function PlanCard({
       </div>
 
       {/* botón */}
-      <div className="relative z-10 mt-10">
+      <div className="relative z-10 mt-6">
         <Link
           href={href}
           className={[
-            "inline-flex w-full items-center justify-center rounded-full px-6 py-5 text-xl font-extrabold transition-all duration-300",
+            "inline-flex w-full items-center justify-center rounded-full px-6 py-3.5 text-lg font-extrabold transition-all duration-300",
             highlighted
               ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-[0_18px_38px_-16px_rgba(153,51,49,0.52)] hover:shadow-[0_22px_48px_-18px_rgba(153,51,49,0.60)]"
               : "bg-surface-tertiary text-content-primary hover:bg-surface-tertiary",

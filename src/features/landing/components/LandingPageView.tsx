@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
+import { sectionReveal, scaleFade } from "@/features/landing/lib/motionVariants";
 import { SECTIONS } from "@/features/landing/data/landingData";
 import { useLandingPage } from "@/features/landing/hooks/useLandingPage";
 import {
@@ -19,6 +20,7 @@ import {
 export function LandingPageView() {
   const {
     logoWrapRef,
+    logoMobileRef,
     howSectionRef,
     activeId,
     showLogo,
@@ -30,7 +32,7 @@ export function LandingPageView() {
   } = useLandingPage();
 
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-[#f6f4f3] pt-[76px] text-content-primary">
+    <main className="relative min-h-screen overflow-x-hidden bg-white pt-[76px] text-content-primary">
       <div className="pointer-events-none fixed inset-0 z-0">
         <AnimatedGraphBackground
           className={[
@@ -59,6 +61,7 @@ export function LandingPageView() {
             className={[
               "py-10",
               isCenterMode ? "lg:ml-0" : "lg:-ml-10 xl:-ml-16 2xl:-ml-24",
+              !isCenterMode ? "pr-[130px] sm:pr-[160px] lg:pr-0" : "",
             ].join(" ")}
           >
             {SECTIONS.map((section) => {
@@ -71,14 +74,14 @@ export function LandingPageView() {
                   id={section.id}
                   data-section
                   ref={section.id === "como-funciona" ? howSectionRef : undefined}
-                  initial={{ opacity: 0, y: 36 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true, margin: "-100px" }}
-                  transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+                  variants={sectionReveal}
+                  initial="hidden"
+                  whileInView="show"
+                  viewport={{ once: true, amount: 0.15 }}
                   className={[
                     "scroll-mt-28",
                     "min-h-[calc(100vh-76px)]",
-                    "flex items-center py-14",
+                    "flex items-center py-14 will-change-transform",
                     isCenter ? "justify-center" : "",
                   ].join(" ")}
                 >
@@ -87,12 +90,6 @@ export function LandingPageView() {
                       isCenter
                         ? "mx-auto w-full max-w-6xl text-center"
                         : "max-w-2xl",
-                      "transition-all duration-500",
-                      isActive
-                        ? "translate-y-0 opacity-100"
-                        : section.id === "contacto"
-                          ? "translate-y-0 opacity-100"
-                          : "translate-y-0 opacity-100 md:translate-y-2 md:opacity-75",
                     ].join(" ")}
                   >
                     <LandingSectionTitle
@@ -105,18 +102,16 @@ export function LandingPageView() {
 
                     {section.cta && !isCenter && (
                       <motion.div
+                        variants={scaleFade}
                         className="mt-8"
-                        initial={{ opacity: 0, scale: 0.96 }}
-                        whileInView={{ opacity: 1, scale: 1 }}
-                        viewport={{ once: true }}
-                        transition={{ delay: 0.15, duration: 0.35 }}
                       >
-                        <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+                        <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
                           <Link
                             href={section.cta.href}
-                            className="inline-flex rounded-full bg-gradient-to-r from-accent to-accent-hover px-8 py-4 text-lg font-semibold text-content-inverted shadow-lg shadow-accent/20 transition-all duration-300 hover:shadow-xl"
+                            className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2.5 text-sm font-semibold text-content-inverted shadow-lg shadow-accent/20 transition-all duration-300 sm:px-8 sm:py-4 sm:text-base hover:shadow-[0_20px_44px_-14px_rgba(153,51,49,0.52)]"
                           >
                             {section.cta.label}
+                            <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">&rarr;</span>
                           </Link>
                         </motion.div>
                       </motion.div>
@@ -152,6 +147,7 @@ export function LandingPageView() {
             showLogo={showLogo}
             isCenterMode={isCenterMode}
             logoWrapRef={logoWrapRef}
+            logoMobileRef={logoMobileRef}
           />
         </div>
       </div>

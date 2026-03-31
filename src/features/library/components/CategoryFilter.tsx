@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Reorder } from "framer-motion";
 import { LibraryCategory } from "@/features/library/types";
 
@@ -40,6 +40,14 @@ export function CategoryFilter({
       }
     },
   );
+
+  // Detectar si es dispositivo touch para deshabilitar drag y habilitar scroll nativo
+  const [isTouch, setIsTouch] = useState(false);
+  useEffect(() => {
+    setIsTouch(window.matchMedia("(pointer: coarse)").matches);
+  }, []);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const orderIds = orderedCategories.map((cat) => cat.id);
@@ -88,7 +96,11 @@ export function CategoryFilter({
   }
 
   return (
-    <div className="no-scrollbar -mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2">
+    <div
+      ref={scrollRef}
+      className="no-scrollbar -mx-1 flex items-center gap-3 overflow-x-auto px-1 pb-2 touch-pan-x"
+      style={{ WebkitOverflowScrolling: "touch" }}
+    >
       <button
         onClick={() => onSelectCategory(null)}
         className={[
@@ -110,6 +122,8 @@ export function CategoryFilter({
             key={category.id}
             value={category}
             className="cursor-grab active:cursor-grabbing"
+            drag={isTouch ? false : "x"}
+            dragListener={!isTouch}
           >
             <button
               onClick={() => onSelectCategory(category.id)}

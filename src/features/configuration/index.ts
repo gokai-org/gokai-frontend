@@ -1,4 +1,5 @@
 export { IntegrationButton } from "./components/IntegrationButton";
+export { SettingsBootstrap } from "./components/SettingsBootstrap";
 export {
   SettingsSelectItem,
   SettingsToggleItem,
