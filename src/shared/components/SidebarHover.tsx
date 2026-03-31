@@ -4,7 +4,6 @@ import React, { useEffect, useMemo, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
-import { useTheme } from "@/shared/hooks/useTheme";
 
 type ItemKey =
   | "mapa"
@@ -562,10 +561,6 @@ function GlobalStyles() {
 }
 
 function Header({ expanded }: { expanded: boolean }) {
-  const { theme } = useTheme();
-  const logoSrc =
-    theme === "dark" ? "/logos/gokai-logo-dark.svg" : "/logos/gokai-logo.svg";
-
   return (
     <div className="pt-4 pb-0">
       <div className={[expanded ? "px-4" : "px-2"].join(" ")}>
@@ -575,15 +570,32 @@ function Header({ expanded }: { expanded: boolean }) {
             expanded ? "gap-3" : "justify-center",
           ].join(" ")}
         >
-          <motion.img
-            src={logoSrc}
-            alt="Gokai"
-            draggable={false}
-            className="select-none h-10 w-10"
-            initial={false}
-            animate={{ rotate: expanded ? 180 : -180 }}
-            transition={{ duration: 0.45, ease: "easeInOut" }}
-          />
+          {/*
+           * Dos imágenes controladas por CSS. El script inline en layout.tsx
+           * ya aplica la clase `dark` en <html> antes de que React hidrate,
+           * así que Tailwind dark: resuelve el logo correcto desde el primer
+           * frame sin depender del estado React (que causa el destello).
+           */}
+          <div className="relative h-10 w-10 shrink-0">
+            <motion.img
+              src="/logos/gokai-logo.svg"
+              alt="Gokai"
+              draggable={false}
+              className="absolute inset-0 select-none h-10 w-10 block dark:hidden"
+              initial={false}
+              animate={{ rotate: expanded ? 180 : -180 }}
+              transition={{ duration: 0.45, ease: "easeInOut" }}
+            />
+            <motion.img
+              src="/logos/gokai-logo-dark.svg"
+              alt="Gokai"
+              draggable={false}
+              className="absolute inset-0 select-none h-10 w-10 hidden dark:block"
+              initial={false}
+              animate={{ rotate: expanded ? 180 : -180 }}
+              transition={{ duration: 0.45, ease: "easeInOut" }}
+            />
+          </div>
 
           {expanded && (
             <div className="hidden md:block">

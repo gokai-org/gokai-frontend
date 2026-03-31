@@ -23,7 +23,7 @@ interface RecentCardProps {
 
 export function RecentCard({ item, index = 0, onClick }: RecentCardProps) {
   const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
-    useCardAnimation(index);
+    useCardAnimation(index, { useInView: false });
   const formatTime = (timeInfo?: string | Date) => {
     if (!timeInfo) return "Hace un momento";
 

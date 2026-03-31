@@ -18,9 +18,9 @@ export function useRecentItems() {
       const response = await getRecentItems();
       // Aplanar los tres grupos en un solo array ordenado por fecha
       const all: BackendRecentItem[] = [
-        ...(response.kanji ?? []),
-        ...(response.grammar_lesson ?? []),
-        ...(response.word ?? []),
+        ...(response.kanji ?? []).map((item) => ({ ...item, type: item.type || "kanji" })),
+        ...(response.grammar_lesson ?? []).map((item) => ({ ...item, type: item.type || "grammar_lesson" })),
+        ...(response.word ?? []).map((item) => ({ ...item, type: item.type || "word" })),
       ].sort(
         (a, b) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

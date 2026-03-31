@@ -10,6 +10,7 @@ import { useLandingActiveSection } from "@/features/landing/hooks/useLandingActi
 
 export function useLandingPage() {
   const logoWrapRef = useRef<HTMLDivElement | null>(null);
+  const logoMobileRef = useRef<HTMLDivElement | null>(null);
   const howSectionRef = useRef<HTMLElement | null>(null);
 
   const { activeId } = useLandingActiveSection("inicio");
@@ -45,7 +46,8 @@ export function useLandingPage() {
 
       const headerOffset = 86;
       const rect = element.getBoundingClientRect();
-      const isBeforeHowSection = rect.top > headerOffset;
+      const anticipation = window.innerHeight * 0.25;
+      const isBeforeHowSection = rect.top > headerOffset + anticipation;
 
       setShowLogo(isBeforeHowSection);
     };
@@ -68,18 +70,23 @@ export function useLandingPage() {
 
   useEffect(() => {
     let raf = 0;
+    let lastDeg = 0;
 
     const handleScroll = () => {
-      if (!showLogo || !logoWrapRef.current) return;
-
       cancelAnimationFrame(raf);
       raf = requestAnimationFrame(() => {
-        if (!logoWrapRef.current) return;
-
         const scrollY = window.scrollY || 0;
         const degrees = scrollY * 0.12;
 
-        logoWrapRef.current.style.transform = `rotate(${degrees}deg)`;
+        if (degrees === lastDeg) return;
+        lastDeg = degrees;
+
+        if (logoWrapRef.current) {
+          logoWrapRef.current.style.transform = `rotate(${degrees}deg)`;
+        }
+        if (logoMobileRef.current) {
+          logoMobileRef.current.style.transform = `rotate(${degrees}deg)`;
+        }
       });
     };
 
@@ -90,7 +97,7 @@ export function useLandingPage() {
       cancelAnimationFrame(raf);
       window.removeEventListener("scroll", handleScroll);
     };
-  }, [showLogo]);
+  }, []);
 
   const isCenterMode =
     (SECTIONS.find((section) => section.id === activeId)?.layout ?? "split") ===
@@ -104,6 +111,7 @@ export function useLandingPage() {
 
   return {
     logoWrapRef,
+    logoMobileRef,
     howSectionRef,
     activeId,
     showLogo,

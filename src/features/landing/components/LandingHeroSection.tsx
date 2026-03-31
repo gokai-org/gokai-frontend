@@ -2,6 +2,12 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
+import {
+  fadeUp,
+  fadeUpSoft,
+  scaleFade,
+  staggerContainer,
+} from "@/features/landing/lib/motionVariants";
 
 interface LandingHeroSectionProps {
   titleA?: string;
@@ -20,13 +26,23 @@ export function LandingHeroSection({
   cta,
 }: LandingHeroSectionProps) {
   return (
-    <div className="max-w-2xl">
+    <motion.div
+      className="max-w-2xl"
+      variants={staggerContainer(0.1, 0.05)}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, margin: "-80px" }}
+    >
+      {/* Etiqueta introductoria */}
+      <motion.div variants={fadeUpSoft} className="mb-5">
+        <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/[0.07] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-accent">
+          Plataforma de japonés con IA
+        </span>
+      </motion.div>
+
       <motion.h2
-        initial={{ opacity: 0, y: 28 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: "-100px" }}
-        transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-        className="text-5xl font-extrabold leading-[1.02] tracking-tight md:text-7xl"
+        variants={fadeUp}
+        className="text-4xl font-extrabold leading-[1.02] tracking-tight sm:text-5xl md:text-7xl"
       >
         <span className="block">{titleA}</span>
         <span className="block text-accent">{titleB}</span>
@@ -34,45 +50,42 @@ export function LandingHeroSection({
 
       {desc && (
         <motion.p
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.5, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-          className="mt-6 text-lg leading-relaxed text-content-secondary md:text-2xl"
+          variants={fadeUpSoft}
+          className="mt-4 text-sm leading-relaxed text-content-secondary sm:text-base md:text-2xl"
         >
           {desc}
         </motion.p>
       )}
 
       {cta && (
-        <motion.div
-          className="mt-8"
-          initial={{ opacity: 0, scale: 0.96 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.15, duration: 0.35 }}
-        >
-          <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
+        <motion.div variants={scaleFade} className="mt-8">
+          <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
             <Link
               href={cta.href}
-              className="inline-flex rounded-full bg-gradient-to-r from-accent to-accent-hover px-8 py-4 text-lg font-semibold text-content-inverted shadow-lg shadow-accent/20 transition-all duration-300 hover:shadow-xl"
+              className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2.5 text-sm font-semibold text-content-inverted shadow-lg shadow-accent/20 transition-all duration-300 sm:gap-2.5 sm:px-8 sm:py-4 sm:text-base hover:shadow-[0_20px_44px_-14px_rgba(153,51,49,0.52)]"
             >
               {cta.label}
+              <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
             </Link>
           </motion.div>
         </motion.div>
       )}
 
       <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.35, duration: 0.4 }}
+        variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.5 } } }}
         className="mt-14 flex items-center gap-2 text-xs text-content-muted"
       >
         <span>Desliza para ver más</span>
-        <span className="translate-y-[1px]">↓</span>
+        <motion.span
+          animate={{ y: [0, 4, 0] }}
+          transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}
+          className="inline-block"
+        >
+          ↓
+        </motion.span>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }

@@ -2,17 +2,17 @@
 
 import { motion } from "framer-motion";
 import { MembershipPicker } from "@/features/landing";
+import { staggerContainer, fadeUp } from "@/features/landing/lib/motionVariants";
 
 export function LandingPlansSection() {
   return (
     <motion.div
       className="mt-12"
-      initial={{ opacity: 0, y: 12 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.45 }}
+      variants={staggerContainer(0.1, 0.05)}
     >
-      <MembershipPicker mode="link" />
+      <motion.div variants={fadeUp}>
+        <MembershipPicker mode="link" />
+      </motion.div>
     </motion.div>
   );
 }
