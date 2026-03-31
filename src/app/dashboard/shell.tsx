@@ -13,7 +13,7 @@ export default function ContentShell({
   const isChatbot = pathname === "/dashboard/chatbot";
   const isLibrary = pathname === "/dashboard/library";
   const isReviews = pathname === "/dashboard/reviews";
-  const isGraph = pathname === "/dashboard/graph";
+  const isGraph = pathname.startsWith("/dashboard/graph");
   const isStatistics = pathname === "/dashboard/statistics";
   const isHelp = pathname === "/dashboard/help";
   const isNotices = pathname === "/dashboard/notices";

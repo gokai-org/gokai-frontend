@@ -9,14 +9,12 @@ import ReactFlow, {
   addEdge,
   Connection,
   BackgroundVariant,
-  Panel,
   ReactFlowProvider,
   NodeMouseHandler,
   useReactFlow,
   type Viewport,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import { motion } from "framer-motion";
 import CustomNode from "./CustomNode";
 import CustomEdge from "./CustomEdge";
 import type { GraphNode, GraphEdge } from "@/features/graph/lib/graphTypes";
@@ -48,8 +46,6 @@ function LearningGraphInner({
   useEffect(() => {
     setEdges(initialEdges);
   }, [initialEdges, setEdges]);
-
-  const [activeTab, setActiveTab] = useState<"explore" | "grammar">("explore");
 
   const [lessonOpen, setLessonOpen] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -128,44 +124,6 @@ function LearningGraphInner({
 
   return (
     <div className="absolute inset-0 w-full h-full">
-      {/* Tabs */}
-      <Panel position="top-center" className="bg-transparent z-10">
-        <motion.div
-          initial={{ y: -20, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex gap-2 bg-surface-primary/90 backdrop-blur-md rounded-xl p-1.5 shadow-lg border border-border-subtle"
-        >
-          <button
-            onClick={() => setActiveTab("explore")}
-            className={`
-              px-8 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200
-              ${
-                activeTab === "explore"
-                  ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-md shadow-accent/30"
-                  : "text-content-secondary hover:bg-surface-tertiary"
-              }
-            `}
-          >
-            Explorar
-          </button>
-
-          <button
-            onClick={() => setActiveTab("grammar")}
-            className={`
-              px-8 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200
-              ${
-                activeTab === "grammar"
-                  ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-md shadow-accent/30"
-                  : "text-content-secondary hover:bg-surface-tertiary"
-              }
-            `}
-          >
-            Gramática
-          </button>
-        </motion.div>
-      </Panel>
-
       <ReactFlow
         nodes={nodes}
         edges={edges}

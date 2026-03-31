@@ -4,7 +4,7 @@ import {
   NodeType,
   NodeStatus,
   GraphLayoutConfig,
-} from "./graphTypes";
+} from "@/features/graph/lib/graphTypes";
 import { GRAPH_CONFIG } from "./graphConfig";
 
 interface NodeDefinition {

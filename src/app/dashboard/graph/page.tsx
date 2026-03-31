@@ -1,6 +1,6 @@
 "use client";
 
-import UserGraph from "@/features/graph/components/UserGraph";
+import UserGraph from "@/features/graph/explore/components/UserGraph";
 
 export default function Page() {
   // Ejemplo: Mostrar el progreso del usuario

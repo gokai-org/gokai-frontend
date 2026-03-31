@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import LearningGraph from "@/features/graph/components/LearningGraph";
+import LearningGraph from "./LearningGraph";
 import {
   createCustomGraph,
   generateConnections,
-} from "@/features/graph/lib/graphBuilder";
+} from "../lib/graphBuilder";
 import type { NodeType, NodeStatus } from "@/features/graph/lib/graphTypes";
 import { listKanjis } from "@/features/kanji/api/kanjiApi";
 import type { Kanji } from "@/features/kanji/types";

@@ -1,4 +1,4 @@
-import { NodeType, NodeStatus } from "./graphTypes";
+import { NodeType, NodeStatus } from "@/features/graph/lib/graphTypes";
 
 /**
  * Configuración visual del grafo
