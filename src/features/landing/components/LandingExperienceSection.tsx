@@ -70,7 +70,7 @@ export function LandingExperienceSection() {
       idxRef.current  = idx;
       setRealIdx(((idx - N) % N + N) % N);
 
-      animate(x, -(idx * s), {
+      animate(x, -(idx * s) as number, {
         duration : 0.48,
         ease     : [...EASE] as number[],
         onComplete: () => {
