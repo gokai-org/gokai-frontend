@@ -296,7 +296,7 @@ export default function SidebarOnly() {
             onMouseLeave={() => setHovered(false)}
             className={[
               "h-full rounded-[28px] bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] backdrop-blur",
-              "shadow-[var(--shadow-lg)]",
+              "shadow-[var(--shadow-md)]",
               "flex flex-col overflow-hidden",
               "w-[320px] md:w-[78px]",
             ].join(" ")}
@@ -306,9 +306,6 @@ export default function SidebarOnly() {
               stiffness: 350,
               damping: 30,
               mass: 0.7,
-            }}
-            whileHover={{
-              boxShadow: "var(--shadow-xl)",
             }}
           >
             <motion.div animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
@@ -408,7 +405,7 @@ export default function SidebarOnly() {
               className={[
                 "md:hidden fixed left-4 top-4 z-[55] h-[calc(100dvh-32px)]",
                 "bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] backdrop-blur",
-                "shadow-[var(--shadow-xl)]",
+                "shadow-[var(--shadow-md)]",
                 "rounded-[28px] overflow-hidden flex flex-col",
                 "w-[calc(86vw-16px)] max-w-[360px]",
               ].join(" ")}

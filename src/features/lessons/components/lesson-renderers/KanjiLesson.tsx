@@ -20,9 +20,13 @@ const modeTitle: Record<LessonMode, string> = {
 export default function KanjiLesson({
   data,
   mode,
+  ctaDisabled = false,
+  ctaDisabledReason,
 }: {
   data: Extract<LessonResolved, { kind: "kanji" }>;
   mode: LessonMode;
+  ctaDisabled?: boolean;
+  ctaDisabledReason?: string;
 }) {
   const [showWritingPractice, setShowWritingPractice] = useState(false);
   const k = data.kanji;
@@ -105,9 +109,17 @@ export default function KanjiLesson({
 
       {/* CTA */}
       <LessonCTA
-        variant={mode === "writing" ? "start" : "start"}
-        label={mode === "writing" ? "Comenzar escritura" : "Comenzar"}
+        variant={ctaDisabled ? "disabled" : "start"}
+        label={
+          ctaDisabled
+            ? "Aún bloqueado"
+            : mode === "writing"
+              ? "Comenzar escritura"
+              : "Comenzar"
+        }
         onClick={() => {
+          if (ctaDisabled) return;
+
           if (mode === "writing") {
             setShowWritingPractice(true);
           } else {
@@ -115,6 +127,12 @@ export default function KanjiLesson({
           }
         }}
       />
+
+      {ctaDisabled && ctaDisabledReason ? (
+        <p className="-mt-2 text-center text-xs leading-5 text-content-secondary">
+          {ctaDisabledReason}
+        </p>
+      ) : null}
 
       {/* Writing practice modal */}
       {showWritingPractice && (

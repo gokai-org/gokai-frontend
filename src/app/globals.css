@@ -317,3 +317,540 @@ html {
 .support-modal-scroll::-webkit-scrollbar-thumb:hover {
   background: var(--scrollbar-thumb-hover);
 }
+
+@keyframes kanji-star-float {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+}
+
+.kanji-star-float {
+  animation-name: kanji-star-float;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-fill-mode: both;
+}
+
+@keyframes kanji-selected-pulse {
+  0% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    opacity: 0.72;
+    transform: scale(1);
+  }
+}
+
+.kanji-selected-pulse {
+  animation: kanji-selected-pulse 3.2s ease-in-out infinite;
+}
+
+@keyframes kanji-space-twinkle-luxe {
+  0% {
+    opacity: 0.56;
+  }
+  18% {
+    opacity: 0.66;
+  }
+  42% {
+    opacity: 0.84;
+  }
+  64% {
+    opacity: 0.72;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes kanji-space-twinkle-soft {
+  0% {
+    opacity: 0.62;
+  }
+  50% {
+    opacity: 0.78;
+  }
+  100% {
+    opacity: 0.66;
+  }
+}
+
+@keyframes kanji-space-breathe {
+  0% {
+    opacity: 0.58;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.82;
+    transform: scale(1.018);
+  }
+  100% {
+    opacity: 0.62;
+    transform: scale(1.006);
+  }
+}
+
+.kanji-space-scene {
+  contain: layout paint style;
+  isolation: isolate;
+}
+
+.kanji-space-base,
+.kanji-space-ambient,
+.kanji-space-vignette,
+.kanji-space-stars-far,
+.kanji-space-stars-glimmer,
+.kanji-space-stars-near,
+.kanji-space-stars-dust,
+.kanji-space-haze-far,
+.kanji-space-haze-mid,
+.kanji-space-haze-near,
+.kanji-space-ring {
+  contain: paint;
+  backface-visibility: hidden;
+  will-change: opacity;
+}
+
+.kanji-space-stars-far,
+.kanji-space-stars-glimmer,
+.kanji-space-stars-near,
+.kanji-space-stars-dust {
+  background-repeat: repeat;
+  background-origin: border-box;
+}
+
+.kanji-space-haze-far,
+.kanji-space-haze-mid,
+.kanji-space-haze-near,
+.kanji-space-ring {
+  background-repeat: no-repeat;
+  background-origin: border-box;
+}
+
+.kanji-space-layer {
+  left: 50%;
+  top: 50%;
+  overflow: visible;
+  transform-origin: center;
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+  contain: layout style;
+  backface-visibility: hidden;
+}
+
+.kanji-space-layer-far {
+  width: var(--kanji-layer-far-span, 1800px);
+  height: var(--kanji-layer-far-span, 1800px);
+}
+
+.kanji-space-layer-mid {
+  width: var(--kanji-layer-mid-span, 2200px);
+  height: var(--kanji-layer-mid-span, 2200px);
+}
+
+.kanji-space-layer-near {
+  width: var(--kanji-layer-near-span, 2600px);
+  height: var(--kanji-layer-near-span, 2600px);
+}
+
+.kanji-space-layer-stars.kanji-space-layer-far {
+  transform: translate3d(
+      calc(-50% + var(--kanji-camera-x, 0px) * var(--kanji-parallax-far-factor, -0.16)),
+      calc(-50% + var(--kanji-camera-y, 0px) * var(--kanji-parallax-far-factor, -0.16)),
+      0
+    )
+    scale(
+      calc(1 + (var(--kanji-camera-zoom, 1) - 1) * var(--kanji-parallax-far-star-zoom, 0.034))
+    );
+}
+
+.kanji-space-layer-atmosphere.kanji-space-layer-far {
+  transform: translate3d(
+      calc(-50% + var(--kanji-camera-x, 0px) * var(--kanji-parallax-far-factor, -0.16)),
+      calc(-50% + var(--kanji-camera-y, 0px) * var(--kanji-parallax-far-factor, -0.16)),
+      0
+    )
+    scale(
+      calc(
+        1 + (var(--kanji-camera-zoom, 1) - 1) * var(--kanji-parallax-far-atmosphere-zoom, 0.05)
+      )
+    );
+}
+
+.kanji-space-layer-stars.kanji-space-layer-mid {
+  transform: translate3d(
+      calc(-50% + var(--kanji-camera-x, 0px) * var(--kanji-parallax-mid-factor, -0.3)),
+      calc(-50% + var(--kanji-camera-y, 0px) * var(--kanji-parallax-mid-factor, -0.3)),
+      0
+    )
+    scale(
+      calc(1 + (var(--kanji-camera-zoom, 1) - 1) * var(--kanji-parallax-mid-star-zoom, 0.052))
+    );
+}
+
+.kanji-space-layer-atmosphere.kanji-space-layer-mid {
+  transform: translate3d(
+      calc(-50% + var(--kanji-camera-x, 0px) * var(--kanji-parallax-mid-factor, -0.3)),
+      calc(-50% + var(--kanji-camera-y, 0px) * var(--kanji-parallax-mid-factor, -0.3)),
+      0
+    )
+    scale(
+      calc(
+        1 + (var(--kanji-camera-zoom, 1) - 1) * var(--kanji-parallax-mid-atmosphere-zoom, 0.078)
+      )
+    );
+}
+
+.kanji-space-layer-stars.kanji-space-layer-near {
+  transform: translate3d(
+      calc(-50% + var(--kanji-camera-x, 0px) * var(--kanji-parallax-near-factor, -0.48)),
+      calc(-50% + var(--kanji-camera-y, 0px) * var(--kanji-parallax-near-factor, -0.48)),
+      0
+    )
+    scale(
+      calc(1 + (var(--kanji-camera-zoom, 1) - 1) * var(--kanji-parallax-near-star-zoom, 0.072))
+    );
+}
+
+.kanji-space-layer-atmosphere.kanji-space-layer-near {
+  transform: translate3d(
+      calc(-50% + var(--kanji-camera-x, 0px) * var(--kanji-parallax-near-factor, -0.48)),
+      calc(-50% + var(--kanji-camera-y, 0px) * var(--kanji-parallax-near-factor, -0.48)),
+      0
+    )
+    scale(
+      calc(
+        1 + (var(--kanji-camera-zoom, 1) - 1) * var(--kanji-parallax-near-atmosphere-zoom, 0.106)
+      )
+    );
+}
+
+.kanji-space-atmosphere-surface {
+  inset: calc(var(--kanji-atmosphere-bleed, 240px) * -1);
+  transition: opacity 180ms ease-out;
+}
+
+.kanji-space-base {
+  background-image:
+    radial-gradient(circle at 16% 10%, rgba(255, 255, 255, 0.14), transparent 24%),
+    radial-gradient(circle at 82% 20%, rgba(22, 20, 24, 0.08), transparent 30%),
+    radial-gradient(circle at 50% 76%, rgba(34, 30, 34, 0.1), transparent 38%),
+    linear-gradient(180deg, #ffffff 0%, #f4f1f2 56%, #e6e0e2 100%);
+}
+
+.dark .kanji-space-base {
+  background-image:
+    radial-gradient(circle at top, rgba(196, 68, 66, 0.18), transparent 30%),
+    linear-gradient(180deg, #040405 0%, #0a0a0d 52%, #101015 100%);
+}
+
+.kanji-space-ambient {
+  background-image:
+    radial-gradient(circle at 18% 16%, rgba(255, 255, 255, 0.1), transparent 22%),
+    radial-gradient(circle at 84% 74%, rgba(24, 22, 27, 0.12), transparent 28%),
+    radial-gradient(circle at 52% 48%, rgba(255, 255, 255, 0.16), transparent 44%),
+    conic-gradient(
+      from 220deg at 52% 48%,
+      rgba(255, 255, 255, 0.08) 0deg,
+      transparent 88deg,
+      rgba(160, 36, 44, 0.03) 150deg,
+      transparent 232deg,
+      rgba(26, 22, 28, 0.05) 306deg,
+      rgba(255, 255, 255, 0.05) 360deg
+    );
+  opacity: 0.92;
+}
+
+.dark .kanji-space-ambient {
+  background-image:
+    radial-gradient(circle at 14% 18%, rgba(196, 68, 66, 0.12), transparent 32%),
+    radial-gradient(circle at 84% 72%, rgba(122, 48, 46, 0.1), transparent 36%),
+    radial-gradient(circle at 54% 56%, rgba(255, 255, 255, 0.018), transparent 52%);
+  opacity: 0.94;
+}
+
+.kanji-space-vignette {
+  background-image:
+    radial-gradient(circle at 50% 28%, rgba(255, 255, 255, 0.36), transparent 24%),
+    radial-gradient(circle at center, transparent 40%, rgba(28, 24, 30, 0.16) 100%);
+}
+
+.dark .kanji-space-vignette {
+  background-image:
+    radial-gradient(circle at center, transparent 42%, rgba(0, 0, 0, 0.28) 100%);
+}
+
+.kanji-space-stars-far {
+  background-image:
+    radial-gradient(circle at 14% 22%, rgba(255, 255, 255, 0.98) 0 1.34px, transparent 1.96px),
+    radial-gradient(circle at 72% 66%, rgba(16, 14, 20, 0.5) 0 1.22px, transparent 1.96px),
+    radial-gradient(circle at 46% 82%, rgba(194, 34, 45, 0.34) 0 1.58px, transparent 2.16px);
+  background-size:
+    clamp(280px, 26vw, 440px) clamp(280px, 26vw, 440px),
+    clamp(380px, 40vw, 620px) clamp(380px, 40vw, 620px),
+    clamp(480px, 54vw, 760px) clamp(480px, 54vw, 760px);
+  background-position:
+    0 0,
+    180px 120px,
+    320px 240px;
+  opacity: 0.92;
+}
+
+.dark .kanji-space-stars-far {
+  background-image:
+    radial-gradient(circle at 14% 22%, rgba(255, 255, 255, 0.7) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 72% 66%, rgba(255, 255, 255, 0.5) 0 1.1px, transparent 1.8px),
+    radial-gradient(circle at 46% 82%, rgba(196, 68, 66, 0.32) 0 1.4px, transparent 2px);
+}
+
+.kanji-space-stars-glimmer {
+  background-image:
+    radial-gradient(circle at 18% 34%, rgba(255, 255, 255, 0.98) 0 1.08px, transparent 1.8px),
+    radial-gradient(circle at 62% 18%, rgba(16, 14, 20, 0.5) 0 1.12px, transparent 1.74px),
+    radial-gradient(circle at 84% 58%, rgba(194, 34, 45, 0.38) 0 1.5px, transparent 2.1px),
+    radial-gradient(circle at 36% 78%, rgba(255, 255, 255, 0.54) 0 1.1px, transparent 1.7px);
+  opacity: 0.9;
+  background-size:
+    clamp(220px, 22vw, 320px) clamp(220px, 22vw, 320px),
+    clamp(340px, 34vw, 540px) clamp(340px, 34vw, 540px),
+    clamp(460px, 48vw, 700px) clamp(460px, 48vw, 700px),
+    clamp(560px, 60vw, 860px) clamp(560px, 60vw, 860px);
+  background-position:
+    64px 48px,
+    150px 220px,
+    290px 120px,
+    420px 310px;
+}
+
+.dark .kanji-space-stars-glimmer {
+  background-image:
+    radial-gradient(circle at 18% 34%, rgba(255, 255, 255, 0.74) 0 0.9px, transparent 1.6px),
+    radial-gradient(circle at 62% 18%, rgba(255, 255, 255, 0.48) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 84% 58%, rgba(196, 68, 66, 0.34) 0 1.4px, transparent 2px),
+    radial-gradient(circle at 36% 78%, rgba(255, 255, 255, 0.3) 0 1px, transparent 1.6px);
+}
+
+.kanji-space-stars-near {
+  background-image:
+    radial-gradient(circle at 24% 26%, rgba(255, 255, 255, 1) 0 2.06px, transparent 2.96px),
+    radial-gradient(circle at 82% 74%, rgba(16, 14, 20, 0.58) 0 1.72px, transparent 2.64px),
+    radial-gradient(circle at 58% 42%, rgba(198, 36, 47, 0.34) 0 2.14px, transparent 3.16px);
+  background-size:
+    clamp(360px, 38vw, 560px) clamp(360px, 38vw, 560px),
+    clamp(520px, 56vw, 780px) clamp(520px, 56vw, 780px),
+    clamp(640px, 68vw, 920px) clamp(640px, 68vw, 920px);
+  background-position:
+    48px 24px,
+    180px 340px,
+    320px 220px;
+  opacity: 0.98;
+}
+
+.dark .kanji-space-stars-near {
+  background-image:
+    radial-gradient(circle at 24% 26%, rgba(255, 255, 255, 0.88) 0 1.8px, transparent 2.6px),
+    radial-gradient(circle at 82% 74%, rgba(255, 255, 255, 0.62) 0 1.6px, transparent 2.5px),
+    radial-gradient(circle at 58% 42%, rgba(196, 68, 66, 0.26) 0 2px, transparent 3px);
+}
+
+.kanji-space-stars-dust {
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(16, 14, 20, 0.22) 0 1.08px, transparent 2.48px),
+    radial-gradient(circle at 48% 72%, rgba(188, 36, 47, 0.18) 0 1px, transparent 2.08px),
+    radial-gradient(circle at 82% 34%, rgba(255, 255, 255, 0.36) 0 1.3px, transparent 2.3px),
+    radial-gradient(circle at 68% 88%, rgba(16, 14, 20, 0.14) 0 1px, transparent 2.08px);
+  opacity: 0.7;
+  background-size:
+    clamp(180px, 18vw, 260px) clamp(180px, 18vw, 260px),
+    clamp(260px, 28vw, 400px) clamp(260px, 28vw, 400px),
+    clamp(360px, 42vw, 560px) clamp(360px, 42vw, 560px),
+    clamp(460px, 56vw, 720px) clamp(460px, 56vw, 720px);
+  background-position:
+    40px 56px,
+    140px 180px,
+    280px 96px,
+    360px 260px;
+}
+
+.dark .kanji-space-stars-dust {
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.1) 0 1px, transparent 2.4px),
+    radial-gradient(circle at 48% 72%, rgba(255, 255, 255, 0.08) 0 0.9px, transparent 2px),
+    radial-gradient(circle at 82% 34%, rgba(196, 68, 66, 0.16) 0 1.2px, transparent 2.2px),
+    radial-gradient(circle at 68% 88%, rgba(255, 255, 255, 0.06) 0 0.9px, transparent 2px);
+}
+
+.kanji-space-haze-far {
+  background-image:
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.34), transparent 18%),
+    radial-gradient(circle at 76% 62%, rgba(180, 30, 42, 0.18), transparent 24%),
+    radial-gradient(circle at 12% 78%, rgba(28, 24, 30, 0.14), transparent 20%),
+    radial-gradient(circle at 88% 22%, rgba(255, 255, 255, 0.16), transparent 18%);
+  background-size: cover;
+  opacity: 0.88;
+}
+
+.dark .kanji-space-haze-far {
+  background-image:
+    radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.04), transparent 18%),
+    radial-gradient(circle at 74% 62%, rgba(196, 68, 66, 0.12), transparent 24%),
+    radial-gradient(circle at 12% 78%, rgba(196, 68, 66, 0.08), transparent 20%),
+    radial-gradient(circle at 88% 22%, rgba(133, 76, 66, 0.12), transparent 16%);
+}
+
+.kanji-space-haze-mid {
+  background-image:
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.16), transparent 16%),
+    radial-gradient(circle at 84% 34%, rgba(186, 32, 44, 0.14), transparent 20%),
+    conic-gradient(
+      from 220deg at 50% 50%,
+      transparent 0deg,
+      rgba(186, 32, 44, 0.07) 70deg,
+      transparent 136deg,
+      rgba(24, 20, 26, 0.05) 208deg,
+      transparent 290deg,
+      rgba(255, 255, 255, 0.08) 340deg,
+      transparent 360deg
+    );
+  opacity: 0.72;
+  background-size: cover;
+}
+
+.dark .kanji-space-haze-mid {
+  background-image:
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, 0.03), transparent 16%),
+    radial-gradient(circle at 84% 34%, rgba(196, 68, 66, 0.12), transparent 20%),
+    conic-gradient(
+      from 220deg at 50% 50%,
+      transparent 0deg,
+      rgba(196, 68, 66, 0.08) 72deg,
+      transparent 132deg,
+      rgba(255, 255, 255, 0.03) 212deg,
+      transparent 290deg,
+      rgba(196, 68, 66, 0.06) 340deg,
+      transparent 360deg
+    );
+  opacity: 0.55;
+}
+
+.kanji-space-ring {
+  background-image:
+    radial-gradient(circle at 50% 50%, transparent 0%, transparent 48%, rgba(255, 255, 255, 0.2) 74%, rgba(24, 20, 26, 0.06) 80%, transparent 88%, transparent 100%);
+  opacity: 0.46;
+  background-size: cover;
+}
+
+.dark .kanji-space-ring {
+  background-image:
+    radial-gradient(circle at 50% 50%, transparent 0%, transparent 48%, rgba(196, 68, 66, 0.08) 72%, transparent 100%);
+  opacity: 0.45;
+}
+
+.kanji-space-haze-near {
+  background-image:
+    radial-gradient(circle at 68% 16%, rgba(192, 30, 43, 0.18), transparent 17%),
+    radial-gradient(circle at 38% 84%, rgba(255, 255, 255, 0.18), transparent 18%),
+    radial-gradient(circle at 24% 52%, rgba(24, 20, 26, 0.12), transparent 14%),
+    radial-gradient(circle at 82% 58%, rgba(255, 255, 255, 0.1), transparent 18%);
+  background-size: cover;
+  opacity: 0.86;
+}
+
+.dark .kanji-space-haze-near {
+  background-image:
+    radial-gradient(circle at 68% 16%, rgba(196, 68, 66, 0.14), transparent 18%),
+    radial-gradient(circle at 38% 84%, rgba(255, 255, 255, 0.04), transparent 18%),
+    radial-gradient(circle at 24% 52%, rgba(132, 74, 66, 0.12), transparent 14%);
+}
+
+.kanji-space-twinkle-luxe-far {
+  animation: kanji-space-twinkle-luxe 12.8s cubic-bezier(0.45, 0.02, 0.2, 1) infinite;
+}
+
+.kanji-space-twinkle-luxe-glimmer {
+  animation: kanji-space-twinkle-luxe 9.4s cubic-bezier(0.42, 0.04, 0.22, 1) infinite;
+  animation-delay: 1s;
+}
+
+.kanji-space-twinkle-luxe-near {
+  animation: kanji-space-twinkle-luxe 7.8s cubic-bezier(0.44, 0.03, 0.24, 1) infinite;
+  animation-delay: 0.55s;
+}
+
+.kanji-space-twinkle-luxe-dust {
+  animation: kanji-space-twinkle-luxe 14.2s ease-in-out infinite;
+  animation-delay: 1.4s;
+}
+
+.kanji-space-twinkle-soft-far {
+  animation: kanji-space-twinkle-soft 14s ease-in-out infinite;
+}
+
+.kanji-space-twinkle-soft-glimmer {
+  animation: kanji-space-twinkle-soft 11.5s ease-in-out infinite;
+  animation-delay: 0.9s;
+}
+
+.kanji-space-twinkle-soft-near {
+  animation: kanji-space-twinkle-soft 9.8s ease-in-out infinite;
+  animation-delay: 0.45s;
+}
+
+.kanji-space-breathe-slow {
+  animation: kanji-space-breathe 14s ease-in-out infinite;
+}
+
+.kanji-space-breathe-mid {
+  animation: kanji-space-breathe 11s ease-in-out infinite;
+  animation-delay: 0.8s;
+}
+
+.kanji-space-breathe-fast {
+  animation: kanji-space-breathe 8.5s ease-in-out infinite;
+  animation-delay: 0.4s;
+}
+
+[data-kanji-interacting="true"] .kanji-space-twinkle-luxe-far,
+[data-kanji-interacting="true"] .kanji-space-twinkle-luxe-glimmer,
+[data-kanji-interacting="true"] .kanji-space-twinkle-luxe-near,
+[data-kanji-interacting="true"] .kanji-space-twinkle-luxe-dust,
+[data-kanji-interacting="true"] .kanji-space-twinkle-soft-far,
+[data-kanji-interacting="true"] .kanji-space-twinkle-soft-glimmer,
+[data-kanji-interacting="true"] .kanji-space-twinkle-soft-near,
+[data-kanji-interacting="true"] .kanji-space-breathe-slow,
+[data-kanji-interacting="true"] .kanji-space-breathe-mid,
+[data-kanji-interacting="true"] .kanji-space-breathe-fast {
+  animation-play-state: paused;
+}
+
+[data-kanji-interacting="true"] .kanji-space-atmosphere-surface {
+  transition: none;
+}
+
+[data-kanji-quality="low"] .kanji-space-stars-near,
+[data-kanji-quality="low"] .kanji-space-stars-far {
+  opacity: 0.78;
+}
+
+html:not(.dark) [data-kanji-quality="low"] .kanji-space-ambient {
+  opacity: 0.86;
+}
+
+html:not(.dark) [data-kanji-quality="low"] .kanji-space-stars-near,
+html:not(.dark) [data-kanji-quality="low"] .kanji-space-stars-far {
+  opacity: 0.94;
+}

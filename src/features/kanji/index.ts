@@ -19,5 +19,12 @@ export {
   meaningsToArray,
   readingsToArray,
 } from "./utils/kanjiText";
-export { submitKanjiLessonResult, getKanjiLessonResults } from "./api/kanjiApi";
+export {
+  listKanjis,
+  getKanji,
+  getKanjiStrokes,
+  submitKanjiExerciseAnswer,
+  submitKanjiLessonResult,
+  getKanjiLessonResults,
+} from "./api/kanjiApi";
 export { useSubmitKanjiLesson } from "./hooks/useSubmitKanjiLesson";

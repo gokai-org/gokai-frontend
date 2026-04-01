@@ -22,6 +22,8 @@ type Props = {
   userId: string;
   entityId?: string | null;
   entityKind?: "kanji" | "subtheme" | "grammar" | null;
+  kanjiCtaDisabled?: boolean;
+  kanjiCtaDisabledReason?: string;
 };
 
 export default function LessonDrawer({
@@ -32,6 +34,8 @@ export default function LessonDrawer({
   userId,
   entityId = null,
   entityKind = null,
+  kanjiCtaDisabled = false,
+  kanjiCtaDisabledReason,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [lessons, setLessons] = useState<LessonResolved[]>([]);
@@ -202,7 +206,12 @@ export default function LessonDrawer({
 
               {!loading && active && (
                 <div className="pb-2">
-                  <LessonShell lesson={active} mode={mode} />
+                  <LessonShell
+                    lesson={active}
+                    mode={mode}
+                    kanjiCtaDisabled={kanjiCtaDisabled}
+                    kanjiCtaDisabledReason={kanjiCtaDisabledReason}
+                  />
                 </div>
               )}
             </div>

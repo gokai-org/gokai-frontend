@@ -92,9 +92,16 @@ function SectionCard({
 interface KanjiDetailModalProps {
   kanji: Kanji | null;
   onClose: () => void;
+  practiceDisabled?: boolean;
+  practiceDisabledReason?: string;
 }
 
-export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
+export function KanjiDetailModal({
+  kanji,
+  onClose,
+  practiceDisabled = false,
+  practiceDisabledReason,
+}: KanjiDetailModalProps) {
   const [showWritingPractice, setShowWritingPractice] = useState(false);
   const [activeStroke, setActiveStroke] = useState(-1);
 
@@ -105,7 +112,7 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
   const primaryMeaning = getPrimaryMeaning(kanji.meanings);
   const hasStrokes = kanji.strokes && kanji.strokes.length > 0 && kanji.viewBox;
 
-  if (showWritingPractice) {
+  if (showWritingPractice && !practiceDisabled) {
     return (
       <WritingPracticeModal
         kanji={kanji}
@@ -393,10 +400,14 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
                 variants={fadeUp}
                 initial="hidden"
                 animate="visible"
-                onClick={() => setShowWritingPractice(true)}
+                onClick={() => {
+                  if (practiceDisabled) return;
+                  setShowWritingPractice(true);
+                }}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/25 transition hover:shadow-xl hover:shadow-accent/30 focus:outline-none focus:ring-4 focus:ring-accent/20"
+                disabled={practiceDisabled}
+                className="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/25 transition hover:shadow-xl hover:shadow-accent/30 focus:outline-none focus:ring-4 focus:ring-accent/20 disabled:cursor-not-allowed disabled:from-surface-tertiary disabled:to-surface-tertiary disabled:text-content-muted disabled:shadow-none"
               >
                 <svg
                   className="h-5 w-5"
@@ -411,8 +422,20 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
                   />
                 </svg>
-                Practicar trazado
+                {practiceDisabled ? "Aún bloqueado" : "Practicar trazado"}
               </motion.button>
+
+              {practiceDisabled && practiceDisabledReason && (
+                <motion.p
+                  custom={5}
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="visible"
+                  className="text-center text-xs leading-5 text-content-secondary"
+                >
+                  {practiceDisabledReason}
+                </motion.p>
+              )}
             </div>
           </div>
         </motion.div>
