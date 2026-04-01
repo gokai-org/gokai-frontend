@@ -18,6 +18,11 @@ const MIN_SPACING_X = NODE_WIDTH * 1.04;
 const MIN_SPACING_Y = NODE_HEIGHT * 0.86;
 const RELAXATION_PASSES = 5;
 const SPRING_BACK = 0.3;
+// Sphere center within the node bounding box — must stay in sync with KanjiConstellationNode.tsx (_SX/_SY)
+const SPHERE_CENTER_X = 84;
+const SPHERE_CENTER_Y = 77;
+// Grid pitch — must stay in sync with gap prop on <Background> components in KanjiConstellationMap.tsx
+const GRID_PITCH = 160;
 
 type LayoutFrame = {
   width: number;
@@ -294,12 +299,77 @@ function createSequentialLayoutEdges(ids: string[], positions: Point[]) {
   });
 }
 
+/**
+ * Hard-snap with greedy deduplication: every sphere center lands exactly on a
+ * 160 px grid intersection (same grid as the React Flow <Background> components).
+ *
+ * Algorithm:
+ * 1. Compute each node's ideal intersection (nearest grid point for its sphere center).
+ * 2. Sort by confidence (nodes already closest to an intersection get first pick).
+ * 3. Assign greedily; on collision, expand the Chebyshev search radius until an
+ *    unoccupied intersection is found.
+ *
+ * Result: every node sits exactly on a real Go-board intersection, with no two
+ * nodes sharing the same point.
+ */
+function snapNodesToGridExact(positions: Point[]): Point[] {
+  const result: Point[] = new Array(positions.length);
+  const occupied = new Set<string>();
+
+  // Pre-compute each node's ideal target and its distance to that target.
+  const ideals = positions.map((pos, i) => {
+    const cx = pos.x + SPHERE_CENTER_X;
+    const cy = pos.y + SPHERE_CENTER_Y;
+    const idealCX = Math.round(cx / GRID_PITCH) * GRID_PITCH;
+    const idealCY = Math.round(cy / GRID_PITCH) * GRID_PITCH;
+    return { i, cx, cy, idealCX, idealCY, dist: Math.hypot(idealCX - cx, idealCY - cy) };
+  });
+
+  // Process most-confident nodes first so they always keep their ideal intersection.
+  ideals.sort((a, b) => a.dist - b.dist);
+
+  for (const node of ideals) {
+    let placed = false;
+    // Expand Chebyshev shell outward until an unoccupied intersection is found.
+    for (let r = 0; r <= 9 && !placed; r++) {
+      const ring: { cx: number; cy: number; d: number }[] = [];
+      for (let di = -r; di <= r; di++) {
+        for (let dj = -r; dj <= r; dj++) {
+          // Only process the border of the current shell (skip interior).
+          if (Math.max(Math.abs(di), Math.abs(dj)) !== r) continue;
+          const tcx = node.idealCX + di * GRID_PITCH;
+          const tcy = node.idealCY + dj * GRID_PITCH;
+          const key = `${tcx},${tcy}`;
+          if (!occupied.has(key)) {
+            ring.push({ cx: tcx, cy: tcy, d: Math.hypot(tcx - node.cx, tcy - node.cy) });
+          }
+        }
+      }
+      ring.sort((a, b) => a.d - b.d);
+      if (ring.length > 0) {
+        const best = ring[0];
+        occupied.add(`${best.cx},${best.cy}`);
+        result[node.i] = { x: best.cx - SPHERE_CENTER_X, y: best.cy - SPHERE_CENTER_Y };
+        placed = true;
+      }
+    }
+    if (!placed) {
+      // r=9 covers 361 candidates — this branch is unreachable in practice.
+      result[node.i] = positions[node.i];
+    }
+  }
+
+  return result;
+}
+
 export function buildKanjiConstellationLayout(ids: string[]): KanjiConstellationLayout {
   const frame = getLayoutFrame(ids.length);
-  const positions = relaxNodePositions(
+  const relaxed = relaxNodePositions(
     ids.map((_, index) => getInitialNodePosition(index, ids.length, frame)),
     frame,
   );
+  // Place every sphere center exactly on a Go-board grid intersection (hard snap + dedup).
+  const positions = snapNodesToGridExact(relaxed);
 
   const minX = Math.min(...positions.map((position) => position.x));
   const maxX = Math.max(...positions.map((position) => position.x)) + NODE_WIDTH;

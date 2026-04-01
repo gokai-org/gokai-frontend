@@ -148,7 +148,24 @@ export default function KanjisView() {
 
   const graph = useMemo(
     () => createKanjiConstellationGraph(items, layout, selectedId, qualityProfile),
-    [items, layout, qualityProfile, selectedId],
+    // Depend only on the primitives that affect visible output. The full qualityProfile
+    // object is recreated on every FPS-probe tick even when no visual param changes,
+    // so a reference-equality dep would trigger a full graph recompute every frame.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      items,
+      layout,
+      selectedId,
+      qualityProfile.tier,
+      qualityProfile.node.glowScale,
+      qualityProfile.node.shadowScale,
+      qualityProfile.node.showOrbitRings,
+      qualityProfile.node.shouldUsePulse,
+      qualityProfile.edge.widthScale,
+      qualityProfile.edge.opacityScale,
+      qualityProfile.edge.showLockedDash,
+      qualityProfile.edge.curvature,
+    ],
   );
 
   const backgroundStyle = useMemo(
@@ -176,25 +193,36 @@ export default function KanjisView() {
           : "0",
       } as React.CSSProperties;
     },
-    [graphicsProfile, qualityProfile],
+    // Only recompute when layout/parallax signals change meaningfully.
+    // FPS-probe ticks update graphicsProfile reference but don't change these primitives.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [
+      graphicsProfile.shouldUseParallax,
+      graphicsProfile.signals.width,
+      graphicsProfile.signals.height,
+      graphicsProfile.signals.pointerType,
+      graphicsProfile.signals.devicePixelRatio,
+      qualityProfile.background.parallaxStrength,
+      qualityProfile.background.zoomStrength,
+    ],
   );
 
-  const handleSelect = (nodeId: string) => {
+  const handleSelect = useCallback((nodeId: string) => {
     setManualSelectedId(nodeId);
     setDetailNodeId(nodeId);
-  };
+  }, []);
 
-  const handleCloseDetail = () => {
+  const handleCloseDetail = useCallback(() => {
     setDetailNodeId(null);
-  };
+  }, []);
 
-  const handleWritingStart = (kanji: Kanji) => {
+  const handleWritingStart = useCallback((kanji: Kanji) => {
     setWritingKanji(kanji);
-  };
+  }, []);
 
-  const handleWritingEnd = () => {
+  const handleWritingEnd = useCallback(() => {
     setWritingKanji(null);
-  };
+  }, []);
 
   useEffect(() => {
     setHidden(detailNodeId !== null);
@@ -375,6 +403,7 @@ export default function KanjisView() {
         ref={backgroundRef}
         data-kanji-interacting="false"
         data-kanji-quality={qualityProfile.tier}
+        data-kanji-parallax={graphicsProfile.shouldUseParallax ? "active" : "inactive"}
         className="absolute inset-0"
         style={{ contain: "layout paint style", ...backgroundStyle } as React.CSSProperties}
       >

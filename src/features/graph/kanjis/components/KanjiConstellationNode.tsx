@@ -82,11 +82,11 @@ function getPlanetStyles(
 
   return {
     glow: selected
-      ? createGlow(6, Math.round(17 + shadowScale * 4), 0.05, 0.11, glowScale, "200,200,220")
-      : createGlow(2, Math.round(9 + shadowScale * 2), 0.02, 0.06, glowScale, "200,200,220"),
+      ? createGlow(6, Math.round(17 + shadowScale * 4), 0.07, 0.15, glowScale, "140, 140, 150")
+      : createGlow(2, Math.round(9 + shadowScale * 2), 0.03, 0.07, glowScale, "140, 140, 150"),
     sphereClass: "kanji-node-sphere",
-    ring: "rgba(180, 178, 198, 0.18)",
-    orbit: "rgba(180, 178, 198, 0.28)",
+    ring: "rgba(140, 140, 150, 0.16)",
+    orbit: "rgba(140, 140, 150, 0.26)",
     label: "text-content-secondary",
     meta: "text-content-muted",
   };
@@ -142,7 +142,7 @@ function KanjiConstellationNode({ data }: NodeProps<KanjiConstellationNodeData>)
             </span>
           </div>
 
-          <div className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-black/14 bg-black/38 text-white/92 dark:border-white/10 dark:bg-black/44">
+          <div className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-black/52 text-white/88 dark:border-white/10 dark:bg-black/44 dark:text-white/92">
             {progress.status === "locked" ? (
               <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2.2} />
             ) : progress.status === "completed" ? (
@@ -157,7 +157,7 @@ function KanjiConstellationNode({ data }: NodeProps<KanjiConstellationNodeData>)
           <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-content-muted">
             Kanji {String(progress.index + 1).padStart(2, "0")}
           </span>
-          <div className="max-w-[160px] rounded-full border border-black/12 bg-surface-primary/88 px-3 py-1 text-xs font-semibold dark:border-white/10 dark:bg-black/20">
+          <div className="max-w-[160px] rounded-full border border-black/8 bg-white/95 px-3 py-1 text-xs font-semibold dark:border-white/10 dark:bg-black/20">
             <span className={styles.label}>{progress.primaryMeaning}</span>
           </div>
           <span className={`text-[11px] ${styles.meta}`}>

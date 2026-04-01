@@ -1,7 +1,7 @@
 "use client";
 
 import { memo } from "react";
-import { getBezierPath, type EdgeProps } from "reactflow";
+import { getSmoothStepPath, type EdgeProps } from "reactflow";
 import type { KanjiConstellationEdgeData } from "../types";
 
 function KanjiConstellationEdge({
@@ -14,14 +14,15 @@ function KanjiConstellationEdge({
   targetPosition,
   data,
 }: EdgeProps<KanjiConstellationEdgeData>) {
-  const [path] = getBezierPath({
+  const [path] = getSmoothStepPath({
     sourceX,
     sourceY,
     sourcePosition,
     targetX,
     targetY,
     targetPosition,
-    curvature: data?.curvature ?? 0.36,
+    borderRadius: 14,
+    offset: 40,
   });
 
   const status = data?.status ?? "locked";
@@ -48,7 +49,7 @@ function KanjiConstellationEdge({
             dash: "8 14",
           }
         : {
-            stroke: "rgba(140, 140, 148, 0.26)",
+            stroke: "rgba(155, 142, 142, 0.22)",
             width: 1.6 * widthScale,
             opacity: 0.44 * opacityScale,
             dash: showLockedDash ? "5 11" : undefined,

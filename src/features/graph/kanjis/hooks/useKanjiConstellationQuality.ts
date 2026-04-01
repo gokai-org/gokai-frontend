@@ -129,7 +129,7 @@ export function createKanjiConstellationQualityProfile(
     },
     node: {
       shouldUsePulse: graphicsProfile.shouldUsePulse,
-      showOrbitRings: true,
+      showOrbitRings: false,
       glowScale: graphicsProfile.glowStrength,
       shadowScale: graphicsProfile.shadowStrength,
     },

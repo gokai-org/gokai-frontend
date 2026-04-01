@@ -361,34 +361,40 @@ html {
 
 /* ── Kanji node sphere visual states ── */
 .kanji-node-sphere {
+  /* Locked: neutral charcoal stone — pure grey, no warm undertone */
   background:
-    radial-gradient(ellipse at 50% -14%, rgba(255,255,255,0.22) 0%, transparent 56%),
-    linear-gradient(172deg, #909098 0%, #6e6a78 55%, #4c4858 100%);
-  border-color: rgba(136,132,152,0.38);
+    radial-gradient(ellipse at 50% -14%, rgba(255,255,255,0.18) 0%, transparent 52%),
+    linear-gradient(172deg, #484848 0%, #282828 52%, #101010 100%);
+  border-color: rgba(80, 80, 80, 0.32);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.30),
-    0 4px 16px rgba(0,0,0,0.10);
-  color: rgba(236,234,244,0.84);
+    inset 0 1px 0 rgba(255,255,255,0.16),
+    0 6px 3px rgba(0, 0, 0, 0.44),
+    0 8px 20px rgba(0, 0, 0, 0.18);
+  color: rgba(180, 176, 180, 0.64);
 }
 .dark .kanji-node-sphere {
+  /* Locked dark: pure graphite-obsidian — near-black, no warm undertone */
   background:
-    radial-gradient(ellipse at 50% -14%, rgba(255,255,255,0.05) 0%, transparent 54%),
-    linear-gradient(172deg, rgba(38,40,50,0.97) 0%, rgba(18,20,26,1) 100%);
-  border-color: rgba(255,255,255,0.09);
+    radial-gradient(ellipse at 50% -14%, rgba(255,255,255,0.04) 0%, transparent 50%),
+    linear-gradient(172deg, #242424 0%, #141414 52%, #060606 100%);
+  border-color: rgba(60, 60, 60, 0.18);
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 6px 22px rgba(0,0,0,0.46);
-  color: rgba(175,174,192,0.72);
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 7px 4px rgba(0,0,0,0.76),
+    0 10px 28px rgba(0,0,0,0.50);
+  color: rgba(170, 170, 175, 0.50);
 }
 
 .kanji-node-sphere-available {
+  /* Available: brand-red stone — vibrant but grounded on the board */
   background:
     radial-gradient(ellipse at 50% -14%, rgba(255,255,255,0.28) 0%, transparent 56%),
     linear-gradient(172deg, #c03636 0%, #951f1f 52%, #600f0f 100%);
   border-color: rgba(196,74,70,0.46);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.22),
-    0 5px 18px rgba(140,28,28,0.22);
+    0 6px 3px rgba(48,10,8,0.40),
+    0 8px 20px rgba(140,28,28,0.18);
   color: rgba(255,255,255,0.97);
 }
 .dark .kanji-node-sphere-available {
@@ -398,18 +404,21 @@ html {
   border-color: rgba(196,68,66,0.28);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.08),
-    0 8px 24px rgba(120,20,20,0.22);
+    0 7px 4px rgba(0,0,0,0.62),
+    0 10px 26px rgba(120,20,20,0.20);
   color: rgba(255,255,255,0.94);
 }
 
 .kanji-node-sphere-completed {
+  /* Completed: deep red stone — mastered, commanding on the board */
   background:
     radial-gradient(ellipse at 50% -14%, rgba(255,255,255,0.34) 0%, transparent 56%),
     linear-gradient(172deg, #d44e4e 0%, #aa2828 50%, #721414 100%);
   border-color: rgba(222,90,84,0.54);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.28),
-    0 6px 22px rgba(160,32,32,0.26);
+    0 6px 3px rgba(52,10,8,0.40),
+    0 8px 22px rgba(160,32,32,0.20);
   color: rgba(255,255,255,1);
 }
 .dark .kanji-node-sphere-completed {
@@ -419,7 +428,8 @@ html {
   border-color: rgba(210,74,70,0.40);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.10),
-    0 10px 28px rgba(140,22,22,0.30);
+    0 7px 4px rgba(0,0,0,0.60),
+    0 12px 30px rgba(140,22,22,0.26);
   color: rgba(255,255,255,0.97);
 }
 
@@ -447,14 +457,14 @@ html {
 /* ── Base gradient — static, never changes, no compositor layer ── */
 .kanji-bg-base {
   backface-visibility: hidden;
+  /* Light mode: white-off-white — clean, minimal, premium */
   background:
-    radial-gradient(ellipse 78% 60% at 52% 32%, rgba(255, 255, 255, 0.72) 0%, transparent 68%),
-    linear-gradient(162deg, #f0ede8 0%, #eae2da 24%, #e8ddd5 54%, #e5d8cc 100%);
+    linear-gradient(162deg, #fafafa 0%, #f7f7f8 42%, #f5f5f6 72%, #f3f3f4 100%);
 }
 .dark .kanji-bg-base {
-  /* Dark mode: deep space, warm undertone */
+  /* Dark mode: deep kuro — pure near-black, no warm undertone */
   background:
-    linear-gradient(162deg, #0b0809 0%, #100b0c 50%, #0d0f14 100%);
+    linear-gradient(162deg, #090909 0%, #0d0d0d 42%, #0a0a0a 72%, #080808 100%);
 }
 
 /* ── Parallax star layer ── */
@@ -474,69 +484,42 @@ html {
     scale(
       calc(1 + (var(--kanji-camera-zoom, 1) - 1) * var(--kanji-parallax-zoom-factor, 0.048))
     );
-  will-change: transform;
   backface-visibility: hidden;
   contain: layout style;
   background-repeat: repeat;
   background-origin: border-box;
   /*
-   * Light mode: stellar field 
+   * Light mode: atmospheric red traces that drift with parallax.
+   * Ellipses are intentionally huge (80–90 % of the layer) so no circular
+   * halo reads at any viewport size — pure fog, not glowing discs.
    */
   background-image:
-    /* Fine grain — distant field */
-    radial-gradient(circle at 18% 14%, rgba(22, 14, 12, 0.22) 0 0.9px, transparent 1.5px),
-    radial-gradient(circle at 72% 68%, rgba(18, 12, 10, 0.16) 0 0.8px, transparent 1.4px),
-    radial-gradient(circle at 46% 42%, rgba(20, 13, 11, 0.14) 0 0.9px, transparent 1.5px),
-    /* Mid-size — main field */
-    radial-gradient(circle at 16% 60%, rgba(16, 10, 9, 0.20) 0 1.4px, transparent 2.0px),
-    radial-gradient(circle at 74% 28%, rgba(20, 12, 10, 0.17) 0 1.3px, transparent 2.0px),
-    radial-gradient(circle at 90% 82%, rgba(18, 11, 10, 0.14) 0 1.2px, transparent 1.8px),
-    /* Brand-red accent stars — sparse, intentional */
-    radial-gradient(circle at 38% 78%, rgba(153, 51, 49, 0.38) 0 1.3px, transparent 2.0px),
-    radial-gradient(circle at 82% 42%, rgba(180, 72, 70, 0.28) 0 1.1px, transparent 1.7px);
-  background-size:
-    clamp(300px, 30vw, 460px) clamp(300px, 30vw, 460px),
-    clamp(460px, 46vw, 680px) clamp(460px, 46vw, 680px),
-    clamp(620px, 64vw, 900px) clamp(620px, 64vw, 900px),
-    clamp(560px, 58vw, 840px) clamp(560px, 58vw, 840px),
-    clamp(720px, 74vw, 1060px) clamp(720px, 74vw, 1060px),
-    clamp(880px, 90vw, 1300px) clamp(880px, 90vw, 1300px),
-    clamp(640px, 66vw, 940px) clamp(640px, 66vw, 940px),
-    clamp(820px, 84vw, 1200px) clamp(820px, 84vw, 1200px);
-  background-position:
-    0 0, 200px 140px, 80px 320px,
-    120px 200px, 360px 100px, 520px 360px,
-    240px 440px, 480px 220px;
-  opacity: 0.88;
+    radial-gradient(ellipse 86% 64% at 18% 26%, rgba(153, 30, 30, 0.018) 0%, transparent 70%),
+    radial-gradient(ellipse 74% 58% at 78% 62%, rgba(120, 18, 18, 0.013) 0%, transparent 68%),
+    radial-gradient(ellipse 94% 68% at 52% 84%, rgba(140, 22, 22, 0.011) 0%, transparent 74%);
+  background-size: 100% 100%;
+  background-position: 0 0;
+  opacity: 0.95;
 }
 .dark .kanji-bg-parallax-layer {
-  /* Dark mode: crisp white stars + brand-red accent stars */
+  /*
+   * Dark mode: deep crimson haze patches — subtle territorial depth via parallax.
+   * Grid lives in React Flow Background; this layer adds atmosphere only.
+   */
   background-image:
-    /* Fine grain — distant field */
-    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.84) 0 1.0px, transparent 1.6px),
-    radial-gradient(circle at 72% 68%, rgba(255, 255, 255, 0.68) 0 0.9px, transparent 1.5px),
-    radial-gradient(circle at 46% 42%, rgba(255, 252, 248, 0.60) 0 0.9px, transparent 1.5px),
-    /* Mid-size — main field */
-    radial-gradient(circle at 16% 60%, rgba(255, 253, 248, 0.94) 0 1.5px, transparent 2.2px),
-    radial-gradient(circle at 74% 28%, rgba(255, 250, 244, 0.82) 0 1.4px, transparent 2.1px),
-    radial-gradient(circle at 90% 82%, rgba(255, 252, 248, 0.74) 0 1.3px, transparent 2.0px),
-    /* Brand-red accent stars — sparse, intentional */
-    radial-gradient(circle at 38% 78%, rgba(196, 68, 66, 0.46) 0 1.4px, transparent 2.1px),
-    radial-gradient(circle at 82% 42%, rgba(196, 68, 66, 0.32) 0 1.2px, transparent 1.8px);
-  background-size:
-    clamp(300px, 30vw, 460px) clamp(300px, 30vw, 460px),
-    clamp(460px, 46vw, 680px) clamp(460px, 46vw, 680px),
-    clamp(620px, 64vw, 900px) clamp(620px, 64vw, 900px),
-    clamp(560px, 58vw, 840px) clamp(560px, 58vw, 840px),
-    clamp(720px, 74vw, 1060px) clamp(720px, 74vw, 1060px),
-    clamp(880px, 90vw, 1300px) clamp(880px, 90vw, 1300px),
-    clamp(640px, 66vw, 940px) clamp(640px, 66vw, 940px),
-    clamp(820px, 84vw, 1200px) clamp(820px, 84vw, 1200px);
-  background-position:
-    0 0, 200px 140px, 80px 320px,
-    120px 200px, 360px 100px, 520px 360px,
-    240px 440px, 480px 220px;
-  opacity: 0.92;
+    radial-gradient(ellipse 44% 34% at 18% 26%, rgba(120, 16, 16, 0.06) 0%, transparent 64%),
+    radial-gradient(ellipse 38% 30% at 78% 62%, rgba(80, 10, 10, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 56% 40% at 52% 84%, rgba(100, 14, 14, 0.03) 0%, transparent 68%);
+  background-size: 100% 100%;
+  background-position: 0 0;
+  opacity: 0.90;
+}
+
+/* Promote parallax layer to its own compositor layer only when parallax is active.
+   Keeping will-change off at idle reduces GPU layer count, which directly improves
+   backdrop-filter performance on the sidebar and other fixed composited elements. */
+[data-kanji-parallax="active"] .kanji-bg-parallax-layer {
+  will-change: transform;
 }
 
 /* Animate star layer — tier=high only */
@@ -548,20 +531,22 @@ html {
 .kanji-bg-atmosphere {
   backface-visibility: hidden;
   /*
-   * Light mode: three-layer nebula mirroring dark mode structure.
+   * Light mode: near-invisible crimson breath — very wide, very low opacity.
+   * Three overlapping giant ellipses create a gradient fog, not visible halos.
+   * Opacity 0.72 further softens the already-faint values.
    */
   background:
-    radial-gradient(ellipse 66% 52% at 50% 46%, rgba(153, 51, 49, 0.12) 0%, rgba(180, 72, 70, 0.05) 52%, transparent 78%),
-    radial-gradient(ellipse 40% 32% at 20% 22%, rgba(30, 16, 14, 0.07) 0%, transparent 60%),
-    radial-gradient(ellipse 36% 30% at 78% 76%, rgba(153, 51, 49, 0.06) 0%, transparent 58%);
-  opacity: 0.92;
+    radial-gradient(ellipse 92% 74% at 50% 44%, rgba(153, 51, 49, 0.028) 0%, transparent 82%),
+    radial-gradient(ellipse 76% 60% at 20% 20%, rgba(90, 14, 14, 0.016) 0%, transparent 72%),
+    radial-gradient(ellipse 70% 56% at 80% 76%, rgba(120, 22, 22, 0.012) 0%, transparent 70%);
+  opacity: 0.72;
 }
 .dark .kanji-bg-atmosphere {
-  /* Dark mode: brand-red nebula — controlled, cinematic */
+  /* Dark mode: deep board atmosphere — dark crimson at center, fading to void */
   background:
-    radial-gradient(ellipse 66% 52% at 50% 46%, rgba(153, 51, 49, 0.11) 0%, rgba(106, 26, 24, 0.04) 52%, transparent 78%),
-    radial-gradient(ellipse 38% 30% at 22% 20%, rgba(196, 68, 66, 0.06) 0%, transparent 58%),
-    radial-gradient(ellipse 34% 28% at 78% 78%, rgba(136, 44, 42, 0.05) 0%, transparent 56%);
+    radial-gradient(ellipse 58% 44% at 50% 42%, rgba(140, 18, 18, 0.08) 0%, rgba(80, 8, 8, 0.03) 54%, transparent 78%),
+    radial-gradient(ellipse 34% 26% at 22% 22%, rgba(110, 14, 14, 0.04) 0%, transparent 58%),
+    radial-gradient(ellipse 30% 24% at 76% 74%, rgba(100, 16, 16, 0.03) 0%, transparent 56%);
   opacity: 0.90;
 }
 
@@ -573,13 +558,14 @@ html {
 /* ── Edge vignette — static paint, no compositor promotion ── */
 .kanji-bg-vignette {
   backface-visibility: hidden;
-
+  /* Light mode: neutral soft frame — barely visible, no warm tint */
   background:
-    radial-gradient(circle at center, transparent 48%, rgba(28, 16, 14, 0.22) 100%);
+    radial-gradient(circle at center, transparent 50%, rgba(10, 10, 14, 0.09) 100%);
 }
 .dark .kanji-bg-vignette {
+  /* Dark mode: deep board-frame shadow — neutral pure black */
   background:
-    radial-gradient(circle at center, transparent 46%, rgba(0, 0, 0, 0.54) 100%);
+    radial-gradient(circle at center, transparent 42%, rgba(4, 4, 4, 0.70) 100%);
 }
 
 /* ── Pause background animations during pan/zoom interactions ── */
@@ -594,4 +580,15 @@ html {
 }
 html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   opacity: 0.72;
+}
+
+/* ── World-aligned board grid (React Flow Background components) ── */
+/* Light mode uses the 'color' prop directly; dark mode overrides via CSS.
+   SVG presentation attributes have lowest CSS specificity, so class selectors win. */
+.dark .kanji-bg-board-lines svg line,
+.dark .kanji-bg-board-lines svg path {
+  stroke: rgba(200, 200, 210, 0.07);
+}
+.dark .kanji-bg-board-hoshi svg circle {
+  fill: rgba(200, 200, 210, 0.14);
 }
