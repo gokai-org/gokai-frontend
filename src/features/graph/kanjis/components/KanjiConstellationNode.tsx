@@ -1,9 +1,39 @@
 "use client";
 
 import { memo } from "react";
+import type { CSSProperties } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { LockKeyhole, Sparkles } from "lucide-react";
 import type { KanjiConstellationNodeData } from "../types";
+
+// ── Sphere geometry within the node bounding box (168 × 196) ──────────────
+// Outer flex container: pt-2 (8px top padding), items-center → centers 138px sub-container
+// Sub-container: 138 × 138, horizontally centered → left offset = (168 - 138) / 2 = 15px
+// Sphere: 92 × 92, centered within 138 × 138 → inset = (138 - 92) / 2 = 23px
+//   sphere top-left in node coords: (15 + 23, 8 + 23) = (38, 31)
+//   sphere center in node coords:   (84, 77)
+//   sphere radius:                  46
+// Handles are positioned AT the sphere surface so edges visually connect flush.
+const _SX = 84; // sphere center X
+const _SY = 77; // sphere center Y
+const _SR = 46; // sphere radius
+
+const HANDLE_TOP: CSSProperties = {
+  opacity: 0, width: 6, height: 6, background: "transparent", border: "none",
+  top: _SY - _SR, left: _SX, transform: "translate(-50%, -50%)",
+};
+const HANDLE_BOTTOM: CSSProperties = {
+  opacity: 0, width: 6, height: 6, background: "transparent", border: "none",
+  top: _SY + _SR, left: _SX, transform: "translate(-50%, -50%)",
+};
+const HANDLE_LEFT: CSSProperties = {
+  opacity: 0, width: 6, height: 6, background: "transparent", border: "none",
+  top: _SY, left: _SX - _SR, transform: "translate(-50%, -50%)",
+};
+const HANDLE_RIGHT: CSSProperties = {
+  opacity: 0, width: 6, height: 6, background: "transparent", border: "none",
+  top: _SY, left: _SX + _SR, transform: "translate(-50%, -50%)",
+};
 
 function createGlow(
   innerSize: number,
@@ -74,14 +104,14 @@ function KanjiConstellationNode({ data }: NodeProps<KanjiConstellationNodeData>)
 
   return (
     <>
-      <Handle id="target-top" type="target" position={Position.Top} style={{ opacity: 0 }} />
-      <Handle id="target-bottom" type="target" position={Position.Bottom} style={{ opacity: 0 }} />
-      <Handle id="target-left" type="target" position={Position.Left} style={{ opacity: 0 }} />
-      <Handle id="target-right" type="target" position={Position.Right} style={{ opacity: 0 }} />
-      <Handle id="source-top" type="source" position={Position.Top} style={{ opacity: 0 }} />
-      <Handle id="source-bottom" type="source" position={Position.Bottom} style={{ opacity: 0 }} />
-      <Handle id="source-left" type="source" position={Position.Left} style={{ opacity: 0 }} />
-      <Handle id="source-right" type="source" position={Position.Right} style={{ opacity: 0 }} />
+      <Handle id="target-top"    type="target" position={Position.Top}    style={HANDLE_TOP}    />
+      <Handle id="target-bottom" type="target" position={Position.Bottom} style={HANDLE_BOTTOM} />
+      <Handle id="target-left"   type="target" position={Position.Left}   style={HANDLE_LEFT}   />
+      <Handle id="target-right"  type="target" position={Position.Right}  style={HANDLE_RIGHT}  />
+      <Handle id="source-top"    type="source" position={Position.Top}    style={HANDLE_TOP}    />
+      <Handle id="source-bottom" type="source" position={Position.Bottom} style={HANDLE_BOTTOM} />
+      <Handle id="source-left"   type="source" position={Position.Left}   style={HANDLE_LEFT}   />
+      <Handle id="source-right"  type="source" position={Position.Right}  style={HANDLE_RIGHT}  />
 
       <div className="flex h-full w-full flex-col items-center justify-start pt-2">
         <div className="relative flex h-[138px] w-[138px] items-center justify-center">

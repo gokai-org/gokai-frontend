@@ -95,6 +95,8 @@ export default function KanjisView() {
   const viewportFrame = useRef<number | null>(null);
   const lastFrameTime = useRef<number | null>(null);
   const qualityProfileRef = useRef(qualityProfile);
+  // Tracks shouldUseParallax without capturing it in callback closures.
+  const shouldUseParallaxRef = useRef(graphicsProfile.shouldUseParallax);
   const isInteractingRef = useRef(false);
   const animateBackgroundViewportRef = useRef<(timestamp: number) => void>(() => undefined);
   const latestViewport = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
@@ -137,76 +139,26 @@ export default function KanjisView() {
   const backgroundStyle = useMemo(
     () => {
       const { width, height, pointerType } = graphicsProfile.signals;
-      const compactViewport = width <= 1180 || pointerType === "coarse";
-      const continuityBoost = compactViewport ? 1.34 : width < 1360 ? 1.08 : 1;
+      const compact = width <= 1180 || pointerType === "coarse";
       const diagonal = Math.hypot(width, height);
-      const baseSpan = Math.max(diagonal * continuityBoost, Math.max(width, height) * 1.24);
-      const farSpan = Math.round(Math.max(baseSpan * 2.34, compactViewport ? 2800 : 1600));
-      const midSpan = Math.round(Math.max(baseSpan * 2.68, compactViewport ? 3400 : 1850));
-      const nearSpan = Math.round(Math.max(baseSpan * 3.02, compactViewport ? 4000 : 2120));
-      const atmosphereBleed = Math.round(
-        Math.max(
-          Math.max(width, height) * (compactViewport ? 0.62 : 0.32),
-          compactViewport ? 420 : 220,
-        ),
+      // Single span for the one parallax star layer
+      const span = Math.round(
+        Math.max(diagonal * (compact ? 2.6 : 2.2), compact ? 2800 : 2200),
       );
-      const starZoomAttenuation = compactViewport ? 0.36 : width < 1360 ? 0.78 : 1;
-      const atmosphereZoomAttenuation = compactViewport ? 0.76 : width < 1360 ? 0.9 : 1;
-      const parallaxAttenuation = compactViewport ? 0.88 : 1;
+      const parallaxAtten = compact ? 0.80 : 1;
+      const zoomAtten = compact ? 0.55 : 1;
 
       return {
         "--kanji-camera-x": "0px",
         "--kanji-camera-y": "0px",
         "--kanji-camera-zoom": 1,
-        "--kanji-layer-far-span": `${farSpan}px`,
-        "--kanji-layer-mid-span": `${midSpan}px`,
-        "--kanji-layer-near-span": `${nearSpan}px`,
-        "--kanji-atmosphere-bleed": `${atmosphereBleed}px`,
-        "--kanji-parallax-far-factor": `${
-          graphicsProfile.shouldUseParallax
-            ? -0.16 * qualityProfile.background.parallaxStrength * parallaxAttenuation
-            : 0
-        }`,
-        "--kanji-parallax-mid-factor": `${
-          graphicsProfile.shouldUseParallax
-            ? -0.3 * qualityProfile.background.parallaxStrength * parallaxAttenuation
-            : 0
-        }`,
-        "--kanji-parallax-near-factor": `${
-          graphicsProfile.shouldUseParallax
-            ? -0.48 * qualityProfile.background.parallaxStrength * parallaxAttenuation
-            : 0
-        }`,
-        "--kanji-parallax-far-star-zoom": `${
-          graphicsProfile.shouldUseParallax
-            ? 0.034 * qualityProfile.background.zoomStrength * starZoomAttenuation
-            : 0
-        }`,
-        "--kanji-parallax-mid-star-zoom": `${
-          graphicsProfile.shouldUseParallax
-            ? 0.052 * qualityProfile.background.zoomStrength * starZoomAttenuation
-            : 0
-        }`,
-        "--kanji-parallax-near-star-zoom": `${
-          graphicsProfile.shouldUseParallax
-            ? 0.072 * qualityProfile.background.zoomStrength * starZoomAttenuation
-            : 0
-        }`,
-        "--kanji-parallax-far-atmosphere-zoom": `${
-          graphicsProfile.shouldUseParallax
-            ? 0.05 * qualityProfile.background.zoomStrength * atmosphereZoomAttenuation
-            : 0
-        }`,
-        "--kanji-parallax-mid-atmosphere-zoom": `${
-          graphicsProfile.shouldUseParallax
-            ? 0.078 * qualityProfile.background.zoomStrength * atmosphereZoomAttenuation
-            : 0
-        }`,
-        "--kanji-parallax-near-atmosphere-zoom": `${
-          graphicsProfile.shouldUseParallax
-            ? 0.106 * qualityProfile.background.zoomStrength * atmosphereZoomAttenuation
-            : 0
-        }`,
+        "--kanji-layer-span": `${span}px`,
+        "--kanji-parallax-factor": graphicsProfile.shouldUseParallax
+          ? `${(-0.22 * qualityProfile.background.parallaxStrength * parallaxAtten).toFixed(4)}`
+          : "0",
+        "--kanji-parallax-zoom-factor": graphicsProfile.shouldUseParallax
+          ? `${(0.052 * qualityProfile.background.zoomStrength * zoomAtten).toFixed(4)}`
+          : "0",
       } as React.CSSProperties;
     },
     [graphicsProfile, qualityProfile],
@@ -232,6 +184,7 @@ export default function KanjisView() {
 
   useEffect(() => {
     qualityProfileRef.current = qualityProfile;
+    shouldUseParallaxRef.current = qualityProfile.graphics.shouldUseParallax;
   }, [qualityProfile]);
 
   const applyBackgroundViewport = useCallback(
@@ -351,20 +304,20 @@ export default function KanjisView() {
       qualityProfileRef.current.graphics.signals,
     );
 
-    if (!graphicsProfile.shouldUseParallax) return;
+    if (!shouldUseParallaxRef.current) return;
 
     ensureViewportAnimation();
-  }, [ensureViewportAnimation, graphicsProfile.shouldUseParallax]);
+  }, [ensureViewportAnimation]);
 
   const handleInteractionChange = useCallback(
     (isInteracting: boolean) => {
       setInteractionState(isInteracting);
 
-      if (!graphicsProfile.shouldUseParallax) return;
+      if (!shouldUseParallaxRef.current) return;
 
       ensureViewportAnimation();
     },
-    [ensureViewportAnimation, graphicsProfile.shouldUseParallax, setInteractionState],
+    [ensureViewportAnimation, setInteractionState],
   );
 
   useEffect(() => {
@@ -381,12 +334,19 @@ export default function KanjisView() {
     <div
       className="fixed inset-0 overflow-hidden bg-surface-primary"
     >
+      {/*
+       * SIDEBAR LAG FIX: removed `isolate` (was creating an expensive stacking
+       * context that forced backdrop-blur to composite the whole subtree) and
+       * `[transform:translateZ(0)]` (was promoting this wrapper as a useless
+       * compositor layer). `contain: layout paint style` provides the same
+       * visual containment without the compositing cost.
+       */}
       <div
         ref={backgroundRef}
         data-kanji-interacting="false"
         data-kanji-quality={qualityProfile.tier}
-        className="absolute inset-0 isolate [transform:translateZ(0)]"
-        style={backgroundStyle}
+        className="absolute inset-0"
+        style={{ contain: "layout paint style", ...backgroundStyle } as React.CSSProperties}
       >
         <KanjiConstellationBackground
           qualityProfile={qualityProfile}
@@ -395,19 +355,17 @@ export default function KanjisView() {
       </div>
 
       <div className="absolute inset-0 z-10">
-        <div className="absolute inset-0">
-          <KanjiConstellationMap
-            nodes={graph.nodes}
-            edges={graph.edges}
-            layout={layout}
-            onSelect={handleSelect}
-            onViewportChange={syncViewportToScene}
-            initialNodeId={selectedId}
-            focusedNodeId={detailNodeId}
-            onInteractionChange={handleInteractionChange}
-            qualityProfile={qualityProfile}
-          />
-        </div>
+        <KanjiConstellationMap
+          nodes={graph.nodes}
+          edges={graph.edges}
+          layout={layout}
+          onSelect={handleSelect}
+          onViewportChange={syncViewportToScene}
+          initialNodeId={selectedId}
+          focusedNodeId={detailNodeId}
+          onInteractionChange={handleInteractionChange}
+          qualityProfile={qualityProfile}
+        />
       </div>
 
       <LessonDrawer

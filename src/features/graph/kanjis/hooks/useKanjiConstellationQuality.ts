@@ -139,20 +139,20 @@ export function createKanjiConstellationQualityProfile(
             widthScale: 1.04,
             opacityScale: 1,
             showLockedDash: true,
-            curvature: 0.42,
+            curvature: 0.36,
           }
         : tier === "medium"
           ? {
               widthScale: 0.96,
               opacityScale: 0.92,
               showLockedDash: true,
-              curvature: 0.38,
+              curvature: 0.32,
             }
           : {
               widthScale: 0.88,
               opacityScale: 0.86,
               showLockedDash: false,
-              curvature: 0.34,
+              curvature: 0.28,
             },
     camera: buildCameraProfile(signals.width, tier, graphicsProfile),
   };
