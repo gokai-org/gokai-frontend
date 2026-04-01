@@ -206,7 +206,7 @@ function StatOverviewCard({
       className="bg-surface-primary rounded-2xl p-5 shadow-sm border border-border-subtle cursor-default select-none"
     >
       <div className="flex items-center justify-between mb-3">
-        <div className="w-11 h-11 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+        <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-accent/15 to-accent/6 ring-1 ring-inset ring-accent/14 flex items-center justify-center text-accent">
           {stat.icon}
         </div>
 

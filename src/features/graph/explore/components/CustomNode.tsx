@@ -165,7 +165,7 @@ function CustomNode({ data, isConnectable }: CustomNodeProps) {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-surface-primary flex items-center justify-center shadow-md"
+              className="absolute -top-1 -right-1 w-6 h-6 bg-accent rounded-full border-2 border-surface-primary flex items-center justify-center shadow-md shadow-accent/30"
             >
               <svg
                 className="w-3 h-3 text-content-inverted"
@@ -186,7 +186,7 @@ function CustomNode({ data, isConnectable }: CustomNodeProps) {
             <motion.div
               initial={{ scale: 0 }}
               animate={{ scale: 1 }}
-              className="absolute -top-1 -right-1 w-6 h-6 bg-content-muted rounded-full border-2 border-surface-primary flex items-center justify-center shadow-md"
+              className="absolute -top-1 -right-1 w-6 h-6 bg-surface-tertiary rounded-full border-2 border-border-default flex items-center justify-center shadow-md"
             >
               <svg
                 className="w-3 h-3 text-content-inverted"

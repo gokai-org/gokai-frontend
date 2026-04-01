@@ -146,7 +146,7 @@ export default function LessonDrawer({
                     </div>
 
                     {header.pill ? (
-                      <span className="shrink-0 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+                      <span className="shrink-0 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
                         {header.pill}
                       </span>
                     ) : null}
@@ -182,7 +182,7 @@ export default function LessonDrawer({
                         className={[
                           "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border",
                           idx === activeIndex
-                            ? "bg-accent text-content-inverted border-accent"
+                            ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted border-accent shadow-sm"
                             : "bg-surface-primary text-content-secondary border-border-default hover:bg-surface-secondary",
                         ].join(" ")}
                       >

@@ -31,7 +31,7 @@ export function LibraryCard({ item, onClick }: LibraryCardProps) {
       className={[
         "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] border border-border-subtle/40 dark:border-border-subtle/20 bg-surface-primary text-left",
         "shadow-[0_2px_14px_-6px_rgba(0,0,0,0.06)] transition-all duration-300",
-        "hover:-translate-y-1 hover:border-accent/15 hover:shadow-[0_16px_32px_-10px_rgba(0,0,0,0.10)]",
+        "hover:-translate-y-1 hover:border-accent/30 hover:shadow-[0_16px_32px_-10px_rgba(153,51,49,0.20)]",
         "focus:outline-none focus:ring-2 focus:ring-accent/20",
       ].join(" ")}
     >
