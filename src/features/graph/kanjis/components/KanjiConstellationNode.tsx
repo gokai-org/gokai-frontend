@@ -27,57 +27,39 @@ function getPlanetStyles(
   if (status === "completed") {
     return {
       glow: selected
-        ? createGlow(10, 22, 0.12, 0.22, glowScale, "196,68,66")
-        : createGlow(4, 12, 0.08, 0.14, glowScale, "196,68,66"),
-      background:
-        "radial-gradient(circle at 30% 28%, rgba(255,247,243,0.96) 0%, rgba(232,157,135,0.9) 18%, rgba(196,68,66,0.88) 42%, rgba(78,24,23,0.96) 100%)",
-      ring: "rgba(255, 233, 226, 0.22)",
-      orbit: "rgba(255, 217, 206, 0.18)",
+        ? createGlow(8, Math.round(22 + shadowScale * 6), 0.10, 0.20, glowScale, "196,68,66")
+        : createGlow(3, Math.round(13 + shadowScale * 4), 0.05, 0.11, glowScale, "196,68,66"),
+      sphereClass: "kanji-node-sphere kanji-node-sphere-completed",
+      ring: "rgba(196, 68, 66, 0.20)",
+      orbit: "rgba(196, 68, 66, 0.34)",
       label: "text-content-primary",
       meta: "text-content-secondary",
-      shadow:
-        progressShadow("69,18,18", 0.18, 10, 24, shadowScale),
     };
   }
 
   if (status === "available") {
     return {
       glow: selected
-        ? createGlow(8, 20, 0.1, 0.18, glowScale, "196,68,66")
-        : createGlow(3, 10, 0.06, 0.12, glowScale, "196,68,66"),
-      background:
-        "radial-gradient(circle at 30% 28%, rgba(255,248,245,0.95) 0%, rgba(218,164,151,0.82) 20%, rgba(158,77,75,0.78) 46%, rgba(53,27,30,0.94) 100%)",
-      ring: "rgba(255, 233, 226, 0.16)",
-      orbit: "rgba(255, 217, 206, 0.12)",
+        ? createGlow(7, Math.round(19 + shadowScale * 5), 0.08, 0.17, glowScale, "196,68,66")
+        : createGlow(2, Math.round(11 + shadowScale * 3), 0.04, 0.09, glowScale, "196,68,66"),
+      sphereClass: "kanji-node-sphere kanji-node-sphere-available",
+      ring: "rgba(196, 68, 66, 0.14)",
+      orbit: "rgba(196, 68, 66, 0.25)",
       label: "text-content-primary",
       meta: "text-content-secondary",
-      shadow:
-        progressShadow("69,18,18", 0.18, 10, 24, shadowScale),
     };
   }
 
   return {
     glow: selected
-      ? createGlow(8, 16, 0.06, 0.12, glowScale, "255,255,255")
-      : createGlow(3, 8, 0.03, 0.06, glowScale, "255,255,255"),
-    background:
-      "radial-gradient(circle at 30% 28%, rgba(248,248,249,0.88) 0%, rgba(196,198,204,0.42) 20%, rgba(106,110,120,0.34) 48%, rgba(40,42,47,0.86) 100%)",
-    ring: "rgba(255, 255, 255, 0.09)",
-    orbit: "rgba(255, 255, 255, 0.07)",
+      ? createGlow(6, Math.round(17 + shadowScale * 4), 0.05, 0.11, glowScale, "200,200,220")
+      : createGlow(2, Math.round(9 + shadowScale * 2), 0.02, 0.06, glowScale, "200,200,220"),
+    sphereClass: "kanji-node-sphere",
+    ring: "rgba(180, 178, 198, 0.18)",
+    orbit: "rgba(180, 178, 198, 0.28)",
     label: "text-content-secondary",
     meta: "text-content-muted",
-    shadow: progressShadow("15,18,24", 0.14, 8, 18, shadowScale),
   };
-}
-
-function progressShadow(
-  color: string,
-  opacity: number,
-  blurY: number,
-  blur: number,
-  scale: number,
-) {
-  return `0 ${blurY * scale}px ${blur * scale}px rgba(${color},${opacity})`;
 }
 
 function KanjiConstellationNode({ data }: NodeProps<KanjiConstellationNodeData>) {
@@ -123,18 +105,14 @@ function KanjiConstellationNode({ data }: NodeProps<KanjiConstellationNodeData>)
           ) : null}
 
           <div
-            className="relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border border-white/16 text-[42px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14)] transition-transform duration-200 hover:scale-[1.03] dark:border-white/10"
-            style={{
-              background: styles.background,
-              boxShadow: styles.shadow,
-            }}
+            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border text-[42px] font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}`}
           >
             <span className={progress.status === "locked" ? "opacity-72" : ""}>
               {progress.kanji.symbol}
             </span>
           </div>
 
-          <div className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-black/30 text-white/85">
+          <div className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-black/14 bg-black/38 text-white/92 dark:border-white/10 dark:bg-black/44">
             {progress.status === "locked" ? (
               <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2.2} />
             ) : progress.status === "completed" ? (
@@ -149,7 +127,7 @@ function KanjiConstellationNode({ data }: NodeProps<KanjiConstellationNodeData>)
           <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-content-muted">
             Kanji {String(progress.index + 1).padStart(2, "0")}
           </span>
-          <div className="max-w-[160px] rounded-full border border-white/10 bg-surface-primary/65 px-3 py-1 text-xs font-semibold dark:bg-black/20">
+          <div className="max-w-[160px] rounded-full border border-black/12 bg-surface-primary/88 px-3 py-1 text-xs font-semibold dark:border-white/10 dark:bg-black/20">
             <span className={styles.label}>{progress.primaryMeaning}</span>
           </div>
           <span className={`text-[11px] ${styles.meta}`}>
