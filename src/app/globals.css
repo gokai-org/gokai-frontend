@@ -49,7 +49,7 @@
   --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.13);
 
   /* Sidebar glass */
-  --sidebar-bg: rgba(247, 247, 247, 0.925);
+  --sidebar-bg: rgba(255, 255, 255, 0.719);
   --sidebar-ring: rgba(0, 0, 0, 0.05);
   --sidebar-icon-stroke: rgba(0, 0, 0, 0.65);
 
@@ -111,8 +111,8 @@
   --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.55);
 
   /* Sidebar glass */
-  --sidebar-bg: rgba(22, 22, 22, 0.945);
-  --sidebar-ring: rgba(255, 255, 255, 0.06);
+  --sidebar-bg: rgba(22, 22, 22, 0.719);
+  --sidebar-ring: rgba(255, 255, 255, 0.096);
   --sidebar-icon-stroke: rgba(255, 255, 255, 0.65);
 
   /* Skeleton */
@@ -424,18 +424,6 @@ html {
 }
 
 /* ── Kanji constellation background — 4-layer high-performance system ── */
-/*
- * SIDEBAR LAG FIX (structural):
- * The old system promoted 10+ compositor layers (every `kanji-space-layer*` had
- * `will-change: transform, opacity` + `transform-style: preserve-3d`). The sidebar's
- * `backdrop-blur` had to flatten and composite all of them on every frame — very expensive.
- *
- * New architecture: ONE compositor layer (kanji-bg-parallax-layer, will-change: transform).
- * Base, atmosphere and vignette are static paints with no will-change — no compositor
- * promotion, no cost to backdrop-blur sampling.
- * The scene wrapper uses `contain: layout paint style` (no `isolation: isolate`) to
- * avoid creating an expensive stacking context that interacts badly with backdrop-filter.
- */
 
 @keyframes kanji-bg-glimmer {
   0%   { opacity: 0.64; }
@@ -459,10 +447,9 @@ html {
 /* ── Base gradient — static, never changes, no compositor layer ── */
 .kanji-bg-base {
   backface-visibility: hidden;
-  /* Light mode: warm parchment — scholarly cartography feel */
   background:
-    radial-gradient(ellipse 90% 70% at 50% 44%, rgba(240, 231, 224, 0.52) 0%, transparent 72%),
-    linear-gradient(158deg, #f5ede7 0%, #ede4de 52%, #e4dbd3 100%);
+    radial-gradient(ellipse 78% 60% at 52% 32%, rgba(255, 255, 255, 0.72) 0%, transparent 68%),
+    linear-gradient(162deg, #f0ede8 0%, #eae2da 24%, #e8ddd5 54%, #e5d8cc 100%);
 }
 .dark .kanji-bg-base {
   /* Dark mode: deep space, warm undertone */
@@ -470,12 +457,7 @@ html {
     linear-gradient(162deg, #0b0809 0%, #100b0c 50%, #0d0f14 100%);
 }
 
-/* ── Parallax star layer — the SOLE compositor-promoted element ── */
-/*
- * Only this element has `will-change: transform`. The parallax loop writes
- * --kanji-camera-x/y/zoom via style.setProperty and CSS calc() does the rest.
- * Reducing from 6+ promoted layers to 1 is the core performance improvement.
- */
+/* ── Parallax star layer ── */
 .kanji-bg-parallax-layer {
   position: absolute;
   left: 50%;
@@ -497,21 +479,35 @@ html {
   contain: layout style;
   background-repeat: repeat;
   background-origin: border-box;
-  /* Light mode: faint academic dot-map on parchment */
+  /*
+   * Light mode: stellar field 
+   */
   background-image:
-    radial-gradient(circle at 18% 14%, rgba(158, 122, 106, 0.40) 0 0.9px, transparent 1.5px),
-    radial-gradient(circle at 72% 68%, rgba(142, 110, 96, 0.28) 0 0.8px, transparent 1.4px),
-    radial-gradient(circle at 86% 36%, rgba(124, 98, 86, 0.24) 0 1.2px, transparent 1.8px),
-    radial-gradient(circle at 38% 80%, rgba(153, 51, 49, 0.15) 0 1.0px, transparent 1.6px),
-    radial-gradient(circle at 54% 26%, rgba(168, 132, 116, 0.18) 0 0.7px, transparent 1.2px);
+    /* Fine grain — distant field */
+    radial-gradient(circle at 18% 14%, rgba(22, 14, 12, 0.22) 0 0.9px, transparent 1.5px),
+    radial-gradient(circle at 72% 68%, rgba(18, 12, 10, 0.16) 0 0.8px, transparent 1.4px),
+    radial-gradient(circle at 46% 42%, rgba(20, 13, 11, 0.14) 0 0.9px, transparent 1.5px),
+    /* Mid-size — main field */
+    radial-gradient(circle at 16% 60%, rgba(16, 10, 9, 0.20) 0 1.4px, transparent 2.0px),
+    radial-gradient(circle at 74% 28%, rgba(20, 12, 10, 0.17) 0 1.3px, transparent 2.0px),
+    radial-gradient(circle at 90% 82%, rgba(18, 11, 10, 0.14) 0 1.2px, transparent 1.8px),
+    /* Brand-red accent stars — sparse, intentional */
+    radial-gradient(circle at 38% 78%, rgba(153, 51, 49, 0.38) 0 1.3px, transparent 2.0px),
+    radial-gradient(circle at 82% 42%, rgba(180, 72, 70, 0.28) 0 1.1px, transparent 1.7px);
   background-size:
-    clamp(280px, 28vw, 440px) clamp(280px, 28vw, 440px),
-    clamp(400px, 40vw, 600px) clamp(400px, 40vw, 600px),
-    clamp(540px, 56vw, 800px) clamp(540px, 56vw, 800px),
-    clamp(680px, 70vw, 1000px) clamp(680px, 70vw, 1000px),
+    clamp(300px, 30vw, 460px) clamp(300px, 30vw, 460px),
+    clamp(460px, 46vw, 680px) clamp(460px, 46vw, 680px),
+    clamp(620px, 64vw, 900px) clamp(620px, 64vw, 900px),
+    clamp(560px, 58vw, 840px) clamp(560px, 58vw, 840px),
+    clamp(720px, 74vw, 1060px) clamp(720px, 74vw, 1060px),
+    clamp(880px, 90vw, 1300px) clamp(880px, 90vw, 1300px),
+    clamp(640px, 66vw, 940px) clamp(640px, 66vw, 940px),
     clamp(820px, 84vw, 1200px) clamp(820px, 84vw, 1200px);
-  background-position: 0 0, 160px 120px, 320px 56px, 480px 280px, 100px 380px;
-  opacity: 0.78;
+  background-position:
+    0 0, 200px 140px, 80px 320px,
+    120px 200px, 360px 100px, 520px 360px,
+    240px 440px, 480px 220px;
+  opacity: 0.88;
 }
 .dark .kanji-bg-parallax-layer {
   /* Dark mode: crisp white stars + brand-red accent stars */
@@ -551,10 +547,14 @@ html {
 /* ── Atmosphere — static focal depth, no compositor promotion ── */
 .kanji-bg-atmosphere {
   backface-visibility: hidden;
-  /* Light mode: barely-there warm center */
+  /*
+   * Light mode: three-layer nebula mirroring dark mode structure.
+   */
   background:
-    radial-gradient(ellipse 60% 46% at 50% 46%, rgba(185, 150, 132, 0.08) 0%, transparent 70%);
-  opacity: 0.86;
+    radial-gradient(ellipse 66% 52% at 50% 46%, rgba(153, 51, 49, 0.12) 0%, rgba(180, 72, 70, 0.05) 52%, transparent 78%),
+    radial-gradient(ellipse 40% 32% at 20% 22%, rgba(30, 16, 14, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 36% 30% at 78% 76%, rgba(153, 51, 49, 0.06) 0%, transparent 58%);
+  opacity: 0.92;
 }
 .dark .kanji-bg-atmosphere {
   /* Dark mode: brand-red nebula — controlled, cinematic */
@@ -573,9 +573,9 @@ html {
 /* ── Edge vignette — static paint, no compositor promotion ── */
 .kanji-bg-vignette {
   backface-visibility: hidden;
-  /* Light mode */
+
   background:
-    radial-gradient(circle at center, transparent 52%, rgba(170, 153, 142, 0.18) 100%);
+    radial-gradient(circle at center, transparent 48%, rgba(28, 16, 14, 0.22) 100%);
 }
 .dark .kanji-bg-vignette {
   background:
@@ -593,5 +593,5 @@ html {
   opacity: 0.60;
 }
 html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
-  opacity: 0.68;
+  opacity: 0.72;
 }

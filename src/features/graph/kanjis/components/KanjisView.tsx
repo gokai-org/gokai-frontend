@@ -2,11 +2,15 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
+import { useSidebar } from "@/shared/components/SidebarContext";
+import { WritingPracticeModal } from "@/features/kanji/components/WritingPracticeModal";
+import type { Kanji } from "@/features/kanji/types";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import { useGraphicsProfile } from "@/shared/hooks/useGraphicsProfile";
 import type { Viewport } from "reactflow";
 import {
   buildKanjiConstellationLayout,
+  buildTranslateExtent,
   createKanjiConstellationGraph,
 } from "../lib/constellationBuilder";
 import { useKanjiConstellation } from "../hooks/useKanjiConstellation";
@@ -89,8 +93,10 @@ export default function KanjisView() {
     enableFpsProbe: true,
   });
   const qualityProfile = useKanjiConstellationQuality(graphicsProfile);
+  const { setHidden } = useSidebar();
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
+  const [writingKanji, setWritingKanji] = useState<Kanji | null>(null);
   const backgroundRef = useRef<HTMLDivElement | null>(null);
   const viewportFrame = useRef<number | null>(null);
   const lastFrameTime = useRef<number | null>(null);
@@ -125,6 +131,15 @@ export default function KanjisView() {
 
   const layoutIds = useMemo(() => items.map((item) => item.id), [items]);
   const layout = useMemo(() => buildKanjiConstellationLayout(layoutIds), [layoutIds]);
+
+  const translateExtent = useMemo(
+    () => buildTranslateExtent(
+      layout.nodeBounds,
+      graphicsProfile.signals.width,
+      graphicsProfile.signals.height,
+    ),
+    [layout.nodeBounds, graphicsProfile.signals.width, graphicsProfile.signals.height],
+  );
 
   const selectedProgress = useMemo(
     () => items.find((item) => item.id === detailNodeId) ?? null,
@@ -172,6 +187,21 @@ export default function KanjisView() {
   const handleCloseDetail = () => {
     setDetailNodeId(null);
   };
+
+  const handleWritingStart = (kanji: Kanji) => {
+    setWritingKanji(kanji);
+  };
+
+  const handleWritingEnd = () => {
+    setWritingKanji(null);
+  };
+
+  useEffect(() => {
+    setHidden(detailNodeId !== null);
+    return () => {
+      setHidden(false);
+    };
+  }, [detailNodeId, setHidden]);
 
   const setInteractionState = useCallback((isInteracting: boolean) => {
     isInteractingRef.current = isInteracting;
@@ -365,6 +395,7 @@ export default function KanjisView() {
           focusedNodeId={detailNodeId}
           onInteractionChange={handleInteractionChange}
           qualityProfile={qualityProfile}
+          translateExtent={translateExtent}
         />
       </div>
 
@@ -382,7 +413,13 @@ export default function KanjisView() {
             ? `Consigue ${selectedProgress.completionScore}% en el kanji anterior para desbloquear la práctica.`
             : undefined
         }
+        writingActive={writingKanji !== null}
+        onWritingStart={handleWritingStart}
       />
+
+      {writingKanji !== null && (
+        <WritingPracticeModal kanji={writingKanji} onClose={handleWritingEnd} />
+      )}
     </div>
   );
 }

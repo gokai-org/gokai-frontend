@@ -38,6 +38,7 @@ interface KanjiConstellationMapProps {
   focusedNodeId: string | null;
   onInteractionChange: (isInteracting: boolean) => void;
   qualityProfile: KanjiConstellationQualityProfile;
+  translateExtent?: [[number, number], [number, number]];
 }
 
 function getPlanetFocusPoint(node: KanjiNode) {
@@ -59,6 +60,7 @@ function KanjiConstellationMapInner({
   focusedNodeId,
   onInteractionChange,
   qualityProfile,
+  translateExtent: translateExtentProp,
 }: KanjiConstellationMapProps) {
   const { setCenter, getViewport, setViewport } = useReactFlow();
   const hasInitializedViewport = useRef(false);
@@ -187,7 +189,7 @@ function KanjiConstellationMapInner({
       onlyRenderVisibleElements
       minZoom={qualityProfile.camera.overviewZoom}
       maxZoom={qualityProfile.camera.focusZoom}
-      translateExtent={layout.translateExtent}
+      translateExtent={translateExtentProp ?? layout.translateExtent}
       nodesDraggable={false}
       nodesConnectable={false}
       elementsSelectable={false}
@@ -196,8 +198,8 @@ function KanjiConstellationMapInner({
       selectNodesOnDrag={false}
       panOnDrag
       panOnScroll={false}
-      zoomOnScroll={false}
-      zoomOnPinch={false}
+      zoomOnScroll
+      zoomOnPinch
       zoomOnDoubleClick={false}
       preventScrolling
       proOptions={{ hideAttribution: true }}

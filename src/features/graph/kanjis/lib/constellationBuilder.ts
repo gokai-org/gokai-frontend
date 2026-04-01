@@ -54,8 +54,22 @@ type LayoutEdge = {
 export type KanjiConstellationLayout = {
   nodes: LayoutNode[];
   edges: LayoutEdge[];
+  nodeBounds: { minX: number; maxX: number; minY: number; maxY: number };
   translateExtent: [[number, number], [number, number]];
 };
+
+export function buildTranslateExtent(
+  bounds: KanjiConstellationLayout["nodeBounds"],
+  viewportWidth: number,
+  viewportHeight: number,
+): [[number, number], [number, number]] {
+  const padX = Math.max(viewportWidth * 0.25, NODE_WIDTH);
+  const padY = Math.max(viewportHeight * 0.22, NODE_HEIGHT);
+  return [
+    [bounds.minX - padX, bounds.minY - padY],
+    [bounds.maxX + padX, bounds.maxY + padY],
+  ];
+}
 
 function seededFraction(seed: number, salt: number) {
   const value = Math.sin(seed * 91.137 + salt * 31.331) * 43758.5453;
@@ -287,20 +301,22 @@ export function buildKanjiConstellationLayout(ids: string[]): KanjiConstellation
     frame,
   );
 
-  const minX = Math.min(...positions.map((position) => position.x)) - 1400;
-  const maxX = Math.max(...positions.map((position) => position.x)) + 1400;
-  const minY = Math.min(...positions.map((position) => position.y)) - 1200;
-  const maxY = Math.max(...positions.map((position) => position.y)) + 1200;
+  const minX = Math.min(...positions.map((position) => position.x));
+  const maxX = Math.max(...positions.map((position) => position.x)) + NODE_WIDTH;
+  const minY = Math.min(...positions.map((position) => position.y));
+  const maxY = Math.max(...positions.map((position) => position.y)) + NODE_HEIGHT;
 
   return {
+    nodeBounds: { minX, maxX, minY, maxY },
     nodes: ids.map((id, index) => ({
       id,
       position: positions[index],
     })),
     edges: createSequentialLayoutEdges(ids, positions),
+    // Default fallback; overridden at render time with viewport-aware padding via buildTranslateExtent.
     translateExtent: [
-      [minX, minY],
-      [maxX, maxY],
+      [minX - 380, minY - 280],
+      [maxX + 380, maxY + 280],
     ],
   };
 }

@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LessonMode, LessonResolved } from "../types";
+import type { Kanji } from "@/features/kanji/types";
 import { getLessonsForNode } from "../lib/lessonService";
 import LessonShell from "./LessonShell";
 import { SkeletonDrawerContent } from "@/shared/ui/Skeleton";
@@ -24,6 +25,8 @@ type Props = {
   entityKind?: "kanji" | "subtheme" | "grammar" | null;
   kanjiCtaDisabled?: boolean;
   kanjiCtaDisabledReason?: string;
+  writingActive?: boolean;
+  onWritingStart?: (kanji: Kanji) => void;
 };
 
 export default function LessonDrawer({
@@ -36,6 +39,8 @@ export default function LessonDrawer({
   entityKind = null,
   kanjiCtaDisabled = false,
   kanjiCtaDisabledReason,
+  writingActive = false,
+  onWritingStart,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [lessons, setLessons] = useState<LessonResolved[]>([]);
@@ -111,8 +116,9 @@ export default function LessonDrawer({
             onClick={onClose}
             className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[1px]"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: writingActive ? 0 : 1 }}
             exit={{ opacity: 0 }}
+            style={{ pointerEvents: writingActive ? "none" : "auto" }}
           />
 
           {/* Drawer: desktop floating right | mobile bottom sheet */}
@@ -128,9 +134,14 @@ export default function LessonDrawer({
               "max-sm:h-[85dvh] max-sm:w-auto max-sm:rounded-3xl",
             ].join(" ")}
             initial={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
-            animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+            animate={
+              writingActive
+                ? (isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 })
+                : (isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 })
+            }
             exit={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 26 }}
+            style={writingActive ? { pointerEvents: "none" } : undefined}
           >
             {/* Header sticky */}
             <div className="sticky top-0 z-10 bg-surface-primary/90 backdrop-blur-md border-b border-border-subtle rounded-t-3xl">
@@ -211,6 +222,7 @@ export default function LessonDrawer({
                     mode={mode}
                     kanjiCtaDisabled={kanjiCtaDisabled}
                     kanjiCtaDisabledReason={kanjiCtaDisabledReason}
+                    onWritingStart={onWritingStart}
                   />
                 </div>
               )}
