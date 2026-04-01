@@ -9,15 +9,15 @@ import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences"
 import { useGraphicsProfile } from "@/shared/hooks/useGraphicsProfile";
 import type { Viewport } from "reactflow";
 import {
-  buildKanjiConstellationLayout,
+  buildKanjiBoardLayout,
   buildTranslateExtent,
-  createKanjiConstellationGraph,
-} from "../lib/constellationBuilder";
-import { useKanjiConstellation } from "../hooks/useKanjiConstellation";
-import { useKanjiConstellationQuality } from "../hooks/useKanjiConstellationQuality";
-import type { KanjiConstellationQualitySignals } from "../types";
-import { KanjiConstellationBackground } from "./KanjiConstellationBackground";
-import { KanjiConstellationMap } from "./KanjiConstellationMap";
+  createKanjiBoardGraph,
+} from "../lib/boardBuilder";
+import { useKanjiBoard } from "../hooks/useKanjiBoard";
+import { useKanjiBoardQuality } from "../hooks/useKanjiBoardQuality";
+import type { KanjiBoardQualitySignals } from "../types";
+import { KanjiBoardBackground } from "./KanjiBoardBackground";
+import { KanjiBoardMap } from "./KanjiBoardMap";
 
 const GRAPH_USER_ID = "user123";
 
@@ -42,7 +42,7 @@ function snap(value: number, step: number) {
   return Math.round(value / step) * step;
 }
 
-function getBackgroundViewportConfig(signals: KanjiConstellationQualitySignals) {
+function getBackgroundViewportConfig(signals: KanjiBoardQualitySignals) {
   const compactViewport = signals.width <= 1180 || signals.pointerType === "coarse";
   const positionStep = compactViewport || signals.devicePixelRatio >= 2 ? 0.5 : 1;
 
@@ -57,7 +57,7 @@ function getBackgroundViewportConfig(signals: KanjiConstellationQualitySignals) 
 
 function normalizeViewportForBackground(
   viewport: Viewport,
-  signals: KanjiConstellationQualitySignals,
+  signals: KanjiBoardQualitySignals,
 ) {
   const config = getBackgroundViewportConfig(signals);
 
@@ -70,7 +70,7 @@ function normalizeViewportForBackground(
 
 function formatBackgroundViewportState(
   state: BackgroundViewportState,
-  signals: KanjiConstellationQualitySignals,
+  signals: KanjiBoardQualitySignals,
 ): BackgroundViewportCssState {
   const config = getBackgroundViewportConfig(signals);
   const x = snap(state.x, config.positionStep);
@@ -85,14 +85,14 @@ function formatBackgroundViewportState(
 }
 
 export default function KanjisView() {
-  const { items, summary } = useKanjiConstellation();
+  const { items, summary } = useKanjiBoard();
   const { animationsEnabled, heavyAnimationsEnabled } = useAnimationPreferences();
   const graphicsProfile = useGraphicsProfile({
     animationsEnabled,
     heavyAnimationsEnabled,
     enableFpsProbe: true,
   });
-  const qualityProfile = useKanjiConstellationQuality(graphicsProfile);
+  const qualityProfile = useKanjiBoardQuality(graphicsProfile);
   const { setHidden } = useSidebar();
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
@@ -130,7 +130,7 @@ export default function KanjisView() {
   }, [detailNodeId, items, manualSelectedId, summary.currentKanjiId]);
 
   const layoutIds = useMemo(() => items.map((item) => item.id), [items]);
-  const layout = useMemo(() => buildKanjiConstellationLayout(layoutIds), [layoutIds]);
+  const layout = useMemo(() => buildKanjiBoardLayout(layoutIds), [layoutIds]);
 
   const translateExtent = useMemo(
     () => buildTranslateExtent(
@@ -147,7 +147,7 @@ export default function KanjisView() {
   );
 
   const graph = useMemo(
-    () => createKanjiConstellationGraph(items, layout, selectedId, qualityProfile),
+    () => createKanjiBoardGraph(items, layout, selectedId, qualityProfile),
     // Depend only on the primitives that affect visible output. The full qualityProfile
     // object is recreated on every FPS-probe tick even when no visual param changes,
     // so a reference-equality dep would trigger a full graph recompute every frame.
@@ -164,7 +164,6 @@ export default function KanjisView() {
       qualityProfile.edge.widthScale,
       qualityProfile.edge.opacityScale,
       qualityProfile.edge.showLockedDash,
-      qualityProfile.edge.curvature,
     ],
   );
 
@@ -249,7 +248,7 @@ export default function KanjisView() {
     (
       layer: HTMLDivElement,
       state: BackgroundViewportState,
-      signals: KanjiConstellationQualitySignals,
+      signals: KanjiBoardQualitySignals,
     ) => {
       const formattedState = formatBackgroundViewportState(state, signals);
       const previousState = appliedViewportCss.current;
@@ -407,14 +406,14 @@ export default function KanjisView() {
         className="absolute inset-0"
         style={{ contain: "layout paint style", ...backgroundStyle } as React.CSSProperties}
       >
-        <KanjiConstellationBackground
+        <KanjiBoardBackground
           qualityProfile={qualityProfile}
           graphicsProfile={graphicsProfile}
         />
       </div>
 
       <div className="absolute inset-0 z-10">
-        <KanjiConstellationMap
+        <KanjiBoardMap
           nodes={graph.nodes}
           edges={graph.edges}
           layout={layout}

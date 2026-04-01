@@ -66,9 +66,12 @@ export function RecentCard({ item, index = 0, onClick }: RecentCardProps) {
       >
         <div
           className={[
-            "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl",
-            "bg-accent/8 text-lg font-bold text-accent",
-            "group-hover:bg-accent group-hover:text-content-inverted",
+            "flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl",
+            "bg-[#f5e8e8] border border-[#e8c8c8] text-[#8c2e2c] dark:bg-[#2a1010] dark:border-[#4a1e1e] dark:text-[#c97a78]",
+            "text-[20px] font-bold",
+            "shadow-[inset_0_1px_0_rgba(255,255,255,0.60)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
+            "group-hover:bg-[#efdddd] group-hover:border-[#d4a8a6] dark:group-hover:bg-[#321414] dark:group-hover:border-[#5c2424]",
+            "group-hover:scale-105",
             hoverTransition,
           ].join(" ")}
         >

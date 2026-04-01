@@ -10,8 +10,8 @@ import {
 } from "@/features/kanji";
 import {
   KANJI_COMPLETION_SCORE,
-  type KanjiConstellationProgress,
-  type KanjiConstellationSummary,
+  type KanjiBoardProgress,
+  type KanjiBoardSummary,
 } from "../types";
 
 function normalizeKanjis(payload: unknown): Kanji[] {
@@ -60,7 +60,7 @@ function normalizeResults(payload: unknown): KanjiLessonResult[] {
   return [];
 }
 
-function buildSummary(items: KanjiConstellationProgress[]): KanjiConstellationSummary {
+function buildSummary(items: KanjiBoardProgress[]): KanjiBoardSummary {
   const completedCount = items.filter((item) => item.status === "completed").length;
   const availableCount = items.filter((item) => item.status === "available").length;
   const lockedCount = items.filter((item) => item.status === "locked").length;
@@ -92,7 +92,7 @@ function buildSummary(items: KanjiConstellationProgress[]): KanjiConstellationSu
   };
 }
 
-export function useKanjiConstellation() {
+export function useKanjiBoard() {
   const [kanjis, setKanjis] = useState<Kanji[]>([]);
   const [results, setResults] = useState<KanjiLessonResult[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,7 +156,7 @@ export function useKanjiConstellation() {
   const items = useMemo(() => {
     let previousSequentialCompleted = true;
 
-    return kanjis.map<KanjiConstellationProgress>((kanji, index) => {
+    return kanjis.map<KanjiBoardProgress>((kanji, index) => {
       const resultData = resultsByKanji.get(kanji.id);
       const bestScore = resultData?.bestScore ?? null;
       const isCompleted = bestScore !== null && bestScore >= KANJI_COMPLETION_SCORE;

@@ -3,16 +3,16 @@
 import { useMemo } from "react";
 import type { GraphicsProfile } from "@/shared/hooks/useGraphicsProfile";
 import type {
-  KanjiConstellationCameraProfile,
-  KanjiConstellationQualityProfile,
-  KanjiConstellationQualityTier,
+  KanjiBoardCameraProfile,
+  KanjiBoardQualityProfile,
+  KanjiBoardQualityTier,
 } from "../types";
 
 function buildCameraProfile(
   width: number,
-  tier: KanjiConstellationQualityTier,
+  tier: KanjiBoardQualityTier,
   graphicsProfile: GraphicsProfile,
-): KanjiConstellationCameraProfile {
+): KanjiBoardCameraProfile {
   const baseTransition = graphicsProfile.cameraTransitionDuration;
   const baseRestore = graphicsProfile.cameraRestoreDuration;
 
@@ -93,9 +93,9 @@ function buildCameraProfile(
         };
 }
 
-export function createKanjiConstellationQualityProfile(
+export function createKanjiBoardQualityProfile(
   graphicsProfile: GraphicsProfile,
-): KanjiConstellationQualityProfile {
+): KanjiBoardQualityProfile {
   const tier = graphicsProfile.tier;
   const signals = graphicsProfile.signals;
 
@@ -158,6 +158,6 @@ export function createKanjiConstellationQualityProfile(
   };
 }
 
-export function useKanjiConstellationQuality(graphicsProfile: GraphicsProfile) {
-  return useMemo(() => createKanjiConstellationQualityProfile(graphicsProfile), [graphicsProfile]);
+export function useKanjiBoardQuality(graphicsProfile: GraphicsProfile) {
+  return useMemo(() => createKanjiBoardQualityProfile(graphicsProfile), [graphicsProfile]);
 }

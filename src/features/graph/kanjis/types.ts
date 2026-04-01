@@ -8,23 +8,23 @@ import type {
 
 export const KANJI_COMPLETION_SCORE = 70;
 
-export type KanjiConstellationStatus = "completed" | "available" | "locked";
-export type KanjiConstellationQualityTier = GraphicsQualityTier;
+export type KanjiBoardStatus = "completed" | "available" | "locked";
+export type KanjiBoardQualityTier = GraphicsQualityTier;
 
-export interface KanjiConstellationProgress {
+export interface KanjiBoardProgress {
   id: string;
   index: number;
   kanji: Kanji;
   primaryMeaning: string;
   bestScore: number | null;
   attemptCount: number;
-  status: KanjiConstellationStatus;
+  status: KanjiBoardStatus;
   completionScore: number;
   progressPercent: number;
   bestResult: KanjiLessonResult | null;
 }
 
-export interface KanjiConstellationSummary {
+export interface KanjiBoardSummary {
   totalCount: number;
   completedCount: number;
   availableCount: number;
@@ -35,9 +35,9 @@ export interface KanjiConstellationSummary {
   consecutiveCompletedCount: number;
 }
 
-export type KanjiConstellationQualitySignals = GraphicsQualitySignals;
+export type KanjiBoardQualitySignals = GraphicsQualitySignals;
 
-export interface KanjiConstellationCameraProfile {
+export interface KanjiBoardCameraProfile {
   overviewZoom: number;
   focusZoom: number;
   initialDuration: number;
@@ -45,9 +45,9 @@ export interface KanjiConstellationCameraProfile {
   restoreDuration: number;
 }
 
-export interface KanjiConstellationQualityProfile {
-  tier: KanjiConstellationQualityTier;
-  signals: KanjiConstellationQualitySignals;
+export interface KanjiBoardQualityProfile {
+  tier: KanjiBoardQualityTier;
+  signals: KanjiBoardQualitySignals;
   graphics: GraphicsProfile;
   allowMotion: boolean;
   allowHeavyMotion: boolean;
@@ -81,28 +81,29 @@ export interface KanjiConstellationQualityProfile {
     showLockedDash: boolean;
     curvature: number;
   };
-  camera: KanjiConstellationCameraProfile;
+  camera: KanjiBoardCameraProfile;
 }
 
-export interface KanjiConstellationNodeData {
-  progress: KanjiConstellationProgress;
+export interface KanjiBoardNodeData {
+  progress: KanjiBoardProgress;
   selected: boolean;
-  qualityTier: KanjiConstellationQualityTier;
+  qualityTier: KanjiBoardQualityTier;
   glowScale: number;
   shadowScale: number;
   showOrbitRings: boolean;
   shouldUsePulse: boolean;
 }
 
-export interface KanjiConstellationEdgeData {
-  status: KanjiConstellationStatus;
+export interface KanjiBoardEdgeData {
+  status: KanjiBoardStatus;
   highlight: boolean;
-  qualityTier: KanjiConstellationQualityTier;
+  qualityTier: KanjiBoardQualityTier;
   widthScale: number;
   opacityScale: number;
   showLockedDash: boolean;
-  curvature: number;
+  /** @deprecated — passed but not consumed by KanjiBoardEdge; kept optional for forward compat */
+  curvature?: number;
 }
 
-export type KanjiConstellationNode = Node<KanjiConstellationNodeData>;
-export type KanjiConstellationEdge = Edge<KanjiConstellationEdgeData>;
+export type KanjiBoardNode = Node<KanjiBoardNodeData>;
+export type KanjiBoardEdge = Edge<KanjiBoardEdgeData>;

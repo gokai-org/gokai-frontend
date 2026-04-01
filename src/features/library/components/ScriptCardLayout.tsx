@@ -58,6 +58,62 @@ export function ScriptSymbolBox({ symbol, gradient, hoverTransition }: ScriptSym
   );
 }
 
+// ─── MahjongSymbolBox (katakana) ────────────────────────────────────────────
+// Portrait rectangle with rounded corners, like a mahjong tile.
+
+export function MahjongSymbolBox({ symbol, gradient, hoverTransition }: ScriptSymbolBoxProps) {
+  return (
+    <div
+      className={[
+        "inline-flex h-[56px] w-[44px] items-center justify-center overflow-hidden",
+        "rounded-xl bg-gradient-to-br font-black text-content-inverted shadow-lg",
+        "ring-2 ring-transparent",
+        "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
+        "text-[28px] leading-none",
+        hoverTransition,
+        gradient,
+      ].join(" ")}
+    >
+      {symbol}
+    </div>
+  );
+}
+
+// ─── ShogiSymbolBox (hiragana) ────────────────────────────────────────────────
+// Pentagon shape: narrower top with diagonal sides widening downward,
+// like a shogi piece. Shadow uses filter: drop-shadow so it follows the shape.
+
+export function ShogiSymbolBox({ symbol, gradient, hoverTransition }: ScriptSymbolBoxProps) {
+  // All corners rounded with r≈5: apex (top-center), both shoulders, both bottom corners.
+  const shogiPath =
+    "path('M 18 3 Q 22 0 26 3 L 40 15 Q 44 18 44 23 L 44 50 Q 44 56 38 56 L 6 56 Q 0 56 0 50 L 0 23 Q 0 18 4 15 Z')";
+
+  return (
+    <div
+      className={["relative inline-flex h-[56px] w-[44px] group-hover:scale-110", hoverTransition].join(" ")}
+      style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.30))" }}
+    >
+      {/* Ring border — scales slightly outward on hover, follows shogi shape */}
+      <div
+        className={["absolute inset-0 opacity-0 group-hover:opacity-100 scale-[1.09] bg-white/25", hoverTransition].join(" ")}
+        style={{ clipPath: shogiPath }}
+      />
+      {/* Gradient fill */}
+      <div
+        className={[
+          "relative flex h-full w-full items-center justify-center",
+          "bg-gradient-to-br font-black text-content-inverted",
+          "text-[28px] leading-none",
+          gradient,
+        ].join(" ")}
+        style={{ clipPath: shogiPath }}
+      >
+        {symbol}
+      </div>
+    </div>
+  );
+}
+
 // ─── ScriptCardLayout ─────────────────────────────────────────────────────────
 
 export interface ScriptCardLayoutProps {
@@ -69,7 +125,6 @@ export interface ScriptCardLayoutProps {
   hasOnClick: boolean;
   hasFavoriteToggle: boolean;
   config: ScriptCardConfig;
-  /** Tailwind transition class injected by useCardAnimation — empty when animations off. */
   hoverTransition: string;
   onFavoriteToggle?: () => void;
 }
@@ -107,8 +162,7 @@ export function ScriptCardLayout({
       >
         <span
           className={[
-            "-translate-y-1 translate-x-8 text-[96px] font-black leading-none",
-            config.decorOpacity,
+            "-translate-y-1 translate-x-8 text-[96px] font-black leading-none opacity-[0.03] group-hover:opacity-[0.06]",
             hoverTransition,
           ].join(" ")}
         >
@@ -128,11 +182,33 @@ export function ScriptCardLayout({
 
       {/* ── Top row: symbol box + points badge ─────────────────── */}
       <div className="relative z-10 mb-4 flex items-start justify-between gap-2">
-        <ScriptSymbolBox
-          symbol={symbol}
-          gradient={config.thumbGradient}
-          hoverTransition={hoverTransition}
-        />
+        {config.symbolShape === "circle" ? (
+          <div
+            className={[
+              "inline-flex h-14 w-14 items-center justify-center overflow-hidden",
+              "rounded-full bg-gradient-to-br font-black text-content-inverted shadow-lg",
+              "ring-2 ring-transparent",
+              "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
+              "text-[28px] leading-none",
+              hoverTransition,
+              config.thumbGradient,
+            ].join(" ")}
+          >
+            {symbol}
+          </div>
+        ) : config.symbolShape === "mahjong" ? (
+          <MahjongSymbolBox
+            symbol={symbol}
+            gradient={config.thumbGradient}
+            hoverTransition={hoverTransition}
+          />
+        ) : (
+          <ShogiSymbolBox
+            symbol={symbol}
+            gradient={config.thumbGradient}
+            hoverTransition={hoverTransition}
+          />
+        )}
 
         {pointsBadge && (
           <span

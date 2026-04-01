@@ -10,36 +10,36 @@ import ReactFlow, {
   useReactFlow,
 } from "reactflow";
 import "reactflow/dist/style.css";
-import KanjiConstellationEdge from "./KanjiConstellationEdge";
-import KanjiConstellationNode from "./KanjiConstellationNode";
-import type { KanjiConstellationLayout } from "../lib/constellationBuilder";
+import KanjiBoardEdge from "./KanjiBoardEdge";
+import KanjiBoardNode from "./KanjiBoardNode";
+import type { KanjiBoardLayout } from "../lib/boardBuilder";
 import type {
-  KanjiConstellationEdge as KanjiEdge,
-  KanjiConstellationNode as KanjiNode,
-  KanjiConstellationQualityProfile,
+  KanjiBoardEdge as KanjiEdge,
+  KanjiBoardNode as KanjiNode,
+  KanjiBoardQualityProfile,
 } from "../types";
 
 const nodeTypes = {
-  "kanji-planet": KanjiConstellationNode,
+  "kanji-planet": KanjiBoardNode,
 };
 
 const edgeTypes = {
-  "kanji-constellation": KanjiConstellationEdge,
+  "kanji-constellation": KanjiBoardEdge,
 };
 
 const PLANET_CENTER_X = 84;
 const PLANET_CENTER_Y = 78;
 
-interface KanjiConstellationMapProps {
+interface KanjiBoardMapProps {
   nodes: KanjiNode[];
   edges: KanjiEdge[];
-  layout: KanjiConstellationLayout;
+  layout: KanjiBoardLayout;
   onSelect: (nodeId: string) => void;
   onViewportChange: (viewport: Viewport) => void;
   initialNodeId: string | null;
   focusedNodeId: string | null;
   onInteractionChange: (isInteracting: boolean) => void;
-  qualityProfile: KanjiConstellationQualityProfile;
+  qualityProfile: KanjiBoardQualityProfile;
   translateExtent?: [[number, number], [number, number]];
 }
 
@@ -52,7 +52,7 @@ function getPlanetFocusPoint(node: KanjiNode) {
   };
 }
 
-function KanjiConstellationMapInner({
+function KanjiBoardMapInner({
   nodes,
   edges,
   layout,
@@ -63,7 +63,7 @@ function KanjiConstellationMapInner({
   onInteractionChange,
   qualityProfile,
   translateExtent: translateExtentProp,
-}: KanjiConstellationMapProps) {
+}: KanjiBoardMapProps) {
   const { setCenter, getViewport, setViewport } = useReactFlow();
   const hasInitializedViewport = useRef(false);
   const savedViewport = useRef<Viewport | null>(null);
@@ -233,10 +233,10 @@ function KanjiConstellationMapInner({
   );
 }
 
-export function KanjiConstellationMap(props: KanjiConstellationMapProps) {
+export function KanjiBoardMap(props: KanjiBoardMapProps) {
   return (
     <ReactFlowProvider>
-      <KanjiConstellationMapInner {...props} />
+      <KanjiBoardMapInner {...props} />
     </ReactFlowProvider>
   );
 }

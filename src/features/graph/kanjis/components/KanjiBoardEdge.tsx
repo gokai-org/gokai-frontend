@@ -2,9 +2,9 @@
 
 import { memo } from "react";
 import { getSmoothStepPath, type EdgeProps } from "reactflow";
-import type { KanjiConstellationEdgeData } from "../types";
+import type { KanjiBoardEdgeData } from "../types";
 
-function KanjiConstellationEdge({
+function KanjiBoardEdge({
   id,
   sourceX,
   sourceY,
@@ -13,7 +13,7 @@ function KanjiConstellationEdge({
   sourcePosition,
   targetPosition,
   data,
-}: EdgeProps<KanjiConstellationEdgeData>) {
+}: EdgeProps<KanjiBoardEdgeData>) {
   const [path] = getSmoothStepPath({
     sourceX,
     sourceY,
@@ -30,43 +30,41 @@ function KanjiConstellationEdge({
   const widthScale = data?.widthScale ?? 1;
   const opacityScale = data?.opacityScale ?? 1;
   const showLockedDash = data?.showLockedDash ?? true;
-  // Glow is shown only on high-tier hardware to keep low/medium cost-free.
   const showGlow = data?.qualityTier === "high" && status !== "locked";
 
   const palette =
     status === "completed"
       ? {
-          stroke: "rgba(196, 68, 66, 0.78)",
+          stroke: "var(--kanji-edge-completed-stroke)",
           width: (highlight ? 2.8 : 2.2) * widthScale,
-          opacity: (highlight ? 0.98 : 0.84) * opacityScale,
+          opacity: (highlight ? 0.92 : 0.78) * opacityScale,
           dash: undefined,
         }
       : status === "available"
         ? {
-            stroke: "rgba(196, 68, 66, 0.52)",
+            stroke: "var(--kanji-edge-available-stroke)",
             width: (highlight ? 2.4 : 1.9) * widthScale,
-            opacity: (highlight ? 0.88 : 0.72) * opacityScale,
+            opacity: (highlight ? 0.80 : 0.64) * opacityScale,
             dash: "8 14",
           }
         : {
-            stroke: "rgba(155, 142, 142, 0.22)",
+            stroke: "var(--kanji-edge-locked-stroke)",
             width: 1.6 * widthScale,
-            opacity: 0.44 * opacityScale,
+            opacity: 0.22 * opacityScale,
             dash: showLockedDash ? "5 11" : undefined,
           };
 
   return (
     <>
-      {/* Subtle glow halo — GPU-composited blur, high tier only */}
+      {/* Subtle glow halo — wider stroke replaces CSS blur (no GPU off-screen compositing) */}
       {showGlow && (
         <path
           d={path}
           style={{
             stroke: palette.stroke,
-            strokeWidth: palette.width * 3.8,
-            opacity: palette.opacity * 0.18,
+            strokeWidth: palette.width * 6,
+            opacity: palette.opacity * 0.13,
             strokeLinecap: "round",
-            filter: "blur(4px)",
             pointerEvents: "none",
           }}
           fill="none"
@@ -76,6 +74,7 @@ function KanjiConstellationEdge({
       <path
         id={id}
         d={path}
+        className={status === "available" ? "kanji-edge-available" : undefined}
         style={{
           stroke: palette.stroke,
           strokeWidth: palette.width,
@@ -90,7 +89,7 @@ function KanjiConstellationEdge({
   );
 }
 
-export default memo(KanjiConstellationEdge, (previous, next) => {
+export default memo(KanjiBoardEdge, (previous, next) => {
   return (
     previous.sourceX === next.sourceX &&
     previous.sourceY === next.sourceY &&

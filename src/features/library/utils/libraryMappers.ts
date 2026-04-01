@@ -133,7 +133,6 @@ export function kanjiToScriptCard(
     symbol: kanji.symbol,
     title: meaning,
     subtitle: reading ? `Lectura: ${reading}` : undefined,
-    pointsBadge: `${kanji.pointsToUnlock} pts`,
     variant: "kanji",
     isFavorite,
   };
@@ -149,7 +148,6 @@ export function hiraganaToScriptCard(
     id: kana.id,
     symbol: kana.symbol,
     title: kana.romaji?.trim() || kana.symbol,
-    pointsBadge: `${kana.pointsToUnlock} pts`,
     variant: "hiragana",
     isFavorite,
   };
@@ -165,7 +163,6 @@ export function katakanaToScriptCard(
     id: kana.id,
     symbol: kana.symbol,
     title: kana.romaji?.trim() || kana.symbol,
-    pointsBadge: `${kana.pointsToUnlock} pts`,
     variant: "katakana",
     isFavorite,
   };

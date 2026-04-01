@@ -2,10 +2,10 @@
 
 import { memo } from "react";
 import type { GraphicsProfile } from "@/shared/hooks/useGraphicsProfile";
-import type { KanjiConstellationQualityProfile } from "../types";
+import type { KanjiBoardQualityProfile } from "../types";
 
-interface KanjiConstellationBackgroundProps {
-  qualityProfile: KanjiConstellationQualityProfile;
+interface KanjiBoardBackgroundProps {
+  qualityProfile: KanjiBoardQualityProfile;
   graphicsProfile: GraphicsProfile;
 }
 
@@ -13,19 +13,15 @@ function cn(...values: Array<string | false | null | undefined>) {
   return values.filter(Boolean).join(" ");
 }
 
-export const KanjiConstellationBackground = memo(
-  function KanjiConstellationBackground({
+export const KanjiBoardBackground = memo(
+  function KanjiBoardBackground({
     qualityProfile,
     graphicsProfile,
-  }: KanjiConstellationBackgroundProps) {
-    // Stars visible from medium tier upward
+  }: KanjiBoardBackgroundProps) {
     const showStars = graphicsProfile.maxBackgroundEffects >= 2;
-    // Atmospheric depth visible on high tier only
     const showAtmosphere = graphicsProfile.maxBackgroundEffects >= 3;
-    // Animate star layer: high tier with background animations enabled
     const animateStars =
       graphicsProfile.shouldAnimateBackground && qualityProfile.background.animateTwinkle;
-    // Breathe atmosphere: high tier with heavy effects only
     const animateBreathe =
       graphicsProfile.shouldAnimateBackground && qualityProfile.background.animateBreathe;
 
@@ -34,10 +30,10 @@ export const KanjiConstellationBackground = memo(
         className="absolute inset-0 pointer-events-none kanji-bg-scene"
         aria-hidden="true"
       >
-        {/* Static base — paint only, no compositor promotion */}
+        {/* Static base  */}
         <div className="absolute inset-0 kanji-bg-base" />
 
-        {/* Single parallax star tile — sole compositor-promoted layer */}
+        {/* Single parallax star tile */}
         {showStars ? (
           <div
             className={cn(
@@ -47,7 +43,7 @@ export const KanjiConstellationBackground = memo(
           />
         ) : null}
 
-        {/* Atmospheric depth — static radial gradient, no will-change */}
+        {/* Atmospheric depth */}
         {showAtmosphere ? (
           <div
             className={cn(
@@ -57,13 +53,11 @@ export const KanjiConstellationBackground = memo(
           />
         ) : null}
 
-        {/* Edge vignette — static, no compositor promotion */}
+        {/* Edge vignette */}
         <div className="absolute inset-0 kanji-bg-vignette" />
       </div>
     );
   },
-  // Only re-render when visually relevant properties change.
-  // Camera profile changes on resize do NOT affect background visuals.
   (prev, next) =>
     prev.qualityProfile.tier === next.qualityProfile.tier &&
     prev.qualityProfile.background.animateTwinkle === next.qualityProfile.background.animateTwinkle &&

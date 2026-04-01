@@ -4,16 +4,9 @@ import { memo } from "react";
 import type { CSSProperties } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { LockKeyhole, Sparkles } from "lucide-react";
-import type { KanjiConstellationNodeData } from "../types";
+import type { KanjiBoardNodeData } from "../types";
 
 // ── Sphere geometry within the node bounding box (168 × 196) ──────────────
-// Outer flex container: pt-2 (8px top padding), items-center → centers 138px sub-container
-// Sub-container: 138 × 138, horizontally centered → left offset = (168 - 138) / 2 = 15px
-// Sphere: 92 × 92, centered within 138 × 138 → inset = (138 - 92) / 2 = 23px
-//   sphere top-left in node coords: (15 + 23, 8 + 23) = (38, 31)
-//   sphere center in node coords:   (84, 77)
-//   sphere radius:                  46
-// Handles are positioned AT the sphere surface so edges visually connect flush.
 const _SX = 84; // sphere center X
 const _SY = 77; // sphere center Y
 const _SR = 46; // sphere radius
@@ -49,7 +42,7 @@ function createGlow(
 }
 
 function getPlanetStyles(
-  status: KanjiConstellationNodeData["progress"]["status"],
+  status: KanjiBoardNodeData["progress"]["status"],
   selected: boolean,
   glowScale: number,
   shadowScale: number,
@@ -57,42 +50,39 @@ function getPlanetStyles(
   if (status === "completed") {
     return {
       glow: selected
-        ? createGlow(8, Math.round(22 + shadowScale * 6), 0.10, 0.20, glowScale, "196,68,66")
-        : createGlow(3, Math.round(13 + shadowScale * 4), 0.05, 0.11, glowScale, "196,68,66"),
-      sphereClass: "kanji-node-sphere kanji-node-sphere-completed",
-      ring: "rgba(196, 68, 66, 0.20)",
-      orbit: "rgba(196, 68, 66, 0.34)",
+        ? createGlow(8, Math.round(22 + shadowScale * 6), 0.11, 0.22, glowScale, "186,72,66")
+        : createGlow(3, Math.round(13 + shadowScale * 4), 0.06, 0.12, glowScale, "186,72,66"),
+      sphereClass: "bg-gradient-to-br from-[#BA4845] to-[#C85148] border-white/[0.18] shadow-[0_4px_20px_rgba(186,72,66,0.36)] text-white kanji-node-sphere-completed-enter",
+      ring: "rgba(186, 72, 66, 0.22)",
+      orbit: "rgba(186, 72, 66, 0.36)",
       label: "text-content-primary",
-      meta: "text-content-secondary",
     };
   }
 
   if (status === "available") {
     return {
       glow: selected
-        ? createGlow(7, Math.round(19 + shadowScale * 5), 0.08, 0.17, glowScale, "196,68,66")
-        : createGlow(2, Math.round(11 + shadowScale * 3), 0.04, 0.09, glowScale, "196,68,66"),
-      sphereClass: "kanji-node-sphere kanji-node-sphere-available",
-      ring: "rgba(196, 68, 66, 0.14)",
-      orbit: "rgba(196, 68, 66, 0.25)",
+        ? createGlow(7, Math.round(19 + shadowScale * 5), 0.09, 0.18, glowScale, "186,72,66")
+        : createGlow(4, Math.round(14 + shadowScale * 3), 0.08, 0.14, glowScale, "186,72,66"),
+      sphereClass: "bg-gradient-to-br from-[#993331] to-[#BA5149] border-white/[0.14] shadow-[0_4px_16px_rgba(153,51,49,0.28)] text-white kanji-node-sphere-available-enter",
+      ring: "rgba(186, 72, 66, 0.16)",
+      orbit: "rgba(186, 72, 66, 0.27)",
       label: "text-content-primary",
-      meta: "text-content-secondary",
     };
   }
 
   return {
     glow: selected
-      ? createGlow(6, Math.round(17 + shadowScale * 4), 0.07, 0.15, glowScale, "140, 140, 150")
-      : createGlow(2, Math.round(9 + shadowScale * 2), 0.03, 0.07, glowScale, "140, 140, 150"),
-    sphereClass: "kanji-node-sphere",
-    ring: "rgba(140, 140, 150, 0.16)",
-    orbit: "rgba(140, 140, 150, 0.26)",
+      ? createGlow(6, Math.round(17 + shadowScale * 4), 0.07, 0.15, glowScale, "120,112,126")
+      : createGlow(2, Math.round(9 + shadowScale * 2), 0.03, 0.07, glowScale, "120,112,126"),
+    sphereClass: "bg-gradient-to-br from-[#383438] to-[#1C181E] border-white/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.36)] text-white/40",
+    ring: "rgba(120, 112, 126, 0.18)",
+    orbit: "rgba(120, 112, 126, 0.28)",
     label: "text-content-secondary",
-    meta: "text-content-muted",
   };
 }
 
-function KanjiConstellationNode({ data }: NodeProps<KanjiConstellationNodeData>) {
+function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
   const { progress, selected } = data;
   const styles = getPlanetStyles(
     progress.status,
@@ -116,7 +106,14 @@ function KanjiConstellationNode({ data }: NodeProps<KanjiConstellationNodeData>)
       <div className="flex h-full w-full flex-col items-center justify-start pt-2">
         <div className="relative flex h-[138px] w-[138px] items-center justify-center">
           <div
-            className={showPulse ? "absolute inset-0 rounded-full kanji-selected-pulse" : "absolute inset-0 rounded-full"}
+            className={[
+              "absolute inset-0 rounded-full",
+              showPulse
+                ? "kanji-selected-pulse"
+                : progress.status === "available" && !selected
+                  ? "kanji-node-available-breathe"
+                  : "",
+            ].filter(Boolean).join(" ")}
             style={{ boxShadow: styles.glow }}
           />
 
@@ -153,29 +150,20 @@ function KanjiConstellationNode({ data }: NodeProps<KanjiConstellationNodeData>)
           </div>
         </div>
 
-        <div className="mt-1.5 flex flex-col items-center gap-1 text-center">
-          <span className="text-[10px] font-semibold uppercase tracking-[0.34em] text-content-muted">
+        <div className="mt-2 flex flex-col items-center gap-1.5 text-center">
+          <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-content-secondary">
             Kanji {String(progress.index + 1).padStart(2, "0")}
           </span>
-          <div className="max-w-[160px] rounded-full border border-black/8 bg-white/95 px-3 py-1 text-xs font-semibold dark:border-white/10 dark:bg-black/20">
+          <div className="max-w-[160px] rounded-full border border-black/12 bg-white/98 px-3.5 py-1 text-[12px] font-semibold dark:border-white/18 dark:bg-white/10">
             <span className={styles.label}>{progress.primaryMeaning}</span>
           </div>
-          <span className={`text-[11px] ${styles.meta}`}>
-            {progress.status === "completed"
-              ? `Dominado · ${progress.bestScore ?? progress.completionScore}%`
-              : progress.status === "available"
-                ? progress.bestScore !== null
-                  ? `Listo para dominar · ${progress.bestScore}%`
-                  : `Disponible · Meta ${progress.completionScore}%`
-                : `Bloqueado · Requiere ${progress.completionScore}% en el anterior`}
-          </span>
         </div>
       </div>
     </>
   );
 }
 
-export default memo(KanjiConstellationNode, (previous, next) => {
+export default memo(KanjiBoardNode, (previous, next) => {
   return (
     previous.xPos === next.xPos &&
     previous.yPos === next.yPos &&
