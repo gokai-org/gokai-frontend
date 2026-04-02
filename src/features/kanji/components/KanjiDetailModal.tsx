@@ -8,6 +8,7 @@ import {
 } from "@/features/kanji/utils/kanjiText";
 import { WritingPracticeModal } from "./WritingPracticeModal";
 import { KanjiStrokePlayer } from "./KanjiStrokePlayer";
+import { KanjiLessonFlowModal } from "./lesson-flow";
 
 const overlayVariants = {
   hidden: { opacity: 0 },
@@ -103,6 +104,7 @@ export function KanjiDetailModal({
   practiceDisabledReason,
 }: KanjiDetailModalProps) {
   const [showWritingPractice, setShowWritingPractice] = useState(false);
+  const [showLessonFlow, setShowLessonFlow] = useState(false);
   const [activeStroke, setActiveStroke] = useState(-1);
 
   if (!kanji) return null;
@@ -111,6 +113,15 @@ export function KanjiDetailModal({
   const meanings = meaningsToArray(kanji.meanings);
   const primaryMeaning = getPrimaryMeaning(kanji.meanings);
   const hasStrokes = kanji.strokes && kanji.strokes.length > 0 && kanji.viewBox;
+
+  if (showLessonFlow && !practiceDisabled) {
+    return (
+      <KanjiLessonFlowModal
+        kanji={kanji}
+        onClose={() => setShowLessonFlow(false)}
+      />
+    );
+  }
 
   if (showWritingPractice && !practiceDisabled) {
     return (
@@ -394,7 +405,7 @@ export function KanjiDetailModal({
                 </span>
               </motion.div>
 
-              {/* CTA: Practice button */}
+              {/* CTA: Lesson flow (primary) */}
               <motion.button
                 custom={4}
                 variants={fadeUp}
@@ -402,7 +413,7 @@ export function KanjiDetailModal({
                 animate="visible"
                 onClick={() => {
                   if (practiceDisabled) return;
-                  setShowWritingPractice(true);
+                  setShowLessonFlow(true);
                 }}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
@@ -419,11 +430,30 @@ export function KanjiDetailModal({
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
                   />
                 </svg>
-                {practiceDisabled ? "Aún bloqueado" : "Practicar trazado"}
+                {practiceDisabled ? "Aún bloqueado" : "Iniciar lección"}
               </motion.button>
+
+              {/* Secondary: writing-only practice */}
+              {!practiceDisabled && (
+                <motion.button
+                  custom={5}
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="visible"
+                  onClick={() => setShowWritingPractice(true)}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-surface-tertiary px-4 py-2.5 text-xs font-semibold text-content-secondary hover:text-content-primary transition"
+                >
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                  </svg>
+                  Solo practicar trazado
+                </motion.button>
+              )}
 
               {practiceDisabled && practiceDisabledReason && (
                 <motion.p

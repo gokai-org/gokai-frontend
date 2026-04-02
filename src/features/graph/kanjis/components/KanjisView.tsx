@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { WritingPracticeModal } from "@/features/kanji/components/WritingPracticeModal";
+import { KanjiLessonFlowModal } from "@/features/kanji/components/lesson-flow";
 import type { Kanji } from "@/features/kanji/types";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import { useGraphicsProfile } from "@/shared/hooks/useGraphicsProfile";
@@ -97,6 +98,7 @@ export default function KanjisView() {
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
   const [writingKanji, setWritingKanji] = useState<Kanji | null>(null);
+  const [lessonKanji, setLessonKanji] = useState<Kanji | null>(null);
   const backgroundRef = useRef<HTMLDivElement | null>(null);
   const viewportFrame = useRef<number | null>(null);
   const lastFrameTime = useRef<number | null>(null);
@@ -221,6 +223,14 @@ export default function KanjisView() {
 
   const handleWritingEnd = useCallback(() => {
     setWritingKanji(null);
+  }, []);
+
+  const handleLessonStart = useCallback((kanji: Kanji) => {
+    setLessonKanji(kanji);
+  }, []);
+
+  const handleLessonEnd = useCallback(() => {
+    setLessonKanji(null);
   }, []);
 
   useEffect(() => {
@@ -447,6 +457,10 @@ export default function KanjisView() {
 
       {writingKanji !== null && (
         <WritingPracticeModal kanji={writingKanji} onClose={handleWritingEnd} />
+      )}
+
+      {lessonKanji !== null && (
+        <KanjiLessonFlowModal kanji={lessonKanji} onClose={handleLessonEnd} />
       )}
     </div>
   );

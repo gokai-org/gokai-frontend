@@ -28,3 +28,23 @@ export {
   getKanjiLessonResults,
 } from "./api/kanjiApi";
 export { useSubmitKanjiLesson } from "./hooks/useSubmitKanjiLesson";
+
+/* ── Lesson Flow (new 4-exercise system) ── */
+export { KanjiLessonFlowModal } from "./components/lesson-flow";
+export { useKanjiLessonFlow } from "./hooks/useKanjiLessonFlow";
+export {
+  getKanjiLessonFlow,
+  getKanjiLessonExercise,
+  submitKanjiLessonExerciseResult,
+} from "./api/kanjiLessonFlowApi";
+export type {
+  KanjiLessonExerciseKind,
+  KanjiLessonQuestionOption,
+  KanjiLessonQuestion,
+  KanjiLessonBlockPayload,
+  KanjiLessonBlockSubmission,
+  KanjiLessonExerciseResult,
+  KanjiLessonFlowData,
+  KanjiLessonFlowStep,
+  KanjiLessonSessionState,
+} from "./types/lessonFlow";

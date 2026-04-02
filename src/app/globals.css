@@ -233,6 +233,7 @@ body {
   color: var(--text-primary);
   font-family:
     var(--font-montserrat),
+    var(--jp-font-family, "Noto Sans JP", sans-serif),
     ui-sans-serif,
     system-ui,
     -apple-system,
@@ -249,6 +250,33 @@ body {
 html {
   background: var(--surface-primary);
   transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ── Typography scaling (driven by data-font-size on <html>) ─── */
+/* Uses CSS zoom so even hardcoded px values scale proportionally */
+:root {
+  --typography-zoom: 1;
+}
+html[data-font-size="small"]   { --typography-zoom: 0.875; }
+html[data-font-size="medium"]  { --typography-zoom: 1; }
+html[data-font-size="large"]   { --typography-zoom: 1.125; }
+html[data-font-size="x-large"] { --typography-zoom: 1.25; }
+
+/* ── Japanese font families (driven by data-jp-font on <html>) ─ */
+/* These are injected as fallbacks in the font stack so CJK glyphs
+   (which Montserrat does NOT cover) automatically use the JP font. */
+:root {
+  --jp-font-family: "Noto Sans JP", sans-serif;
+}
+html[data-jp-font="noto"]     { --jp-font-family: var(--font-noto-sans-jp, "Noto Sans JP"), sans-serif; }
+html[data-jp-font="hiragino"] { --jp-font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif; }
+html[data-jp-font="yugothic"] { --jp-font-family: "Yu Gothic", "YuGothic", sans-serif; }
+html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans-serif; }
+
+/* Explicit .jp-text / [lang="ja"] override (opt-in) */
+.jp-text,
+[lang="ja"] {
+  font-family: var(--jp-font-family, "Noto Sans JP", sans-serif);
 }
 
 /* ── Custom scrollbar for KanjiDetailModal ── */
