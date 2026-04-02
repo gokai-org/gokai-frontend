@@ -58,6 +58,7 @@ export async function GET(req: NextRequest) {
               ? new Date(payload.iat * 1000).toISOString()
               : undefined,
             twoFactorEnabled: false,
+            points: 0,
           };
 
           return NextResponse.json({ user });
@@ -111,6 +112,7 @@ export async function GET(req: NextRequest) {
           createdAt: userData.created_at,
           subscribed,
           twoFactorEnabled: false,
+          points: typeof userData.points === "number" ? userData.points : 0,
         };
 
         return NextResponse.json({ user });

@@ -404,6 +404,28 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
   animation: kanji-edge-march 1.2s linear infinite;
 }
 
+/* ── Kanji unlock animations ── */
+@keyframes kanji-node-unlock-burst {
+  0%   { transform: scale(0.7); opacity: 0.3; filter: brightness(3) saturate(2); }
+  30%  { transform: scale(1.35); opacity: 1;   filter: brightness(2) saturate(1.8); }
+  60%  { transform: scale(0.95); opacity: 1;   filter: brightness(1.4) saturate(1.3); }
+  80%  { transform: scale(1.05); opacity: 1;   filter: brightness(1.1) saturate(1.1); }
+  100% { transform: scale(1);    opacity: 1;   filter: brightness(1) saturate(1); }
+}
+
+.kanji-node-unlocking {
+  animation: kanji-node-unlock-burst 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes kanji-edge-unlock-draw {
+  from { stroke-dashoffset: 1; opacity: 0.2; }
+  to   { stroke-dashoffset: 0; opacity: 1; }
+}
+
+.kanji-edge-unlocking {
+  animation: kanji-edge-unlock-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 /* ── Kanji constellation background — 4-layer high-performance system ── */
 
 @keyframes kanji-bg-glimmer {

@@ -214,6 +214,7 @@ export function createKanjiBoardGraph(
   layout: KanjiBoardLayout,
   selectedId: string | null,
   qualityProfile: KanjiBoardQualityProfile,
+  newlyUnlockedIds?: ReadonlySet<string>,
 ): { nodes: KanjiBoardNode[]; edges: KanjiBoardEdge[] } {
   const itemsById = new Map(items.map((item) => [item.id, item]));
 
@@ -233,6 +234,7 @@ export function createKanjiBoardGraph(
         shadowScale: qualityProfile.node.shadowScale,
         showOrbitRings: qualityProfile.node.showOrbitRings,
         shouldUsePulse: qualityProfile.node.shouldUsePulse,
+        unlocking: newlyUnlockedIds?.has(progress.id) ?? false,
       },
       draggable: false,
       selectable: true,
@@ -245,6 +247,10 @@ export function createKanjiBoardGraph(
     const source = itemsById.get(layoutEdge.source);
     const target = itemsById.get(layoutEdge.target);
     if (!source || !target) return [];
+
+    const unlocking =
+      (newlyUnlockedIds?.has(layoutEdge.source) ?? false) ||
+      (newlyUnlockedIds?.has(layoutEdge.target) ?? false);
 
     return [{
       id: layoutEdge.id,
@@ -260,6 +266,7 @@ export function createKanjiBoardGraph(
         widthScale: qualityProfile.edge.widthScale,
         opacityScale: qualityProfile.edge.opacityScale,
         showLockedDash: qualityProfile.edge.showLockedDash,
+        unlocking,
       },
     }];
   });

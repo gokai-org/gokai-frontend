@@ -31,6 +31,7 @@ function KanjiBoardEdge({
   const opacityScale = data?.opacityScale ?? 1;
   const showLockedDash = data?.showLockedDash ?? true;
   const showGlow = data?.qualityTier === "high" && status !== "locked";
+  const unlocking = data?.unlocking ?? false;
 
   const palette =
     status === "completed"
@@ -74,14 +75,18 @@ function KanjiBoardEdge({
       <path
         id={id}
         d={path}
-        className={status === "available" ? "kanji-edge-available" : undefined}
+        pathLength={unlocking ? 1 : undefined}
+        className={[
+          status === "available" && !unlocking ? "kanji-edge-available" : undefined,
+          unlocking ? "kanji-edge-unlocking" : undefined,
+        ].filter(Boolean).join(" ") || undefined}
         style={{
           stroke: palette.stroke,
           strokeWidth: palette.width,
           opacity: palette.opacity,
           strokeLinecap: "round",
           strokeLinejoin: "round",
-          strokeDasharray: palette.dash,
+          strokeDasharray: unlocking ? 1 : palette.dash,
         }}
         fill="none"
       />
@@ -97,6 +102,7 @@ export default memo(KanjiBoardEdge, (previous, next) => {
     previous.targetY === next.targetY &&
     previous.data?.status === next.data?.status &&
     previous.data?.highlight === next.data?.highlight &&
-    previous.data?.qualityTier === next.data?.qualityTier
+    previous.data?.qualityTier === next.data?.qualityTier &&
+    previous.data?.unlocking === next.data?.unlocking
   );
 });

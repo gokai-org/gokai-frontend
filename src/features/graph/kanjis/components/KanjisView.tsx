@@ -3,9 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import { useSidebar } from "@/shared/components/SidebarContext";
-import { WritingPracticeModal } from "@/features/kanji/components/WritingPracticeModal";
-import { KanjiLessonFlowModal } from "@/features/kanji/components/lesson-flow";
-import type { Kanji } from "@/features/kanji/types";
+import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import { useGraphicsProfile } from "@/shared/hooks/useGraphicsProfile";
 import type { Viewport } from "reactflow";
@@ -86,7 +84,7 @@ function formatBackgroundViewportState(
 }
 
 export default function KanjisView() {
-  const { items, summary } = useKanjiBoard();
+  const { items, summary, userPoints, reload } = useKanjiBoard();
   const { animationsEnabled, heavyAnimationsEnabled } = useAnimationPreferences();
   const graphicsProfile = useGraphicsProfile({
     animationsEnabled,
@@ -97,8 +95,8 @@ export default function KanjisView() {
   const { setHidden } = useSidebar();
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
-  const [writingKanji, setWritingKanji] = useState<Kanji | null>(null);
-  const [lessonKanji, setLessonKanji] = useState<Kanji | null>(null);
+  const [quizKanji, setQuizKanji] = useState<{ id: string; symbol: string } | null>(null);
+  const [newlyUnlockedIds, setNewlyUnlockedIds] = useState<ReadonlySet<string>>(new Set());
   const backgroundRef = useRef<HTMLDivElement | null>(null);
   const viewportFrame = useRef<number | null>(null);
   const lastFrameTime = useRef<number | null>(null);
@@ -149,7 +147,7 @@ export default function KanjisView() {
   );
 
   const graph = useMemo(
-    () => createKanjiBoardGraph(items, layout, selectedId, qualityProfile),
+    () => createKanjiBoardGraph(items, layout, selectedId, qualityProfile, newlyUnlockedIds),
     // Depend only on the primitives that affect visible output. The full qualityProfile
     // object is recreated on every FPS-probe tick even when no visual param changes,
     // so a reference-equality dep would trigger a full graph recompute every frame.
@@ -158,6 +156,7 @@ export default function KanjisView() {
       items,
       layout,
       selectedId,
+      newlyUnlockedIds,
       qualityProfile.tier,
       qualityProfile.node.glowScale,
       qualityProfile.node.shadowScale,
@@ -217,21 +216,36 @@ export default function KanjisView() {
     setDetailNodeId(null);
   }, []);
 
-  const handleWritingStart = useCallback((kanji: Kanji) => {
-    setWritingKanji(kanji);
+  const handleQuizStart = useCallback((kanji: { id: string; symbol: string }) => {
+    setQuizKanji(kanji);
   }, []);
 
-  const handleWritingEnd = useCallback(() => {
-    setWritingKanji(null);
+  const handleQuizEnd = useCallback(() => {
+    setQuizKanji(null);
   }, []);
 
-  const handleLessonStart = useCallback((kanji: Kanji) => {
-    setLessonKanji(kanji);
-  }, []);
-
-  const handleLessonEnd = useCallback(() => {
-    setLessonKanji(null);
-  }, []);
+  const handleUnlock = useCallback((unlockedIds: string[]) => {
+    reload();
+    // Compute which kanjis newly unlocked from the board items after reload
+    // For the animation, we use the IDs passed from the modal
+    if (unlockedIds.length > 0) {
+      const ids = new Set(unlockedIds);
+      setNewlyUnlockedIds(ids);
+      setTimeout(() => setNewlyUnlockedIds(new Set()), 2500);
+    } else {
+      // onUnlock called with empty array — compute next locked kanji that will unlock
+      const POINTS_PER_KANJI = 30;
+      const threshold = userPoints + POINTS_PER_KANJI;
+      const unlocked = items
+        .filter((item) => item.status === "locked" && item.kanji.pointsToUnlock <= threshold)
+        .map((item) => item.id);
+      if (unlocked.length > 0) {
+        const ids = new Set(unlocked);
+        setNewlyUnlockedIds(ids);
+        setTimeout(() => setNewlyUnlockedIds(new Set()), 2500);
+      }
+    }
+  }, [reload, items, userPoints]);
 
   useEffect(() => {
     setHidden(detailNodeId !== null);
@@ -451,16 +465,16 @@ export default function KanjisView() {
             ? `Consigue ${selectedProgress.completionScore}% en el kanji anterior para desbloquear la práctica.`
             : undefined
         }
-        writingActive={writingKanji !== null}
-        onWritingStart={handleWritingStart}
+        onQuizStart={handleQuizStart}
       />
 
-      {writingKanji !== null && (
-        <WritingPracticeModal kanji={writingKanji} onClose={handleWritingEnd} />
-      )}
-
-      {lessonKanji !== null && (
-        <KanjiLessonFlowModal kanji={lessonKanji} onClose={handleLessonEnd} />
+      {quizKanji !== null && (
+        <KanjiQuizModal
+          kanjiId={quizKanji.id}
+          label={quizKanji.symbol}
+          onClose={handleQuizEnd}
+          onUnlock={handleUnlock}
+        />
       )}
     </div>
   );

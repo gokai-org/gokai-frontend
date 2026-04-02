@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState, useCallback } from "react";
+import { LockKeyhole } from "lucide-react";
 import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
 import {
   SCRIPT_CARD_CONFIG,
@@ -20,6 +21,8 @@ export interface ScriptCardProps {
   variant: ScriptVariant;
   index?: number;
   isFavorite?: boolean;
+  locked?: boolean;
+  unlocking?: boolean;
   onClick?: () => void;
   onFavoriteToggle?: (id: string) => void;
 }
@@ -35,6 +38,8 @@ export function ScriptCard({
   variant,
   index = 0,
   isFavorite = false,
+  locked = false,
+  unlocking = false,
   onClick,
   onFavoriteToggle,
 }: ScriptCardProps) {
@@ -76,13 +81,17 @@ export function ScriptCard({
   const cardClassName = [
     "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] p-5 text-left",
     "min-h-[190px] select-none",
-    "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
-    config.shadowCard,
-    config.shadowHover,
+    locked
+      ? "bg-gradient-to-br from-[#383438] to-[#1C181E] border border-white/[0.06] cursor-default"
+      : [
+          "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
+          config.shadowCard,
+          config.shadowHover,
+          onClick
+            ? `cursor-pointer hover:-translate-y-1 hover:border-transparent focus:outline-none focus-visible:ring-2 ${config.ring}`
+            : "",
+        ].filter(Boolean).join(" "),
     cardTransition,
-    onClick
-      ? `cursor-pointer hover:-translate-y-1 hover:border-transparent focus:outline-none focus-visible:ring-2 ${config.ring}`
-      : "",
     longPressActive ? `ring-2 ${config.ring} scale-[0.97]` : "",
   ]
     .filter(Boolean)
@@ -125,6 +134,48 @@ export function ScriptCard({
     </AnimatePresence>
   );
 
+  const lockedOverlay = locked ? (
+    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2">
+      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40">
+        <LockKeyhole className="h-4.5 w-4.5 text-white/60" strokeWidth={2.2} />
+      </div>
+      <span className="text-[11px] font-medium text-white/40">Bloqueado</span>
+    </div>
+  ) : null;
+
+  const unlockingOverlay = unlocking ? (
+    <motion.div
+      key="unlock-burst"
+      className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-[22px] overflow-hidden"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ delay: 1.8, duration: 0.4 }}
+    >
+      <motion.div
+        className="absolute inset-0 rounded-[22px]"
+        initial={{ opacity: 0.7 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 1.8 }}
+        style={{ background: "radial-gradient(circle, rgba(139,92,246,0.55) 0%, transparent 70%)" }}
+      />
+      <motion.div
+        initial={{ scale: 0.5, opacity: 0 }}
+        animate={{ scale: [0.5, 1.4, 1.0], opacity: [0, 1, 0] }}
+        transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
+        className="absolute w-full h-full rounded-[22px]"
+        style={{ background: "radial-gradient(circle at 50% 50%, rgba(167,139,250,0.4) 0%, transparent 60%)" }}
+      />
+      <motion.span
+        initial={{ scale: 0.4, opacity: 0 }}
+        animate={{ scale: 1, opacity: [0, 1, 0.8, 0] }}
+        transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1] }}
+        className="relative z-10 text-4xl select-none"
+      >
+        ✨
+      </motion.span>
+    </motion.div>
+  ) : null;
+
   const layout = (
     <ScriptCardLayout
       symbol={symbol}
@@ -137,10 +188,14 @@ export function ScriptCard({
       config={config}
       hoverTransition={hoverTransition}
       onFavoriteToggle={onFavoriteToggle ? () => onFavoriteToggle(id) : undefined}
+      locked={locked}
     />
   );
 
-  const cardEl = onClick ? (
+  const effectiveOnClick = locked ? undefined : onClick;
+  const effectiveOnFavoriteToggle = locked ? undefined : onFavoriteToggle;
+
+  const cardEl = effectiveOnClick ? (
     <div
       role="button"
       tabIndex={0}
@@ -154,18 +209,22 @@ export function ScriptCard({
       className={cardClassName}
     >
       {favoriteOverlay}
+      {lockedOverlay}
+      {unlockingOverlay}
       {layout}
     </div>
   ) : (
     <div
-      onTouchStart={handleTouchStart}
-      onTouchEnd={cancelLongPress}
-      onTouchMove={cancelLongPress}
+      onTouchStart={locked ? undefined : handleTouchStart}
+      onTouchEnd={locked ? undefined : cancelLongPress}
+      onTouchMove={locked ? undefined : cancelLongPress}
       onContextMenu={(e) => e.preventDefault()}
       style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
       className={cardClassName}
     >
       {favoriteOverlay}
+      {lockedOverlay}
+      {unlockingOverlay}
       {layout}
     </div>
   );

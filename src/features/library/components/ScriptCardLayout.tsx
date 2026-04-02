@@ -59,7 +59,6 @@ export function ScriptSymbolBox({ symbol, gradient, hoverTransition }: ScriptSym
 }
 
 // ─── MahjongSymbolBox (katakana) ────────────────────────────────────────────
-// Portrait rectangle with rounded corners, like a mahjong tile.
 
 export function MahjongSymbolBox({ symbol, gradient, hoverTransition }: ScriptSymbolBoxProps) {
   return (
@@ -80,11 +79,8 @@ export function MahjongSymbolBox({ symbol, gradient, hoverTransition }: ScriptSy
 }
 
 // ─── ShogiSymbolBox (hiragana) ────────────────────────────────────────────────
-// Pentagon shape: narrower top with diagonal sides widening downward,
-// like a shogi piece. Shadow uses filter: drop-shadow so it follows the shape.
 
 export function ShogiSymbolBox({ symbol, gradient, hoverTransition }: ScriptSymbolBoxProps) {
-  // All corners rounded with r≈5: apex (top-center), both shoulders, both bottom corners.
   const shogiPath =
     "path('M 18 3 Q 22 0 26 3 L 40 15 Q 44 18 44 23 L 44 50 Q 44 56 38 56 L 6 56 Q 0 56 0 50 L 0 23 Q 0 18 4 15 Z')";
 
@@ -127,6 +123,7 @@ export interface ScriptCardLayoutProps {
   config: ScriptCardConfig;
   hoverTransition: string;
   onFavoriteToggle?: () => void;
+  locked?: boolean;
 }
 
 /**
@@ -142,18 +139,21 @@ export function ScriptCardLayout({
   config,
   hoverTransition,
   onFavoriteToggle,
+  locked = false,
 }: ScriptCardLayoutProps) {
   return (
     <>
       {/* ── Gradient overlay ─────────────────────────────────── */}
-      <div
-        aria-hidden
-        className={[
-          "pointer-events-none absolute inset-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
-          hoverTransition,
-          config.hoverGradient,
-        ].join(" ")}
-      />
+      {!locked && (
+        <div
+          aria-hidden
+          className={[
+            "pointer-events-none absolute inset-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
+            hoverTransition,
+            config.hoverGradient,
+          ].join(" ")}
+        />
+      )}
 
       {/* ── Decorative oversized symbol in background ────────────── */}
       <span
@@ -162,23 +162,28 @@ export function ScriptCardLayout({
       >
         <span
           className={[
-            "-translate-y-1 translate-x-8 text-[96px] font-black leading-none opacity-[0.03] group-hover:opacity-[0.06]",
-            hoverTransition,
-          ].join(" ")}
+            "-translate-y-1 translate-x-8 text-[96px] font-black leading-none",
+            locked
+              ? "opacity-[0.04]"
+              : "opacity-[0.03] group-hover:opacity-[0.06]",
+            locked ? "" : hoverTransition,
+          ].filter(Boolean).join(" ")}
         >
           {symbol}
         </span>
       </span>
 
       {/* ── Bottom vignette ─────────────────────────────────── */}
-      <div
-        className={[
-          "pointer-events-none absolute inset-x-0 bottom-0 h-28 rounded-b-[24px]",
-          "bg-gradient-to-t from-black/30 to-transparent",
-          "opacity-0 group-hover:opacity-100",
-          hoverTransition,
-        ].join(" ")}
-      />
+      {!locked && (
+        <div
+          className={[
+            "pointer-events-none absolute inset-x-0 bottom-0 h-28 rounded-b-[24px]",
+            "bg-gradient-to-t from-black/30 to-transparent",
+            "opacity-0 group-hover:opacity-100",
+            hoverTransition,
+          ].join(" ")}
+        />
+      )}
 
       {/* ── Top row: symbol box + points badge ─────────────────── */}
       <div className="relative z-10 mb-4 flex items-start justify-between gap-2">
@@ -186,31 +191,38 @@ export function ScriptCardLayout({
           <div
             className={[
               "inline-flex h-14 w-14 items-center justify-center overflow-hidden",
-              "rounded-full bg-gradient-to-br font-black text-content-inverted shadow-lg",
+              "rounded-full font-black shadow-lg",
               "ring-2 ring-transparent",
-              "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
               "text-[28px] leading-none",
-              hoverTransition,
-              config.thumbGradient,
+              locked
+                ? "bg-gradient-to-br from-[#4a464c] to-[#2e2a30] text-white/40 shadow-[0_2px_8px_rgba(0,0,0,0.36)]"
+                : [
+                    "bg-gradient-to-br text-content-inverted",
+                    "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
+                    hoverTransition,
+                    config.thumbGradient,
+                  ].join(" "),
             ].join(" ")}
           >
-            {symbol}
+            <span className={locked ? "opacity-[0.72]" : ""}>
+              {symbol}
+            </span>
           </div>
         ) : config.symbolShape === "mahjong" ? (
           <MahjongSymbolBox
             symbol={symbol}
-            gradient={config.thumbGradient}
-            hoverTransition={hoverTransition}
+            gradient={locked ? "from-[#4a464c] to-[#2e2a30]" : config.thumbGradient}
+            hoverTransition={locked ? "" : hoverTransition}
           />
         ) : (
           <ShogiSymbolBox
             symbol={symbol}
-            gradient={config.thumbGradient}
-            hoverTransition={hoverTransition}
+            gradient={locked ? "from-[#4a464c] to-[#2e2a30]" : config.thumbGradient}
+            hoverTransition={locked ? "" : hoverTransition}
           />
         )}
 
-        {pointsBadge && (
+        {pointsBadge && !locked && (
           <span
             className={[
               "rounded-full border px-2 py-[3px] text-[10px] font-extrabold leading-none backdrop-blur-sm",
@@ -231,9 +243,11 @@ export function ScriptCardLayout({
         <h3
           className={[
             "line-clamp-2 text-[17px] font-black leading-tight",
-            "text-content-primary group-hover:text-content-inverted",
-            hoverTransition,
-          ].join(" ")}
+            locked
+              ? "text-white/40"
+              : "text-content-primary group-hover:text-content-inverted",
+            locked ? "" : hoverTransition,
+          ].filter(Boolean).join(" ")}
         >
           {title}
         </h3>
@@ -242,9 +256,11 @@ export function ScriptCardLayout({
           <p
             className={[
               "mt-1 line-clamp-1 text-[12px] font-medium",
-              "text-content-muted group-hover:text-white/60",
-              hoverTransition,
-            ].join(" ")}
+              locked
+                ? "text-white/25"
+                : "text-content-muted group-hover:text-white/60",
+              locked ? "" : hoverTransition,
+            ].filter(Boolean).join(" ")}
           >
             {subtitle}
           </p>
@@ -252,7 +268,7 @@ export function ScriptCardLayout({
       </div>
 
       {/* ── Favourite button ────────────────────────────────────── */}
-      {hasFavoriteToggle && onFavoriteToggle && (
+      {!locked && hasFavoriteToggle && onFavoriteToggle && (
         <button
           type="button"
           onClick={(e) => {

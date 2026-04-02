@@ -17,6 +17,7 @@ const INITIAL_STATE: KanjiLessonSessionState = {
   step: "loading",
   currentExerciseIndex: 0,
   currentQuestionIndex: 0,
+  currentExerciseCorrectCount: 0,
   results: [],
   selectedOptionIndex: null,
   isAnswered: false,
@@ -25,38 +26,22 @@ const INITIAL_STATE: KanjiLessonSessionState = {
 };
 
 export interface UseKanjiLessonFlowReturn {
-  /** Current session state */
   state: KanjiLessonSessionState;
-  /** Full lesson flow data (null while loading) */
   flowData: KanjiLessonFlowData | null;
-  /** Current exercise block (null if not on exercise step) */
   currentExercise: KanjiLessonBlockPayload | null;
-  /** Total number of exercises */
   totalExercises: number;
-  /** Overall progress percentage (0–100) */
   overallProgress: number;
-  /** Loading state */
   loading: boolean;
-  /** Error message */
   error: string | null;
-  /** Whether a submission is in progress */
   submitting: boolean;
 
-  /** Initialize the lesson flow for a kanji */
   startLesson: (kanji: Kanji) => Promise<void>;
-  /** Move from intro to first exercise */
   beginExercises: () => void;
-  /** Select an answer option (for choice exercises) */
   selectOption: (optionIndex: number) => void;
-  /** Confirm the selected answer and show feedback */
   confirmAnswer: () => void;
-  /** Advance to the next question or exercise */
   nextStep: () => void;
-  /** Set writing phase (demo → practice) */
   setWritingPhase: (phase: KanjiWritingPhase) => void;
-  /** Complete the writing exercise with a score */
   completeWriting: (score: number) => void;
-  /** Reset the entire session */
   reset: () => void;
 }
 
@@ -67,6 +52,16 @@ export function useKanjiLessonFlow(): UseKanjiLessonFlowReturn {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const startTimeRef = useRef<number>(0);
+
+  // Always-current refs — safe to read inside callbacks without stale closure risk
+  const stateRef = useRef(state);
+  stateRef.current = state;
+  const flowDataRef = useRef(flowData);
+  flowDataRef.current = flowData;
+
+  // Idempotency guard: tracks which exercise indices have already been submitted.
+  // Prevents double-submission caused by React StrictMode double-invoking setState updaters.
+  const submittedIndicesRef = useRef<Set<number>>(new Set());
 
   // Derived
   const currentExercise = useMemo(() => {
@@ -91,6 +86,7 @@ export function useKanjiLessonFlow(): UseKanjiLessonFlowReturn {
     setError(null);
     setState(INITIAL_STATE);
     setFlowData(null);
+    submittedIndicesRef.current.clear();
     startTimeRef.current = Date.now();
 
     try {
@@ -115,6 +111,7 @@ export function useKanjiLessonFlow(): UseKanjiLessonFlowReturn {
       step: "exercise",
       currentExerciseIndex: 0,
       currentQuestionIndex: 0,
+      currentExerciseCorrectCount: 0,
       selectedOptionIndex: null,
       isAnswered: false,
       writingPhase: "demo",
@@ -125,12 +122,11 @@ export function useKanjiLessonFlow(): UseKanjiLessonFlowReturn {
   // ── Select option ──
   const selectOption = useCallback((optionIndex: number) => {
     setState((s) => {
-      if (s.isAnswered) return s; // Can't change after confirming
+      if (s.isAnswered) return s; 
       return { ...s, selectedOptionIndex: optionIndex };
     });
   }, []);
 
-  // ── Confirm answer (show feedback) ──
   const confirmAnswer = useCallback(() => {
     setState((s) => {
       if (s.selectedOptionIndex === null || s.isAnswered) return s;
@@ -138,139 +134,159 @@ export function useKanjiLessonFlow(): UseKanjiLessonFlowReturn {
     });
   }, []);
 
-  // ── Submit block result to backend ──
-  const submitBlockResult = useCallback(async (result: KanjiLessonExerciseResult) => {
-    if (!flowData) return;
+  // ── Submit block result — idempotent via exerciseIndex guard ──
+  // IMPORTANT: This must be called OUTSIDE any setState updater to prevent
+  // double-invocation in React StrictMode (which calls updaters twice per update).
+  const submitBlockResult = useCallback(async (
+    result: KanjiLessonExerciseResult,
+    exerciseIndex: number,
+  ) => {
+    // Idempotency: skip if this exercise index was already submitted in this session
+    if (submittedIndicesRef.current.has(exerciseIndex)) return;
+    submittedIndicesRef.current.add(exerciseIndex);
+
+    const fd = flowDataRef.current;
+    if (!fd) return;
+
     setSubmitting(true);
     try {
       await submitKanjiLessonExerciseResult({
         type: result.type,
-        kanjiId: flowData.kanjiId,
+        kanjiId: fd.kanjiId,
         score: result.score,
       });
     } catch (err) {
       console.error("[LessonFlow] Error submitting block result:", err);
+      // Allow a retry attempt on the next call
+      submittedIndicesRef.current.delete(exerciseIndex);
     } finally {
       setSubmitting(false);
     }
-  }, [flowData]);
+  }, []);
 
-  // ── Next step (after feedback or to next exercise) ──
+  // ── Next step: advance question → exercise → summary ──
+  // Uses stateRef / flowDataRef instead of the functional-updater form so that
+  // submitBlockResult stays OUTSIDE setState and is never double-invoked.
   const nextStep = useCallback(() => {
-    setState((s) => {
-      if (!flowData) return s;
-      const exercise = flowData.exercises[s.currentExerciseIndex];
-      if (!exercise) return s;
+    const s = stateRef.current;
+    const fd = flowDataRef.current;
+    if (!fd) return;
 
-      // Calculate if current answer was correct
-      const question = exercise.questions[s.currentQuestionIndex];
-      const isCorrect = question?.options[s.selectedOptionIndex ?? -1]?.correct ?? false;
+    const exercise = fd.exercises[s.currentExerciseIndex];
+    if (!exercise) return;
 
-      // Move to next question in same exercise
-      const nextQ = s.currentQuestionIndex + 1;
-      if (nextQ < exercise.questions.length) {
-        return {
-          ...s,
-          step: "exercise" as KanjiLessonFlowStep,
-          currentQuestionIndex: nextQ,
-          selectedOptionIndex: null,
-          isAnswered: false,
-        };
-      }
+    const question = exercise.questions[s.currentQuestionIndex];
+    const isCorrect = question?.options[s.selectedOptionIndex ?? -1]?.correct ?? false;
 
-      // Exercise block complete — calculate score
-      const totalQs = exercise.questions.length;
-      const correctSoFar = s.results
-        .filter((r) => r.type === exercise.type)
-        .reduce((sum, r) => sum + r.correctAnswers, 0);
-      const totalCorrect = correctSoFar + (isCorrect ? 1 : 0);
+    // Accumulate correct count for this exercise (fixes multi-question scoring)
+    const newCorrectCount = s.currentExerciseCorrectCount + (isCorrect ? 1 : 0);
+    const nextQ = s.currentQuestionIndex + 1;
 
-      const blockResult: KanjiLessonExerciseResult = {
-        type: exercise.type,
-        totalQuestions: totalQs,
-        correctAnswers: totalCorrect,
-        score: Math.round((totalCorrect / totalQs) * 100),
-      };
+    // ── More questions remain in this exercise ──
+    if (nextQ < exercise.questions.length) {
+      setState({
+        ...s,
+        step: "exercise" as KanjiLessonFlowStep,
+        currentQuestionIndex: nextQ,
+        selectedOptionIndex: null,
+        isAnswered: false,
+        currentExerciseCorrectCount: newCorrectCount,
+      });
+      return;
+    }
 
-      // Submit to backend (fire and forget)
-      submitBlockResult(blockResult);
+    // ── Last question of this exercise done: build result ──
+    const totalQs = exercise.questions.length;
+    const blockResult: KanjiLessonExerciseResult = {
+      type: exercise.type,
+      totalQuestions: totalQs,
+      correctAnswers: newCorrectCount,
+      score: Math.round((newCorrectCount / totalQs) * 100),
+    };
 
-      const newResults = [...s.results, blockResult];
+    const newResults = [...s.results, blockResult];
+    const exerciseIndex = s.currentExerciseIndex;
+    const nextEx = exerciseIndex + 1;
 
-      // Move to next exercise
-      const nextEx = s.currentExerciseIndex + 1;
-      if (nextEx < flowData.exercises.length) {
-        const nextExercise = flowData.exercises[nextEx];
-        return {
-          ...s,
-          step: "exercise" as KanjiLessonFlowStep,
-          currentExerciseIndex: nextEx,
-          currentQuestionIndex: 0,
-          selectedOptionIndex: null,
-          isAnswered: false,
-          results: newResults,
-          writingPhase: nextExercise.type === "writing" ? "demo" as KanjiWritingPhase : s.writingPhase,
-          writingScore: null,
-        };
-      }
-
-      // All exercises done → summary
-      return {
+    if (nextEx < fd.exercises.length) {
+      const nextExercise = fd.exercises[nextEx];
+      setState({
+        ...s,
+        step: "exercise" as KanjiLessonFlowStep,
+        currentExerciseIndex: nextEx,
+        currentQuestionIndex: 0,
+        selectedOptionIndex: null,
+        isAnswered: false,
+        results: newResults,
+        currentExerciseCorrectCount: 0,
+        writingPhase: nextExercise.type === "writing" ? "demo" as KanjiWritingPhase : s.writingPhase,
+        writingScore: null,
+      });
+    } else {
+      setState({
         ...s,
         step: "summary" as KanjiLessonFlowStep,
         results: newResults,
         selectedOptionIndex: null,
         isAnswered: false,
-      };
-    });
-  }, [flowData, submitBlockResult]);
+        currentExerciseCorrectCount: 0,
+      });
+    }
 
-  // ── Writing-specific actions ──
+    // Submit OUTSIDE setState — idempotency guard prevents duplicates
+    submitBlockResult(blockResult, exerciseIndex);
+  }, [submitBlockResult]);
+
   const setWritingPhase = useCallback((phase: KanjiWritingPhase) => {
     setState((s) => ({ ...s, writingPhase: phase }));
   }, []);
 
   const completeWriting = useCallback((score: number) => {
-    setState((s) => {
-      if (!flowData) return s;
-      const exercise = flowData.exercises[s.currentExerciseIndex];
-      if (!exercise || exercise.type !== "writing") return s;
+    const s = stateRef.current;
+    const fd = flowDataRef.current;
+    if (!fd) return;
 
-      const blockResult: KanjiLessonExerciseResult = {
-        type: "writing",
-        totalQuestions: 1,
-        correctAnswers: score >= 50 ? 1 : 0,
-        score,
-      };
+    const exercise = fd.exercises[s.currentExerciseIndex];
+    if (!exercise || exercise.type !== "writing") return;
 
-      submitBlockResult(blockResult);
+    const blockResult: KanjiLessonExerciseResult = {
+      type: "writing",
+      totalQuestions: 1,
+      correctAnswers: score >= 50 ? 1 : 0,
+      score,
+    };
 
-      const newResults = [...s.results, blockResult];
-      const nextEx = s.currentExerciseIndex + 1;
+    const newResults = [...s.results, blockResult];
+    const exerciseIndex = s.currentExerciseIndex;
+    const nextEx = exerciseIndex + 1;
 
-      if (nextEx < flowData.exercises.length) {
-        return {
-          ...s,
-          step: "exercise" as KanjiLessonFlowStep,
-          currentExerciseIndex: nextEx,
-          currentQuestionIndex: 0,
-          selectedOptionIndex: null,
-          isAnswered: false,
-          results: newResults,
-          writingScore: score,
-          writingPhase: "done" as KanjiWritingPhase,
-        };
-      }
-
-      return {
+    if (nextEx < fd.exercises.length) {
+      setState({
+        ...s,
+        step: "exercise" as KanjiLessonFlowStep,
+        currentExerciseIndex: nextEx,
+        currentQuestionIndex: 0,
+        selectedOptionIndex: null,
+        isAnswered: false,
+        results: newResults,
+        writingScore: score,
+        writingPhase: "done" as KanjiWritingPhase,
+        currentExerciseCorrectCount: 0,
+      });
+    } else {
+      setState({
         ...s,
         step: "summary" as KanjiLessonFlowStep,
         results: newResults,
         writingScore: score,
         writingPhase: "done" as KanjiWritingPhase,
-      };
-    });
-  }, [flowData, submitBlockResult]);
+        currentExerciseCorrectCount: 0,
+      });
+    }
+
+    // Submit OUTSIDE setState — idempotency guard prevents duplicates
+    submitBlockResult(blockResult, exerciseIndex);
+  }, [submitBlockResult]);
 
   // ── Reset ──
   const reset = useCallback(() => {
@@ -279,6 +295,7 @@ export function useKanjiLessonFlow(): UseKanjiLessonFlowReturn {
     setError(null);
     setLoading(false);
     setSubmitting(false);
+    submittedIndicesRef.current.clear();
   }, []);
 
   return {

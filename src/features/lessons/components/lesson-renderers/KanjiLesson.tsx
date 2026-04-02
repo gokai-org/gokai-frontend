@@ -22,12 +22,14 @@ export default function KanjiLesson({
   ctaDisabled = false,
   ctaDisabledReason,
   onWritingStart,
+  onQuizStart,
 }: {
   data: Extract<LessonResolved, { kind: "kanji" }>;
   mode: LessonMode;
   ctaDisabled?: boolean;
   ctaDisabledReason?: string;
   onWritingStart?: (kanji: Kanji) => void;
+  onQuizStart?: (kanji: Kanji) => void;
 }) {
   const k = data.kanji;
 
@@ -127,6 +129,18 @@ export default function KanjiLesson({
           }
         }}
       />
+
+      {/* Quiz CTA */}
+      {onQuizStart && (
+        <LessonCTA
+          variant={ctaDisabled ? "disabled" : "complete"}
+          label={ctaDisabled ? "Quiz bloqueado" : "Comenzar Quiz"}
+          onClick={() => {
+            if (ctaDisabled) return;
+            onQuizStart(k);
+          }}
+        />
+      )}
 
       {ctaDisabled && ctaDisabledReason ? (
         <p className="-mt-2 text-center text-xs leading-5 text-content-secondary">

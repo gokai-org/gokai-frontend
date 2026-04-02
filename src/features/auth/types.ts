@@ -11,6 +11,7 @@ export interface User {
   createdAt?: string;
   subscribed?: boolean;
   twoFactorEnabled?: boolean;
+  points?: number;
 }
 
 export interface UserInterest {

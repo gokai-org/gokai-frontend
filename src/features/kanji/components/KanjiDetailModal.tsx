@@ -6,9 +6,7 @@ import {
   meaningsToArray,
   getPrimaryMeaning,
 } from "@/features/kanji/utils/kanjiText";
-import { WritingPracticeModal } from "./WritingPracticeModal";
 import { KanjiStrokePlayer } from "./KanjiStrokePlayer";
-import { KanjiLessonFlowModal } from "./lesson-flow";
 
 const overlayVariants = {
   hidden: { opacity: 0 },
@@ -95,6 +93,7 @@ interface KanjiDetailModalProps {
   onClose: () => void;
   practiceDisabled?: boolean;
   practiceDisabledReason?: string;
+  onQuizStart?: (kanji: Kanji) => void;
 }
 
 export function KanjiDetailModal({
@@ -102,9 +101,8 @@ export function KanjiDetailModal({
   onClose,
   practiceDisabled = false,
   practiceDisabledReason,
+  onQuizStart,
 }: KanjiDetailModalProps) {
-  const [showWritingPractice, setShowWritingPractice] = useState(false);
-  const [showLessonFlow, setShowLessonFlow] = useState(false);
   const [activeStroke, setActiveStroke] = useState(-1);
 
   if (!kanji) return null;
@@ -113,24 +111,6 @@ export function KanjiDetailModal({
   const meanings = meaningsToArray(kanji.meanings);
   const primaryMeaning = getPrimaryMeaning(kanji.meanings);
   const hasStrokes = kanji.strokes && kanji.strokes.length > 0 && kanji.viewBox;
-
-  if (showLessonFlow && !practiceDisabled) {
-    return (
-      <KanjiLessonFlowModal
-        kanji={kanji}
-        onClose={() => setShowLessonFlow(false)}
-      />
-    );
-  }
-
-  if (showWritingPractice && !practiceDisabled) {
-    return (
-      <WritingPracticeModal
-        kanji={kanji}
-        onClose={() => setShowWritingPractice(false)}
-      />
-    );
-  }
 
   return (
     <AnimatePresence>
@@ -405,19 +385,19 @@ export function KanjiDetailModal({
                 </span>
               </motion.div>
 
-              {/* CTA: Lesson flow (primary) */}
+              {/* CTA: Quiz */}
               <motion.button
                 custom={4}
                 variants={fadeUp}
                 initial="hidden"
                 animate="visible"
                 onClick={() => {
-                  if (practiceDisabled) return;
-                  setShowLessonFlow(true);
+                  if (practiceDisabled || !onQuizStart) return;
+                  onQuizStart(kanji);
                 }}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
-                disabled={practiceDisabled}
+                disabled={practiceDisabled || !onQuizStart}
                 className="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/25 transition hover:shadow-xl hover:shadow-accent/30 focus:outline-none focus:ring-4 focus:ring-accent/20 disabled:cursor-not-allowed disabled:from-surface-tertiary disabled:to-surface-tertiary disabled:text-content-muted disabled:shadow-none"
               >
                 <svg
@@ -430,30 +410,11 @@ export function KanjiDetailModal({
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                {practiceDisabled ? "Aún bloqueado" : "Iniciar lección"}
+                {practiceDisabled ? "Aún bloqueado" : "Comenzar Quiz"}
               </motion.button>
-
-              {/* Secondary: writing-only practice */}
-              {!practiceDisabled && (
-                <motion.button
-                  custom={5}
-                  variants={fadeUp}
-                  initial="hidden"
-                  animate="visible"
-                  onClick={() => setShowWritingPractice(true)}
-                  whileHover={{ scale: 1.01 }}
-                  whileTap={{ scale: 0.98 }}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl bg-surface-tertiary px-4 py-2.5 text-xs font-semibold text-content-secondary hover:text-content-primary transition"
-                >
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                  </svg>
-                  Solo practicar trazado
-                </motion.button>
-              )}
 
               {practiceDisabled && practiceDisabledReason && (
                 <motion.p

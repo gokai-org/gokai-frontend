@@ -48,3 +48,22 @@ export type {
   KanjiLessonFlowStep,
   KanjiLessonSessionState,
 } from "./types/lessonFlow";
+
+/* ── Kanji Quiz (backend-driven quiz system) ── */
+export { KanjiQuizModal } from "./components/quiz";
+export { useKanjiQuiz } from "./hooks/useKanjiQuiz";
+export { getKanjiQuiz, submitKanjiQuiz } from "./api/kanjiQuizApi";
+export type {
+  KanjiQuizType,
+  KanjiQuizOption,
+  KanjiQuizQuestion,
+  KanjiQuizResponse,
+  KanjiQuizSubmitBody,
+  KanjiQuizSessionState,
+} from "./types/quiz";
+export {
+  parseKanjiQuizStrokes,
+  normalizeQuizResponse,
+  isValidWritingQuestion,
+  quizQuestionToLessonQuestion,
+} from "./utils/quizParser";

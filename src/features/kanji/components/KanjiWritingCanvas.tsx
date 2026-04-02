@@ -12,19 +12,12 @@ export interface DrawnStroke {
 }
 
 interface KanjiWritingCanvasProps {
-  /** SVG viewBox of the reference kanji */
   viewBox: string;
-  /** Reference stroke paths (shown as faint guides) */
   guideStrokes: string[];
-  /** Index of the stroke the user is expected to draw */
   activeStrokeIndex: number;
-  /** Called when user finishes a stroke */
   onStrokeDrawn: (stroke: DrawnStroke) => void;
-  /** Size in px (square) */
   size?: number;
-  /** Whether drawing is enabled */
   disabled?: boolean;
-  /** When true, flash red border briefly (feedback for bad stroke) */
   flashError?: boolean;
 }
 
@@ -43,12 +36,11 @@ export function KanjiWritingCanvas({
   const completedStrokes = useRef<DrawnStroke[]>([]);
   const rafId = useRef(0);
 
-  // Parse viewBox numbers (stable across renders)
   const vbParts = viewBox.split(/\s+/).map(Number);
   const vbWidth = vbParts[2] || 109;
   const vbHeight = vbParts[3] || 109;
 
-  // ── Redraw (memoized) ──
+  // ── Redraw  ──
   const redraw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -142,19 +134,16 @@ export function KanjiWritingCanvas({
     }
   }, [guideStrokes, activeStrokeIndex, vbWidth, vbHeight]);
 
-  /** Schedule a redraw on the next animation frame (coalesces calls). */
   const scheduleRedraw = useCallback(() => {
     cancelAnimationFrame(rafId.current);
     rafId.current = requestAnimationFrame(redraw);
   }, [redraw]);
 
-  // Reset completed strokes when active index changes
   useEffect(() => {
     completedStrokes.current = [];
     scheduleRedraw();
   }, [activeStrokeIndex, scheduleRedraw]);
 
-  // Initial draw
   useEffect(() => {
     scheduleRedraw();
     return () => cancelAnimationFrame(rafId.current);

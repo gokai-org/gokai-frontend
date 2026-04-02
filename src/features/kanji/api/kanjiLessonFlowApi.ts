@@ -7,12 +7,8 @@ import type {
 import { getMockKanjiLessonFlow } from "../mock/mockLessonFlow";
 
 /* ── Feature flag: toggle between mock and real backend ── */
-const USE_MOCK = true; // TODO: set to false when backend endpoints are ready
+const USE_MOCK = true;
 
-/**
- * Fetch the full lesson flow for a kanji.
- * Returns all 4 exercise blocks + stroke data in one call.
- */
 export async function getKanjiLessonFlow(
   kanjiId: string,
   symbol: string,
@@ -31,10 +27,6 @@ export async function getKanjiLessonFlow(
   );
 }
 
-/**
- * Fetch a single exercise block (when loading exercises individually).
- * Currently unused — full flow is fetched at once — but ready for future use.
- */
 export async function getKanjiLessonExercise(
   kanjiId: string,
   exerciseType: string,
@@ -53,9 +45,6 @@ export async function getKanjiLessonExercise(
   );
 }
 
-/**
- * Submit the result of a single exercise block.
- */
 export async function submitKanjiLessonExerciseResult(
   body: KanjiLessonBlockSubmission,
 ): Promise<{ success: boolean }> {

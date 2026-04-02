@@ -12,12 +12,14 @@ export default function LessonShell({
   kanjiCtaDisabled = false,
   kanjiCtaDisabledReason,
   onWritingStart,
+  onQuizStart,
 }: {
   lesson: LessonResolved;
   mode: LessonMode;
   kanjiCtaDisabled?: boolean;
   kanjiCtaDisabledReason?: string;
   onWritingStart?: (kanji: Kanji) => void;
+  onQuizStart?: (kanji: Kanji) => void;
 }) {
   switch (lesson.kind) {
     case "kanji":
@@ -28,6 +30,7 @@ export default function LessonShell({
           ctaDisabled={kanjiCtaDisabled}
           ctaDisabledReason={kanjiCtaDisabledReason}
           onWritingStart={onWritingStart}
+          onQuizStart={onQuizStart}
         />
       );
     case "grammar":

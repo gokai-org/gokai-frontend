@@ -92,6 +92,7 @@ export interface KanjiBoardNodeData {
   shadowScale: number;
   showOrbitRings: boolean;
   shouldUsePulse: boolean;
+  unlocking?: boolean;
 }
 
 export interface KanjiBoardEdgeData {
@@ -101,6 +102,7 @@ export interface KanjiBoardEdgeData {
   widthScale: number;
   opacityScale: number;
   showLockedDash: boolean;
+  unlocking?: boolean;
   /** @deprecated — passed but not consumed by KanjiBoardEdge; kept optional for forward compat */
   curvature?: number;
 }

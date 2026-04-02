@@ -8,6 +8,7 @@ import {
   type Kanji,
   type KanjiLessonResult,
 } from "@/features/kanji";
+import { getCurrentUser } from "@/features/auth";
 import {
   KANJI_COMPLETION_SCORE,
   type KanjiBoardProgress,
@@ -95,6 +96,7 @@ function buildSummary(items: KanjiBoardProgress[]): KanjiBoardSummary {
 export function useKanjiBoard() {
   const [kanjis, setKanjis] = useState<Kanji[]>([]);
   const [results, setResults] = useState<KanjiLessonResult[]>([]);
+  const [userPoints, setUserPoints] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,13 +105,15 @@ export function useKanjiBoard() {
     setError(null);
 
     try {
-      const [kanjiPayload, resultsPayload] = await Promise.all([
+      const [kanjiPayload, resultsPayload, user] = await Promise.all([
         listKanjis(),
         getKanjiLessonResults({ limit: 500 }).catch(() => []),
+        getCurrentUser().catch(() => null),
       ]);
 
       setKanjis(normalizeKanjis(kanjiPayload));
       setResults(normalizeResults(resultsPayload));
+      setUserPoints(typeof user?.points === "number" ? user.points : 0);
     } catch (err) {
       const message =
         err instanceof Error
@@ -154,21 +158,16 @@ export function useKanjiBoard() {
   }, [results]);
 
   const items = useMemo(() => {
-    let previousSequentialCompleted = true;
-
     return kanjis.map<KanjiBoardProgress>((kanji, index) => {
       const resultData = resultsByKanji.get(kanji.id);
       const bestScore = resultData?.bestScore ?? null;
       const isCompleted = bestScore !== null && bestScore >= KANJI_COMPLETION_SCORE;
+      const isUnlocked = userPoints >= kanji.pointsToUnlock;
       const status = isCompleted
         ? "completed"
-        : previousSequentialCompleted
+        : isUnlocked
           ? "available"
           : "locked";
-
-      if (!isCompleted) {
-        previousSequentialCompleted = false;
-      }
 
       return {
         id: kanji.id,
@@ -183,13 +182,14 @@ export function useKanjiBoard() {
         bestResult: resultData?.bestResult ?? null,
       };
     });
-  }, [kanjis, resultsByKanji]);
+  }, [kanjis, resultsByKanji, userPoints]);
 
   const summary = useMemo(() => buildSummary(items), [items]);
 
   return {
     items,
     summary,
+    userPoints,
     loading,
     error,
     reload,

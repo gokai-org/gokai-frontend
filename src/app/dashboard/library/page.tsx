@@ -1,7 +1,7 @@
 "use client";
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
-import { useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
@@ -18,6 +18,7 @@ import { LibrarySkeleton } from "@/shared/ui/Skeleton";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
 import { useVocabularyContent } from "@/features/library/hooks/useVocabularyContent";
+import { useKanjiLockedStatus } from "@/features/library/hooks/useKanjiLockedStatus";
 import {
   CombinedLibraryItem,
   useLibraryContent,
@@ -25,6 +26,7 @@ import {
 import type { Kanji } from "@/features/kanji/types";
 import type { Kana } from "@/features/kana/types";
 import { getKana } from "@/features/kana/api/kanaApi";
+import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import {
   buildLibraryCategories,
   kanjiToScriptCard,
@@ -34,12 +36,14 @@ import {
   themeToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
+import { getPrimaryMeaning } from "@/features/kanji";
 
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKanji, setSelectedKanji] = useState<Kanji | null>(null);
   const [selectedKana, setSelectedKana] = useState<Kana | null>(null);
+  const [quizKanjiId, setQuizKanjiId] = useState<string | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
@@ -58,6 +62,9 @@ export default function LibraryPage() {
     loadingKatakanas,
     loadingHiraganas,
   } = useLibraryContent(searchQuery);
+
+  const { lockedKanjiIds, userPoints } = useKanjiLockedStatus(kanjis);
+  const [newlyUnlockedKanjiIds, setNewlyUnlockedKanjiIds] = useState<ReadonlySet<string>>(new Set());
 
   const {
     themes,
@@ -100,6 +107,22 @@ export default function LibraryPage() {
     addRecentItem("kanji", kanji.id);
     setSelectedKanji(kanji);
   };
+
+  const handleUnlock = useCallback((unlockedIds: string[]) => {
+    const POINTS_PER_KANJI = 30;
+    const threshold = userPoints + POINTS_PER_KANJI;
+    const candidateIds = unlockedIds.length > 0
+      ? new Set(unlockedIds)
+      : new Set(
+          kanjis
+            .filter((k) => lockedKanjiIds.has(k.id) && k.pointsToUnlock <= threshold)
+            .map((k) => k.id),
+        );
+    if (candidateIds.size > 0) {
+      setNewlyUnlockedKanjiIds(candidateIds);
+      setTimeout(() => setNewlyUnlockedKanjiIds(new Set()), 2500);
+    }
+  }, [kanjis, lockedKanjiIds, userPoints]);
 
   const handleKanaClick = async (kana: Kana) => {
     try {
@@ -185,6 +208,7 @@ export default function LibraryPage() {
                     favoriteKanjis={favoriteKanjis}
                     favoriteHiraganas={favoriteHiraganas}
                     favoriteKatakanas={favoriteKatakanas}
+                    lockedKanjiIds={lockedKanjiIds}
                     toggleFavoriteKanji={toggleFavoriteKanji}
                     toggleFavoriteHiragana={(id) =>
                       void toggleFavorite(id, "hiragana")
@@ -248,6 +272,7 @@ export default function LibraryPage() {
                     favoriteKanjis={favoriteKanjis}
                     favoriteHiraganas={favoriteHiraganas}
                     favoriteKatakanas={favoriteKatakanas}
+                    lockedKanjiIds={lockedKanjiIds}
                     toggleFavoriteKanji={toggleFavoriteKanji}
                     toggleFavoriteHiragana={(id) =>
                       void toggleFavorite(id, "hiragana")
@@ -296,15 +321,20 @@ export default function LibraryPage() {
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                       {kanjis
                         .filter((kanji) => favoriteKanjis.has(kanji.id))
-                        .map((kanji, i) => (
-                          <ScriptCard
-                            key={kanji.id}
-                            {...kanjiToScriptCard(kanji, true)}
-                            index={i}
-                            onClick={() => handleKanjiClick(kanji)}
-                            onFavoriteToggle={toggleFavoriteKanji}
-                          />
-                        ))}
+                        .map((kanji, i) => {
+                          const isLocked = lockedKanjiIds.has(kanji.id);
+                          return (
+                            <ScriptCard
+                              key={kanji.id}
+                              {...kanjiToScriptCard(kanji, true)}
+                              index={i}
+                              locked={isLocked}
+                              unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
+                              onClick={isLocked ? undefined : () => handleKanjiClick(kanji)}
+                              onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
+                            />
+                          );
+                        })}
                     </div>
                   </div>
                 )}
@@ -435,15 +465,20 @@ export default function LibraryPage() {
               >
                 {kanjis.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {kanjis.map((kanji, i) => (
-                      <ScriptCard
-                        key={kanji.id}
-                        {...kanjiToScriptCard(kanji, favoriteKanjis.has(kanji.id))}
-                        index={i}
-                        onClick={() => handleKanjiClick(kanji)}
-                        onFavoriteToggle={toggleFavoriteKanji}
-                      />
-                    ))}
+                    {kanjis.map((kanji, i) => {
+                      const isLocked = lockedKanjiIds.has(kanji.id);
+                      return (
+                        <ScriptCard
+                          key={kanji.id}
+                          {...kanjiToScriptCard(kanji, favoriteKanjis.has(kanji.id))}
+                          index={i}
+                          locked={isLocked}
+                          unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
+                          onClick={isLocked ? undefined : () => handleKanjiClick(kanji)}
+                          onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </LibraryCategorySection>
@@ -646,14 +681,17 @@ export default function LibraryPage() {
                       if (r.type === "kanji") {
                         const kanji = kanjis.find((k) => k.id === r.id);
                         if (!kanji) return null;
+                        const isLocked = lockedKanjiIds.has(kanji.id);
 
                         return (
                           <ScriptCard
                             key={r.id}
                             {...kanjiToScriptCard(kanji, favoriteKanjis.has(kanji.id))}
                             index={i}
-                            onClick={() => handleKanjiClick(kanji)}
-                            onFavoriteToggle={toggleFavoriteKanji}
+                            locked={isLocked}
+                            unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
+                            onClick={isLocked ? undefined : () => handleKanjiClick(kanji)}
+                            onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
                           />
                         );
                       }
@@ -701,7 +739,23 @@ export default function LibraryPage() {
           <KanjiDetailModal
             kanji={selectedKanji}
             onClose={() => setSelectedKanji(null)}
+            practiceDisabled={
+              selectedKanji ? lockedKanjiIds.has(selectedKanji.id) : false
+            }
+            practiceDisabledReason="Completa el kanji anterior con al menos 70% para desbloquear."
+            onQuizStart={(kanji) => {
+              setSelectedKanji(null);
+              setQuizKanjiId(kanji.id);
+            }}
           />
+
+          {quizKanjiId && (
+            <KanjiQuizModal
+              kanjiId={quizKanjiId}
+              onClose={() => setQuizKanjiId(null)}
+              onUnlock={handleUnlock}
+            />
+          )}
 
           {selectedKana && (
             <KanaDetailModal

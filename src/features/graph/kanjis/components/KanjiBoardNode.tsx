@@ -132,7 +132,7 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
           ) : null}
 
           <div
-            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border text-[42px] font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}`}
+            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border text-[42px] font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}${data.unlocking ? " kanji-node-unlocking" : ""}`}
           >
             <span className={progress.status === "locked" ? "opacity-72" : ""}>
               {progress.kanji.symbol}
@@ -172,6 +172,7 @@ export default memo(KanjiBoardNode, (previous, next) => {
     previous.data.progress.bestScore === next.data.progress.bestScore &&
     previous.data.progress.primaryMeaning === next.data.progress.primaryMeaning &&
     previous.data.qualityTier === next.data.qualityTier &&
+    previous.data.unlocking === next.data.unlocking &&
     previous.dragging === next.dragging
   );
 });

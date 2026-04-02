@@ -1,44 +1,34 @@
-/* ── Kanji Lesson Flow Types ──
- * Types for the 4-exercise sequential kanji lesson system.
- * Designed to match the backend contract while staying flexible for future changes.
- */
+/* ── Kanji Lesson Flow Types ──*/
 
-/** The four exercise kinds in a kanji lesson */
 export type KanjiLessonExerciseKind =
-  | "meaning"           // kanji → select correct meaning
-  | "kanji_selection"   // meaning → select correct kanji
-  | "reading_meaning"   // readings → select correct meaning
+  | "meaning"           // select correct meaning
+  | "kanji_selection"   // select correct kanji
+  | "reading_meaning"   // select correct meaning from readings
   | "writing";          // demo + freehand writing
 
-/** A single selectable option within a question */
 export type KanjiLessonQuestionOption = {
   value: string;
   correct: boolean;
 };
 
-/** A single question within an exercise block */
 export type KanjiLessonQuestion = {
   kanji: string;
   kanjiId: string;
-  /** Display value shown as prompt (meaning text, reading text, etc.) */
   prompt?: string;
   options: KanjiLessonQuestionOption[];
 };
 
-/** Payload returned by the backend for one exercise block */
 export type KanjiLessonBlockPayload = {
   type: KanjiLessonExerciseKind;
   questions: KanjiLessonQuestion[];
 };
 
-/** Submission sent to the backend after completing one exercise block */
 export type KanjiLessonBlockSubmission = {
   type: KanjiLessonExerciseKind;
   kanjiId: string;
   score: number;
 };
 
-/** Per-exercise result tracked locally */
 export type KanjiLessonExerciseResult = {
   type: KanjiLessonExerciseKind;
   totalQuestions: number;
@@ -46,13 +36,11 @@ export type KanjiLessonExerciseResult = {
   score: number;
 };
 
-/** Stroke data needed for the writing exercise */
 export type KanjiLessonStrokeData = {
   viewBox: string;
   strokes: string[];
 };
 
-/** Full lesson flow data (all 4 exercises for one kanji) */
 export type KanjiLessonFlowData = {
   kanjiId: string;
   symbol: string;
@@ -62,7 +50,6 @@ export type KanjiLessonFlowData = {
   strokeData?: KanjiLessonStrokeData;
 };
 
-/** Steps in the lesson flow UI */
 export type KanjiLessonFlowStep =
   | "loading"
   | "intro"
@@ -70,14 +57,14 @@ export type KanjiLessonFlowStep =
   | "exercise-feedback"
   | "summary";
 
-/** Writing sub-phases */
 export type KanjiWritingPhase = "demo" | "practice" | "done";
 
-/** Internal session state managed by the orchestrator hook */
 export type KanjiLessonSessionState = {
   step: KanjiLessonFlowStep;
   currentExerciseIndex: number;
   currentQuestionIndex: number;
+  /** Accumulates correct answers for the exercise in progress (resets per exercise). */
+  currentExerciseCorrectCount: number;
   results: KanjiLessonExerciseResult[];
   selectedOptionIndex: number | null;
   isAnswered: boolean;
@@ -85,7 +72,6 @@ export type KanjiLessonSessionState = {
   writingScore: number | null;
 };
 
-/** Exercise label mapping for UI */
 export const EXERCISE_LABELS: Record<KanjiLessonExerciseKind, string> = {
   meaning: "Significado",
   kanji_selection: "Selección",
@@ -93,7 +79,6 @@ export const EXERCISE_LABELS: Record<KanjiLessonExerciseKind, string> = {
   writing: "Escritura",
 };
 
-/** Exercise icon names for UI */
 export const EXERCISE_ICONS: Record<KanjiLessonExerciseKind, string> = {
   meaning: "translate",
   kanji_selection: "kanji",

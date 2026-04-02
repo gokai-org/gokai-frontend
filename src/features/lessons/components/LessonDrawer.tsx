@@ -27,6 +27,7 @@ type Props = {
   kanjiCtaDisabledReason?: string;
   writingActive?: boolean;
   onWritingStart?: (kanji: Kanji) => void;
+  onQuizStart?: (kanji: Kanji) => void;
 };
 
 export default function LessonDrawer({
@@ -41,6 +42,7 @@ export default function LessonDrawer({
   kanjiCtaDisabledReason,
   writingActive = false,
   onWritingStart,
+  onQuizStart,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [lessons, setLessons] = useState<LessonResolved[]>([]);
@@ -223,6 +225,7 @@ export default function LessonDrawer({
                     kanjiCtaDisabled={kanjiCtaDisabled}
                     kanjiCtaDisabledReason={kanjiCtaDisabledReason}
                     onWritingStart={onWritingStart}
+                    onQuizStart={onQuizStart}
                   />
                 </div>
               )}
