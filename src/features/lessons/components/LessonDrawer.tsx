@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LessonMode, LessonResolved } from "../types";
+import type { Kanji } from "@/features/kanji/types";
 import { getLessonsForNode } from "../lib/lessonService";
 import LessonShell from "./LessonShell";
 import { SkeletonDrawerContent } from "@/shared/ui/Skeleton";
@@ -22,6 +23,11 @@ type Props = {
   userId: string;
   entityId?: string | null;
   entityKind?: "kanji" | "subtheme" | "grammar" | null;
+  kanjiCtaDisabled?: boolean;
+  kanjiCtaDisabledReason?: string;
+  writingActive?: boolean;
+  onWritingStart?: (kanji: Kanji) => void;
+  onQuizStart?: (kanji: Kanji) => void;
 };
 
 export default function LessonDrawer({
@@ -32,6 +38,11 @@ export default function LessonDrawer({
   userId,
   entityId = null,
   entityKind = null,
+  kanjiCtaDisabled = false,
+  kanjiCtaDisabledReason,
+  writingActive = false,
+  onWritingStart,
+  onQuizStart,
 }: Props) {
   const [loading, setLoading] = useState(false);
   const [lessons, setLessons] = useState<LessonResolved[]>([]);
@@ -107,8 +118,9 @@ export default function LessonDrawer({
             onClick={onClose}
             className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[1px]"
             initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            animate={{ opacity: writingActive ? 0 : 1 }}
             exit={{ opacity: 0 }}
+            style={{ pointerEvents: writingActive ? "none" : "auto" }}
           />
 
           {/* Drawer: desktop floating right | mobile bottom sheet */}
@@ -124,9 +136,14 @@ export default function LessonDrawer({
               "max-sm:h-[85dvh] max-sm:w-auto max-sm:rounded-3xl",
             ].join(" ")}
             initial={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
-            animate={isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 }}
+            animate={
+              writingActive
+                ? (isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 })
+                : (isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 })
+            }
             exit={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 26 }}
+            style={writingActive ? { pointerEvents: "none" } : undefined}
           >
             {/* Header sticky */}
             <div className="sticky top-0 z-10 bg-surface-primary/90 backdrop-blur-md border-b border-border-subtle rounded-t-3xl">
@@ -142,7 +159,7 @@ export default function LessonDrawer({
                     </div>
 
                     {header.pill ? (
-                      <span className="shrink-0 rounded-full bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
+                      <span className="shrink-0 rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-xs font-bold text-accent">
                         {header.pill}
                       </span>
                     ) : null}
@@ -178,7 +195,7 @@ export default function LessonDrawer({
                         className={[
                           "shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold border",
                           idx === activeIndex
-                            ? "bg-accent text-content-inverted border-accent"
+                            ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted border-accent shadow-sm"
                             : "bg-surface-primary text-content-secondary border-border-default hover:bg-surface-secondary",
                         ].join(" ")}
                       >
@@ -202,7 +219,14 @@ export default function LessonDrawer({
 
               {!loading && active && (
                 <div className="pb-2">
-                  <LessonShell lesson={active} mode={mode} />
+                  <LessonShell
+                    lesson={active}
+                    mode={mode}
+                    kanjiCtaDisabled={kanjiCtaDisabled}
+                    kanjiCtaDisabledReason={kanjiCtaDisabledReason}
+                    onWritingStart={onWritingStart}
+                    onQuizStart={onQuizStart}
+                  />
                 </div>
               )}
             </div>

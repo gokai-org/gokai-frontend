@@ -690,11 +690,7 @@ export function WritingPracticeModal({
                 className="flex flex-col items-center gap-5"
               >
                 <p className="text-sm text-content-tertiary text-center">
-                  Dibuja el trazo{" "}
-                  <span className="font-bold text-accent text-base">
-                    #{practiceStrokeIndex + 1}
-                  </span>{" "}
-                  de {totalStrokes}
+                  Traza el kanji sin guia de orden
                 </p>
 
                 {/* Canvas container */}
@@ -707,6 +703,7 @@ export function WritingPracticeModal({
                       onStrokeDrawn={handleStrokeDrawn}
                       size={practiceSize}
                       flashError={flashError}
+                      hideStrokeOrder
                     />
                   </div>
 
@@ -776,9 +773,6 @@ export function WritingPracticeModal({
                       else if (sr.validation.feedback === "acceptable")
                         dotClass = "bg-amber-400";
                       else dotClass = "bg-red-400";
-                    } else if (i === practiceStrokeIndex) {
-                      dotClass =
-                        "bg-accent ring-2 ring-accent/30 ring-offset-1";
                     }
                     return (
                       <motion.div

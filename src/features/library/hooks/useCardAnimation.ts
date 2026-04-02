@@ -1,6 +1,6 @@
 "use client";
 
-import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 
 export const CARD_ANIMATION_EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -20,8 +20,9 @@ export function useCardAnimation(
   options: { useInView?: boolean } = {},
 ) {
   const { useInView = true } = options;
-  const { animationsEnabled, heavyAnimationsEnabled } =
-    useAnimationPreferences();
+  const platformMotion = usePlatformMotion();
+  const animationsEnabled = platformMotion.shouldAnimate;
+  const heavyAnimationsEnabled = platformMotion.motionMode === "full";
 
   // Cap del stagger: máximo 14 × 30 ms = 420 ms
   const cappedDelay = Math.min(index, 14) * 0.03;
@@ -32,7 +33,7 @@ export function useCardAnimation(
     scale: 1,
     transition: {
       delay: cappedDelay,
-      duration: heavyAnimationsEnabled ? 0.35 : 0.2,
+      duration: (heavyAnimationsEnabled ? 0.35 : 0.2) * platformMotion.durationScale,
       ease: CARD_ANIMATION_EASE,
     },
   };
@@ -53,7 +54,7 @@ export function useCardAnimation(
       }
     : {};
 
-  const hoverTransition = animationsEnabled
+  const hoverTransition = platformMotion.shouldUseHoverAnimations
     ? "transition-all duration-300 ease-out"
     : "";
 

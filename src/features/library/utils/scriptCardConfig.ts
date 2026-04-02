@@ -3,6 +3,8 @@ export const SCRIPT_CARD_EASE = [0.22, 1, 0.36, 1] as const;
 export type ScriptVariant = "kanji" | "hiragana" | "katakana";
 
 export interface ScriptCardConfig {
+  /** Shape rendered in the top-left symbol box */
+  symbolShape: "circle" | "mahjong" | "shogi";
   bgTint: string;
   hoverGradient: string;
   thumbGradient: string;
@@ -19,6 +21,7 @@ export interface ScriptCardConfig {
 
 export const SCRIPT_CARD_CONFIG: Record<ScriptVariant, ScriptCardConfig> = {
   kanji: {
+    symbolShape: "circle",
     bgTint: "",
     hoverGradient: "from-[#5C1210] via-[#8C2E2C] to-[#BA4845]",
     thumbGradient: "from-[#993331] to-[#BA5149]",
@@ -33,6 +36,7 @@ export const SCRIPT_CARD_CONFIG: Record<ScriptVariant, ScriptCardConfig> = {
   },
 
   hiragana: {
+    symbolShape: "shogi",
     bgTint: "",
     hoverGradient: "from-[#3B1840] via-[#6B3578] to-[#9B56A8]",
     thumbGradient: "from-[#7B3F8A] to-[#A866B5]",
@@ -47,6 +51,7 @@ export const SCRIPT_CARD_CONFIG: Record<ScriptVariant, ScriptCardConfig> = {
   },
 
   katakana: {
+    symbolShape: "mahjong",
     bgTint: "",
     hoverGradient: "from-[#0D2E4A] via-[#1B5078] to-[#2E82B5]",
     thumbGradient: "from-[#1B5078] to-[#2E82B5]",

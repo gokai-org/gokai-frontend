@@ -25,8 +25,11 @@ export function KanjiStrokePlayer({
   const pathRefs = useRef<(SVGPathElement | null)[]>([]);
 
   useEffect(() => {
-    const lengths = pathRefs.current.map((p) => (p ? p.getTotalLength() : 0));
-    setAnimatedLengths(lengths);
+    const id = requestAnimationFrame(() => {
+      const lengths = pathRefs.current.map((p) => (p ? p.getTotalLength() : 0));
+      setAnimatedLengths(lengths);
+    });
+    return () => cancelAnimationFrame(id);
   }, [strokes]);
 
   const setPathRef = useCallback(
@@ -123,29 +126,18 @@ export function KanjiStrokePlayer({
               className={onStrokeClick ? "cursor-pointer" : undefined}
             />
 
-            {renderNumber && (
-              <StrokeNumber
-                key={`${i}-${activeStrokeIndex}-${numberMode}`}
-                pathRef={pathRefs.current[i]}
-                index={i}
-              />
-            )}
+          {renderNumber && (
+            <StrokeNumber
+              key={`${i}-${activeStrokeIndex}-${numberMode}`}
+              pathRef={pathRefs.current[i]}
+              index={i}
+            />
+          )}
           </g>
         );
       })}
 
-      <style>{`
-        @keyframes kanji-draw {
-          to { stroke-dashoffset: 0; }
-        }
-
-        /* pop-in for the number bubble */
-        @keyframes kanji-num-in {
-          0% { opacity: 0; transform: translateY(-2px) scale(0.75); }
-          100% { opacity: 1; transform: translateY(0px) scale(1); }
-        }
-      `}</style>
-    </svg>
+      </svg>
   );
 }
 
@@ -156,15 +148,21 @@ function StrokeNumber({
   pathRef: SVGPathElement | null;
   index: number;
 }) {
-  if (!pathRef) return null;
+  // Defer getPointAtLength out of React render phase to avoid forced synchronous layout.
+  const [pos, setPos] = useState<{ cx: number; cy: number } | null>(null);
 
-  const pt = pathRef.getPointAtLength(0);
+  useEffect(() => {
+    if (!pathRef) return;
+    const raf = requestAnimationFrame(() => {
+      const pt = pathRef.getPointAtLength(0);
+      setPos({ cx: pt.x + 2, cy: pt.y - 2 });
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [pathRef]);
 
-  const ox = 2;
-  const oy = -2;
+  if (!pos) return null;
 
-  const cx = pt.x + ox;
-  const cy = pt.y + oy;
+  const { cx, cy } = pos;
 
   return (
     <g

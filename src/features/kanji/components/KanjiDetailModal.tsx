@@ -6,7 +6,6 @@ import {
   meaningsToArray,
   getPrimaryMeaning,
 } from "@/features/kanji/utils/kanjiText";
-import { WritingPracticeModal } from "./WritingPracticeModal";
 import { KanjiStrokePlayer } from "./KanjiStrokePlayer";
 
 const overlayVariants = {
@@ -92,10 +91,18 @@ function SectionCard({
 interface KanjiDetailModalProps {
   kanji: Kanji | null;
   onClose: () => void;
+  practiceDisabled?: boolean;
+  practiceDisabledReason?: string;
+  onQuizStart?: (kanji: Kanji) => void;
 }
 
-export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
-  const [showWritingPractice, setShowWritingPractice] = useState(false);
+export function KanjiDetailModal({
+  kanji,
+  onClose,
+  practiceDisabled = false,
+  practiceDisabledReason,
+  onQuizStart,
+}: KanjiDetailModalProps) {
   const [activeStroke, setActiveStroke] = useState(-1);
 
   if (!kanji) return null;
@@ -104,15 +111,6 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
   const meanings = meaningsToArray(kanji.meanings);
   const primaryMeaning = getPrimaryMeaning(kanji.meanings);
   const hasStrokes = kanji.strokes && kanji.strokes.length > 0 && kanji.viewBox;
-
-  if (showWritingPractice) {
-    return (
-      <WritingPracticeModal
-        kanji={kanji}
-        onClose={() => setShowWritingPractice(false)}
-      />
-    );
-  }
 
   return (
     <AnimatePresence>
@@ -387,16 +385,20 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
                 </span>
               </motion.div>
 
-              {/* CTA: Practice button */}
+              {/* CTA: Quiz */}
               <motion.button
                 custom={4}
                 variants={fadeUp}
                 initial="hidden"
                 animate="visible"
-                onClick={() => setShowWritingPractice(true)}
+                onClick={() => {
+                  if (practiceDisabled || !onQuizStart) return;
+                  onQuizStart(kanji);
+                }}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/25 transition hover:shadow-xl hover:shadow-accent/30 focus:outline-none focus:ring-4 focus:ring-accent/20"
+                disabled={practiceDisabled || !onQuizStart}
+                className="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/25 transition hover:shadow-xl hover:shadow-accent/30 focus:outline-none focus:ring-4 focus:ring-accent/20 disabled:cursor-not-allowed disabled:from-surface-tertiary disabled:to-surface-tertiary disabled:text-content-muted disabled:shadow-none"
               >
                 <svg
                   className="h-5 w-5"
@@ -408,11 +410,23 @@ export function KanjiDetailModal({ kanji, onClose }: KanjiDetailModalProps) {
                   <path
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                Practicar trazado
+                {practiceDisabled ? "Aún bloqueado" : "Comenzar Quiz"}
               </motion.button>
+
+              {practiceDisabled && practiceDisabledReason && (
+                <motion.p
+                  custom={5}
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="visible"
+                  className="text-center text-xs leading-5 text-content-secondary"
+                >
+                  {practiceDisabledReason}
+                </motion.p>
+              )}
             </div>
           </div>
         </motion.div>

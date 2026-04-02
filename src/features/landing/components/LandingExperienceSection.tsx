@@ -41,7 +41,7 @@ export function LandingExperienceSection() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const perViewRef   = useRef(3);            // ref para acceso síncrono
-  const x            = useMotionValue(0);
+  const x = useMotionValue<number>(0);
   const idxRef       = useRef(N);            // empieza en N = primer item real
   const lockRef      = useRef(false);
 

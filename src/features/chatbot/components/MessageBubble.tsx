@@ -15,7 +15,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
     <div className={`mb-4 flex ${isBot ? "justify-start" : "justify-end"}`}>
       <div className="max-w-[88%] sm:max-w-[74%]">
         {isBot && (
-          <div className="mb-2 inline-flex rounded-full bg-accent px-3 py-1 text-[11px] font-extrabold tracking-wide text-content-inverted">
+          <div className="mb-2 inline-flex rounded-full bg-gradient-to-r from-accent to-accent-hover px-3 py-1 text-[11px] font-extrabold tracking-wide text-content-inverted shadow-sm ring-1 ring-white/15">
             SEN
           </div>
         )}

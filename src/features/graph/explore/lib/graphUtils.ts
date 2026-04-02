@@ -1,4 +1,4 @@
-import { GraphNode, GraphEdge, NodeStatus } from "./graphTypes";
+import { GraphNode, GraphEdge, NodeStatus } from "@/features/graph/lib/graphTypes";
 import { GRAPH_CONFIG } from "./graphConfig";
 
 /**

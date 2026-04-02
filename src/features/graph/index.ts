@@ -1,12 +1,26 @@
+// Shared
 export { default as AnimatedGraphBackground } from "./components/AnimatedGraphBackground";
-export { default as CustomEdge } from "./components/CustomEdge";
-export { default as CustomNode } from "./components/CustomNode";
-export { default as LearningGraph } from "./components/LearningGraph";
-export { default as UserGraph } from "./components/UserGraph";
+export { default as GraphNavBar } from "./components/GraphNavBar";
 export * from "./lib/graphTypes";
-export * from "./lib/graphConfig";
-export * from "./lib/graphUtils";
-export * from "./lib/graphBuilder";
+
+// Explore
+export { CustomEdge, CustomNode, LearningGraph, UserGraph } from "./explore";
+export {
+  createCustomGraph,
+  generateConnections,
+  updateNodeStatus,
+  GRAPH_CONFIG,
+  NODE_TYPE_CONFIG,
+  NODE_STATUS_CONFIG,
+} from "./explore";
+
+// Grammar
+export { GrammarView } from "./grammar";
+
+// Kanjis
+export { KanjisView } from "./kanjis";
+
+// Domain types
 export type {
   Theme,
   Subtheme,

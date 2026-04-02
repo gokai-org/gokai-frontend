@@ -33,7 +33,18 @@ const POINT_PENALTIES = {
 } as const;
 
 /**
+ * Module-level cache for sampled SVG path points.
+ * Kanji stroke paths are stable per-kanji, so repeated validateStroke calls
+ * (across practice attempts, quiz retries, component remounts) reuse computed
+ * points instead of recreating DOM elements each time.
+ *
+ * Memory: ~20 kanjis × ~12 strokes × 24 points = ~5 760 {x,y} objects — trivial.
+ */
+const _samplePointsCache = new Map<string, StrokePoint[]>();
+
+/**
  * Sample points along an SVG path string for comparison.
+ * Results are memoized per (pathD, viewBox, numSamples).
  */
 export function sampleSvgPath(
   pathD: string,
@@ -41,6 +52,10 @@ export function sampleSvgPath(
   numSamples = 20,
 ): StrokePoint[] {
   if (typeof document === "undefined") return [];
+
+  const cacheKey = `${pathD}|${viewBox}|${numSamples}`;
+  const cached = _samplePointsCache.get(cacheKey);
+  if (cached) return cached;
 
   try {
     const svgNS = "http://www.w3.org/2000/svg";
@@ -65,6 +80,7 @@ export function sampleSvgPath(
     }
 
     document.body.removeChild(svg);
+    _samplePointsCache.set(cacheKey, points);
     return points;
   } catch {
     return [];

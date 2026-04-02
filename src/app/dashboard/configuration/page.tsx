@@ -20,6 +20,8 @@ import { UpgradePlanModal } from "@/features/configuration/components/UpgradePla
 import { CancelSubscriptionModal } from "@/features/configuration/components/CancelSubscriptionModal";
 import { billingConfig } from "@/shared/config";
 import { useTheme } from "@/shared/hooks/useTheme";
+import { useTypography } from "@/shared/hooks/useTypography";
+import type { FontSize, JapaneseFont } from "@/shared/hooks/useTypography";
 
 const sectionTitles: Record<string, string> = {
   general: "Configuración General",
@@ -290,6 +292,7 @@ function AppearanceSettings({
 }) {
   const a = settings.appearance;
   const { setTheme } = useTheme();
+  const { setFontSize, setJapaneseFont } = useTypography();
   return (
     <>
       <SettingsSection
@@ -316,7 +319,10 @@ function AppearanceSettings({
           description="Tamaño del texto en la interfaz"
           value={a.fontSize}
           options={["Pequeño", "Mediano", "Grande", "Muy grande"]}
-          onChange={(v) => updateSection("appearance", { fontSize: v })}
+          onChange={(v) => {
+            updateSection("appearance", { fontSize: v });
+            setFontSize(v as FontSize);
+          }}
         />
 
         <SettingsSelectItem
@@ -324,7 +330,10 @@ function AppearanceSettings({
           description="Tipografía para caracteres japoneses"
           value={a.japaneseFont}
           options={["Noto Sans JP", "Hiragino", "Yu Gothic", "Meiryo"]}
-          onChange={(v) => updateSection("appearance", { japaneseFont: v })}
+          onChange={(v) => {
+            updateSection("appearance", { japaneseFont: v });
+            setJapaneseFont(v as JapaneseFont);
+          }}
         />
       </SettingsSection>
     </>

@@ -1,13 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import type { LessonMode, LessonResolved } from "@/features/lessons/types";
+import type { Kanji } from "@/features/kanji/types";
 import LessonCTA from "@/features/lessons/components/LessonCTA";
 import {
   normalizeReadings,
   normalizeMeanings,
 } from "@/features/kanji/lib/kanjiFormat";
-import { WritingPracticeModal } from "@/features/kanji/components/WritingPracticeModal";
 import { motion } from "framer-motion";
 
 const modeTitle: Record<LessonMode, string> = {
@@ -20,11 +19,18 @@ const modeTitle: Record<LessonMode, string> = {
 export default function KanjiLesson({
   data,
   mode,
+  ctaDisabled = false,
+  ctaDisabledReason,
+  onWritingStart,
+  onQuizStart,
 }: {
   data: Extract<LessonResolved, { kind: "kanji" }>;
   mode: LessonMode;
+  ctaDisabled?: boolean;
+  ctaDisabledReason?: string;
+  onWritingStart?: (kanji: Kanji) => void;
+  onQuizStart?: (kanji: Kanji) => void;
 }) {
-  const [showWritingPractice, setShowWritingPractice] = useState(false);
   const k = data.kanji;
 
   const r = normalizeReadings(k.readings);
@@ -105,24 +111,42 @@ export default function KanjiLesson({
 
       {/* CTA */}
       <LessonCTA
-        variant={mode === "writing" ? "start" : "start"}
-        label={mode === "writing" ? "Comenzar escritura" : "Comenzar"}
+        variant={ctaDisabled ? "disabled" : "start"}
+        label={
+          ctaDisabled
+            ? "Aún bloqueado"
+            : mode === "writing"
+              ? "Comenzar escritura"
+              : "Comenzar"
+        }
         onClick={() => {
+          if (ctaDisabled) return;
+
           if (mode === "writing") {
-            setShowWritingPractice(true);
+            onWritingStart?.(k);
           } else {
             console.log("start", data.lesson.id, "kanji", k.id);
           }
         }}
       />
 
-      {/* Writing practice modal */}
-      {showWritingPractice && (
-        <WritingPracticeModal
-          kanji={k}
-          onClose={() => setShowWritingPractice(false)}
+      {/* Quiz CTA */}
+      {onQuizStart && (
+        <LessonCTA
+          variant={ctaDisabled ? "disabled" : "complete"}
+          label={ctaDisabled ? "Quiz bloqueado" : "Comenzar Quiz"}
+          onClick={() => {
+            if (ctaDisabled) return;
+            onQuizStart(k);
+          }}
         />
       )}
+
+      {ctaDisabled && ctaDisabledReason ? (
+        <p className="-mt-2 text-center text-xs leading-5 text-content-secondary">
+          {ctaDisabledReason}
+        </p>
+      ) : null}
     </div>
   );
 }

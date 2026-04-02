@@ -14,7 +14,7 @@ export default function SubthemeLesson({
 
   return (
     <div className="space-y-4">
-      <div className="rounded-3xl border border-border-subtle p-4 bg-gradient-to-b from-surface-primary to-[#fffaf0]">
+      <div className="rounded-3xl border border-border-subtle p-4 bg-gradient-to-b from-surface-elevated to-accent/4">
         <div className="flex items-center justify-between">
           <div className="text-xs font-semibold text-accent">
             SUBTHEME • {mode.toUpperCase()}

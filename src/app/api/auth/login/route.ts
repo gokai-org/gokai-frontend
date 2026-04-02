@@ -85,6 +85,7 @@ export async function POST(req: Request) {
       lastName: data?.lastName,
       profile,
       birthdate: data?.birthdate,
+      points: typeof data?.points === "number" ? data.points : 0,
     },
   });
 
