@@ -5,13 +5,20 @@ import {
   useCallback, useMemo, useLayoutEffect,
 } from "react";
 import { motion, useMotionValue, animate } from "framer-motion";
-import type { PanInfo } from "framer-motion";
+import type { PanInfo, MotionValue } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { FEATURES } from "@/features/landing/data/landingData";
 import { FeatureCard } from "@/features/landing";
 import { staggerContainer } from "@/features/landing/lib/motionVariants";
 
 const EASE    = [0.22, 1, 0.36, 1] as const;
+
+// Workaround: framer-motion v12 overload resolution fails for animate(MotionValue, number, opts).
+const animateValue = animate as unknown as (
+  value: MotionValue<number>,
+  to: number,
+  options: { duration: number; ease: number[]; onComplete: () => void },
+) => { stop: () => void };
 const GAP     = 24;       // gap-6 = 24 px
 const AUTO_MS = 2_600;    // ms por slide
 const N       = FEATURES.length;
@@ -70,23 +77,22 @@ export function LandingExperienceSection() {
       idxRef.current  = idx;
       setRealIdx(((idx - N) % N + N) % N);
 
-    animate(x, [x.get(), -(idx * s)], {
-      duration: 0.48,
-      ease: EASE,
-      onComplete: () => {
-        lockRef.current = false;
-        let warp = idx;
-
-        if (idx < N) warp = idx + N;
-        else if (idx >= N * 2) warp = idx - N;
-
-        if (warp !== idx) {
-          x.set(-(warp * getStep()));
-          idxRef.current = warp;
-          setRealIdx(((warp - N) % N + N) % N);
-        }
-      },
-    });
+      const target = -(idx * s);
+      animateValue(x, target, {
+        duration : 0.48,
+        ease     : [...EASE] as number[],
+        onComplete: () => {
+          lockRef.current = false;
+          let warp = idx;
+          if      (idx < N     ) warp = idx + N;
+          else if (idx >= N * 2) warp = idx - N;
+          if (warp !== idx) {
+            x.set(-(warp * getStep()));
+            idxRef.current = warp;
+            setRealIdx(((warp - N) % N + N) % N);
+          }
+        },
+      });
     },
     [getStep, x],
   );
