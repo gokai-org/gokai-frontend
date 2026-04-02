@@ -1,38 +1,17 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Kanji } from "@/features/kanji/types";
 import { getPrimaryMeaning } from "@/features/kanji/utils/kanjiText";
 import { useKanjiLessonFlow } from "@/features/kanji/hooks/useKanjiLessonFlow";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { KanjiLessonProgress } from "./KanjiLessonProgress";
 import { KanjiMeaningExercise } from "./KanjiMeaningExercise";
 import { KanjiSelectionExercise } from "./KanjiSelectionExercise";
 import { KanjiReadingExercise } from "./KanjiReadingExercise";
 import { KanjiWritingExercise } from "./KanjiWritingExercise";
 import { KanjiLessonResultSummary } from "./KanjiLessonResultSummary";
-
-const overlayVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-  exit: { opacity: 0 },
-};
-
-const panelVariants = {
-  hidden: { opacity: 0, scale: 0.95, y: 24 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.96,
-    y: 16,
-    transition: { duration: 0.2 },
-  },
-};
 
 interface KanjiLessonFlowModalProps {
   kanji: Kanji;
@@ -41,7 +20,43 @@ interface KanjiLessonFlowModalProps {
 
 export function KanjiLessonFlowModal({ kanji, onClose }: KanjiLessonFlowModalProps) {
   const lesson = useKanjiLessonFlow();
+  const platformMotion = usePlatformMotion();
   const meaning = getPrimaryMeaning(kanji.meanings) || "";
+
+  const overlayVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0 },
+      visible: { opacity: 1, transition: { duration: platformMotion.shouldUseLightAnimations ? 0.18 : 0.24 } },
+      exit: { opacity: 0, transition: { duration: platformMotion.shouldUseLightAnimations ? 0.14 : 0.18 } },
+    }),
+    [platformMotion.shouldUseLightAnimations],
+  );
+
+  const panelVariants = useMemo(
+    () => ({
+      hidden: {
+        opacity: 0,
+        scale: platformMotion.shouldUseLightAnimations ? 1 : 0.95,
+        y: platformMotion.shouldUseLightAnimations ? 10 : 24,
+      },
+      visible: {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: {
+          duration: platformMotion.shouldUseLightAnimations ? 0.24 : 0.35,
+          ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+        },
+      },
+      exit: {
+        opacity: 0,
+        scale: platformMotion.shouldUseLightAnimations ? 1 : 0.96,
+        y: platformMotion.shouldUseLightAnimations ? 8 : 16,
+        transition: { duration: platformMotion.shouldUseLightAnimations ? 0.16 : 0.2 },
+      },
+    }),
+    [platformMotion.shouldUseLightAnimations],
+  );
 
   // Start lesson on mount
   useEffect(() => {

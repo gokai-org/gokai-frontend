@@ -93,6 +93,7 @@ export interface KanjiBoardNodeData {
   showOrbitRings: boolean;
   shouldUsePulse: boolean;
   unlocking?: boolean;
+  shaking?: boolean;
 }
 
 export interface KanjiBoardEdgeData {

@@ -75,7 +75,7 @@ function getPlanetStyles(
     glow: selected
       ? createGlow(6, Math.round(17 + shadowScale * 4), 0.07, 0.15, glowScale, "120,112,126")
       : createGlow(2, Math.round(9 + shadowScale * 2), 0.03, 0.07, glowScale, "120,112,126"),
-    sphereClass: "bg-gradient-to-br from-[#383438] to-[#1C181E] border-white/[0.06] shadow-[0_2px_8px_rgba(0,0,0,0.36)] text-white/40",
+    sphereClass: "kanji-node-sphere-locked border-[#D8D2E4]/38 dark:border-white/[0.06]",
     ring: "rgba(120, 112, 126, 0.18)",
     orbit: "rgba(120, 112, 126, 0.28)",
     label: "text-content-secondary",
@@ -131,15 +131,31 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
             </>
           ) : null}
 
+          {/* Unlock ring — quality-tiered halo burst */}
+          {data.unlocking && data.qualityTier !== "low" && (
+            <div className="kanji-node-unlock-ring pointer-events-none absolute inset-[18px]" />
+          )}
+          {data.unlocking && data.qualityTier === "high" && (
+            <div
+              className="kanji-node-unlock-ring pointer-events-none absolute inset-[10px]"
+              style={{ animationDelay: "0.22s" }}
+            />
+          )}
+
           <div
-            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border text-[42px] font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}${data.unlocking ? " kanji-node-unlocking" : ""}`}
+            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border text-[42px] font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}${data.unlocking ? " kanji-node-unlocking" : ""}${data.shaking ? " kanji-node-shaking" : ""}`}
           >
             <span className={progress.status === "locked" ? "opacity-72" : ""}>
               {progress.kanji.symbol}
             </span>
           </div>
 
-          <div className="absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border border-black/20 bg-black/52 text-white/88 dark:border-white/10 dark:bg-black/44 dark:text-white/92">
+          <div className={[
+            "absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border",
+            progress.status === "locked"
+              ? "border-[#D8D2E4]/50 bg-[#F6F4FA]/90 text-[#C0B9CC] dark:border-white/10 dark:bg-black/44 dark:text-white/92"
+              : "border-black/20 bg-black/52 text-white/88 dark:border-white/10 dark:bg-black/44 dark:text-white/92",
+          ].join(" ")}>
             {progress.status === "locked" ? (
               <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2.2} />
             ) : progress.status === "completed" ? (
@@ -148,6 +164,15 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
               <span className="text-[11px] font-semibold">{progress.bestScore ?? 0}</span>
             )}
           </div>
+
+          {/* +30 points float — always shown when unlocking */}
+          {data.unlocking && (
+            <div className="pointer-events-none absolute top-0 right-0 z-30">
+              <span className="kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#BA4845] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(186,72,66,0.52)]">
+                +30
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="mt-2 flex flex-col items-center gap-1.5 text-center">
@@ -173,6 +198,7 @@ export default memo(KanjiBoardNode, (previous, next) => {
     previous.data.progress.primaryMeaning === next.data.progress.primaryMeaning &&
     previous.data.qualityTier === next.data.qualityTier &&
     previous.data.unlocking === next.data.unlocking &&
+    previous.data.shaking === next.data.shaking &&
     previous.dragging === next.dragging
   );
 });

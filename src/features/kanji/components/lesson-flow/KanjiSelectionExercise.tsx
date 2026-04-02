@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { KanjiLessonQuestion } from "@/features/kanji/types/lessonFlow";
+import { normalizeKanjiDisplayText } from "@/features/kanji/utils/kanjiText";
 import { ExerciseOptionCard } from "./ExerciseOptionCard";
 
 interface KanjiSelectionExerciseProps {
@@ -20,6 +21,8 @@ export function KanjiSelectionExercise({
   onSelect,
   onConfirm,
 }: KanjiSelectionExerciseProps) {
+  const prompt = normalizeKanjiDisplayText(question.prompt || question.kanji);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -39,13 +42,13 @@ export function KanjiSelectionExercise({
         transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
         className="px-6 py-4 rounded-2xl bg-gradient-to-b from-emerald-50 to-emerald-50/40 dark:from-emerald-950/40 dark:to-emerald-950/20 border border-emerald-200 dark:border-emerald-800 shadow-sm"
       >
-        <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300 text-center capitalize">
-          {question.prompt || question.kanji}
+        <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300 text-center">
+          {prompt}
         </p>
       </motion.div>
 
-      {/* Kanji options — 2×2 grid */}
-      <div className="w-full max-w-sm grid grid-cols-2 gap-2.5">
+      {/* Kanji options */}
+      <div className="w-full max-w-md grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {question.options.map((opt, i) => (
           <ExerciseOptionCard
             key={i}
@@ -68,7 +71,7 @@ export function KanjiSelectionExercise({
           whileTap={selectedIndex !== null ? { scale: 0.98 } : undefined}
           onClick={onConfirm}
           disabled={selectedIndex === null}
-          className="w-full max-w-sm py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold shadow-lg shadow-accent/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
+          className="w-full max-w-md py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold shadow-lg shadow-accent/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
           Confirmar
         </motion.button>

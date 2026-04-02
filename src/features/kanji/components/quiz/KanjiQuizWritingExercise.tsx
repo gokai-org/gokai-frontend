@@ -368,26 +368,25 @@ export function KanjiQuizWritingExercise({
             activeStrokeIndex={practiceStrokeIndex}
             size={practiceSize}
             onStrokeDrawn={handleStrokeDrawn}
+            hideStrokeOrder
           />
         </motion.div>
 
         {/* Stroke progress */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-content-muted font-medium">
-            Trazo {Math.min(practiceStrokeIndex + 1, totalStrokes)} / {totalStrokes}
+            Trazos evaluados {strokeResults.length} / {totalStrokes}
           </span>
           <div className="flex gap-1">
             {strokes.map((_, i) => (
               <div
                 key={i}
                 className={`w-2 h-2 rounded-full transition-all ${
-                  i < practiceStrokeIndex
+                  i < strokeResults.length
                     ? strokeResults[i]?.validation.isCorrect
                       ? "bg-emerald-400"
                       : "bg-red-400"
-                    : i === practiceStrokeIndex
-                      ? "bg-accent"
-                      : "bg-surface-tertiary"
+                    : "bg-surface-tertiary"
                 }`}
               />
             ))}

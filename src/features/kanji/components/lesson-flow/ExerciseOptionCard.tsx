@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import type { KanjiLessonQuestionOption } from "@/features/kanji/types/lessonFlow";
+import { normalizeKanjiDisplayText } from "@/features/kanji/utils/kanjiText";
 
 interface ExerciseOptionCardProps {
   option: KanjiLessonQuestionOption;
@@ -9,7 +10,6 @@ interface ExerciseOptionCardProps {
   selected: boolean;
   revealed: boolean;
   onSelect: (index: number) => void;
-  /** Use large kanji display mode (for kanji_selection exercise) */
   kanjiMode?: boolean;
 }
 
@@ -22,6 +22,7 @@ export function ExerciseOptionCard({
   kanjiMode = false,
 }: ExerciseOptionCardProps) {
   const isCorrect = option.correct;
+  const displayValue = kanjiMode ? option.value : normalizeKanjiDisplayText(option.value);
 
   let borderClass = "border-border-subtle";
   let bgClass = "bg-surface-secondary hover:bg-surface-tertiary";
@@ -48,9 +49,9 @@ export function ExerciseOptionCard({
     <motion.button
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.3 }}
-      whileHover={!revealed ? { scale: 1.02 } : undefined}
-      whileTap={!revealed ? { scale: 0.98 } : undefined}
+      transition={{ delay: index * 0.045, duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      whileHover={!revealed ? { scale: 1.015, y: -1 } : undefined}
+      whileTap={!revealed ? { scale: 0.97 } : undefined}
       onClick={() => !revealed && onSelect(index)}
       disabled={revealed}
       className={`relative w-full rounded-2xl border-2 ${borderClass} ${bgClass} transition-all duration-200 ${
@@ -89,7 +90,7 @@ export function ExerciseOptionCard({
             kanjiMode ? "text-3xl leading-none py-1" : "text-sm"
           }`}
         >
-          {option.value}
+          {displayValue}
         </span>
       </div>
     </motion.button>

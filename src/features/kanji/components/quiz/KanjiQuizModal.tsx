@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKanjiQuiz } from "@/features/kanji/hooks/useKanjiQuiz";
 import { quizQuestionToLessonQuestion, isValidWritingQuestion } from "@/features/kanji/utils/quizParser";
@@ -9,37 +9,14 @@ import type { KanjiQuizRoundResult, KanjiQuizType } from "@/features/kanji/types
 import { KanjiMeaningExercise } from "@/features/kanji/components/lesson-flow/KanjiMeaningExercise";
 import { KanjiSelectionExercise } from "@/features/kanji/components/lesson-flow/KanjiSelectionExercise";
 import { KanjiReadingExercise } from "@/features/kanji/components/lesson-flow/KanjiReadingExercise";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { KanjiQuizWritingExercise } from "./KanjiQuizWritingExercise";
-
-const overlayVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1 },
-  exit: { opacity: 0 },
-};
-
-const panelVariants = {
-  hidden: { opacity: 0, scale: 0.95, y: 24 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-    transition: { duration: 0.35, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] },
-  },
-  exit: {
-    opacity: 0,
-    scale: 0.96,
-    y: 16,
-    transition: { duration: 0.2 },
-  },
-};
 
 export interface KanjiQuizModalProps {
   kanjiId: string;
   label?: string;
   onClose: () => void;
   onComplete?: (score: number, updatedPoints: number | null) => void;
-  /** Called once when points are awarded (all 4 rounds complete at 100%). */
-  onUnlock?: (newlyUnlockedKanjiIds: string[]) => void;
 }
 
 export function KanjiQuizModal({
@@ -47,9 +24,44 @@ export function KanjiQuizModal({
   label,
   onClose,
   onComplete,
-  onUnlock,
 }: KanjiQuizModalProps) {
   const quiz = useKanjiQuiz();
+  const platformMotion = usePlatformMotion();
+
+  const overlayVariants = useMemo(
+    () => ({
+      hidden: { opacity: 0 },
+      visible: { opacity: 1, transition: { duration: platformMotion.shouldUseLightAnimations ? 0.18 : 0.24 } },
+      exit: { opacity: 0, transition: { duration: platformMotion.shouldUseLightAnimations ? 0.14 : 0.18 } },
+    }),
+    [platformMotion.shouldUseLightAnimations],
+  );
+
+  const panelVariants = useMemo(
+    () => ({
+      hidden: {
+        opacity: 0,
+        scale: platformMotion.shouldUseLightAnimations ? 1 : 0.95,
+        y: platformMotion.shouldUseLightAnimations ? 10 : 24,
+      },
+      visible: {
+        opacity: 1,
+        scale: 1,
+        y: 0,
+        transition: {
+          duration: platformMotion.shouldUseLightAnimations ? 0.24 : 0.35,
+          ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+        },
+      },
+      exit: {
+        opacity: 0,
+        scale: platformMotion.shouldUseLightAnimations ? 1 : 0.96,
+        y: platformMotion.shouldUseLightAnimations ? 8 : 16,
+        transition: { duration: platformMotion.shouldUseLightAnimations ? 0.16 : 0.2 },
+      },
+    }),
+    [platformMotion.shouldUseLightAnimations],
+  );
 
   useEffect(() => {
     quiz.startQuiz(kanjiId);
@@ -63,19 +75,11 @@ export function KanjiQuizModal({
   }, [quiz, kanjiId]);
 
   const handleClose = useCallback(() => {
-    if (quiz.state.step === "summary" && onComplete) {
+    if ((quiz.state.step === "summary" || quiz.state.step === "celebration") && onComplete) {
       onComplete(quiz.finalScore, quiz.updatedPoints);
     }
     onClose();
   }, [quiz, onClose, onComplete]);
-
-  // Fire onUnlock once when all rounds complete and points are awarded
-  useEffect(() => {
-    if (quiz.state.step === "summary" && quiz.updatedPoints !== null && onUnlock) {
-      onUnlock([]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quiz.state.step, quiz.updatedPoints]);
 
   const handleNextAfterFeedback = useCallback(() => {
     quiz.nextStep();
@@ -93,11 +97,10 @@ export function KanjiQuizModal({
     submitting,
     isPointsError,
     updatedPoints,
+    pointsDelta,
     roundResults,
     currentRound,
   } = quiz;
-
-  const quizTypeLabel = quizData ? QUIZ_TYPE_LABELS[quizData.type] : "";
 
   const isTransitioning = state.step === "submitting" || (state.step === "loading" && roundResults.length > 0);
 
@@ -119,7 +122,7 @@ export function KanjiQuizModal({
           exit="exit"
           className={[
             "bg-surface-primary w-full shadow-2xl ring-1 ring-border-subtle flex flex-col",
-            state.step === "summary" ? "max-w-2xl" : "max-w-lg",
+            (state.step === "summary" || state.step === "celebration") ? "max-w-2xl" : "max-w-lg",
             "rounded-3xl max-h-[95dvh]",
             "max-sm:max-w-none max-sm:mx-auto max-sm:w-[calc(100vw-2rem)]",
             "max-sm:max-h-[92dvh] max-sm:rounded-3xl",
@@ -139,9 +142,6 @@ export function KanjiQuizModal({
                   <h2 className="text-base font-bold text-content-inverted leading-tight">
                     Quiz de Kanji
                   </h2>
-                  {quizTypeLabel && state.step !== "summary" && (
-                    <p className="text-xs text-white/70 font-medium">{quizTypeLabel}</p>
-                  )}
                 </div>
               </div>
 
@@ -356,11 +356,80 @@ export function KanjiQuizModal({
               </motion.div>
             )}
 
-            {/* FINAL SUMMARY */}
+            {/* PERFECT COMPLETION — the only success screen shown before close */}
+            {state.step === "celebration" && (
+              <motion.div
+                key="celebration"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0, scale: 0.96 }}
+                transition={{ duration: 0.3 }}
+                className="flex flex-col items-center justify-center py-8 gap-6 text-center"
+              >
+                {/* Kanji burst */}
+                <div className="relative">
+                  <div className="kanji-celebration-halo absolute inset-[-24px] rounded-full" />
+                  <motion.div
+                    initial={{ scale: 0.3, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ duration: 0.55, ease: [0.34, 1.56, 0.64, 1] }}
+                    className="relative z-10 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-hover shadow-[0_0_48px_rgba(186,72,66,0.52)]"
+                  >
+                    <span className="text-5xl font-bold text-white select-none">
+                      {label || "漢"}
+                    </span>
+                  </motion.div>
+                </div>
+
+                {pointsDelta > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 12, scale: 0.8 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    transition={{ delay: 0.32, duration: 0.42, ease: [0.34, 1.56, 0.64, 1] }}
+                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2 shadow-lg shadow-accent/30"
+                  >
+                    <span className="text-xl font-black text-white">+{pointsDelta}</span>
+                    <span className="text-sm font-semibold text-white/80">puntos ganados</span>
+                  </motion.div>
+                )}
+
+                {/* Headline */}
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.44, duration: 0.38 }}
+                  className="space-y-1.5"
+                >
+                  <p className="text-2xl font-black text-content-primary">¡Kanji completado!</p>
+                  <p className="text-sm text-content-muted">
+                    {pointsDelta > 0 ? "Has superado los 4 ejercicios" : "Has completado los 4 ejercicios"}
+                  </p>
+                </motion.div>
+
+                {/* CTA */}
+                <motion.button
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.7 }}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={handleClose}
+                  className="mt-2 flex items-center gap-2 rounded-2xl border border-border-subtle bg-surface-secondary px-6 py-3 text-sm font-semibold text-content-secondary transition hover:bg-surface-tertiary"
+                >
+                  Cerrar
+                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  </svg>
+                </motion.button>
+              </motion.div>
+            )}
+
+            {/* FINAL SUMMARY — only for non-perfect runs */}
             {state.step === "summary" && (
               <QuizMultiRoundSummary
                 roundResults={roundResults}
                 updatedPoints={updatedPoints}
+                pointsDelta={pointsDelta}
                 submitError={error}
                 onRetry={handleRetry}
                 onClose={handleClose}
@@ -455,17 +524,19 @@ function QuizProgress({
 function QuizMultiRoundSummary({
   roundResults,
   updatedPoints,
+  pointsDelta,
   submitError,
   onRetry,
   onClose,
 }: {
   roundResults: KanjiQuizRoundResult[];
   updatedPoints: number | null;
+  pointsDelta: number;
   submitError: string | null;
   onRetry: () => void;
   onClose: () => void;
 }) {
-  const earnedPoints = updatedPoints !== null;
+  const earnedPoints = pointsDelta > 0 && updatedPoints !== null;
 
   const overallScore = roundResults.length > 0
     ? Math.round(roundResults.reduce((sum, r) => sum + r.score, 0) / roundResults.length)
@@ -575,7 +646,7 @@ function QuizMultiRoundSummary({
             </svg>
           </div>
           <div>
-            <p className="text-sm font-bold text-emerald-400">+30 puntos obtenidos</p>
+            <p className="text-sm font-bold text-emerald-400">+{pointsDelta} puntos obtenidos</p>
             <p className="text-xs text-emerald-400/70">Total: {updatedPoints} pts</p>
           </div>
         </motion.div>

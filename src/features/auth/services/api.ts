@@ -11,7 +11,7 @@ import type {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const response = await fetch("/api/auth/user");
+    const response = await fetch("/api/auth/user", { cache: "no-store" });
     if (!response.ok) return null;
     const data = await response.json();
     return data.user;

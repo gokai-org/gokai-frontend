@@ -34,7 +34,7 @@ export function LandingExperienceSection() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const perViewRef   = useRef(3);            // ref para acceso síncrono
-  const x            = useMotionValue(0);
+  const x = useMotionValue<number>(0);
   const idxRef       = useRef(N);            // empieza en N = primer item real
   const lockRef      = useRef(false);
 
@@ -70,21 +70,23 @@ export function LandingExperienceSection() {
       idxRef.current  = idx;
       setRealIdx(((idx - N) % N + N) % N);
 
-      animate(x, -(idx * s), {
-        duration : 0.48,
-        ease     : [...EASE] as number[],
-        onComplete: () => {
-          lockRef.current = false;
-          let warp = idx;
-          if      (idx < N     ) warp = idx + N;
-          else if (idx >= N * 2) warp = idx - N;
-          if (warp !== idx) {
-            x.set(-(warp * getStep()));
-            idxRef.current = warp;
-            setRealIdx(((warp - N) % N + N) % N);
-          }
-        },
-      });
+    animate(x, [x.get(), -(idx * s)], {
+      duration: 0.48,
+      ease: EASE,
+      onComplete: () => {
+        lockRef.current = false;
+        let warp = idx;
+
+        if (idx < N) warp = idx + N;
+        else if (idx >= N * 2) warp = idx - N;
+
+        if (warp !== idx) {
+          x.set(-(warp * getStep()));
+          idxRef.current = warp;
+          setRealIdx(((warp - N) % N + N) % N);
+        }
+      },
+    });
     },
     [getStep, x],
   );

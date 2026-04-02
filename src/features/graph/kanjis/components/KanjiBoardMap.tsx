@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -210,33 +210,30 @@ function KanjiBoardMapInner({
       className="!bg-transparent [&_.react-flow__pane]:cursor-grab [&_.react-flow__pane.dragging]:cursor-grabbing"
     >
       {/*
-       * World-aligned board grid — both layers live in React Flow's world coordinate
-       * system, identical to the nodes. Pan/zoom moves everything together: the grid
-       * and the nodes are on the same surface. This is the key fix for the "nodes
-       * floating over texture" perception.
+       * World-aligned board grid
        */}
       <Background
         className="kanji-bg-board-lines"
         variant={BackgroundVariant.Lines}
         gap={160}
-        lineWidth={0.7}
-        color="rgba(18, 18, 22, 0.09)"
+        lineWidth={0.9}
+        color="rgba(18, 18, 22, 0.15)"
       />
       <Background
         className="kanji-bg-board-hoshi"
         variant={BackgroundVariant.Dots}
         gap={480}
-        size={2.5}
-        color="rgba(18, 18, 22, 0.19)"
+        size={2.8}
+        color="rgba(18, 18, 22, 0.28)"
       />
     </ReactFlow>
   );
 }
 
-export function KanjiBoardMap(props: KanjiBoardMapProps) {
+export const KanjiBoardMap = memo(function KanjiBoardMap(props: KanjiBoardMapProps) {
   return (
     <ReactFlowProvider>
       <KanjiBoardMapInner {...props} />
     </ReactFlowProvider>
   );
-}
+});

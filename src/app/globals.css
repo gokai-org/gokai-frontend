@@ -349,13 +349,13 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 /* ── Kanji board: theme-aware edge stroke variables ── */
 :root {
   --kanji-edge-locked-stroke:    rgba(28, 22, 32, 1);
-  --kanji-edge-available-stroke: rgba(153, 51, 49, 1);
-  --kanji-edge-completed-stroke: rgba(153, 51, 49, 1);
+  --kanji-edge-available-stroke: rgba(172, 56, 52, 1);
+  --kanji-edge-completed-stroke: rgba(172, 56, 52, 1);
 }
 .dark {
   --kanji-edge-locked-stroke:    rgba(210, 200, 220, 1);
-  --kanji-edge-available-stroke: rgba(200, 72, 68, 1);
-  --kanji-edge-completed-stroke: rgba(204, 78, 74, 1);
+  --kanji-edge-available-stroke: rgba(210, 78, 72, 1);
+  --kanji-edge-completed-stroke: rgba(218, 84, 78, 1);
 }
 
 /* ── Kanji node / edge animations ── */
@@ -395,16 +395,51 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
   animation: kanji-node-enter 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* Available edge: marching-ants flow (dash sum = 8+14 = 22) */
+/* Available edge: marching-ants flow (dash=5, gap=10, sum=15) */
 @keyframes kanji-edge-march {
-  to { stroke-dashoffset: -22; }
+  to { stroke-dashoffset: -15; }
 }
 
 .kanji-edge-available {
-  animation: kanji-edge-march 1.2s linear infinite;
+  animation: kanji-edge-march 1.1s linear infinite;
 }
 
-/* ── Kanji unlock animations ── */
+/* ── Stroke player & writing canvas animations ── */
+@keyframes kanji-draw {
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes kanji-num-in {
+  0%   { opacity: 0; transform: translateY(-2px) scale(0.75); }
+  100% { opacity: 1; transform: translateY(0px)  scale(1);    }
+}
+
+/* ── Kanji node shake: quick wiggle for locked node clicks ── */
+@keyframes kanji-node-shake {
+  0%,  100% { transform: translateX(0)            rotate(0);    }
+  14%        { transform: translateX(-7px)          rotate(-2.5deg); }
+  28%        { transform: translateX(6px)           rotate(2deg);    }
+  42%        { transform: translateX(-4px)          rotate(-1.5deg); }
+  57%        { transform: translateX(3.5px)         rotate(1deg);    }
+  71%        { transform: translateX(-2px)          rotate(-0.5deg); }
+  86%        { transform: translateX(1px);          }
+}
+.kanji-node-shaking {
+  animation: kanji-node-shake 0.58s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  will-change: transform;
+}
+
+/* ── Celebration halo: radial pulse expanding behind the kanji symbol ── */
+@keyframes kanji-celebration-halo {
+  0%   { transform: scale(0.6);  opacity: 0.72; }
+  50%  { transform: scale(1.22); opacity: 0.42; }
+  100% { transform: scale(1.8);  opacity: 0;    }
+}
+.kanji-celebration-halo {
+  background: radial-gradient(circle, rgba(186,72,66,0.36) 0%, transparent 70%);
+  animation: kanji-celebration-halo 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  pointer-events: none;
+}
 @keyframes kanji-node-unlock-burst {
   0%   { transform: scale(0.7); opacity: 0.3; filter: brightness(3) saturate(2); }
   30%  { transform: scale(1.35); opacity: 1;   filter: brightness(2) saturate(1.8); }
@@ -424,6 +459,41 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 .kanji-edge-unlocking {
   animation: kanji-edge-unlock-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Locked sphere: pearl gray in light mode, deep in dark mode ── */
+.kanji-node-sphere-locked {
+  background: linear-gradient(135deg, #F6F4FA 0%, #EFECF5 100%);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
+  color: rgba(60, 50, 88, 1);
+}
+.dark .kanji-node-sphere-locked {
+  background: linear-gradient(135deg, #383438 0%, #1C181E 100%);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.36);
+  color: rgba(255, 255, 255, 0.40);
+}
+
+/* ── Unlock ring: double-halo burst expanding from unlocked node ── */
+@keyframes kanji-node-unlock-ring {
+  0%   { transform: scale(1);    opacity: 0.84; }
+  100% { transform: scale(1.82); opacity: 0;    }
+}
+.kanji-node-unlock-ring {
+  border: 2px solid rgba(186, 72, 69, 0.64);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: kanji-node-unlock-ring 0.92s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Points float: +30 badge rises and fades from completed node ── */
+@keyframes kanji-points-float {
+  0%   { opacity: 0;   transform: translateY(4px)  scale(0.65); }
+  16%  { opacity: 1;   transform: translateY(-2px) scale(1.08); }
+  64%  { opacity: 1;   transform: translateY(-20px) scale(1);   }
+  100% { opacity: 0;   transform: translateY(-36px) scale(0.88); }
+}
+.kanji-node-points-float {
+  animation: kanji-points-float 1.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 /* ── Kanji constellation background — 4-layer high-performance system ── */
@@ -561,7 +631,26 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 [data-kanji-interacting="true"] .kanji-bg-animate,
 [data-kanji-interacting="true"] .kanji-bg-breathe,
 [data-kanji-interacting="true"] .kanji-edge-available,
-[data-kanji-interacting="true"] .kanji-node-available-breathe {
+[data-kanji-interacting="true"] .kanji-node-available-breathe,
+[data-kanji-interacting="true"] .kanji-selected-pulse {
+  animation-play-state: paused;
+}
+
+/* ── Freeze all board animation + release GPU layer while quiz modal is open ──
+   The quiz overlay uses backdrop-blur-sm, which forces the browser to flatten and
+   re-composite every layer behind it. If the parallax layer has will-change:transform
+   (a promoted GPU layer), that compositing is 3-5× more expensive.
+   Resetting will-change to auto during quiz collapses the GPU layer, making the
+   backdrop-blur sample from the normal stacking context instead.
+*/
+[data-kanji-quiz-active="true"] .kanji-bg-parallax-layer {
+  will-change: auto;
+}
+[data-kanji-quiz-active="true"] .kanji-bg-animate,
+[data-kanji-quiz-active="true"] .kanji-bg-breathe,
+[data-kanji-quiz-active="true"] .kanji-edge-available,
+[data-kanji-quiz-active="true"] .kanji-node-available-breathe,
+[data-kanji-quiz-active="true"] .kanji-selected-pulse {
   animation-play-state: paused;
 }
 
@@ -578,8 +667,8 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
    SVG presentation attributes have lowest CSS specificity, so class selectors win. */
 .dark .kanji-bg-board-lines svg line,
 .dark .kanji-bg-board-lines svg path {
-  stroke: rgba(200, 200, 210, 0.32);
+  stroke: rgba(200, 200, 210, 0.42);
 }
 .dark .kanji-bg-board-hoshi svg circle {
-  fill: rgba(200, 200, 210, 0.52);
+  fill: rgba(200, 200, 210, 0.64);
 }

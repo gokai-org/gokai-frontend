@@ -82,7 +82,7 @@ export function ScriptCard({
     "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] p-5 text-left",
     "min-h-[190px] select-none",
     locked
-      ? "bg-gradient-to-br from-[#383438] to-[#1C181E] border border-white/[0.06] cursor-default"
+      ? "bg-gradient-to-br from-[#FAFBFD] to-[#F5F3F9] border border-[#E5E1EE]/80 dark:from-[#383438] dark:to-[#1C181E] dark:border-white/[0.06] cursor-default"
       : [
           "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
           config.shadowCard,
@@ -136,10 +136,10 @@ export function ScriptCard({
 
   const lockedOverlay = locked ? (
     <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-black/40">
-        <LockKeyhole className="h-4.5 w-4.5 text-white/60" strokeWidth={2.2} />
+      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#C4BDD0]/65 bg-[#EDE9F2]/90 dark:border-white/10 dark:bg-black/40">
+        <LockKeyhole className="h-4.5 w-4.5 text-[#C8C2D4] dark:text-white/60" strokeWidth={2.2} />
       </div>
-      <span className="text-[11px] font-medium text-white/40">Bloqueado</span>
+      <span className="text-[11px] font-medium text-[#CEC8D8] dark:text-white/40">Bloqueado</span>
     </div>
   ) : null;
 
@@ -149,30 +149,43 @@ export function ScriptCard({
       className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-[22px] overflow-hidden"
       initial={{ opacity: 1 }}
       animate={{ opacity: 0 }}
-      transition={{ delay: 1.8, duration: 0.4 }}
+      transition={{ delay: animationsEnabled ? 2.1 : 0.9, duration: 0.4 }}
     >
+      {/* Radial glow in kanji crimson */}
       <motion.div
         className="absolute inset-0 rounded-[22px]"
-        initial={{ opacity: 0.7 }}
+        initial={{ opacity: 0.78 }}
         animate={{ opacity: 0 }}
-        transition={{ duration: 1.8 }}
-        style={{ background: "radial-gradient(circle, rgba(139,92,246,0.55) 0%, transparent 70%)" }}
+        transition={{ duration: animationsEnabled ? 1.9 : 0.8 }}
+        style={{ background: "radial-gradient(circle, rgba(186,72,69,0.48) 0%, transparent 70%)" }}
       />
+      {/* Expanding ring — skipped on reduced animations */}
+      {animationsEnabled && (
+        <motion.div
+          className="absolute rounded-[24px] border-2 border-[#BA4845]/52"
+          initial={{ opacity: 0.92, scale: 0.52 }}
+          animate={{ opacity: 0, scale: 1.48 }}
+          transition={{ duration: 0.88, ease: [0.22, 1, 0.36, 1] }}
+          style={{ inset: 0 }}
+        />
+      )}
+      {/* +30 points badge floating up */}
       <motion.div
-        initial={{ scale: 0.5, opacity: 0 }}
-        animate={{ scale: [0.5, 1.4, 1.0], opacity: [0, 1, 0] }}
-        transition={{ duration: 1.1, ease: [0.22, 1, 0.36, 1] }}
-        className="absolute w-full h-full rounded-[22px]"
-        style={{ background: "radial-gradient(circle at 50% 50%, rgba(167,139,250,0.4) 0%, transparent 60%)" }}
-      />
-      <motion.span
-        initial={{ scale: 0.4, opacity: 0 }}
-        animate={{ scale: 1, opacity: [0, 1, 0.8, 0] }}
-        transition={{ duration: 1.3, ease: [0.22, 1, 0.36, 1] }}
-        className="relative z-10 text-4xl select-none"
+        className="relative z-10 flex items-center gap-1 rounded-full bg-[#BA4845] px-3 py-[5px] shadow-[0_3px_12px_rgba(186,72,66,0.52)]"
+        initial={{ y: 10, opacity: 0, scale: 0.68 }}
+        animate={
+          animationsEnabled
+            ? { y: [10, -2, -30, -38], opacity: [0, 1, 1, 0], scale: [0.68, 1.05, 1, 0.94] }
+            : { y: -22, opacity: [0, 1, 0], scale: 1 }
+        }
+        transition={{
+          duration: animationsEnabled ? 1.9 : 0.9,
+          times: animationsEnabled ? [0, 0.14, 0.68, 1] : [0, 0.3, 1],
+          ease: [0.22, 1, 0.36, 1],
+        }}
       >
-        ✨
-      </motion.span>
+        <span className="text-[13px] font-black tracking-wide text-white">+30</span>
+      </motion.div>
     </motion.div>
   ) : null;
 

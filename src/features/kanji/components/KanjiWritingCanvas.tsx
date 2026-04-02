@@ -11,6 +11,8 @@ export interface DrawnStroke {
   points: { x: number; y: number }[];
 }
 
+const _canvasPath2dCache = new Map<string, Path2D>();
+
 interface KanjiWritingCanvasProps {
   viewBox: string;
   guideStrokes: string[];
@@ -19,6 +21,7 @@ interface KanjiWritingCanvasProps {
   size?: number;
   disabled?: boolean;
   flashError?: boolean;
+  hideStrokeOrder?: boolean;
 }
 
 export function KanjiWritingCanvas({
@@ -29,6 +32,7 @@ export function KanjiWritingCanvas({
   size = 300,
   disabled = false,
   flashError = false,
+  hideStrokeOrder = false,
 }: KanjiWritingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -36,9 +40,30 @@ export function KanjiWritingCanvas({
   const completedStrokes = useRef<DrawnStroke[]>([]);
   const rafId = useRef(0);
 
+  const cssColorsRef = useRef<{ grid: string; stroke: string; accent: string } | null>(null);
+  useEffect(() => {
+    const readColors = () => {
+      const cs = getComputedStyle(document.documentElement);
+      cssColorsRef.current = {
+        grid:   cs.getPropertyValue("--border-primary").trim()  || "#e5e7eb",
+        stroke: cs.getPropertyValue("--text-primary").trim()   || "#1a1a1a",
+        accent: cs.getPropertyValue("--accent").trim()         || "#993331",
+      };
+    };
+    readColors();
+    const observer = new MutationObserver(readColors);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => observer.disconnect();
+  }, []);
+
   const vbParts = viewBox.split(/\s+/).map(Number);
   const vbWidth = vbParts[2] || 109;
   const vbHeight = vbParts[3] || 109;
+
+  const guideStrokesRef = useRef(guideStrokes);
+  const activeStrokeIndexRef = useRef(activeStrokeIndex);
+  guideStrokesRef.current = guideStrokes;
+  activeStrokeIndexRef.current = activeStrokeIndex;
 
   // ── Redraw  ──
   const redraw = useCallback(() => {
@@ -47,10 +72,10 @@ export function KanjiWritingCanvas({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const cs = getComputedStyle(document.documentElement);
-    const gridColor = cs.getPropertyValue("--border-primary").trim() || "#e5e7eb";
-    const strokeColor = cs.getPropertyValue("--text-primary").trim() || "#1a1a1a";
-    const accentColor = cs.getPropertyValue("--accent").trim() || "#993331";
+    const colors = cssColorsRef.current;
+    const gridColor   = colors?.grid   ?? "#e5e7eb";
+    const strokeColor = colors?.stroke ?? "#1a1a1a";
+    const accentColor = colors?.accent ?? "#993331";
 
     const w = canvas.width;
     const h = canvas.height;
@@ -78,13 +103,23 @@ export function KanjiWritingCanvas({
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
     const lw = 3 * Math.min(sx, sy);
-    for (let i = 0; i < guideStrokes.length; i++) {
+    const gs = guideStrokesRef.current;
+    const asi = activeStrokeIndexRef.current;
+    for (let i = 0; i < gs.length; i++) {
       try {
-        const p2d = new Path2D(scaleSvgPath(guideStrokes[i], sx, sy));
-        if (i < activeStrokeIndex) {
+        const p2dKey = `${gs[i]}|${canvas.width}|${canvas.height}`;
+        let p2d = _canvasPath2dCache.get(p2dKey);
+        if (!p2d) {
+          p2d = new Path2D(scaleSvgPath(gs[i], sx, sy));
+          _canvasPath2dCache.set(p2dKey, p2d);
+        }
+        if (hideStrokeOrder) {
+          ctx.strokeStyle = gridColor;
+          ctx.globalAlpha = 0.22;
+        } else if (i < asi) {
           ctx.strokeStyle = strokeColor;
           ctx.globalAlpha = 0.15;
-        } else if (i === activeStrokeIndex) {
+        } else if (i === asi) {
           ctx.strokeStyle = accentColor;
           ctx.globalAlpha = 0.25;
         } else {
@@ -132,7 +167,7 @@ export function KanjiWritingCanvas({
       ctx.stroke();
       ctx.restore();
     }
-  }, [guideStrokes, activeStrokeIndex, vbWidth, vbHeight]);
+  }, [hideStrokeOrder, vbWidth, vbHeight]);
 
   const scheduleRedraw = useCallback(() => {
     cancelAnimationFrame(rafId.current);
@@ -202,7 +237,6 @@ export function KanjiWritingCanvas({
         completedStrokes.current.push(drawnStroke);
         onStrokeDrawn(drawnStroke);
       } else if (currentPoints.current.length === 1) {
-        // Even a single-point tap counts as a stroke attempt (miss)
         const drawnStroke: DrawnStroke = {
           points: [...currentPoints.current, currentPoints.current[0]],
         };

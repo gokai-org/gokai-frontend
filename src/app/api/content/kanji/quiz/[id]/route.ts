@@ -23,9 +23,10 @@ export async function GET(
   const token = normalizeBearerToken(raw);
 
   try {
-    const upstream = await fetch(
-      `${apiConfig.studyApiBase}/kanji/quiz/${id}`,
-      {
+    const upstreamGetUrl = `${apiConfig.studyApiBase}/kanji/quiz/${id}`;
+    console.log("[QUIZ GET] fetching:", upstreamGetUrl);
+
+    const upstream = await fetch(upstreamGetUrl, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -34,6 +35,8 @@ export async function GET(
     );
 
     const text = await upstream.text();
+    console.log("[QUIZ GET] upstream status:", upstream.status);
+    console.log("[QUIZ GET] upstream body:", text.substring(0, 1000));
 
     if (!upstream.ok) {
       let errorData: Record<string, unknown> = {};
@@ -89,24 +92,31 @@ export async function POST(
     );
   }
 
+  const submitPayload = {
+    type: body.type,
+    score: body.score,
+    duration: body.duration,
+  };
+  const upstreamUrl = `${apiConfig.studyApiBase}/kanji/quiz/${id}`;
+
+  console.log("[QUIZ POST] kanji_id:", id);
+  console.log("[QUIZ POST] payload →", JSON.stringify(submitPayload));
+  console.log("[QUIZ POST] upstream URL:", upstreamUrl);
+
   try {
-    const upstream = await fetch(
-      `${apiConfig.studyApiBase}/kanji/quiz/${id}`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          type: body.type,
-          score: body.score,
-          duration: body.duration,
-        }),
+    const upstream = await fetch(upstreamUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify(submitPayload),
+    });
 
     const text = await upstream.text();
+
+    console.log("[QUIZ POST] upstream status:", upstream.status);
+    console.log("[QUIZ POST] upstream body:", text.substring(0, 1000));
 
     if (!upstream.ok) {
       let errorData: Record<string, unknown> = {};
@@ -116,6 +126,7 @@ export async function POST(
         errorData = { message: text };
       }
 
+      console.error("[QUIZ POST] upstream error:", upstream.status, errorData);
       return NextResponse.json(
         {
           message: errorData.message || "Error al enviar resultado del quiz",
@@ -132,6 +143,7 @@ export async function POST(
       data = { success: true };
     }
 
+    console.log("[QUIZ POST] respuesta final al cliente:", JSON.stringify(data));
     return NextResponse.json(data);
   } catch (error) {
     console.error("[API] Error submitting kanji quiz:", error);

@@ -56,9 +56,12 @@ export function quizQuestionToLessonQuestion(
   quizType: "kanji" | "meaning" | "reading",
 ): KanjiLessonQuestion {
   return {
-    kanji: quizType === "kanji" ? question.kanji : "",
+    // "meaning" shows a written meaning → the kanji field is unused; the meaning
+    // text travels through `prompt` so KanjiSelectionExercise can render it.
+    // "kanji" and "reading" both show the kanji symbol as the large prompt.
+    kanji: quizType !== "meaning" ? question.kanji : "",
     kanjiId: "",
-    prompt: quizType !== "kanji" ? question.kanji : undefined,
+    prompt: quizType === "meaning" ? question.kanji : undefined,
     options: question.options.map((opt) => ({
       value: opt.value,
       correct: opt.correct,

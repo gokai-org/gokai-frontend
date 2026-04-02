@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Montserrat, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
+import { PlatformMotionProvider } from "@/shared/components/PlatformMotionProvider";
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
 
 const montserrat = Montserrat({
@@ -50,7 +51,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>
       <body className="min-h-dvh overflow-x-hidden bg-surface-primary text-content-primary">
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider>
+          <PlatformMotionProvider>{children}</PlatformMotionProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

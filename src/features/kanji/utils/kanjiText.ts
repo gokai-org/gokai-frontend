@@ -27,3 +27,11 @@ export function readingsToArray(readings: KanjiReadings): string[] {
     ...(readings.other ?? []),
   ];
 }
+
+export function normalizeKanjiDisplayText(value: string): string {
+  const cleaned = value.trim().replace(/\s+/g, " ");
+  if (!cleaned || !/[A-Za-zÀ-ÿ]/.test(cleaned)) return cleaned;
+
+  const lower = cleaned.toLocaleLowerCase("es");
+  return lower.charAt(0).toLocaleUpperCase("es") + lower.slice(1);
+}

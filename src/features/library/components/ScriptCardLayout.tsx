@@ -38,6 +38,7 @@ interface ScriptSymbolBoxProps {
   symbol: string;
   gradient: string;
   hoverTransition: string;
+  textOverride?: string;
 }
 
 export function ScriptSymbolBox({ symbol, gradient, hoverTransition }: ScriptSymbolBoxProps) {
@@ -60,12 +61,13 @@ export function ScriptSymbolBox({ symbol, gradient, hoverTransition }: ScriptSym
 
 // ─── MahjongSymbolBox (katakana) ────────────────────────────────────────────
 
-export function MahjongSymbolBox({ symbol, gradient, hoverTransition }: ScriptSymbolBoxProps) {
+export function MahjongSymbolBox({ symbol, gradient, hoverTransition, textOverride }: ScriptSymbolBoxProps) {
   return (
     <div
       className={[
         "inline-flex h-[56px] w-[44px] items-center justify-center overflow-hidden",
-        "rounded-xl bg-gradient-to-br font-black text-content-inverted shadow-lg",
+        "rounded-xl bg-gradient-to-br font-black shadow-lg",
+        textOverride ?? "text-content-inverted",
         "ring-2 ring-transparent",
         "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
         "text-[28px] leading-none",
@@ -80,7 +82,7 @@ export function MahjongSymbolBox({ symbol, gradient, hoverTransition }: ScriptSy
 
 // ─── ShogiSymbolBox (hiragana) ────────────────────────────────────────────────
 
-export function ShogiSymbolBox({ symbol, gradient, hoverTransition }: ScriptSymbolBoxProps) {
+export function ShogiSymbolBox({ symbol, gradient, hoverTransition, textOverride }: ScriptSymbolBoxProps) {
   const shogiPath =
     "path('M 18 3 Q 22 0 26 3 L 40 15 Q 44 18 44 23 L 44 50 Q 44 56 38 56 L 6 56 Q 0 56 0 50 L 0 23 Q 0 18 4 15 Z')";
 
@@ -98,7 +100,8 @@ export function ShogiSymbolBox({ symbol, gradient, hoverTransition }: ScriptSymb
       <div
         className={[
           "relative flex h-full w-full items-center justify-center",
-          "bg-gradient-to-br font-black text-content-inverted",
+          "bg-gradient-to-br font-black",
+          textOverride ?? "text-content-inverted",
           "text-[28px] leading-none",
           gradient,
         ].join(" ")}
@@ -195,7 +198,7 @@ export function ScriptCardLayout({
               "ring-2 ring-transparent",
               "text-[28px] leading-none",
               locked
-                ? "bg-gradient-to-br from-[#4a464c] to-[#2e2a30] text-white/40 shadow-[0_2px_8px_rgba(0,0,0,0.36)]"
+                ? "bg-gradient-to-br from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30] text-[#C4BDD2] dark:text-white/40"
                 : [
                     "bg-gradient-to-br text-content-inverted",
                     "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
@@ -211,14 +214,16 @@ export function ScriptCardLayout({
         ) : config.symbolShape === "mahjong" ? (
           <MahjongSymbolBox
             symbol={symbol}
-            gradient={locked ? "from-[#4a464c] to-[#2e2a30]" : config.thumbGradient}
+            gradient={locked ? "from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30]" : config.thumbGradient}
             hoverTransition={locked ? "" : hoverTransition}
+            textOverride={locked ? "text-[#C4BDD2] dark:text-white/40" : undefined}
           />
         ) : (
           <ShogiSymbolBox
             symbol={symbol}
-            gradient={locked ? "from-[#4a464c] to-[#2e2a30]" : config.thumbGradient}
+            gradient={locked ? "from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30]" : config.thumbGradient}
             hoverTransition={locked ? "" : hoverTransition}
+            textOverride={locked ? "text-[#C4BDD2] dark:text-white/40" : undefined}
           />
         )}
 
@@ -244,7 +249,7 @@ export function ScriptCardLayout({
           className={[
             "line-clamp-2 text-[17px] font-black leading-tight",
             locked
-              ? "text-white/40"
+              ? "text-content-muted dark:text-white/40"
               : "text-content-primary group-hover:text-content-inverted",
             locked ? "" : hoverTransition,
           ].filter(Boolean).join(" ")}
@@ -257,7 +262,7 @@ export function ScriptCardLayout({
             className={[
               "mt-1 line-clamp-1 text-[12px] font-medium",
               locked
-                ? "text-white/25"
+                ? "text-content-muted/70 dark:text-white/25"
                 : "text-content-muted group-hover:text-white/60",
               locked ? "" : hoverTransition,
             ].filter(Boolean).join(" ")}

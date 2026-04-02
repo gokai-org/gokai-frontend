@@ -1,7 +1,7 @@
 "use client";
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
@@ -43,7 +43,7 @@ export default function LibraryPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKanji, setSelectedKanji] = useState<Kanji | null>(null);
   const [selectedKana, setSelectedKana] = useState<Kana | null>(null);
-  const [quizKanjiId, setQuizKanjiId] = useState<string | null>(null);
+  const [quizKanji, setQuizKanji] = useState<{ id: string; symbol: string } | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
@@ -63,8 +63,10 @@ export default function LibraryPage() {
     loadingHiraganas,
   } = useLibraryContent(searchQuery);
 
-  const { lockedKanjiIds, userPoints } = useKanjiLockedStatus(kanjis);
+  const { lockedKanjiIds, reload: reloadLockedStatus } = useKanjiLockedStatus(kanjis);
   const [newlyUnlockedKanjiIds, setNewlyUnlockedKanjiIds] = useState<ReadonlySet<string>>(new Set());
+  const lockedKanjiIdsBeforeQuizRef = useRef<Set<string> | null>(null);
+  const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const {
     themes,
@@ -108,21 +110,38 @@ export default function LibraryPage() {
     setSelectedKanji(kanji);
   };
 
-  const handleUnlock = useCallback((unlockedIds: string[]) => {
-    const POINTS_PER_KANJI = 30;
-    const threshold = userPoints + POINTS_PER_KANJI;
-    const candidateIds = unlockedIds.length > 0
-      ? new Set(unlockedIds)
-      : new Set(
-          kanjis
-            .filter((k) => lockedKanjiIds.has(k.id) && k.pointsToUnlock <= threshold)
-            .map((k) => k.id),
-        );
-    if (candidateIds.size > 0) {
-      setNewlyUnlockedKanjiIds(candidateIds);
-      setTimeout(() => setNewlyUnlockedKanjiIds(new Set()), 2500);
+  const handleQuizStart = useCallback((kanji: Kanji) => {
+    lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
+    setSelectedKanji(null);
+    setQuizKanji({ id: kanji.id, symbol: kanji.symbol });
+  }, [lockedKanjiIds]);
+
+  const handleQuizClose = useCallback(async () => {
+    setQuizKanji(null);
+
+    const lockedIdsBeforeQuiz = lockedKanjiIdsBeforeQuizRef.current;
+    lockedKanjiIdsBeforeQuizRef.current = null;
+
+    const nextUserPoints = await reloadLockedStatus();
+
+    if (!lockedIdsBeforeQuiz) return;
+
+    const unlockedIds = kanjis
+      .filter((kanji) => lockedIdsBeforeQuiz.has(kanji.id) && nextUserPoints >= kanji.pointsToUnlock)
+      .map((kanji) => kanji.id);
+
+    if (unlockedIds.length === 0) return;
+
+    if (unlockAnimationTimerRef.current !== null) {
+      clearTimeout(unlockAnimationTimerRef.current);
     }
-  }, [kanjis, lockedKanjiIds, userPoints]);
+
+    const nextUnlockedIds = new Set(unlockedIds);
+    setNewlyUnlockedKanjiIds(nextUnlockedIds);
+    unlockAnimationTimerRef.current = setTimeout(() => {
+      setNewlyUnlockedKanjiIds(new Set());
+    }, 2500);
+  }, [kanjis, reloadLockedStatus]);
 
   const handleKanaClick = async (kana: Kana) => {
     try {
@@ -209,6 +228,7 @@ export default function LibraryPage() {
                     favoriteHiraganas={favoriteHiraganas}
                     favoriteKatakanas={favoriteKatakanas}
                     lockedKanjiIds={lockedKanjiIds}
+                    newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
                     toggleFavoriteKanji={toggleFavoriteKanji}
                     toggleFavoriteHiragana={(id) =>
                       void toggleFavorite(id, "hiragana")
@@ -273,6 +293,7 @@ export default function LibraryPage() {
                     favoriteHiraganas={favoriteHiraganas}
                     favoriteKatakanas={favoriteKatakanas}
                     lockedKanjiIds={lockedKanjiIds}
+                    newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
                     toggleFavoriteKanji={toggleFavoriteKanji}
                     toggleFavoriteHiragana={(id) =>
                       void toggleFavorite(id, "hiragana")
@@ -743,17 +764,14 @@ export default function LibraryPage() {
               selectedKanji ? lockedKanjiIds.has(selectedKanji.id) : false
             }
             practiceDisabledReason="Completa el kanji anterior con al menos 70% para desbloquear."
-            onQuizStart={(kanji) => {
-              setSelectedKanji(null);
-              setQuizKanjiId(kanji.id);
-            }}
+            onQuizStart={handleQuizStart}
           />
 
-          {quizKanjiId && (
+          {quizKanji !== null && (
             <KanjiQuizModal
-              kanjiId={quizKanjiId}
-              onClose={() => setQuizKanjiId(null)}
-              onUnlock={handleUnlock}
+              kanjiId={quizKanji.id}
+              label={quizKanji.symbol}
+              onClose={handleQuizClose}
             />
           )}
 

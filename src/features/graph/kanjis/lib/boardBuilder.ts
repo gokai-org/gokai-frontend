@@ -215,6 +215,7 @@ export function createKanjiBoardGraph(
   selectedId: string | null,
   qualityProfile: KanjiBoardQualityProfile,
   newlyUnlockedIds?: ReadonlySet<string>,
+  shakingNodeId?: string | null,
 ): { nodes: KanjiBoardNode[]; edges: KanjiBoardEdge[] } {
   const itemsById = new Map(items.map((item) => [item.id, item]));
 
@@ -235,10 +236,9 @@ export function createKanjiBoardGraph(
         showOrbitRings: qualityProfile.node.showOrbitRings,
         shouldUsePulse: qualityProfile.node.shouldUsePulse,
         unlocking: newlyUnlockedIds?.has(progress.id) ?? false,
+        shaking: progress.id === shakingNodeId,
       },
       draggable: false,
-      selectable: true,
-      focusable: true,
       style: NODE_STYLE,
     }];
   });
@@ -269,6 +269,121 @@ export function createKanjiBoardGraph(
         unlocking,
       },
     }];
+  });
+
+  return { nodes, edges };
+}
+
+// ── Optimized two-phase graph building ───────────────────────────────────────
+//
+// Using createKanjiBoardGraph for every interaction (e.g. clicking a node)
+// rebuilds ALL node and edge objects, giving ReactFlow new array references
+// even for nodes that didn't change.  The split below separates stable
+// structure from transient UI state so selection/shaking/unlocking only do
+// a fast O(n) ref-identity patch.
+
+/**
+ * Phase 1 — structural graph.
+ * Builds nodes + edges from items+layout+quality WITHOUT any transient UI
+ * state (selected, unlocking, shaking).  Stable across user interactions;
+ * only rebuilds when items, layout, or quality params change.
+ */
+export function createBaseKanjiBoardGraph(
+  items: KanjiBoardProgress[],
+  layout: KanjiBoardLayout,
+  qualityProfile: KanjiBoardQualityProfile,
+): { nodes: KanjiBoardNode[]; edges: KanjiBoardEdge[] } {
+  const itemsById = new Map(items.map((item) => [item.id, item]));
+
+  const nodes: KanjiBoardNode[] = layout.nodes.flatMap((layoutNode) => {
+    const progress = itemsById.get(layoutNode.id);
+    if (!progress) return [];
+
+    return [{
+      id: progress.id,
+      type: "kanji-planet",
+      position: layoutNode.position,
+      data: {
+        progress,
+        selected: false,
+        qualityTier: qualityProfile.tier,
+        glowScale: qualityProfile.node.glowScale,
+        shadowScale: qualityProfile.node.shadowScale,
+        showOrbitRings: qualityProfile.node.showOrbitRings,
+        shouldUsePulse: qualityProfile.node.shouldUsePulse,
+        unlocking: false,
+        shaking: false,
+      },
+      draggable: false,
+      style: NODE_STYLE,
+    }];
+  });
+
+  const edges: KanjiBoardEdge[] = layout.edges.flatMap((layoutEdge) => {
+    const source = itemsById.get(layoutEdge.source);
+    const target = itemsById.get(layoutEdge.target);
+    if (!source || !target) return [];
+
+    return [{
+      id: layoutEdge.id,
+      source: layoutEdge.source,
+      target: layoutEdge.target,
+      type: "kanji-constellation",
+      sourceHandle: layoutEdge.sourceHandle,
+      targetHandle: layoutEdge.targetHandle,
+      data: {
+        status: getEdgeStatus(source, target),
+        highlight: false,
+        qualityTier: qualityProfile.tier,
+        widthScale: qualityProfile.edge.widthScale,
+        opacityScale: qualityProfile.edge.opacityScale,
+        showLockedDash: qualityProfile.edge.showLockedDash,
+        unlocking: false,
+      },
+    }];
+  });
+
+  return { nodes, edges };
+}
+
+/**
+ * Phase 2 — UI state patch.
+ * Injects selectedId / newlyUnlockedIds / shakingNodeId onto a base graph.
+ * Only nodes/edges that actually changed get new object references, so
+ * React Flow's internal memo comparator skips unchanged nodes entirely.
+ */
+export function applyBoardUIState(
+  base: { nodes: KanjiBoardNode[]; edges: KanjiBoardEdge[] },
+  selectedId: string | null,
+  newlyUnlockedIds: ReadonlySet<string>,
+  shakingNodeId: string | null,
+): { nodes: KanjiBoardNode[]; edges: KanjiBoardEdge[] } {
+  const nodes = base.nodes.map((node) => {
+    const selected  = node.id === selectedId;
+    const unlocking = newlyUnlockedIds.has(node.id);
+    const shaking   = node.id === shakingNodeId;
+
+    if (
+      node.data.selected  === selected  &&
+      node.data.unlocking === unlocking &&
+      node.data.shaking   === shaking
+    ) {
+      return node; // stable ref — ReactFlow skips internal diff for this node
+    }
+
+    return { ...node, data: { ...node.data, selected, unlocking, shaking } };
+  });
+
+  const edges = base.edges.map((edge) => {
+    const highlight = selectedId === edge.source || selectedId === edge.target;
+    const unlocking =
+      newlyUnlockedIds.has(edge.source) || newlyUnlockedIds.has(edge.target);
+
+    if (edge.data?.highlight === highlight && edge.data?.unlocking === unlocking) {
+      return edge; // stable ref
+    }
+
+    return { ...edge, data: { ...edge.data!, highlight, unlocking } };
   });
 
   return { nodes, edges };

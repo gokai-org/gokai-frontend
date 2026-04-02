@@ -12,7 +12,7 @@ interface KanjiReadingExerciseProps {
   onConfirm: () => void;
 }
 
-/** Exercise 3: Show readings → select correct meaning */
+/** Exercise 3: Show kanji → select correct reading */
 export function KanjiReadingExercise({
   question,
   selectedIndex,
@@ -20,8 +20,6 @@ export function KanjiReadingExercise({
   onSelect,
   onConfirm,
 }: KanjiReadingExerciseProps) {
-  const readings = (question.prompt || "").split("、").filter(Boolean);
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -31,33 +29,22 @@ export function KanjiReadingExercise({
     >
       {/* Instruction */}
       <p className="text-sm text-content-tertiary text-center">
-        ¿Qué significan estas lecturas?
+        ¿Cómo se lee este kanji?
       </p>
 
-      {/* Readings display */}
+      {/* Large kanji display */}
       <motion.div
-        initial={{ scale: 0.9, opacity: 0 }}
+        initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
-        className="flex flex-wrap items-center justify-center gap-2 px-5 py-4 rounded-2xl bg-gradient-to-b from-blue-50 to-blue-50/40 dark:from-blue-950/40 dark:to-blue-950/20 border border-blue-200 dark:border-blue-800 shadow-sm"
+        className="w-28 h-28 rounded-2xl bg-gradient-to-b from-blue-500/[0.08] to-transparent border border-blue-200 dark:border-blue-800 flex items-center justify-center shadow-sm"
       >
-        {readings.length > 0 ? (
-          readings.map((r, i) => (
-            <span
-              key={i}
-              className="inline-flex items-center rounded-lg border border-blue-200 dark:border-blue-700 bg-white/60 dark:bg-blue-950/40 px-3 py-1.5 text-base font-bold text-blue-700 dark:text-blue-300"
-            >
-              {r}
-            </span>
-          ))
-        ) : (
-          <span className="text-base font-bold text-blue-700 dark:text-blue-300">
-            {question.prompt || question.kanji}
-          </span>
-        )}
+        <span className="text-6xl font-bold text-content-primary select-none">
+          {question.kanji}
+        </span>
       </motion.div>
 
-      {/* Options */}
+      {/* Reading options */}
       <div className="w-full max-w-sm space-y-2.5">
         {question.options.map((opt, i) => (
           <ExerciseOptionCard

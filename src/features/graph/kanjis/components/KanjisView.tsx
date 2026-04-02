@@ -4,13 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
-import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
-import { useGraphicsProfile } from "@/shared/hooks/useGraphicsProfile";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import type { Viewport } from "reactflow";
 import {
   buildKanjiBoardLayout,
   buildTranslateExtent,
-  createKanjiBoardGraph,
+  createBaseKanjiBoardGraph,
+  applyBoardUIState,
 } from "../lib/boardBuilder";
 import { useKanjiBoard } from "../hooks/useKanjiBoard";
 import { useKanjiBoardQuality } from "../hooks/useKanjiBoardQuality";
@@ -84,20 +84,30 @@ function formatBackgroundViewportState(
 }
 
 export default function KanjisView() {
-  const { items, summary, userPoints, reload } = useKanjiBoard();
-  const { animationsEnabled, heavyAnimationsEnabled } = useAnimationPreferences();
-  const graphicsProfile = useGraphicsProfile({
-    animationsEnabled,
-    heavyAnimationsEnabled,
-    enableFpsProbe: true,
-  });
+  const { items, summary, reload } = useKanjiBoard();
+  const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useKanjiBoardQuality(graphicsProfile);
   const { setHidden } = useSidebar();
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
   const [quizKanji, setQuizKanji] = useState<{ id: string; symbol: string } | null>(null);
   const [newlyUnlockedIds, setNewlyUnlockedIds] = useState<ReadonlySet<string>>(new Set());
+  const [unlockFocusNodeId, setUnlockFocusNodeId] = useState<string | null>(null);
+  const [shakingNodeId, setShakingNodeId] = useState<string | null>(null);
+  const lockedIdsBeforeQuizRef = useRef<Set<string> | null>(null);
+  const shouldResolveUnlocksRef = useRef(false);
+  const shakingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unlockFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Pause parallax rAF loop while the quiz modal is on top.
+  const quizActiveRef = useRef(false);
+  // Always-current item/reload refs so event callbacks stay stable.
+  const itemsRef = useRef(items);
+  const reloadRef = useRef(reload);
+  useEffect(() => { itemsRef.current = items; }, [items]);
+  useEffect(() => { reloadRef.current = reload; }, [reload]);
   const backgroundRef = useRef<HTMLDivElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const viewportFrame = useRef<number | null>(null);
   const lastFrameTime = useRef<number | null>(null);
   const qualityProfileRef = useRef(qualityProfile);
@@ -146,17 +156,17 @@ export default function KanjisView() {
     [detailNodeId, items],
   );
 
-  const graph = useMemo(
-    () => createKanjiBoardGraph(items, layout, selectedId, qualityProfile, newlyUnlockedIds),
-    // Depend only on the primitives that affect visible output. The full qualityProfile
-    // object is recreated on every FPS-probe tick even when no visual param changes,
-    // so a reference-equality dep would trigger a full graph recompute every frame.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+  const focusedNodeId = detailNodeId ?? unlockFocusNodeId;
+
+  // Phase 1 — structural graph: stable across interactions; rebuilds only when
+  // items, layout, or quality params change.  Does NOT hold selection/shaking/
+  // unlocking state, so clicking a node does NOT trigger a full graph rebuild.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const baseGraph = useMemo(
+    () => createBaseKanjiBoardGraph(items, layout, qualityProfile),
     [
       items,
       layout,
-      selectedId,
-      newlyUnlockedIds,
       qualityProfile.tier,
       qualityProfile.node.glowScale,
       qualityProfile.node.shadowScale,
@@ -166,6 +176,13 @@ export default function KanjisView() {
       qualityProfile.edge.opacityScale,
       qualityProfile.edge.showLockedDash,
     ],
+  );
+
+  // Phase 2 — UI state patch: fast O(n) pass; only changed nodes/edges get new
+  // object refs so ReactFlow’s internal memo comparator skips untouched nodes.
+  const graph = useMemo(
+    () => applyBoardUIState(baseGraph, selectedId, newlyUnlockedIds, shakingNodeId),
+    [baseGraph, selectedId, newlyUnlockedIds, shakingNodeId],
   );
 
   const backgroundStyle = useMemo(
@@ -193,9 +210,6 @@ export default function KanjisView() {
           : "0",
       } as React.CSSProperties;
     },
-    // Only recompute when layout/parallax signals change meaningfully.
-    // FPS-probe ticks update graphicsProfile reference but don't change these primitives.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       graphicsProfile.shouldUseParallax,
       graphicsProfile.signals.width,
@@ -208,44 +222,82 @@ export default function KanjisView() {
   );
 
   const handleSelect = useCallback((nodeId: string) => {
+    const item = itemsRef.current.find((i) => i.id === nodeId);
+    if (item?.status === "locked") {
+      // Locked node: quick shake feedback without opening drawer
+      if (shakingTimerRef.current) clearTimeout(shakingTimerRef.current);
+      setShakingNodeId(nodeId);
+      shakingTimerRef.current = setTimeout(() => setShakingNodeId(null), 640);
+      return;
+    }
     setManualSelectedId(nodeId);
     setDetailNodeId(nodeId);
-  }, []);
+  }, []); // stable — reads itemsRef at call time
 
   const handleCloseDetail = useCallback(() => {
     setDetailNodeId(null);
   }, []);
 
   const handleQuizStart = useCallback((kanji: { id: string; symbol: string }) => {
+    // Freeze parallax & board animations while the quiz overlay is active.
+    quizActiveRef.current = true;
+    lockedIdsBeforeQuizRef.current = new Set(
+      itemsRef.current
+        .filter((item) => item.status === "locked")
+        .map((item) => item.id),
+    );
+    shouldResolveUnlocksRef.current = false;
+    if (backgroundRef.current) backgroundRef.current.dataset.kanjiQuizActive = "true";
+    if (rootRef.current) rootRef.current.dataset.kanjiQuizActive = "true";
     setQuizKanji(kanji);
   }, []);
 
   const handleQuizEnd = useCallback(() => {
     setQuizKanji(null);
+    quizActiveRef.current = false;
+    if (backgroundRef.current) backgroundRef.current.dataset.kanjiQuizActive = "false";
+    if (rootRef.current) rootRef.current.dataset.kanjiQuizActive = "false";
+    shouldResolveUnlocksRef.current = lockedIdsBeforeQuizRef.current !== null;
+    void reloadRef.current();
   }, []);
 
-  const handleUnlock = useCallback((unlockedIds: string[]) => {
-    reload();
-    // Compute which kanjis newly unlocked from the board items after reload
-    // For the animation, we use the IDs passed from the modal
-    if (unlockedIds.length > 0) {
-      const ids = new Set(unlockedIds);
-      setNewlyUnlockedIds(ids);
-      setTimeout(() => setNewlyUnlockedIds(new Set()), 2500);
-    } else {
-      // onUnlock called with empty array — compute next locked kanji that will unlock
-      const POINTS_PER_KANJI = 30;
-      const threshold = userPoints + POINTS_PER_KANJI;
-      const unlocked = items
-        .filter((item) => item.status === "locked" && item.kanji.pointsToUnlock <= threshold)
-        .map((item) => item.id);
-      if (unlocked.length > 0) {
-        const ids = new Set(unlocked);
-        setNewlyUnlockedIds(ids);
-        setTimeout(() => setNewlyUnlockedIds(new Set()), 2500);
-      }
+  useEffect(() => {
+    if (!shouldResolveUnlocksRef.current) return;
+
+    shouldResolveUnlocksRef.current = false;
+    const lockedIdsBeforeQuiz = lockedIdsBeforeQuizRef.current;
+    lockedIdsBeforeQuizRef.current = null;
+
+    if (!lockedIdsBeforeQuiz) return;
+
+    const unlockedIds = items
+      .filter((item) => lockedIdsBeforeQuiz.has(item.id) && item.status !== "locked")
+      .map((item) => item.id);
+
+    if (unlockedIds.length === 0) return;
+
+    if (unlockAnimationTimerRef.current !== null) {
+      clearTimeout(unlockAnimationTimerRef.current);
     }
-  }, [reload, items, userPoints]);
+    if (unlockFocusTimerRef.current !== null) {
+      clearTimeout(unlockFocusTimerRef.current);
+    }
+
+    const firstUnlockedId = unlockedIds[0];
+    const nextUnlockedIds = new Set(unlockedIds);
+
+    setDetailNodeId(null);
+    setManualSelectedId(firstUnlockedId);
+    setUnlockFocusNodeId(firstUnlockedId);
+    setNewlyUnlockedIds(nextUnlockedIds);
+
+    unlockAnimationTimerRef.current = setTimeout(() => {
+      setNewlyUnlockedIds(new Set());
+    }, 2500);
+    unlockFocusTimerRef.current = setTimeout(() => {
+      setUnlockFocusNodeId(null);
+    }, 2500);
+  }, [items]);
 
   useEffect(() => {
     setHidden(detailNodeId !== null);
@@ -256,11 +308,12 @@ export default function KanjisView() {
 
   const setInteractionState = useCallback((isInteracting: boolean) => {
     isInteractingRef.current = isInteracting;
+    const val = isInteracting ? "true" : "false";
 
-    const background = backgroundRef.current;
-    if (!background) return;
-
-    background.dataset.kanjiInteracting = isInteracting ? "true" : "false";
+    if (backgroundRef.current) backgroundRef.current.dataset.kanjiInteracting = val;
+    // Root attr is the one that actually gates CSS animation-play-state for
+    // React Flow nodes/edges (siblings to backgroundRef, descendants of rootRef).
+    if (rootRef.current) rootRef.current.dataset.kanjiInteracting = val;
   }, []);
 
   useEffect(() => {
@@ -297,6 +350,10 @@ export default function KanjisView() {
   useEffect(() => {
     animateBackgroundViewportRef.current = (timestamp: number) => {
       viewportFrame.current = null;
+
+      // While the quiz overlay is on top, don't touch CSS vars — the browser
+      // doesn't need to re-composite the parallax layer behind the modal.
+      if (quizActiveRef.current) return;
 
       const layer = backgroundRef.current;
       if (!layer) return;
@@ -406,27 +463,32 @@ export default function KanjisView() {
       if (viewportFrame.current !== null) {
         window.cancelAnimationFrame(viewportFrame.current);
       }
-
+      if (shakingTimerRef.current !== null) {
+        clearTimeout(shakingTimerRef.current);
+      }
+      if (unlockAnimationTimerRef.current !== null) {
+        clearTimeout(unlockAnimationTimerRef.current);
+      }
+      if (unlockFocusTimerRef.current !== null) {
+        clearTimeout(unlockFocusTimerRef.current);
+      }
       lastFrameTime.current = null;
     };
   }, []);
 
   return (
     <div
+      ref={rootRef}
+      data-kanji-interacting="false"
+      data-kanji-quiz-active="false"
       className="fixed inset-0 overflow-hidden bg-surface-primary"
     >
-      {/*
-       * SIDEBAR LAG FIX: removed `isolate` (was creating an expensive stacking
-       * context that forced backdrop-blur to composite the whole subtree) and
-       * `[transform:translateZ(0)]` (was promoting this wrapper as a useless
-       * compositor layer). `contain: layout paint style` provides the same
-       * visual containment without the compositing cost.
-       */}
       <div
         ref={backgroundRef}
         data-kanji-interacting="false"
         data-kanji-quality={qualityProfile.tier}
         data-kanji-parallax={graphicsProfile.shouldUseParallax ? "active" : "inactive"}
+        data-kanji-quiz-active="false"
         className="absolute inset-0"
         style={{ contain: "layout paint style", ...backgroundStyle } as React.CSSProperties}
       >
@@ -444,7 +506,7 @@ export default function KanjisView() {
           onSelect={handleSelect}
           onViewportChange={syncViewportToScene}
           initialNodeId={selectedId}
-          focusedNodeId={detailNodeId}
+          focusedNodeId={focusedNodeId}
           onInteractionChange={handleInteractionChange}
           qualityProfile={qualityProfile}
           translateExtent={translateExtent}
@@ -473,7 +535,6 @@ export default function KanjisView() {
           kanjiId={quizKanji.id}
           label={quizKanji.symbol}
           onClose={handleQuizEnd}
-          onUnlock={handleUnlock}
         />
       )}
     </div>

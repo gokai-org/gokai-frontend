@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import type { ReactNode } from "react";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 
 const defaultEase = [0.22, 1, 0.36, 1] as [number, number, number, number];
 
@@ -32,11 +33,17 @@ export function AnimatedEntrance({
   presence = false,
   mode = "default",
 }: AnimatedEntranceProps) {
-  if (disabled) {
+  const platformMotion = usePlatformMotion();
+  const shouldDisable = disabled || !platformMotion.shouldAnimate;
+
+  if (shouldDisable) {
     return <div className={className}>{children}</div>;
   }
 
-  const isLight = mode === "light";
+  const effectiveMode = mode === "light" || platformMotion.entranceMode === "light"
+    ? "light"
+    : "default";
+  const isLight = effectiveMode === "light";
 
   const content = (
     <motion.div
@@ -56,7 +63,7 @@ export function AnimatedEntrance({
         scale: 1,
         transition: {
           delay: index * delayStep,
-          duration: isLight ? 0.28 : duration,
+          duration: (isLight ? 0.28 : duration) * platformMotion.durationScale,
           ease: defaultEase,
         },
       }}
@@ -65,11 +72,11 @@ export function AnimatedEntrance({
         y: isLight ? 6 : exitOffsetY,
         scale: isLight ? 1 : 0.985,
         transition: {
-          duration: isLight ? 0.2 : 0.28,
+          duration: (isLight ? 0.2 : 0.28) * platformMotion.durationScale,
           ease: defaultEase,
         },
       }}
-      layout={mode === "default"}
+      layout={effectiveMode === "default"}
     >
       {children}
     </motion.div>
