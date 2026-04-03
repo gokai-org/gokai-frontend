@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
 import { saveUserInterests } from "@/features/auth/services/api";
 import type { UserInterest } from "@/features/auth/types";
+import { ThemeModeToggle } from "@/shared/components";
 
 const INTEREST_SECTIONS = [
   {
@@ -247,8 +248,8 @@ export default function InterestsPage() {
   };
 
   return (
-    <div className="force-light">
     <main className="relative min-h-screen bg-surface-secondary overflow-hidden">
+      <ThemeModeToggle className="fixed right-4 top-4 z-50 md:right-6 md:top-6" />
       <AnimatedGraphBackground
         variant="dimmed"
         density={0.00006}
@@ -311,6 +312,15 @@ export default function InterestsPage() {
               width={48}
               height={48}
               priority
+              className="dark:hidden"
+            />
+            <Image
+              src="/logos/gokai-logo-dark.svg"
+              alt=""
+              width={48}
+              height={48}
+              priority
+              className="hidden dark:block"
             />
             <span className="text-2xl font-bold text-content-primary">GOKAI</span>
             <span className="text-sm text-content-tertiary">語界</span>
@@ -534,6 +544,5 @@ export default function InterestsPage() {
         </div>
       </div>
     </main>
-    </div>
   );
 }

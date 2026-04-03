@@ -559,7 +559,7 @@ export default function LoginPage() {
 
       <AuthHero hero={hero} heroIndex={heroIndex} />
 
-      <div className="relative z-10 flex min-h-screen w-full items-center px-6 py-10 lg:pl-10 lg:pr-35">
+      <div className="relative z-10 flex min-h-screen w-full items-center px-6 py-10 lg:pl-10 lg:pr-35 lg:pt-16 xl:pt-20">
         <div className="w-full">
           <section className="flex w-full justify-center lg:justify-end lg:self-center lg:mr-15 xl:mr-14">
             <motion.div

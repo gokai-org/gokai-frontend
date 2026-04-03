@@ -1,205 +1,276 @@
 "use client";
 
-import {
-  useRef, useState, useEffect,
-  useCallback, useMemo, useLayoutEffect,
-} from "react";
-import { motion, useMotionValue, animate } from "framer-motion";
-import type { PanInfo, MotionValue } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import Image from "next/image";
 import { FEATURES } from "@/features/landing/data/landingData";
-import { FeatureCard } from "@/features/landing";
-import { staggerContainer } from "@/features/landing/lib/motionVariants";
 
-const EASE    = [0.22, 1, 0.36, 1] as const;
-
-// Workaround: framer-motion v12 overload resolution fails for animate(MotionValue, number, opts).
-const animateValue = animate as unknown as (
-  value: MotionValue<number>,
-  to: number,
-  options: { duration: number; ease: number[]; onComplete: () => void },
-) => { stop: () => void };
-const GAP     = 24;       // gap-6 = 24 px
-const AUTO_MS = 2_600;    // ms por slide
-const N       = FEATURES.length;
-
-function calcPerView(): number {
-  if (typeof window === "undefined") return 3;
-  return window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1;
+function clamp(v: number, lo: number, hi: number) {
+  return Math.min(hi, Math.max(lo, v));
+}
+function ss(e0: number, e1: number, v: number) {
+  const x = clamp((v - e0) / (e1 - e0 || 1), 0, 1);
+  return x * x * (3 - 2 * x);
 }
 
-export function LandingExperienceSection() {
-  // Lista triple: [clon-final | reales | clon-inicio] → loop infinito
-  const items = useMemo(
-    () => [...FEATURES, ...FEATURES, ...FEATURES],
-    [],
-  );
+const N = FEATURES.length;
 
-  const [perView,  setPerView ] = useState(3);
-  const [isPaused, setIsPaused] = useState(false);
-  const [realIdx,  setRealIdx ] = useState(0); // 0..N-1 para dots
+/*
+ * Paleta de cards que usa tokens de la plataforma:
+ *   - dark  → surface-tertiary  (#1c1c1c dark / #f3f4f6 light)
+ *   - teal  → accent-subtle bg + content-primary text
+ *   - brand → accent bg + white text
+ *   - light → surface-secondary + content-primary
+ *
+ * Para lograr contraste visual se alternan fondos oscuro/teal/brand/light.
+ * En dark-mode las variantes teal y brand se oscurecen con dark: overrides.
+ */
+const CARD_STYLES: { bg: string; text: string; icon: string; kanji: string }[] = [
+  {
+    bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
+    text: "text-content-primary dark:text-white",
+    icon: "bg-content-primary/10 dark:bg-white/10",
+    kanji: "text-content-primary dark:text-white",
+  },
+  {
+    bg: "bg-accent/15 dark:bg-accent/20",
+    text: "text-content-primary dark:text-white",
+    icon: "bg-accent/15 dark:bg-accent/25",
+    kanji: "text-accent dark:text-accent",
+  },
+  {
+    bg: "bg-accent dark:bg-accent",
+    text: "text-white",
+    icon: "bg-white/15",
+    kanji: "text-white",
+  },
+  {
+    bg: "bg-surface-secondary dark:bg-surface-secondary",
+    text: "text-content-primary",
+    icon: "bg-content-primary/10 dark:bg-white/10",
+    kanji: "text-content-primary dark:text-white",
+  },
+  {
+    bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
+    text: "text-content-primary dark:text-white",
+    icon: "bg-content-primary/10 dark:bg-white/10",
+    kanji: "text-content-primary dark:text-white",
+  },
+  {
+    bg: "bg-accent/15 dark:bg-accent/20",
+    text: "text-content-primary dark:text-white",
+    icon: "bg-accent/15 dark:bg-accent/25",
+    kanji: "text-accent dark:text-accent",
+  },
+];
 
-  const containerRef = useRef<HTMLDivElement>(null);
-  const perViewRef   = useRef(3);            // ref para acceso síncrono
-  const x = useMotionValue<number>(0);
-  const idxRef       = useRef(N);            // empieza en N = primer item real
-  const lockRef      = useRef(false);
+function cardEnterT(i: number, sp: number) {
+  const start = 0.48 + i * 0.035;
+  const end = start + 0.10;
+  return ss(start, end, sp);
+}
 
-  /* ── Step (lee de refs, siempre fresco) ──────────────── */
-  const getStep = useCallback((): number => {
-    if (!containerRef.current) return 380;
-    return (containerRef.current.offsetWidth + GAP) / perViewRef.current;
-  }, []);
+interface LandingExperienceSectionProps {
+  sectionProgress: number;
+}
 
-  /* ── Responsive ───────────────────────────────────────── */
-  useEffect(() => {
-    const onResize = () => {
-      const pv = calcPerView();
-      perViewRef.current = pv;
-      setPerView(pv);
-    };
-    onResize();
-    window.addEventListener("resize", onResize, { passive: true });
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
+export function LandingExperienceSection({ sectionProgress: sp }: LandingExperienceSectionProps) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  /* ── Snap instantáneo cuando cambia perView ───────────── */
-  useLayoutEffect(() => {
-    x.set(-(idxRef.current * getStep()));
-  }, [perView, getStep]);
+  // FASE 0 — intro
+  const introIn    = ss(0.04, 0.20, sp);
+  const introStay  = 1 - ss(0.38, 0.48, sp);
+  const introAlpha = introIn * introStay;
+  const introY     = (1 - introIn) * 28 + (1 - introStay) * -18;
 
-  /* ── Mover con warp infinito (onComplete) ─────────────── */
-  const moveTo = useCallback(
-    (idx: number) => {
-      if (lockRef.current) return;
-      const s = getStep();
-      lockRef.current = true;
-      idxRef.current  = idx;
-      setRealIdx(((idx - N) % N + N) % N);
-
-      const target = -(idx * s);
-      animateValue(x, target, {
-        duration : 0.48,
-        ease     : [...EASE] as number[],
-        onComplete: () => {
-          lockRef.current = false;
-          let warp = idx;
-          if      (idx < N     ) warp = idx + N;
-          else if (idx >= N * 2) warp = idx - N;
-          if (warp !== idx) {
-            x.set(-(warp * getStep()));
-            idxRef.current = warp;
-            setRealIdx(((warp - N) % N + N) % N);
-          }
-        },
-      });
-    },
-    [getStep, x],
-  );
-
-  /* ── Auto-avance ──────────────────────────────────────── */
-  useEffect(() => {
-    if (isPaused) return;
-    const id = setInterval(() => {
-      if (!lockRef.current) moveTo(idxRef.current + 1);
-    }, AUTO_MS);
-    return () => clearInterval(id);
-  }, [isPaused, moveTo]);
-
-  /* ── Drag ─────────────────────────────────────────────── */
-  const onDragStart = useCallback(() => {
-    lockRef.current = false;
-    setIsPaused(true);
-  }, []);
-
-  const onDragEnd = useCallback(
-    (_: unknown, info: PanInfo) => {
-      setIsPaused(false);
-      const { offset, velocity } = info;
-      if      (offset.x < -50 || velocity.x < -200) moveTo(idxRef.current + 1);
-      else if (offset.x >  50 || velocity.x >  200) moveTo(idxRef.current - 1);
-      else                                           moveTo(idxRef.current);
-    },
-    [moveTo],
-  );
+  // FASE 1 — card deck
+  const deckGlobalIn  = ss(0.44, 0.54, sp);
+  const deckGlobalOut = 1 - ss(0.88, 0.96, sp);
+  const deckAlpha     = deckGlobalIn * deckGlobalOut;
 
   return (
-    <motion.div
-      className="mt-12"
-      variants={staggerContainer(0.08, 0.1)}
-      onMouseEnter={() => setIsPaused(true)}
-      onMouseLeave={() => setIsPaused(false)}
+    <section
+      id="experiencia"
+      data-section
+      className="relative h-[300svh] scroll-mt-28"
     >
-      {/* ── Track ─────────────────────────────────────── */}
-      <div
-        ref={containerRef}
-        className="relative overflow-hidden pt-3 pb-14 lg:-mx-16 xl:-mx-24"
-        style={{
-          maskImage:
-            'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
-          WebkitMaskImage:
-            'linear-gradient(to right, transparent 0%, black 4%, black 96%, transparent 100%)',
-        }}
-      >
-        <motion.div
-          className="flex gap-6 cursor-grab active:cursor-grabbing select-none"
-          style={{ x }}
-          drag="x"
-          dragConstraints={{ left: -(items.length * 800), right: 800 }}
-          dragElastic={0.05}
-          dragMomentum={false}
-          onDragStart={onDragStart}
-          onDragEnd={onDragEnd}
+      <div className="sticky top-0 flex h-[100svh] flex-col items-center justify-start overflow-y-auto overflow-x-clip pt-12 sm:pt-16 lg:justify-center lg:overflow-hidden lg:pt-0">
+
+        {/* ── FASE 0 — intro ───────────────────────────────────────── */}
+        <div
+          className="pointer-events-none absolute inset-0 flex items-center justify-center px-6"
+          style={{
+            opacity: introAlpha,
+            transform: `translateY(${introY}px)`,
+            willChange: "transform, opacity",
+          }}
         >
-          {items.map((feature, i) => (
-            <div
-              key={`${feature.title}-${i}`}
-              className="flex-shrink-0 w-full h-[320px] sm:h-[370px] sm:w-[calc(50%-12px)] lg:h-[420px] lg:w-[calc(33.333%-16px)]"
-            >
-              <FeatureCard {...feature} index={i % N} />
+          <div className="mx-auto w-full max-w-3xl text-center">
+            <p className="font-sans text-[10px] font-black uppercase tracking-[0.30em] text-accent/75">
+              Our ethos
+            </p>
+            <h2 className="font-sans mt-4 text-4xl font-black leading-[0.92] tracking-tight text-content-primary sm:text-6xl lg:text-7xl">
+              Una experiencia
+              <br />
+              que cambia
+              <br />
+              el ritmo.
+            </h2>
+            <div className="mx-auto mt-7 max-w-xl border-t border-content-primary/10 pt-6">
+              <p className="font-sans text-base leading-relaxed text-content-primary/65 sm:text-lg">
+                GOKAI transforma la escena completa: el grafo cede lentamente,
+                el nuevo fondo emerge con un barrido vertical y el contenido aparece
+                solo cuando la transición ya está asentada.
+              </p>
             </div>
-          ))}
-        </motion.div>
-      </div>
-
-      {/* ── Controles ─────────────────────────────────── */}
-      <div className="mt-4 flex items-center justify-center gap-4">
-        <motion.button
-          onClick={() => moveTo(idxRef.current - 1)}
-          aria-label="Anterior"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-accent/20 bg-surface-primary text-accent shadow-sm transition-colors hover:border-accent/40 hover:bg-accent/5"
-        >
-          <ChevronLeft className="h-5 w-5" />
-        </motion.button>
-
-        <div className="flex items-center gap-2">
-          {Array.from({ length: N }).map((_, i) => (
-            <button
-              key={i}
-              onClick={() => moveTo(N + i)}
-              aria-label={`Diapositiva ${i + 1}`}
-              className={[
-                "h-2 rounded-full transition-all duration-300",
-                i === realIdx
-                  ? "w-7 bg-accent"
-                  : "w-2 bg-accent/25 hover:bg-accent/50",
-              ].join(" ")}
-            />
-          ))}
+          </div>
         </div>
 
-        <motion.button
-          onClick={() => moveTo(idxRef.current + 1)}
-          aria-label="Siguiente"
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.9 }}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-accent/20 bg-surface-primary text-accent shadow-sm transition-colors hover:border-accent/40 hover:bg-accent/5"
+        {/* ── FASE 1 — panel cards (edge-to-edge) ──────────────────── */}
+        <div
+          className="absolute inset-0 z-10 flex items-center"
+          style={{ opacity: deckAlpha, willChange: "opacity" }}
         >
-          <ChevronRight className="h-5 w-5" />
-        </motion.button>
+          {/* Mobile/Tablet: grid 2-col compacto, scrollable si necesario */}
+          <div className="grid w-full grid-cols-2 gap-2 px-3 py-4 sm:gap-3 sm:px-5 md:gap-4 md:px-8 lg:hidden auto-rows-min">
+            {FEATURES.map((f, i) => {
+              const t = cardEnterT(i, sp);
+              return (
+                <div
+                  key={f.title}
+                  className="w-full"
+                  style={{
+                    opacity: t,
+                    transform: `translateY(${(1 - t) * 50}px)`,
+                    willChange: "transform, opacity",
+                  }}
+                >
+                  <PanelCard feature={f} index={i} total={N} isExpanded={false} />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Desktop: flex row edge-to-edge con rounded en extremos */}
+          <div
+            className="hidden w-full overflow-hidden rounded-[20px] lg:flex lg:h-[78vh] lg:max-h-[720px] lg:min-h-[480px] lg:mx-6 xl:mx-10 2xl:mx-14"
+            onMouseLeave={() => setHoveredIndex(null)}
+          >
+            {FEATURES.map((f, i) => {
+              const t = cardEnterT(i, sp);
+              const isExpanded = hoveredIndex === i;
+              const hasHover = hoveredIndex !== null;
+
+              return (
+                <div
+                  key={f.title}
+                  className="relative transition-[flex] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  style={{
+                    flex: isExpanded ? 2.6 : hasHover ? 0.65 : 1,
+                    opacity: t,
+                    transform: `translateY(${(1 - t) * 60}px)`,
+                    willChange: "transform, opacity, flex",
+                  }}
+                  onMouseEnter={() => setHoveredIndex(i)}
+                >
+                  <PanelCard feature={f} index={i} total={N} isExpanded={isExpanded} />
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
-    </motion.div>
+    </section>
+  );
+}
+
+// ── PanelCard ─────────────────────────────────────────────────────────────
+function PanelCard({
+  feature,
+  index,
+  total,
+  isExpanded,
+}: {
+  feature: (typeof FEATURES)[number];
+  index: number;
+  total: number;
+  isExpanded: boolean;
+}) {
+  const isIconString = typeof feature.icon === "string";
+  const style = CARD_STYLES[index % CARD_STYLES.length];
+
+  return (
+    <article
+      className={[
+        "group relative flex h-full flex-col justify-between overflow-hidden font-sans",
+        "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
+        style.bg,
+        style.text,
+        // Mobile/Tablet: card compacta con rounded
+        "w-full min-h-[110px] sm:min-h-[140px] md:min-h-[160px] rounded-2xl",
+        // Desktop: llena el flex, sin width fijo
+        "lg:w-auto lg:min-h-0 lg:rounded-none lg:shrink",
+      ].join(" ")}
+    >
+      {/* Kanji decorativo de fondo */}
+      <div className="pointer-events-none absolute inset-0 flex items-end justify-start select-none overflow-hidden pl-2 pb-8 sm:pl-4 sm:pb-12 lg:pl-6 lg:pb-20">
+        <span
+          className={[
+            "font-black leading-none transition-all duration-500",
+            style.kanji,
+            isExpanded
+              ? "text-[10rem] lg:text-[14rem] opacity-[0.10] scale-105"
+              : "text-[3.5rem] sm:text-[5rem] md:text-[7rem] lg:text-[11rem] opacity-[0.07] scale-100",
+          ].join(" ")}
+        >
+          {feature.jp}
+        </span>
+      </div>
+
+      {/* Top: título + ícono */}
+      <div className="relative z-10 p-3 sm:p-4 lg:p-6">
+        <div className="flex items-start justify-between gap-2 sm:gap-3">
+          <h3
+            className={[
+              "font-sans font-extrabold uppercase leading-[1.05] tracking-tight transition-all duration-500",
+              "text-xs sm:text-sm md:text-base",
+              isExpanded ? "lg:text-2xl xl:text-3xl" : "lg:text-lg",
+            ].join(" ")}
+          >
+            {feature.title}
+          </h3>
+          <div
+            className={[
+              "flex h-6 w-6 sm:h-7 sm:w-7 shrink-0 items-center justify-center rounded-lg backdrop-blur-sm lg:h-9 lg:w-9",
+              style.icon,
+            ].join(" ")}
+          >
+            {isIconString ? (
+              <div className="relative h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5">
+                <Image src={feature.icon as string} alt="" fill className="object-contain" />
+              </div>
+            ) : (
+              <div className="[&_svg]:h-3 [&_svg]:w-3 sm:[&_svg]:h-4 sm:[&_svg]:w-4 lg:[&_svg]:h-5 lg:[&_svg]:w-5">{feature.icon}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom: counter + desc */}
+      <div className="relative z-10 p-3 sm:p-4 lg:p-6">
+        <p className="font-mono text-[9px] sm:text-[10px] lg:text-[11px] tracking-wider opacity-40 mb-1 sm:mb-2">
+          {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+        </p>
+        <p
+          className={[
+            "font-sans text-[10px] leading-relaxed transition-all duration-500 sm:text-xs md:text-sm opacity-70 line-clamp-2 sm:line-clamp-3 lg:line-clamp-none",
+            isExpanded
+              ? "lg:opacity-70 lg:max-h-40 lg:translate-y-0"
+              : "lg:opacity-0 lg:max-h-0 lg:translate-y-3 lg:overflow-hidden",
+          ].join(" ")}
+        >
+          {feature.desc}
+        </p>
+      </div>
+    </article>
   );
 }

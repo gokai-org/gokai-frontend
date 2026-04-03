@@ -33,6 +33,7 @@ export default function AnimatedGraphBackground({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const rafRef = useRef<number | null>(null);
   const resizeTimer = useRef<number | null>(null);
+  const isDarkRef = useRef(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -48,6 +49,23 @@ export default function AnimatedGraphBackground({
       typeof window !== "undefined" &&
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    const root = document.documentElement;
+
+    const updateThemeMode = () => {
+      isDarkRef.current = root.classList.contains("dark");
+    };
+
+    updateThemeMode();
+
+    const themeObserver = new MutationObserver(() => {
+      updateThemeMode();
+    });
+
+    themeObserver.observe(root, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
     let w = 0;
     let h = 0;
@@ -156,14 +174,16 @@ export default function AnimatedGraphBackground({
     }
 
     function draw() {
+      const isDark = isDarkRef.current;
+
       ctx.clearRect(0, 0, w, h);
 
-      // Aristas
+      // ── Aristas (curvas cuadráticas como en landing) ──
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
 
-      const strokeAlphaBase = variant === "dimmed" ? 0.35 : 0.55;
-      const lineWidthBase = variant === "dimmed" ? 1.6 : 2.2;
+      const strokeAlphaBase = variant === "dimmed" ? 0.30 : 0.45;
+      const lineWidthBase = variant === "dimmed" ? 1.2 : 1.8;
 
       for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
@@ -174,58 +194,78 @@ export default function AnimatedGraphBackground({
           const dist = Math.hypot(dx, dy);
           if (dist > maxDist) continue;
 
-          const alpha = 1 - dist / maxDist;
+          const alpha = (1 - dist / maxDist);
+          const fade = alpha * alpha; // cuadrático para fade más suave
 
-          ctx.strokeStyle = `rgba(153, 51, 49, ${strokeAlphaBase * alpha})`;
+          ctx.strokeStyle = `rgba(153, 51, 49, ${strokeAlphaBase * fade})`;
           ctx.lineWidth = lineWidthBase * alpha;
+
+          // Curva cuadrática con punto medio desplazado
+          const mx = (a.x + b.x) / 2 + (a.y - b.y) * 0.08;
+          const my = (a.y + b.y) / 2 + (b.x - a.x) * 0.08;
 
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
-          ctx.lineTo(b.x, b.y);
+          ctx.quadraticCurveTo(mx, my, b.x, b.y);
           ctx.stroke();
         }
       }
 
-      // Nodos
+      // ── Nodos con glow radial (estilo landing) ──
       for (const n of nodes) {
-        ctx.save();
+        const isRed = n.color === "red";
+        const glowR = n.r * (variant === "dimmed" ? 2.2 : 2.8);
 
-        ctx.shadowBlur = variant === "dimmed" ? 12 : 18;
-        ctx.shadowColor =
-          n.color === "red"
-            ? variant === "dimmed"
-              ? "rgba(153,51,49,0.22)"
-              : "rgba(153,51,49,0.30)"
-            : variant === "dimmed"
-              ? "rgba(0,0,0,0.08)"
-              : "rgba(0,0,0,0.10)";
-
+        // Glow radial
+        const grad = ctx.createRadialGradient(n.x, n.y, n.r * 0.4, n.x, n.y, glowR);
+        if (isRed) {
+          const glowA = variant === "dimmed" ? 0.12 : 0.18;
+          grad.addColorStop(0, `rgba(153, 51, 49, ${glowA})`);
+          grad.addColorStop(1, "rgba(153, 51, 49, 0)");
+        } else if (isDark) {
+          const glowA = variant === "dimmed" ? 0.06 : 0.10;
+          grad.addColorStop(0, `rgba(255, 255, 255, ${glowA})`);
+          grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+        } else {
+          const glowA = variant === "dimmed" ? 0.05 : 0.08;
+          grad.addColorStop(0, `rgba(0, 0, 0, ${glowA})`);
+          grad.addColorStop(1, "rgba(0, 0, 0, 0)");
+        }
+        ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-
-        ctx.fillStyle =
-          n.color === "red"
-            ? variant === "dimmed"
-              ? "rgba(153, 51, 49, 0.80)"
-              : "rgba(153, 51, 49, 0.92)"
-            : variant === "dimmed"
-              ? "rgba(255, 255, 255, 0.90)"
-              : "rgba(255, 255, 255, 0.98)";
+        ctx.arc(n.x, n.y, glowR, 0, Math.PI * 2);
         ctx.fill();
 
-        ctx.shadowBlur = 0;
-        ctx.lineWidth = 1;
-        ctx.strokeStyle =
-          n.color === "red"
+        // Nodo sólido
+        ctx.beginPath();
+        ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
+        ctx.fillStyle = isRed
+          ? variant === "dimmed"
+            ? "rgba(153, 51, 49, 0.80)"
+            : "rgba(153, 51, 49, 0.92)"
+          : isDark
             ? variant === "dimmed"
-              ? "rgba(153,51,49,0.18)"
-              : "rgba(153,51,49,0.22)"
+              ? "rgba(255, 255, 255, 0.86)"
+              : "rgba(255, 255, 255, 0.94)"
+            : variant === "dimmed"
+              ? "rgba(19, 19, 19, 0.82)"
+              : "rgba(19, 19, 19, 0.92)";
+        ctx.fill();
+
+        // Borde sutil
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = isRed
+          ? variant === "dimmed"
+            ? "rgba(153,51,49,0.15)"
+            : "rgba(153,51,49,0.20)"
+          : isDark
+            ? variant === "dimmed"
+              ? "rgba(255,255,255,0.06)"
+              : "rgba(255,255,255,0.10)"
             : variant === "dimmed"
               ? "rgba(0,0,0,0.06)"
-              : "rgba(0,0,0,0.08)";
+              : "rgba(0,0,0,0.10)";
         ctx.stroke();
-
-        ctx.restore();
       }
     }
 
@@ -266,6 +306,8 @@ export default function AnimatedGraphBackground({
     return () => {
       if (ro) ro.disconnect();
       else window.removeEventListener("resize", onResize);
+
+      themeObserver.disconnect();
 
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
       if (resizeTimer.current) window.clearTimeout(resizeTimer.current);

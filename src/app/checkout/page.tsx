@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -16,6 +17,7 @@ import {
 } from "lucide-react";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
 import { billingConfig } from "@/shared/config";
+import { ThemeModeToggle } from "@/shared/components";
 
 const PLAN_FEATURES = [
   {
@@ -165,12 +167,12 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="force-light">
     <main className="relative min-h-screen overflow-hidden bg-surface-secondary">
+      <ThemeModeToggle className="fixed right-4 top-4 z-50 md:right-6 md:top-6" />
       <AnimatedGraphBackground />
       <div className="absolute inset-0 bg-linear-to-b from-surface-primary/20 via-surface-primary/10 to-surface-primary/30" />
 
-      <div className="relative z-10 flex min-h-screen items-center justify-center overflow-y-auto px-4 py-8 sm:px-6 sm:py-12">
+      <div className="relative z-10 flex min-h-screen items-center justify-center overflow-y-auto px-4 py-8 sm:px-6 sm:py-12 lg:pt-18 xl:pt-22">
         <motion.div
           className="w-full max-w-lg md:max-w-3xl"
           initial={{ opacity: 0, y: 30 }}
@@ -185,7 +187,7 @@ export default function CheckoutPage() {
 
               <div className="relative z-[1] px-6 pt-6 pb-6 md:pb-0 md:pt-8 md:px-7">
                 <div className="flex flex-col items-center md:items-start">
-                  <a href="/" className="inline-block">
+                  <Link href="/" className="inline-block">
                     <motion.div
                       whileHover={{ rotate: 360, scale: 1.1 }}
                       transition={{ duration: 0.5 }}
@@ -198,7 +200,7 @@ export default function CheckoutPage() {
                         priority
                       />
                     </motion.div>
-                  </a>
+                  </Link>
 
                   <motion.span
                     className="mt-3 inline-flex items-center rounded-full bg-surface-primary/20 px-3 py-1 text-xs font-bold backdrop-blur-sm"
@@ -424,6 +426,5 @@ export default function CheckoutPage() {
         </motion.div>
       </div>
     </main>
-    </div>
   );
 }

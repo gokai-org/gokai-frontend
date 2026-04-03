@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { PremiumStepIndicator } from "@/features/auth/components/PremiumStepIndicator";
 
@@ -26,9 +27,9 @@ export function AuthHeader({
 }: Props) {
   return (
     <div className="flex flex-col items-center text-center">
-      <a href="/" className="inline-block">
+      <Link href="/" className="inline-block">
         <motion.div
-          className="flex items-center justify-center"
+          className="relative flex h-[60px] w-[60px] items-center justify-center"
           whileHover={{ rotate: 360, scale: 1.1 }}
           transition={{ duration: 0.5 }}
         >
@@ -38,9 +39,18 @@ export function AuthHeader({
             width={60}
             height={60}
             priority
+            className="dark:hidden"
+          />
+          <Image
+            src="/logos/gokai-logo-dark.svg"
+            alt=""
+            width={60}
+            height={60}
+            priority
+            className="hidden dark:block"
           />
         </motion.div>
-      </a>
+      </Link>
 
       {mode === "login" ? (
         <>

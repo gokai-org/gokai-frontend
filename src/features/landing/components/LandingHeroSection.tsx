@@ -33,13 +33,6 @@ export function LandingHeroSection({
       whileInView="show"
       viewport={{ once: true, margin: "-80px" }}
     >
-      {/* Etiqueta introductoria */}
-      <motion.div variants={fadeUpSoft} className="mb-5">
-        <span className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/[0.07] px-4 py-1.5 text-xs font-bold uppercase tracking-[0.18em] text-accent">
-          Plataforma de japonés con IA
-        </span>
-      </motion.div>
-
       <motion.h2
         variants={fadeUp}
         className="text-4xl font-extrabold leading-[1.02] tracking-tight sm:text-5xl md:text-7xl"
@@ -74,10 +67,16 @@ export function LandingHeroSection({
       )}
 
       <motion.div
-        variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.5 } } }}
-        className="mt-14 flex items-center gap-2 text-xs text-content-muted"
+        variants={{
+          hidden: { opacity: 0 },
+          show: {
+            opacity: 1,
+            transition: { duration: 0.5 },
+          },
+        }}
+        className="mt-4 flex items-center gap-2 text-xs text-content-muted"
       >
-        <span>Desliza para ver más</span>
+        <span>Desliza para entrar en la ruta</span>
         <motion.span
           animate={{ y: [0, 4, 0] }}
           transition={{ repeat: Infinity, duration: 1.6, ease: "easeInOut" }}

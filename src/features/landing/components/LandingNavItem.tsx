@@ -30,7 +30,7 @@ export function LandingNavItem({
       {active && (
         <motion.span
           layoutId="landing-nav-pill"
-          className="absolute inset-0 rounded-full border border-black/8 bg-surface-primary shadow-[0_6px_18px_-8px_rgba(0,0,0,0.18)]"
+          className="absolute inset-0 rounded-full border border-border-default/70 bg-surface-primary shadow-[var(--shadow-sm)]"
           transition={{
             type: "spring",
             stiffness: 280,

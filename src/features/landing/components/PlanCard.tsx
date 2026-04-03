@@ -37,13 +37,22 @@ export function PlanCard({
       className={[
         "relative flex h-full min-h-[480px] flex-col overflow-hidden rounded-[40px] border p-6 transition-all duration-300 lg:min-h-[520px] lg:p-8",
         highlighted
-          ? "border-accent/15 bg-gradient-to-b from-white via-[#fffaf9] to-[#fff5f3] shadow-[0_30px_70px_-26px_rgba(153,51,49,0.22)]"
-          : "border-border-subtle bg-surface-primary shadow-[0_22px_50px_-22px_rgba(0,0,0,0.18)]",
+          ? "border-accent/40 bg-gradient-to-b from-accent/[0.10] via-[var(--surface-primary)] to-[var(--surface-secondary)] shadow-[0_8px_40px_-8px_rgba(153,51,49,0.30),0_20px_60px_-16px_rgba(153,51,49,0.18)] ring-2 ring-accent/25"
+          : "border-border-subtle bg-surface-primary shadow-[var(--shadow-lg)]",
       ].join(" ")}
     >
       {/* decorativos */}
-      <div className="absolute right-[-16px] top-[-16px] h-28 w-28 rounded-full bg-accent/[0.05]" />
-      <div className="absolute bottom-[-20px] left-[72%] h-20 w-20 rounded-full bg-accent/[0.04]" />
+      <div className={[
+        "absolute right-[-16px] top-[-16px] h-28 w-28 rounded-full",
+        highlighted ? "bg-accent/[0.12]" : "bg-accent/[0.05]",
+      ].join(" ")} />
+      <div className={[
+        "absolute bottom-[-20px] left-[72%] h-20 w-20 rounded-full",
+        highlighted ? "bg-accent/[0.09]" : "bg-accent/[0.04]",
+      ].join(" ")} />
+      {highlighted && (
+        <div className="absolute left-[-30px] top-[40%] h-24 w-24 rounded-full bg-accent/[0.07]" />
+      )}
 
       {/* kanji vertical decorativo */}
       <div className="pointer-events-none absolute right-7 top-8 z-0 flex flex-col items-center leading-none text-accent/12 select-none">
@@ -60,7 +69,7 @@ export function PlanCard({
       {/* espacio fijo para badge */}
       <div className="relative z-10 mb-4 min-h-[36px]">
         {badge ? (
-          <div className="w-fit rounded-full bg-gradient-to-r from-accent to-accent-hover px-4 py-2 text-sm font-bold text-content-inverted shadow-lg shadow-accent/20">
+          <div className="w-fit rounded-full bg-gradient-to-r from-accent to-accent-hover px-4 py-2 text-sm font-bold text-content-inverted shadow-lg shadow-accent/25 ring-1 ring-accent/30">
             {badge}
           </div>
         ) : (
@@ -88,8 +97,8 @@ export function PlanCard({
             className={[
               "font-black tracking-tight",
               highlighted
-                ? "text-5xl text-[#b33c37] lg:text-6xl"
-                : "text-5xl text-[#b33c37] lg:text-6xl",
+                ? "text-5xl text-accent lg:text-6xl drop-shadow-[0_2px_8px_rgba(153,51,49,0.2)]"
+                : "text-5xl text-accent lg:text-6xl",
             ].join(" ")}
           >
             {price}
@@ -130,8 +139,8 @@ export function PlanCard({
           className={[
             "inline-flex w-full items-center justify-center rounded-full px-6 py-3.5 text-lg font-extrabold transition-all duration-300",
             highlighted
-              ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-[0_18px_38px_-16px_rgba(153,51,49,0.52)] hover:shadow-[0_22px_48px_-18px_rgba(153,51,49,0.60)]"
-              : "bg-surface-tertiary text-content-primary hover:bg-surface-tertiary",
+              ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-lg shadow-accent/25 hover:shadow-xl hover:shadow-accent/30 ring-1 ring-accent/20"
+              : "border border-border-default/70 bg-surface-tertiary text-content-primary hover:bg-surface-secondary",
           ].join(" ")}
         >
           {ctaLabel}

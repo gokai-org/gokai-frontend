@@ -20,8 +20,9 @@ export default function MembershipPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
-          <a href="/" className="inline-block">
+          <Link href="/" className="inline-block">
             <motion.div
+              className="relative h-[72px] w-[72px]"
               whileHover={{ rotate: 360, scale: 1.1 }}
               transition={{ duration: 0.5 }}
             >
@@ -31,9 +32,18 @@ export default function MembershipPage() {
                 width={72}
                 height={72}
                 priority
+                className="dark:hidden"
+              />
+              <Image
+                src="/logos/gokai-logo-dark.svg"
+                alt=""
+                width={72}
+                height={72}
+                priority
+                className="hidden dark:block"
               />
             </motion.div>
-          </a>
+          </Link>
 
           <p className="mt-6 text-2xl md:text-4xl font-extrabold text-accent">
             Elige tu plan
