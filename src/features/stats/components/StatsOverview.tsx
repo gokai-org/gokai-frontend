@@ -244,7 +244,9 @@ function StatOverviewCard({
         )}
       </p>
 
-      <p className="text-xs text-content-tertiary font-medium mt-1">{stat.label}</p>
+      <p className="text-xs text-content-tertiary font-medium mt-1">
+        {stat.label}
+      </p>
     </CardWrapper>
   );
 }

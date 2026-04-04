@@ -79,7 +79,9 @@ export default function KanjiLesson({
           </motion.div>
 
           <div className="text-center sm:text-right sm:min-w-[140px]">
-            <div className="text-xs font-bold text-content-primary">Lecturas</div>
+            <div className="text-xs font-bold text-content-primary">
+              Lecturas
+            </div>
 
             <div className="mt-1 text-sm text-content-secondary">
               <span className="font-semibold text-content-primary">On: </span>
@@ -95,7 +97,9 @@ export default function KanjiLesson({
 
         {/* Meanings */}
         <div className="mt-5 rounded-2xl border border-border-subtle bg-surface-tertiary p-4">
-          <div className="text-xs font-bold text-content-primary">Significados</div>
+          <div className="text-xs font-bold text-content-primary">
+            Significados
+          </div>
           <div className="mt-2 flex flex-wrap gap-2">
             {(meanings.length ? meanings : ["—"]).map((w) => (
               <span

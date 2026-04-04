@@ -80,7 +80,9 @@ export function ContactCard() {
         >
           Hablemos de
           <br />
-          <span className="tracking-[0.12em] text-content-inverted/75">GOKAI</span>
+          <span className="tracking-[0.12em] text-content-inverted/75">
+            GOKAI
+          </span>
         </motion.h3>
 
         <motion.p

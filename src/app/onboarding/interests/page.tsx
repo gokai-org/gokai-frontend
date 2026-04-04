@@ -322,7 +322,9 @@ export default function InterestsPage() {
               priority
               className="hidden dark:block"
             />
-            <span className="text-2xl font-bold text-content-primary">GOKAI</span>
+            <span className="text-2xl font-bold text-content-primary">
+              GOKAI
+            </span>
             <span className="text-sm text-content-tertiary">語界</span>
           </div>
         </header>

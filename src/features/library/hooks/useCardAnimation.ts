@@ -33,7 +33,8 @@ export function useCardAnimation(
     scale: 1,
     transition: {
       delay: cappedDelay,
-      duration: (heavyAnimationsEnabled ? 0.35 : 0.2) * platformMotion.durationScale,
+      duration:
+        (heavyAnimationsEnabled ? 0.35 : 0.2) * platformMotion.durationScale,
       ease: CARD_ANIMATION_EASE,
     },
   };

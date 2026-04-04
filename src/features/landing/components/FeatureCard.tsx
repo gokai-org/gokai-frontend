@@ -33,10 +33,17 @@ export function FeatureCard({
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent-hover shadow-[0_6px_12px_-4px_rgba(153,51,49,0.38)]">
             {isIconString ? (
               <div className="relative h-5 w-5">
-                <Image src={icon as string} alt={title} fill className="object-contain" />
+                <Image
+                  src={icon as string}
+                  alt={title}
+                  fill
+                  className="object-contain"
+                />
               </div>
             ) : (
-              <div className="text-content-inverted [&_svg]:h-5 [&_svg]:w-5">{icon}</div>
+              <div className="text-content-inverted [&_svg]:h-5 [&_svg]:w-5">
+                {icon}
+              </div>
             )}
           </div>
           <div className="pointer-events-none text-[1.6rem] font-bold text-accent/12 dark:text-accent/8 select-none leading-none">
@@ -81,20 +88,15 @@ export function FeatureCard({
       <div className="relative z-10 flex h-full flex-col pb-1">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-accent to-accent-hover shadow-[0_10px_18px_-8px_rgba(153,51,49,0.4)] sm:h-14 sm:w-14">
-          {isIconString ? (
-            <div className="relative h-6 w-6 sm:h-7 sm:w-7">
-              <Image
-                src={icon}
-                alt={title}
-                fill
-                className="object-contain"
-              />
-            </div>
-          ) : (
-            <div className="text-content-inverted [&_svg]:h-6 [&_svg]:w-6 sm:[&_svg]:h-7 sm:[&_svg]:w-7">
-              {icon}
-            </div>
-          )}
+            {isIconString ? (
+              <div className="relative h-6 w-6 sm:h-7 sm:w-7">
+                <Image src={icon} alt={title} fill className="object-contain" />
+              </div>
+            ) : (
+              <div className="text-content-inverted [&_svg]:h-6 [&_svg]:w-6 sm:[&_svg]:h-7 sm:[&_svg]:w-7">
+                {icon}
+              </div>
+            )}
           </div>
 
           <div className="rounded-full border border-accent/10 bg-accent/[0.05] px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-accent">

@@ -1,7 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { LandingScrollTimeline, LandingViewportState } from "@/features/landing/types";
+import type {
+  LandingScrollTimeline,
+  LandingViewportState,
+} from "@/features/landing/types";
 import { clamp, smoothstep } from "@/features/landing/lib/landingSceneMath";
 
 const INITIAL_VIEWPORT: LandingViewportState = {
@@ -32,7 +35,9 @@ function getViewportState(): LandingViewportState {
   };
 }
 
-export function useLandingScrollTimeline(sectionIds: string[]): LandingScrollTimeline {
+export function useLandingScrollTimeline(
+  sectionIds: string[],
+): LandingScrollTimeline {
   const ids = useMemo(() => sectionIds, [sectionIds]);
   const frameRef = useRef<number | null>(null);
 
@@ -99,10 +104,18 @@ export function useLandingScrollTimeline(sectionIds: string[]): LandingScrollTim
         const height = Math.max(rect.height, viewport.height * 0.78);
         const start = top - viewport.height * 0.72;
         const end = top + height - viewport.height * 0.3;
-        const progress = clamp((scrollY - start) / Math.max(1, end - start), 0, 1);
+        const progress = clamp(
+          (scrollY - start) / Math.max(1, end - start),
+          0,
+          1,
+        );
         const center = top + height / 2;
         const distance = Math.abs(viewportCenter - center);
-        const focus = clamp(1 - distance / (height * 0.55 + viewport.height * 0.35), 0, 1);
+        const focus = clamp(
+          1 - distance / (height * 0.55 + viewport.height * 0.35),
+          0,
+          1,
+        );
 
         sections[cached.id] = {
           id: cached.id,

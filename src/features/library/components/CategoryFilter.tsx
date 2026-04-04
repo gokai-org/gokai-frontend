@@ -105,7 +105,9 @@ export function CategoryFilter({
         onClick={() => onSelectCategory(null)}
         className={[
           baseButtonClass,
-          selectedCategory === null ? getActiveClass("todos") : getInactiveClass("todos"),
+          selectedCategory === null
+            ? getActiveClass("todos")
+            : getInactiveClass("todos"),
         ].join(" ")}
       >
         <span>Todos</span>

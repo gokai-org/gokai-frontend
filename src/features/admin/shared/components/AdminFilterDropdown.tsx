@@ -72,7 +72,9 @@ export function AdminFilterDropdown<T extends string = string>({
         aria-haspopup="listbox"
         aria-expanded={open}
       >
-        <span className="whitespace-nowrap">{buttonLabel ?? selected.label}</span>
+        <span className="whitespace-nowrap">
+          {buttonLabel ?? selected.label}
+        </span>
         <ChevronDown
           className={[
             "h-4 w-4 shrink-0 transition-transform",
@@ -108,7 +110,9 @@ export function AdminFilterDropdown<T extends string = string>({
                     : "text-content-secondary hover:bg-surface-secondary",
                 ].join(" ")}
               >
-                <span className="whitespace-nowrap font-medium">{option.label}</span>
+                <span className="whitespace-nowrap font-medium">
+                  {option.label}
+                </span>
                 {active && <Check className="h-4 w-4" />}
               </button>
             );

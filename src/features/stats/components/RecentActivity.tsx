@@ -91,11 +91,15 @@ function ActivityRow({
         <p className="text-sm font-bold text-content-primary truncate">
           {activity.title}
         </p>
-        <p className="text-xs text-content-tertiary truncate">{activity.description}</p>
+        <p className="text-xs text-content-tertiary truncate">
+          {activity.description}
+        </p>
       </div>
 
       <div className="text-right shrink-0">
-        <p className="text-xs text-content-muted">{timeAgo(activity.createdAt)}</p>
+        <p className="text-xs text-content-muted">
+          {timeAgo(activity.createdAt)}
+        </p>
         {activity.score !== undefined && (
           <p className="text-sm font-extrabold text-accent">
             {activity.score}%
@@ -152,7 +156,9 @@ export function RecentActivity({
           : {})}
         className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
       >
-        <h3 className="text-lg font-extrabold text-content-primary mb-4">{title}</h3>
+        <h3 className="text-lg font-extrabold text-content-primary mb-4">
+          {title}
+        </h3>
         <div className="flex flex-col items-center py-8 gap-3">
           <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center">
             <Zap className="w-7 h-7 text-accent/40" />

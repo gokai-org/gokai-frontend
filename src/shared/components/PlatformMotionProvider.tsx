@@ -30,8 +30,13 @@ function resolvePlatformMotionMode(
   return "light";
 }
 
-export function PlatformMotionProvider({ children }: { children: React.ReactNode }) {
-  const { animationsEnabled, heavyAnimationsEnabled } = useAnimationPreferences();
+export function PlatformMotionProvider({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { animationsEnabled, heavyAnimationsEnabled } =
+    useAnimationPreferences();
   const graphicsProfile = useGraphicsProfile({
     animationsEnabled,
     heavyAnimationsEnabled,
@@ -56,7 +61,8 @@ export function PlatformMotionProvider({ children }: { children: React.ReactNode
       shouldUseHoverAnimations:
         motionMode === "full" && graphicsProfile.signals.pointerType === "fine",
       entranceMode: motionMode === "full" ? "default" : "light",
-      durationScale: motionMode === "none" ? 0 : motionMode === "light" ? 0.72 : 1,
+      durationScale:
+        motionMode === "none" ? 0 : motionMode === "light" ? 0.72 : 1,
     };
   }, [animationsEnabled, graphicsProfile, heavyAnimationsEnabled]);
 
@@ -71,11 +77,17 @@ export function PlatformMotionProvider({ children }: { children: React.ReactNode
       delete root.dataset.motionTier;
       delete root.dataset.motionPointer;
     };
-  }, [value.graphicsProfile.signals.pointerType, value.graphicsProfile.tier, value.motionMode]);
+  }, [
+    value.graphicsProfile.signals.pointerType,
+    value.graphicsProfile.tier,
+    value.motionMode,
+  ]);
 
   return (
     <PlatformMotionContext.Provider value={value}>
-      <MotionConfig reducedMotion={value.reducedMotion}>{children}</MotionConfig>
+      <MotionConfig reducedMotion={value.reducedMotion}>
+        {children}
+      </MotionConfig>
     </PlatformMotionContext.Provider>
   );
 }

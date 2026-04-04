@@ -81,8 +81,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
   {
     icon: <Target className="w-6 h-6" />,
     title: "Sistema de revisiones",
-    description:
-      "Aprende cómo funciona el SRS y cómo maximizar tu retención.",
+    description: "Aprende cómo funciona el SRS y cómo maximizar tu retención.",
     color: "text-emerald-600 dark:text-emerald-400",
     bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
     tourIndex: 2,
@@ -90,8 +89,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
   {
     icon: <MessageCircle className="w-6 h-6" />,
     title: "Chatbot de conversación",
-    description:
-      "Practica japonés con IA, escenarios reales y correcciones.",
+    description: "Practica japonés con IA, escenarios reales y correcciones.",
     color: "text-amber-600 dark:text-amber-400",
     bgColor: "bg-amber-50 dark:bg-amber-950/40",
     tourIndex: 3,
@@ -126,14 +124,12 @@ export const HELP_TIPS: TipItem[] = [
   {
     icon: <PenTool className="w-5 h-5" />,
     title: "Practica la escritura",
-    description:
-      "Trazar los kanji a mano refuerza memoria visual y muscular.",
+    description: "Trazar los kanji a mano refuerza memoria visual y muscular.",
   },
   {
     icon: <Star className="w-5 h-5" />,
     title: "No te saltes las revisiones",
-    description:
-      "El SRS funciona mejor cuando completas tus repasos a tiempo.",
+    description: "El SRS funciona mejor cuando completas tus repasos a tiempo.",
   },
   {
     icon: <Heart className="w-5 h-5" />,

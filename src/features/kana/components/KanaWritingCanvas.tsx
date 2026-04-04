@@ -47,8 +47,10 @@ export function KanaWritingCanvas({
     if (!ctx) return;
 
     const cs = getComputedStyle(document.documentElement);
-    const gridColor = cs.getPropertyValue("--border-primary").trim() || "#e5e7eb";
-    const strokeColor = cs.getPropertyValue("--text-primary").trim() || "#1a1a1a";
+    const gridColor =
+      cs.getPropertyValue("--border-primary").trim() || "#e5e7eb";
+    const strokeColor =
+      cs.getPropertyValue("--text-primary").trim() || "#1a1a1a";
     const accentColor = cs.getPropertyValue("--accent").trim() || "#993331";
 
     const w = canvas.width;

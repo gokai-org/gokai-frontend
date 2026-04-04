@@ -14,48 +14,49 @@ function ss(e0: number, e1: number, v: number) {
 
 const N = FEATURES.length;
 
-const CARD_STYLES: { bg: string; text: string; icon: string; kanji: string }[] = [
-  {
-    bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
-    text: "text-content-primary dark:text-white",
-    icon: "bg-content-primary/10 dark:bg-white/10",
-    kanji: "text-content-primary dark:text-white",
-  },
-  {
-    bg: "bg-accent/15 dark:bg-accent/20",
-    text: "text-content-primary dark:text-white",
-    icon: "bg-accent/15 dark:bg-accent/25",
-    kanji: "text-accent dark:text-accent",
-  },
-  {
-    bg: "bg-accent dark:bg-accent",
-    text: "text-white",
-    icon: "bg-white/15",
-    kanji: "text-white",
-  },
-  {
-    bg: "bg-surface-secondary dark:bg-surface-secondary",
-    text: "text-content-primary",
-    icon: "bg-content-primary/10 dark:bg-white/10",
-    kanji: "text-content-primary dark:text-white",
-  },
-  {
-    bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
-    text: "text-content-primary dark:text-white",
-    icon: "bg-content-primary/10 dark:bg-white/10",
-    kanji: "text-content-primary dark:text-white",
-  },
-  {
-    bg: "bg-accent/15 dark:bg-accent/20",
-    text: "text-content-primary dark:text-white",
-    icon: "bg-accent/15 dark:bg-accent/25",
-    kanji: "text-accent dark:text-accent",
-  },
-];
+const CARD_STYLES: { bg: string; text: string; icon: string; kanji: string }[] =
+  [
+    {
+      bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
+      text: "text-content-primary dark:text-white",
+      icon: "bg-content-primary/10 dark:bg-white/10",
+      kanji: "text-content-primary dark:text-white",
+    },
+    {
+      bg: "bg-accent/15 dark:bg-accent/20",
+      text: "text-content-primary dark:text-white",
+      icon: "bg-accent/15 dark:bg-accent/25",
+      kanji: "text-accent dark:text-accent",
+    },
+    {
+      bg: "bg-accent dark:bg-accent",
+      text: "text-white",
+      icon: "bg-white/15",
+      kanji: "text-white",
+    },
+    {
+      bg: "bg-surface-secondary dark:bg-surface-secondary",
+      text: "text-content-primary",
+      icon: "bg-content-primary/10 dark:bg-white/10",
+      kanji: "text-content-primary dark:text-white",
+    },
+    {
+      bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
+      text: "text-content-primary dark:text-white",
+      icon: "bg-content-primary/10 dark:bg-white/10",
+      kanji: "text-content-primary dark:text-white",
+    },
+    {
+      bg: "bg-accent/15 dark:bg-accent/20",
+      text: "text-content-primary dark:text-white",
+      icon: "bg-accent/15 dark:bg-accent/25",
+      kanji: "text-accent dark:text-accent",
+    },
+  ];
 
 function cardEnterT(i: number, sp: number) {
   const start = 0.48 + i * 0.035;
-  const end = start + 0.10;
+  const end = start + 0.1;
   return ss(start, end, sp);
 }
 
@@ -63,19 +64,21 @@ interface LandingExperienceSectionProps {
   sectionProgress: number;
 }
 
-export function LandingExperienceSection({ sectionProgress: sp }: LandingExperienceSectionProps) {
+export function LandingExperienceSection({
+  sectionProgress: sp,
+}: LandingExperienceSectionProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   // FASE 0 — intro
-  const introIn    = ss(0.04, 0.20, sp);
-  const introStay  = 1 - ss(0.38, 0.48, sp);
+  const introIn = ss(0.04, 0.2, sp);
+  const introStay = 1 - ss(0.38, 0.48, sp);
   const introAlpha = introIn * introStay;
-  const introY     = (1 - introIn) * 28 + (1 - introStay) * -18;
+  const introY = (1 - introIn) * 28 + (1 - introStay) * -18;
 
   // FASE 1 — card deck
-  const deckGlobalIn  = ss(0.44, 0.54, sp);
+  const deckGlobalIn = ss(0.44, 0.54, sp);
   const deckGlobalOut = 1 - ss(0.88, 0.96, sp);
-  const deckAlpha     = deckGlobalIn * deckGlobalOut;
+  const deckAlpha = deckGlobalIn * deckGlobalOut;
 
   return (
     <section
@@ -84,7 +87,6 @@ export function LandingExperienceSection({ sectionProgress: sp }: LandingExperie
       className="relative h-[300svh] scroll-mt-28"
     >
       <div className="sticky top-0 flex h-[100svh] flex-col items-center justify-start overflow-hidden pt-12 sm:pt-16 lg:justify-center lg:pt-0">
-
         {/* ── FASE 0 — intro ───────────────────────────────────────── */}
         <div
           className="pointer-events-none absolute inset-0 flex items-center justify-center px-6"
@@ -103,11 +105,11 @@ export function LandingExperienceSection({ sectionProgress: sp }: LandingExperie
               <br />
               que evoluciona contigo.
               <br />
-              
             </h2>
             <div className="mx-auto mt-7 max-w-xl border-t border-content-primary/10 pt-6">
               <p className="font-sans text-base leading-relaxed text-content-primary/65 sm:text-lg">
-                Aprende japonés con inteligencia adaptativa, rutas personalizadas y práctica inmersiva.
+                Aprende japonés con inteligencia adaptativa, rutas
+                personalizadas y práctica inmersiva.
               </p>
             </div>
           </div>
@@ -132,7 +134,12 @@ export function LandingExperienceSection({ sectionProgress: sp }: LandingExperie
                     willChange: "transform, opacity",
                   }}
                 >
-                  <PanelCard feature={f} index={i} total={N} isExpanded={false} />
+                  <PanelCard
+                    feature={f}
+                    index={i}
+                    total={N}
+                    isExpanded={false}
+                  />
                 </div>
               );
             })}
@@ -160,7 +167,12 @@ export function LandingExperienceSection({ sectionProgress: sp }: LandingExperie
                   }}
                   onMouseEnter={() => setHoveredIndex(i)}
                 >
-                  <PanelCard feature={f} index={i} total={N} isExpanded={isExpanded} />
+                  <PanelCard
+                    feature={f}
+                    index={i}
+                    total={N}
+                    isExpanded={isExpanded}
+                  />
                 </div>
               );
             })}
@@ -234,10 +246,17 @@ function PanelCard({
           >
             {isIconString ? (
               <div className="relative h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5">
-                <Image src={feature.icon as string} alt="" fill className="object-contain" />
+                <Image
+                  src={feature.icon as string}
+                  alt=""
+                  fill
+                  className="object-contain"
+                />
               </div>
             ) : (
-              <div className="[&_svg]:h-3 [&_svg]:w-3 sm:[&_svg]:h-4 sm:[&_svg]:w-4 lg:[&_svg]:h-5 lg:[&_svg]:w-5">{feature.icon}</div>
+              <div className="[&_svg]:h-3 [&_svg]:w-3 sm:[&_svg]:h-4 sm:[&_svg]:w-4 lg:[&_svg]:h-5 lg:[&_svg]:w-5">
+                {feature.icon}
+              </div>
             )}
           </div>
         </div>
@@ -246,7 +265,8 @@ function PanelCard({
       {/* Bottom: counter + desc */}
       <div className="relative z-10 p-3 sm:p-4 lg:p-6">
         <p className="font-mono text-[9px] sm:text-[10px] lg:text-[11px] tracking-wider opacity-40 mb-1 sm:mb-2">
-          {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
+          {String(index + 1).padStart(2, "0")} /{" "}
+          {String(total).padStart(2, "0")}
         </p>
         <p
           className={[

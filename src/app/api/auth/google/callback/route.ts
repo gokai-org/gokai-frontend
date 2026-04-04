@@ -143,9 +143,7 @@ export async function GET(request: NextRequest) {
     const destination =
       profile === "admin" ? "/admin/dashboard" : "/dashboard/graph";
 
-    const response = NextResponse.redirect(
-      new URL(destination, request.url),
-    );
+    const response = NextResponse.redirect(new URL(destination, request.url));
 
     response.cookies.set("gokai_oauth_state", "", {
       path: "/",

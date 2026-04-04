@@ -17,10 +17,7 @@ export function useLandingPage() {
     [howTab],
   );
 
-  const sectionIds = useMemo(
-    () => SECTIONS.map((section) => section.id),
-    [],
-  );
+  const sectionIds = useMemo(() => SECTIONS.map((section) => section.id), []);
 
   useEffect(() => {
     const rawHash = typeof window !== "undefined" ? window.location.hash : "";

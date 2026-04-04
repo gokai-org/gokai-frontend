@@ -1,4 +1,3 @@
-
 import type {
   KanjiQuizQuestionRaw,
   KanjiQuizQuestion,
@@ -7,7 +6,9 @@ import type {
 } from "@/features/kanji/types/quiz";
 import type { KanjiLessonQuestion } from "@/features/kanji/types/lessonFlow";
 
-export function parseKanjiQuizStrokes(raw: string | undefined | null): string[] {
+export function parseKanjiQuizStrokes(
+  raw: string | undefined | null,
+): string[] {
   if (!raw || typeof raw !== "string") return [];
 
   try {
@@ -26,7 +27,9 @@ export function parseKanjiQuizStrokes(raw: string | undefined | null): string[] 
   }
 }
 
-export function normalizeQuizQuestion(raw: KanjiQuizQuestionRaw): KanjiQuizQuestion {
+export function normalizeQuizQuestion(
+  raw: KanjiQuizQuestionRaw,
+): KanjiQuizQuestion {
   return {
     kanji: raw.kanji,
     options: raw.options ?? [],
@@ -35,7 +38,9 @@ export function normalizeQuizQuestion(raw: KanjiQuizQuestionRaw): KanjiQuizQuest
   };
 }
 
-export function normalizeQuizResponse(raw: KanjiQuizResponseRaw): KanjiQuizResponse {
+export function normalizeQuizResponse(
+  raw: KanjiQuizResponseRaw,
+): KanjiQuizResponse {
   return {
     type: raw.type,
     questions: raw.questions.map(normalizeQuizQuestion),

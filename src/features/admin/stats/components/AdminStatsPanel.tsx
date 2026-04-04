@@ -16,16 +16,19 @@ export function AdminStatsPanel() {
     <AdminDashboardShell
       header={
         <AdminPageHeader
-          icon={<BarChart3 className="h-7 w-7 text-content-inverted" strokeWidth={2.5} />}
+          icon={
+            <BarChart3
+              className="h-7 w-7 text-content-inverted"
+              strokeWidth={2.5}
+            />
+          }
           title="Estadisticas"
           japaneseText="統計"
           subtitle="Seguimiento de rendimiento global y uso de plataforma"
         />
       }
     >
-      <div className="space-y-6 pb-8">
-
-      </div>
+      <div className="space-y-6 pb-8"></div>
     </AdminDashboardShell>
   );
 }

@@ -34,10 +34,7 @@ export function LandingLogoAside({
             aria-hidden="true"
           >
             <div className="rounded-[28px] border border-white/70 bg-white/72 p-3 shadow-[0_18px_34px_-22px_rgba(0,0,0,0.28)] backdrop-blur-xl">
-              <div
-                ref={logoMobileRef}
-                className="w-16 will-change-transform"
-              >
+              <div ref={logoMobileRef} className="w-16 will-change-transform">
                 <Image
                   src="/logos/gokai-logo.svg"
                   alt=""

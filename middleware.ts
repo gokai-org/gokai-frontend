@@ -27,7 +27,9 @@ function getProfileFromToken(token?: string): "admin" | "user" | null {
 export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
   const token = req.cookies.get("gokai_token")?.value;
-  const cookieProfile = normalizeProfile(req.cookies.get("gokai_profile")?.value);
+  const cookieProfile = normalizeProfile(
+    req.cookies.get("gokai_profile")?.value,
+  );
   const tokenProfile = getProfileFromToken(token);
   const profile = tokenProfile ?? cookieProfile;
 
@@ -45,7 +47,8 @@ export function middleware(req: NextRequest) {
   // Si intenta acceder a páginas de auth y ya está autenticado, redirigir al dashboard
   if (isAuthPage && token) {
     const url = req.nextUrl.clone();
-    url.pathname = profile === "admin" ? "/admin/dashboard" : "/dashboard/graph";
+    url.pathname =
+      profile === "admin" ? "/admin/dashboard" : "/dashboard/graph";
     return NextResponse.redirect(url);
   }
 
@@ -62,7 +65,10 @@ export function middleware(req: NextRequest) {
 
   if (isAdminRoute && token && profile !== "admin") {
     if (isAdminApiRoute) {
-      return NextResponse.json({ error: "Acceso restringido a administradores" }, { status: 403 });
+      return NextResponse.json(
+        { error: "Acceso restringido a administradores" },
+        { status: 403 },
+      );
     }
 
     const url = req.nextUrl.clone();

@@ -29,7 +29,7 @@
   /* Accent (brand red) */
   --accent: #993331;
   --accent-hover: #ba5149;
-  --accent-subtle: rgba(153, 51, 49, 0.10);
+  --accent-subtle: rgba(153, 51, 49, 0.1);
   --accent-muted: rgba(153, 51, 49, 0.06);
 
   /* Semantic status */
@@ -45,7 +45,7 @@
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.13);
 
   /* Sidebar glass */
@@ -153,7 +153,7 @@
   /* Accent */
   --accent: #993331;
   --accent-hover: #ba5149;
-  --accent-subtle: rgba(153, 51, 49, 0.10);
+  --accent-subtle: rgba(153, 51, 49, 0.1);
   --accent-muted: rgba(153, 51, 49, 0.06);
 
   /* Status */
@@ -169,7 +169,7 @@
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.10);
+  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.13);
 
   /* Sidebar glass */
@@ -250,7 +250,9 @@ body {
 html {
   background: var(--surface-primary);
   font-size: calc(16px * var(--typography-scale, 1));
-  transition: background-color 0.2s ease, color 0.2s ease;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 /* ── Typography scaling (driven by data-font-size on <html>) ─── */
@@ -258,10 +260,18 @@ html {
 :root {
   --typography-scale: 1;
 }
-html[data-font-size="small"]   { --typography-scale: 0.9375; }
-html[data-font-size="medium"]  { --typography-scale: 1; }
-html[data-font-size="large"]   { --typography-scale: 1.0625; }
-html[data-font-size="x-large"] { --typography-scale: 1.125; }
+html[data-font-size="small"] {
+  --typography-scale: 0.9375;
+}
+html[data-font-size="medium"] {
+  --typography-scale: 1;
+}
+html[data-font-size="large"] {
+  --typography-scale: 1.0625;
+}
+html[data-font-size="x-large"] {
+  --typography-scale: 1.125;
+}
 
 /* ── Japanese font families (driven by data-jp-font on <html>) ─ */
 /* These are injected as fallbacks in the font stack so CJK glyphs
@@ -269,10 +279,18 @@ html[data-font-size="x-large"] { --typography-scale: 1.125; }
 :root {
   --jp-font-family: "Noto Sans JP", sans-serif;
 }
-html[data-jp-font="noto"]     { --jp-font-family: var(--font-noto-sans-jp, "Noto Sans JP"), sans-serif; }
-html[data-jp-font="hiragino"] { --jp-font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif; }
-html[data-jp-font="yugothic"] { --jp-font-family: "Yu Gothic", "YuGothic", sans-serif; }
-html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans-serif; }
+html[data-jp-font="noto"] {
+  --jp-font-family: var(--font-noto-sans-jp, "Noto Sans JP"), sans-serif;
+}
+html[data-jp-font="hiragino"] {
+  --jp-font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+}
+html[data-jp-font="yugothic"] {
+  --jp-font-family: "Yu Gothic", "YuGothic", sans-serif;
+}
+html[data-jp-font="meiryo"] {
+  --jp-font-family: "Meiryo", "メイリオ", sans-serif;
+}
 
 /* Explicit .jp-text / [lang="ja"] override (opt-in) */
 .jp-text,
@@ -349,12 +367,12 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* ── Kanji board: theme-aware edge stroke variables ── */
 :root {
-  --kanji-edge-locked-stroke:    rgba(28, 22, 32, 1);
+  --kanji-edge-locked-stroke: rgba(28, 22, 32, 1);
   --kanji-edge-available-stroke: rgba(172, 56, 52, 1);
   --kanji-edge-completed-stroke: rgba(172, 56, 52, 1);
 }
 .dark {
-  --kanji-edge-locked-stroke:    rgba(210, 200, 220, 1);
+  --kanji-edge-locked-stroke: rgba(210, 200, 220, 1);
   --kanji-edge-available-stroke: rgba(210, 78, 72, 1);
   --kanji-edge-completed-stroke: rgba(218, 84, 78, 1);
 }
@@ -363,9 +381,18 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* Selected node: snappy glow burst */
 @keyframes kanji-selected-pulse {
-  0%   { opacity: 0.48; transform: scale(1);    }
-  30%  { opacity: 1;    transform: scale(1.12); }
-  100% { opacity: 0.48; transform: scale(1);    }
+  0% {
+    opacity: 0.48;
+    transform: scale(1);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1.12);
+  }
+  100% {
+    opacity: 0.48;
+    transform: scale(1);
+  }
 }
 
 .kanji-selected-pulse {
@@ -374,8 +401,13 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* Available node ring: gentle breathe to signal readiness */
 @keyframes kanji-node-available-breathe {
-  0%, 100% { opacity: 0.50; }
-  50%       { opacity: 1;   }
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
 }
 
 .kanji-node-available-breathe {
@@ -384,8 +416,14 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* Sphere entrance — plays when status changes or on mount */
 @keyframes kanji-node-enter {
-  from { opacity: 0; transform: scale(0.76); }
-  to   { opacity: 1; transform: scale(1);    }
+  from {
+    opacity: 0;
+    transform: scale(0.76);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .kanji-node-sphere-available-enter {
@@ -398,7 +436,9 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* Available edge: marching-ants flow (dash=5, gap=10, sum=15) */
 @keyframes kanji-edge-march {
-  to { stroke-dashoffset: -15; }
+  to {
+    stroke-dashoffset: -15;
+  }
 }
 
 .kanji-edge-available {
@@ -407,23 +447,46 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* ── Stroke player & writing canvas animations ── */
 @keyframes kanji-draw {
-  to { stroke-dashoffset: 0; }
+  to {
+    stroke-dashoffset: 0;
+  }
 }
 
 @keyframes kanji-num-in {
-  0%   { opacity: 0; transform: translateY(-2px) scale(0.75); }
-  100% { opacity: 1; transform: translateY(0px)  scale(1);    }
+  0% {
+    opacity: 0;
+    transform: translateY(-2px) scale(0.75);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0px) scale(1);
+  }
 }
 
 /* ── Kanji node shake: quick wiggle for locked node clicks ── */
 @keyframes kanji-node-shake {
-  0%,  100% { transform: translateX(0)            rotate(0);    }
-  14%        { transform: translateX(-7px)          rotate(-2.5deg); }
-  28%        { transform: translateX(6px)           rotate(2deg);    }
-  42%        { transform: translateX(-4px)          rotate(-1.5deg); }
-  57%        { transform: translateX(3.5px)         rotate(1deg);    }
-  71%        { transform: translateX(-2px)          rotate(-0.5deg); }
-  86%        { transform: translateX(1px);          }
+  0%,
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+  14% {
+    transform: translateX(-7px) rotate(-2.5deg);
+  }
+  28% {
+    transform: translateX(6px) rotate(2deg);
+  }
+  42% {
+    transform: translateX(-4px) rotate(-1.5deg);
+  }
+  57% {
+    transform: translateX(3.5px) rotate(1deg);
+  }
+  71% {
+    transform: translateX(-2px) rotate(-0.5deg);
+  }
+  86% {
+    transform: translateX(1px);
+  }
 }
 .kanji-node-shaking {
   animation: kanji-node-shake 0.58s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
@@ -432,21 +495,54 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* ── Celebration halo: radial pulse expanding behind the kanji symbol ── */
 @keyframes kanji-celebration-halo {
-  0%   { transform: scale(0.6);  opacity: 0.72; }
-  50%  { transform: scale(1.22); opacity: 0.42; }
-  100% { transform: scale(1.8);  opacity: 0;    }
+  0% {
+    transform: scale(0.6);
+    opacity: 0.72;
+  }
+  50% {
+    transform: scale(1.22);
+    opacity: 0.42;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
 }
 .kanji-celebration-halo {
-  background: radial-gradient(circle, rgba(186,72,66,0.36) 0%, transparent 70%);
+  background: radial-gradient(
+    circle,
+    rgba(186, 72, 66, 0.36) 0%,
+    transparent 70%
+  );
   animation: kanji-celebration-halo 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
   pointer-events: none;
 }
 @keyframes kanji-node-unlock-burst {
-  0%   { transform: scale(0.7); opacity: 0.3; filter: brightness(3) saturate(2); }
-  30%  { transform: scale(1.35); opacity: 1;   filter: brightness(2) saturate(1.8); }
-  60%  { transform: scale(0.95); opacity: 1;   filter: brightness(1.4) saturate(1.3); }
-  80%  { transform: scale(1.05); opacity: 1;   filter: brightness(1.1) saturate(1.1); }
-  100% { transform: scale(1);    opacity: 1;   filter: brightness(1) saturate(1); }
+  0% {
+    transform: scale(0.7);
+    opacity: 0.3;
+    filter: brightness(3) saturate(2);
+  }
+  30% {
+    transform: scale(1.35);
+    opacity: 1;
+    filter: brightness(2) saturate(1.8);
+  }
+  60% {
+    transform: scale(0.95);
+    opacity: 1;
+    filter: brightness(1.4) saturate(1.3);
+  }
+  80% {
+    transform: scale(1.05);
+    opacity: 1;
+    filter: brightness(1.1) saturate(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: brightness(1) saturate(1);
+  }
 }
 
 .kanji-node-unlocking {
@@ -454,8 +550,14 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 }
 
 @keyframes kanji-edge-unlock-draw {
-  from { stroke-dashoffset: 1; opacity: 0.2; }
-  to   { stroke-dashoffset: 0; opacity: 1; }
+  from {
+    stroke-dashoffset: 1;
+    opacity: 0.2;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
 }
 
 .kanji-edge-unlocking {
@@ -464,20 +566,26 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* ── Locked sphere: pearl gray in light mode, deep in dark mode ── */
 .kanji-node-sphere-locked {
-  background: linear-gradient(135deg, #F6F4FA 0%, #EFECF5 100%);
+  background: linear-gradient(135deg, #f6f4fa 0%, #efecf5 100%);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
   color: rgba(60, 50, 88, 1);
 }
 .dark .kanji-node-sphere-locked {
-  background: linear-gradient(135deg, #383438 0%, #1C181E 100%);
+  background: linear-gradient(135deg, #383438 0%, #1c181e 100%);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.36);
-  color: rgba(255, 255, 255, 0.40);
+  color: rgba(255, 255, 255, 0.4);
 }
 
 /* ── Unlock ring: double-halo burst expanding from unlocked node ── */
 @keyframes kanji-node-unlock-ring {
-  0%   { transform: scale(1);    opacity: 0.84; }
-  100% { transform: scale(1.82); opacity: 0;    }
+  0% {
+    transform: scale(1);
+    opacity: 0.84;
+  }
+  100% {
+    transform: scale(1.82);
+    opacity: 0;
+  }
 }
 .kanji-node-unlock-ring {
   border: 2px solid rgba(186, 72, 69, 0.64);
@@ -488,10 +596,22 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* ── Points float: +30 badge rises and fades from completed node ── */
 @keyframes kanji-points-float {
-  0%   { opacity: 0;   transform: translateY(4px)  scale(0.65); }
-  16%  { opacity: 1;   transform: translateY(-2px) scale(1.08); }
-  64%  { opacity: 1;   transform: translateY(-20px) scale(1);   }
-  100% { opacity: 0;   transform: translateY(-36px) scale(0.88); }
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.65);
+  }
+  16% {
+    opacity: 1;
+    transform: translateY(-2px) scale(1.08);
+  }
+  64% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-36px) scale(0.88);
+  }
 }
 .kanji-node-points-float {
   animation: kanji-points-float 1.9s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -500,17 +620,33 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 /* ── Kanji constellation background — 4-layer high-performance system ── */
 
 @keyframes kanji-bg-glimmer {
-  0%   { opacity: 0.64; }
-  20%  { opacity: 0.80; }
-  46%  { opacity: 0.94; }
-  72%  { opacity: 0.76; }
-  100% { opacity: 0.68; }
+  0% {
+    opacity: 0.64;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  46% {
+    opacity: 0.94;
+  }
+  72% {
+    opacity: 0.76;
+  }
+  100% {
+    opacity: 0.68;
+  }
 }
 
 @keyframes kanji-bg-pulse {
-  0%   { opacity: 0.70; }
-  50%  { opacity: 0.98; }
-  100% { opacity: 0.74; }
+  0% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 0.98;
+  }
+  100% {
+    opacity: 0.74;
+  }
 }
 
 /* Scene: containment without stacking-context promotion */
@@ -522,13 +658,23 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 .kanji-bg-base {
   backface-visibility: hidden;
   /* Light mode: pure white — clean, minimal, premium */
-  background:
-    linear-gradient(162deg, #ffffff 0%, #fefefe 42%, #fdfdfd 72%, #fafafa 100%);
+  background: linear-gradient(
+    162deg,
+    #ffffff 0%,
+    #fefefe 42%,
+    #fdfdfd 72%,
+    #fafafa 100%
+  );
 }
 .dark .kanji-bg-base {
   /* Dark mode: deep kuro — pure near-black, no warm undertone */
-  background:
-    linear-gradient(162deg, #090909 0%, #0d0d0d 42%, #0a0a0a 72%, #080808 100%);
+  background: linear-gradient(
+    162deg,
+    #090909 0%,
+    #0d0d0d 42%,
+    #0a0a0a 72%,
+    #080808 100%
+  );
 }
 
 /* ── Parallax star layer ── */
@@ -539,14 +685,20 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
   transform-origin: center;
   width: var(--kanji-layer-span, 2600px);
   height: var(--kanji-layer-span, 2600px);
-  transform:
-    translate3d(
-      calc(-50% + var(--kanji-camera-x, 0px) * var(--kanji-parallax-factor, -0.22)),
-      calc(-50% + var(--kanji-camera-y, 0px) * var(--kanji-parallax-factor, -0.22)),
+  transform: translate3d(
+      calc(
+        -50% + var(--kanji-camera-x, 0px) * var(--kanji-parallax-factor, -0.22)
+      ),
+      calc(
+        -50% + var(--kanji-camera-y, 0px) * var(--kanji-parallax-factor, -0.22)
+      ),
       0px
     )
     scale(
-      calc(1 + (var(--kanji-camera-zoom, 1) - 1) * var(--kanji-parallax-zoom-factor, 0.048))
+      calc(
+        1 + (var(--kanji-camera-zoom, 1) - 1) *
+          var(--kanji-parallax-zoom-factor, 0.048)
+      )
     );
   backface-visibility: hidden;
   contain: layout style;
@@ -568,12 +720,24 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
    * Grid lives in React Flow Background; this layer adds atmosphere only.
    */
   background-image:
-    radial-gradient(ellipse 44% 34% at 18% 26%, rgba(120, 16, 16, 0.06) 0%, transparent 64%),
-    radial-gradient(ellipse 38% 30% at 78% 62%, rgba(80, 10, 10, 0.04) 0%, transparent 60%),
-    radial-gradient(ellipse 56% 40% at 52% 84%, rgba(100, 14, 14, 0.03) 0%, transparent 68%);
+    radial-gradient(
+      ellipse 44% 34% at 18% 26%,
+      rgba(120, 16, 16, 0.06) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 38% 30% at 78% 62%,
+      rgba(80, 10, 10, 0.04) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 56% 40% at 52% 84%,
+      rgba(100, 14, 14, 0.03) 0%,
+      transparent 68%
+    );
   background-size: 100% 100%;
   background-position: 0 0;
-  opacity: 0.90;
+  opacity: 0.9;
 }
 
 /* Promote parallax layer to its own compositor layer only when parallax is active.
@@ -598,15 +762,28 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
    * on the white base.
    */
   background: none;
-  opacity: 0.90;
+  opacity: 0.9;
 }
 .dark .kanji-bg-atmosphere {
   /* Dark mode: deep board atmosphere — dark crimson at center, fading to void */
   background:
-    radial-gradient(ellipse 58% 44% at 50% 42%, rgba(140, 18, 18, 0.08) 0%, rgba(80, 8, 8, 0.03) 54%, transparent 78%),
-    radial-gradient(ellipse 34% 26% at 22% 22%, rgba(110, 14, 14, 0.04) 0%, transparent 58%),
-    radial-gradient(ellipse 30% 24% at 76% 74%, rgba(100, 16, 16, 0.03) 0%, transparent 56%);
-  opacity: 0.90;
+    radial-gradient(
+      ellipse 58% 44% at 50% 42%,
+      rgba(140, 18, 18, 0.08) 0%,
+      rgba(80, 8, 8, 0.03) 54%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 34% 26% at 22% 22%,
+      rgba(110, 14, 14, 0.04) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 76% 74%,
+      rgba(100, 16, 16, 0.03) 0%,
+      transparent 56%
+    );
+  opacity: 0.9;
 }
 
 /* Optional breathe animation — high tier with heavy effects */
@@ -619,13 +796,19 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
   contain: layout paint style;
   backface-visibility: hidden;
   /* Light mode: neutral soft frame — barely visible, no warm tint */
-  background:
-    radial-gradient(circle at center, transparent 50%, rgba(10, 10, 14, 0.09) 100%);
+  background: radial-gradient(
+    circle at center,
+    transparent 50%,
+    rgba(10, 10, 14, 0.09) 100%
+  );
 }
 .dark .kanji-bg-vignette {
   /* Dark mode: deep board-frame shadow — neutral pure black */
-  background:
-    radial-gradient(circle at center, transparent 42%, rgba(4, 4, 4, 0.70) 100%);
+  background: radial-gradient(
+    circle at center,
+    transparent 42%,
+    rgba(4, 4, 4, 0.7) 100%
+  );
 }
 
 /* ── Pause all board animations during pan/zoom interactions ── */
@@ -657,7 +840,7 @@ html[data-jp-font="meiryo"]   { --jp-font-family: "Meiryo", "メイリオ", sans
 
 /* ── Quality tier overrides ── */
 [data-kanji-quality="low"] .kanji-bg-parallax-layer {
-  opacity: 0.60;
+  opacity: 0.6;
 }
 html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   opacity: 0.72;

@@ -32,12 +32,15 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ user: null }, { status: 401 });
         }
 
-        const response = await fetch(`${apiConfig.usersApiBase}/users/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `${apiConfig.usersApiBase}/users/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           },
-        });
+        );
 
         console.log("Backend response status:", response.status);
 

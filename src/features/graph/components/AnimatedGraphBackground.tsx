@@ -102,7 +102,7 @@ export default function AnimatedGraphBackground({
   variant = "normal",
   mode = "parent",
   edgeMargin,
-  zoom = 0.90,
+  zoom = 0.9,
   spread = 1.28,
   depth = 1.36,
 }: Props) {
@@ -284,8 +284,7 @@ export default function AnimatedGraphBackground({
       const anchorX = width * (isMobile ? 0.5 : 0.58);
       const anchorY = height * 0.5;
 
-      const scale =
-        Math.min(width, height) * (isMobile ? 0.56 : 0.68) * zoom;
+      const scale = Math.min(width, height) * (isMobile ? 0.56 : 0.68) * zoom;
 
       const cameraDistance = isMobile ? 2.55 : 2.2;
 

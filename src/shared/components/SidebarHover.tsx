@@ -600,7 +600,10 @@ function Header({ expanded }: { expanded: boolean }) {
                 <div className="text-[28px] font-extrabold tracking-[0.09em] text-content-primary leading-none">
                   GOKAI
                 </div>
-                <span className="jp-vertical text-[13px] font-black text-content-secondary dark:text-content-tertiary select-none" style={{ lineHeight: 1.15 }}>
+                <span
+                  className="jp-vertical text-[13px] font-black text-content-secondary dark:text-content-tertiary select-none"
+                  style={{ lineHeight: 1.15 }}
+                >
                   語界
                 </span>
               </div>

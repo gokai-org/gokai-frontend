@@ -1,6 +1,12 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
@@ -263,7 +269,12 @@ export default function AdminSidebar() {
               "w-[320px] md:w-[78px]",
             ].join(" ")}
             animate={{ width: expanded ? 320 : 78 }}
-            transition={{ type: "spring", stiffness: 350, damping: 30, mass: 0.7 }}
+            transition={{
+              type: "spring",
+              stiffness: 350,
+              damping: 30,
+              mass: 0.7,
+            }}
             whileHover={{ boxShadow: "var(--shadow-xl)" }}
           >
             <motion.div animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
@@ -363,7 +374,12 @@ export default function AdminSidebar() {
               initial={{ x: -420, opacity: 0, scale: 0.9 }}
               animate={{ x: 0, opacity: 1, scale: 1 }}
               exit={{ x: -420, opacity: 0, scale: 0.9 }}
-              transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.8 }}
+              transition={{
+                type: "spring",
+                stiffness: 300,
+                damping: 30,
+                mass: 0.8,
+              }}
               style={{
                 paddingTop: "env(safe-area-inset-top)",
                 paddingBottom: "env(safe-area-inset-bottom)",
@@ -534,7 +550,10 @@ function Header({ expanded }: { expanded: boolean }) {
                     ADMIN
                   </div>
                 </div>
-                <span className="jp-vertical text-[13px] font-black text-content-secondary select-none" style={{ lineHeight: 1.15 }}>
+                <span
+                  className="jp-vertical text-[13px] font-black text-content-secondary select-none"
+                  style={{ lineHeight: 1.15 }}
+                >
                   語界
                 </span>
               </div>

@@ -2,8 +2,7 @@
 
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 
-interface PrimaryActionButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
+interface PrimaryActionButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   children: ReactNode;
   icon?: ReactNode;
   fullWidth?: boolean;

@@ -100,7 +100,8 @@ function readSignals(previous: GraphicsQualitySignals): GraphicsQualitySignals {
         ? navigatorWithMemory.deviceMemory
         : null,
     pointerType: getPointerType(),
-    prefersReducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    prefersReducedMotion: window.matchMedia("(prefers-reduced-motion: reduce)")
+      .matches,
     fpsEstimate: previous.fpsEstimate,
   };
 }
@@ -161,7 +162,8 @@ function buildGraphicsProfile(
   heavyAnimationsEnabled: boolean,
 ): GraphicsProfile {
   const motionAllowed = animationsEnabled && !signals.prefersReducedMotion;
-  const shouldUseHeavyEffects = motionAllowed && heavyAnimationsEnabled && tier === "high";
+  const shouldUseHeavyEffects =
+    motionAllowed && heavyAnimationsEnabled && tier === "high";
 
   if (!motionAllowed) {
     return {
@@ -272,7 +274,9 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
     heavyAnimationsEnabled = true,
     enableFpsProbe = true,
   } = options;
-  const [signals, setSignals] = useState<GraphicsQualitySignals>(() => getInitialSignals());
+  const [signals, setSignals] = useState<GraphicsQualitySignals>(() =>
+    getInitialSignals(),
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -281,7 +285,9 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
       setSignals((previous) => readSignals(previous));
     };
 
-    const reducedMotionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const reducedMotionQuery = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    );
     const coarsePointerQuery = window.matchMedia("(pointer: coarse)");
     const finePointerQuery = window.matchMedia("(pointer: fine)");
 
@@ -289,9 +295,18 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
 
     window.addEventListener("resize", updateSignals);
 
-    const removeReducedMotionListener = bindMediaQueryListener(reducedMotionQuery, updateSignals);
-    const removeCoarsePointerListener = bindMediaQueryListener(coarsePointerQuery, updateSignals);
-    const removeFinePointerListener = bindMediaQueryListener(finePointerQuery, updateSignals);
+    const removeReducedMotionListener = bindMediaQueryListener(
+      reducedMotionQuery,
+      updateSignals,
+    );
+    const removeCoarsePointerListener = bindMediaQueryListener(
+      coarsePointerQuery,
+      updateSignals,
+    );
+    const removeFinePointerListener = bindMediaQueryListener(
+      finePointerQuery,
+      updateSignals,
+    );
 
     return () => {
       window.removeEventListener("resize", updateSignals);
@@ -302,7 +317,11 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined" || !enableFpsProbe || signals.prefersReducedMotion) {
+    if (
+      typeof window === "undefined" ||
+      !enableFpsProbe ||
+      signals.prefersReducedMotion
+    ) {
       return;
     }
 
@@ -324,7 +343,9 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
       if (frameCount >= 12 || elapsed >= 320) {
         const fps = Math.round((frameCount / Math.max(elapsed, 1)) * 1000);
         setSignals((previous) =>
-          previous.fpsEstimate === fps ? previous : { ...previous, fpsEstimate: fps },
+          previous.fpsEstimate === fps
+            ? previous
+            : { ...previous, fpsEstimate: fps },
         );
         return;
       }
@@ -340,10 +361,24 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
       window.clearTimeout(timeoutId);
       window.cancelAnimationFrame(rafId);
     };
-  }, [enableFpsProbe, signals.height, signals.prefersReducedMotion, signals.width]);
+  }, [
+    enableFpsProbe,
+    signals.height,
+    signals.prefersReducedMotion,
+    signals.width,
+  ]);
 
   return useMemo(() => {
-    const tier = resolveQualityTier(signals, animationsEnabled, heavyAnimationsEnabled);
-    return buildGraphicsProfile(signals, tier, animationsEnabled, heavyAnimationsEnabled);
+    const tier = resolveQualityTier(
+      signals,
+      animationsEnabled,
+      heavyAnimationsEnabled,
+    );
+    return buildGraphicsProfile(
+      signals,
+      tier,
+      animationsEnabled,
+      heavyAnimationsEnabled,
+    );
   }, [animationsEnabled, heavyAnimationsEnabled, signals]);
 }

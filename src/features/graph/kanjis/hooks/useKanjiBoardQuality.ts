@@ -117,9 +117,14 @@ export function createKanjiBoardQualityProfile(
       showRing: graphicsProfile.maxBackgroundEffects >= 3,
       animateTwinkle: graphicsProfile.shouldAnimateBackground,
       animateBreathe:
-        graphicsProfile.shouldAnimateBackground && graphicsProfile.shouldUseHeavyEffects,
-      parallaxStrength: graphicsProfile.shouldUseParallax ? graphicsProfile.parallaxStrength : 0,
-      zoomStrength: graphicsProfile.shouldUseParallax ? graphicsProfile.zoomResponseStrength : 0,
+        graphicsProfile.shouldAnimateBackground &&
+        graphicsProfile.shouldUseHeavyEffects,
+      parallaxStrength: graphicsProfile.shouldUseParallax
+        ? graphicsProfile.parallaxStrength
+        : 0,
+      zoomStrength: graphicsProfile.shouldUseParallax
+        ? graphicsProfile.zoomResponseStrength
+        : 0,
       overscanBase: graphicsProfile.overscanBase,
       overscanZoomFactor: graphicsProfile.overscanZoomFactor,
       interactionSmoothingMs: graphicsProfile.interactionSmoothingMs,
@@ -159,5 +164,8 @@ export function createKanjiBoardQualityProfile(
 }
 
 export function useKanjiBoardQuality(graphicsProfile: GraphicsProfile) {
-  return useMemo(() => createKanjiBoardQualityProfile(graphicsProfile), [graphicsProfile]);
+  return useMemo(
+    () => createKanjiBoardQualityProfile(graphicsProfile),
+    [graphicsProfile],
+  );
 }

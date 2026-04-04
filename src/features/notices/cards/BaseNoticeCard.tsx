@@ -85,7 +85,9 @@ export function BaseNoticeCard({
                     <h3
                       className={cls(
                         "text-sm font-bold leading-snug",
-                        notice.read ? "text-content-secondary" : "text-content-primary",
+                        notice.read
+                          ? "text-content-secondary"
+                          : "text-content-primary",
                       )}
                     >
                       {notice.title}
@@ -156,12 +158,17 @@ export function BaseNoticeCard({
 
               <button
                 onClick={() => longText && setExpanded((prev) => !prev)}
-                className={cls("mt-2 w-full text-left", !longText && "cursor-default")}
+                className={cls(
+                  "mt-2 w-full text-left",
+                  !longText && "cursor-default",
+                )}
               >
                 <p
                   className={cls(
                     "text-xs leading-relaxed",
-                    notice.read ? "text-content-muted" : "text-content-tertiary",
+                    notice.read
+                      ? "text-content-muted"
+                      : "text-content-tertiary",
                   )}
                 >
                   {expanded || !longText

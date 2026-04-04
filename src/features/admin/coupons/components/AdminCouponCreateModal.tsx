@@ -2,13 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import {
-  AlertCircle,
-  CheckCircle2,
-  Loader2,
-  Plus,
-  X,
-} from "lucide-react";
+import { AlertCircle, CheckCircle2, Loader2, Plus, X } from "lucide-react";
 import type { CreateCouponRequest } from "../types/coupons";
 import { DatePicker } from "@/shared/ui/DatePicker";
 
@@ -35,7 +29,11 @@ export function AdminCouponCreateModal({
   const [claimLimit, setClaimLimit] = useState(1);
   const [vigency, setVigency] = useState("");
 
-  const isValid = code.trim().length > 0 && months >= 1 && claimLimit >= 1 && vigency.length > 0;
+  const isValid =
+    code.trim().length > 0 &&
+    months >= 1 &&
+    claimLimit >= 1 &&
+    vigency.length > 0;
 
   const handleCreate = async () => {
     await onCreate({
@@ -143,7 +141,9 @@ export function AdminCouponCreateModal({
                     <input
                       type="number"
                       value={months}
-                      onChange={(e) => setMonths(Math.max(1, Number(e.target.value)))}
+                      onChange={(e) =>
+                        setMonths(Math.max(1, Number(e.target.value)))
+                      }
                       min={1}
                       className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                     />
@@ -156,7 +156,9 @@ export function AdminCouponCreateModal({
                     <input
                       type="number"
                       value={claimLimit}
-                      onChange={(e) => setClaimLimit(Math.max(1, Number(e.target.value)))}
+                      onChange={(e) =>
+                        setClaimLimit(Math.max(1, Number(e.target.value)))
+                      }
                       min={1}
                       className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                     />
@@ -167,10 +169,7 @@ export function AdminCouponCreateModal({
                   <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                     Vigencia *
                   </label>
-                  <DatePicker
-                    value={vigency}
-                    onChange={setVigency}
-                  />
+                  <DatePicker value={vigency} onChange={setVigency} />
                 </div>
 
                 {error && (

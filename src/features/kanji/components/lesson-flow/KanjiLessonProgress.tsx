@@ -1,7 +1,10 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { EXERCISE_LABELS, type KanjiLessonExerciseKind } from "@/features/kanji/types/lessonFlow";
+import {
+  EXERCISE_LABELS,
+  type KanjiLessonExerciseKind,
+} from "@/features/kanji/types/lessonFlow";
 
 interface KanjiLessonProgressProps {
   currentIndex: number;
@@ -46,13 +49,25 @@ export function KanjiLessonProgress({
                 }`}
               >
                 {isDone ? (
-                  <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-2.5 h-2.5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={3}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M5 13l4 4L19 7"
+                    />
                   </svg>
                 ) : (
                   <span>{i + 1}</span>
                 )}
-                <span className="hidden sm:inline">{EXERCISE_LABELS[type]}</span>
+                <span className="hidden sm:inline">
+                  {EXERCISE_LABELS[type]}
+                </span>
               </div>
             </div>
           );

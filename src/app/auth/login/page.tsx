@@ -42,7 +42,10 @@ function normalizeProfile(value: unknown): UserProfile | null {
   return null;
 }
 
-function getDestinationByProfile(profile: UserProfile | null, from: string | null) {
+function getDestinationByProfile(
+  profile: UserProfile | null,
+  from: string | null,
+) {
   if (profile === "admin") return "/admin/dashboard";
   return from || "/dashboard/graph";
 }
@@ -107,7 +110,10 @@ export default function LoginPage() {
         setIntent(parsedIntent);
         setMode("register");
       } else {
-        const membershipUrl = new URL("/auth/membership", window.location.origin);
+        const membershipUrl = new URL(
+          "/auth/membership",
+          window.location.origin,
+        );
         ["google", "email", "firstName", "lastName", "from"].forEach((key) => {
           const value = sp.get(key);
           if (value) membershipUrl.searchParams.set(key, value);
@@ -338,7 +344,8 @@ export default function LoginPage() {
         body: JSON.stringify({ email: forgotEmail, type: "password-recovery" }),
       });
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || "No se pudo enviar el código.");
+      if (!res.ok)
+        throw new Error(data?.error || "No se pudo enviar el código.");
 
       toast.success(`Código enviado a ${forgotEmail}`);
       setForgotStep("code");
@@ -373,7 +380,8 @@ export default function LoginPage() {
       });
 
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || "Código inválido o expirado.");
+      if (!res.ok)
+        throw new Error(data?.error || "Código inválido o expirado.");
 
       toast.success("Código verificado");
       setForgotStep("password");
@@ -543,7 +551,8 @@ export default function LoginPage() {
       });
 
       const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.error || "No se pudo reenviar el código.");
+      if (!res.ok)
+        throw new Error(data?.error || "No se pudo reenviar el código.");
 
       toast.success(`Código reenviado a ${regEmail}`);
       setRegVerificationCode(Array(CODE_LEN).fill(""));
@@ -619,7 +628,9 @@ export default function LoginPage() {
                       onToggleShowPass={() => setShowPass((s) => !s)}
                       onForgotPassword={() => startSwitch("forgot-password")}
                       onGoogleLogin={handleGoogleLogin}
-                      onGoToMembership={() => router.replace("/auth/membership")}
+                      onGoToMembership={() =>
+                        router.replace("/auth/membership")
+                      }
                       onSubmit={handleLoginSubmit}
                     />
                   )}

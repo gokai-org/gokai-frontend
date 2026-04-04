@@ -36,7 +36,9 @@ export async function GET(req: NextRequest) {
   }
 
   const token = normalizeBearerToken(raw);
-  const profileFromCookie = normalizeProfile(req.cookies.get(PROFILE_COOKIE)?.value);
+  const profileFromCookie = normalizeProfile(
+    req.cookies.get(PROFILE_COOKIE)?.value,
+  );
   const profileFromToken = getProfileFromToken(token);
   const profile = profileFromToken ?? profileFromCookie;
 
@@ -51,7 +53,10 @@ export async function GET(req: NextRequest) {
   const url = `${apiConfig.usersApiBase}/support/tickets/`;
 
   console.log("[GET /admin/api/support/tickets] url:", url);
-  console.log("[GET /admin/api/support/tickets] normalized token exists:", !!token);
+  console.log(
+    "[GET /admin/api/support/tickets] normalized token exists:",
+    !!token,
+  );
 
   try {
     const upstream = await fetch(url, {
@@ -74,7 +79,10 @@ export async function GET(req: NextRequest) {
       data = text ? { error: text } : {};
     }
 
-    console.log("[GET /admin/api/support/tickets] upstream status:", upstream.status);
+    console.log(
+      "[GET /admin/api/support/tickets] upstream status:",
+      upstream.status,
+    );
     console.log("[GET /admin/api/support/tickets] upstream response:", data);
 
     return NextResponse.json(data, { status: upstream.status });

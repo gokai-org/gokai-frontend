@@ -20,7 +20,9 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
       setLoading(false);
     }
 
-    setUserPoints((previous) => (previous === nextPoints ? previous : nextPoints));
+    setUserPoints((previous) =>
+      previous === nextPoints ? previous : nextPoints,
+    );
 
     return nextPoints;
   }, []);

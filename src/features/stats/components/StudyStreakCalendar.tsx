@@ -109,7 +109,9 @@ export function StudyStreakCalendar({
     >
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <h3 className="text-lg font-extrabold text-content-primary">
+            {title}
+          </h3>
           <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="flex gap-3">

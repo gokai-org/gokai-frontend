@@ -26,7 +26,10 @@ export async function DELETE(
   const { type, id } = await params;
 
   if (!ALLOWED_TYPES.has(type)) {
-    return NextResponse.json({ error: "Invalid favorite type" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Invalid favorite type" },
+      { status: 400 },
+    );
   }
 
   const token = normalizeBearerToken(raw);

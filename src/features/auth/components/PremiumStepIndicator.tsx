@@ -7,7 +7,9 @@ export function PremiumStepIndicator() {
     <div className="mt-4 w-full max-w-xs mx-auto">
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-xs font-bold text-accent">Paso 1 de 3</span>
-        <span className="text-xs font-medium text-content-muted">Crear cuenta</span>
+        <span className="text-xs font-medium text-content-muted">
+          Crear cuenta
+        </span>
       </div>
 
       <div className="h-1.5 w-full rounded-full bg-surface-tertiary overflow-hidden">

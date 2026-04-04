@@ -72,7 +72,9 @@ function AdminCouponsTableBase({
     <section className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-bold text-content-primary">Todos los cupones</h3>
+          <h3 className="text-base font-bold text-content-primary">
+            Todos los cupones
+          </h3>
           <p className="text-xs text-content-tertiary">
             Ultimos cupones ({coupons.length} de {totalCoupons} cupones)
           </p>
@@ -102,15 +104,33 @@ function AdminCouponsTableBase({
         <table className="min-w-[780px] md:min-w-[880px] xl:min-w-0 w-full table-fixed bg-surface-primary">
           <thead className="bg-[#F8F6F4] text-left">
             <tr>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">ID</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Codigo</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Descripcion</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Meses</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Limite de canjes</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Vigencia</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Estado</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Fecha de creacion</th>
-              <th className="px-2.5 py-2.5 text-center text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Acciones</th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                ID
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Codigo
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Descripcion
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Meses
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Limite de canjes
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Vigencia
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Estado
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Fecha de creacion
+              </th>
+              <th className="px-2.5 py-2.5 text-center text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -128,7 +148,8 @@ function AdminCouponsTableBase({
       {coupons.length > 0 && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-content-tertiary">
-            Mostrando {visibleCoupons.length} cupones (pagina {page} de {totalPages})
+            Mostrando {visibleCoupons.length} cupones (pagina {page} de{" "}
+            {totalPages})
           </p>
 
           <div className="flex items-center gap-2">

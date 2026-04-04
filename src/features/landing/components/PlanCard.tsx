@@ -50,20 +50,26 @@ export function PlanCard({
       ].join(" ")}
     >
       {/* decorativos */}
-      <div className={[
-        "absolute right-[-16px] top-[-16px] h-28 w-28 rounded-full",
-        highlighted ? "bg-white/[0.15]" : "bg-accent/[0.05]",
-      ].join(" ")} />
-      <div className={[
-        "absolute bottom-[-20px] left-[72%] h-20 w-20 rounded-full",
-        highlighted ? "bg-white/[0.10]" : "bg-accent/[0.04]",
-      ].join(" ")} />
+      <div
+        className={[
+          "absolute right-[-16px] top-[-16px] h-28 w-28 rounded-full",
+          highlighted ? "bg-white/[0.15]" : "bg-accent/[0.05]",
+        ].join(" ")}
+      />
+      <div
+        className={[
+          "absolute bottom-[-20px] left-[72%] h-20 w-20 rounded-full",
+          highlighted ? "bg-white/[0.10]" : "bg-accent/[0.04]",
+        ].join(" ")}
+      />
       {highlighted && (
         <div className="absolute left-[-30px] top-[40%] h-24 w-24 rounded-full bg-white/[0.08]" />
       )}
 
       {/* kanji vertical decorativo */}
-      <div className={`pointer-events-none absolute right-7 top-8 z-0 flex flex-col items-center leading-none select-none ${highlighted ? "text-white/15" : "text-accent/12"}`}>
+      <div
+        className={`pointer-events-none absolute right-7 top-8 z-0 flex flex-col items-center leading-none select-none ${highlighted ? "text-white/15" : "text-accent/12"}`}
+      >
         {jp.split("").map((char, index) => (
           <span
             key={`${char}-${index}`}
@@ -88,11 +94,15 @@ export function PlanCard({
       {/* header */}
       <div className="relative z-10 flex min-h-[120px] flex-col text-left">
         <div className="max-w-[82%]">
-          <h3 className={`text-[1.75rem] font-extrabold leading-[1.02] tracking-tight lg:text-[2rem] ${highlighted ? "text-white" : "text-content-primary"}`}>
+          <h3
+            className={`text-[1.75rem] font-extrabold leading-[1.02] tracking-tight lg:text-[2rem] ${highlighted ? "text-white" : "text-content-primary"}`}
+          >
             {title}
           </h3>
 
-          <p className={`mt-2 text-base leading-relaxed ${highlighted ? "text-white/80" : "text-content-secondary"}`}>
+          <p
+            className={`mt-2 text-base leading-relaxed ${highlighted ? "text-white/80" : "text-content-secondary"}`}
+          >
             {description}
           </p>
         </div>
@@ -112,7 +122,9 @@ export function PlanCard({
             {price}
           </p>
 
-          <p className={`mt-2 text-sm font-semibold uppercase tracking-[0.18em] ${highlighted ? "text-white/60" : "text-content-muted"}`}>
+          <p
+            className={`mt-2 text-sm font-semibold uppercase tracking-[0.18em] ${highlighted ? "text-white/60" : "text-content-muted"}`}
+          >
             {highlighted ? "Plan premium" : "Plan inicial"}
           </p>
         </div>
@@ -133,7 +145,9 @@ export function PlanCard({
               <Check className="h-5 w-5" />
             </div>
 
-            <p className={`text-base leading-relaxed ${highlighted ? "text-white/85" : "text-content-secondary"}`}>
+            <p
+              className={`text-base leading-relaxed ${highlighted ? "text-white/85" : "text-content-secondary"}`}
+            >
               {feature}
             </p>
           </div>

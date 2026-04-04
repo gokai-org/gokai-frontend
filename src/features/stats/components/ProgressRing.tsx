@@ -156,7 +156,9 @@ export function ProgressRing({
         className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
       >
         <div className="mb-4">
-          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <h3 className="text-lg font-extrabold text-content-primary">
+            {title}
+          </h3>
           <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="flex flex-col items-center justify-center py-6 gap-3">
@@ -182,7 +184,9 @@ export function ProgressRing({
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-extrabold text-content-muted">0</span>
+              <span className="text-2xl font-extrabold text-content-muted">
+                0
+              </span>
               <span className="text-xs text-content-muted">items</span>
             </div>
           </div>
@@ -224,7 +228,9 @@ export function ProgressRing({
           <Ring categories={colored} animationsEnabled={animationsEnabled} />
           {/* Center label */}
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-xs text-content-tertiary font-medium">Total</span>
+            <span className="text-xs text-content-tertiary font-medium">
+              Total
+            </span>
             <TotalWrapper
               {...(animationsEnabled
                 ? {

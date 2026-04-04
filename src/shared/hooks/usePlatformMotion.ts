@@ -62,7 +62,8 @@ const FALLBACK_MOTION_CONTEXT: PlatformMotionContextValue = {
   durationScale: 0.72,
 };
 
-export const PlatformMotionContext = createContext<PlatformMotionContextValue | null>(null);
+export const PlatformMotionContext =
+  createContext<PlatformMotionContextValue | null>(null);
 
 export function usePlatformMotion() {
   return useContext(PlatformMotionContext) ?? FALLBACK_MOTION_CONTEXT;

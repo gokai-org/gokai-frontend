@@ -70,10 +70,10 @@ export function HelpTipsSection({
               Consejo del día
             </h3>
             <p className="mb-4 text-sm leading-relaxed text-content-secondary">
-              La mejor forma de aprender kanji es en contexto. En lugar de memorizar
-              caracteres aislados, intenta leer frases completas y asociar cada kanji
-              con situaciones reales. El cerebro recuerda mejor historias que datos
-              sueltos.
+              La mejor forma de aprender kanji es en contexto. En lugar de
+              memorizar caracteres aislados, intenta leer frases completas y
+              asociar cada kanji con situaciones reales. El cerebro recuerda
+              mejor historias que datos sueltos.
             </p>
             <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
               <Lightbulb className="h-4 w-4" />

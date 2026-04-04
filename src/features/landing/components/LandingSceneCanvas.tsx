@@ -124,10 +124,7 @@ function getShapePosition(node: BaseNode, shape: MorphShapeId, time: number) {
       const petal = 1 + 0.34 * Math.sin(4 * a + time * 0.8 + node.seed);
       return {
         x: Math.cos(a) * (0.28 + r * 0.7) * petal,
-        y:
-          Math.sin(a) *
-          (0.42 + r * 0.9) *
-          (0.82 + 0.28 * Math.cos(2 * a)),
+        y: Math.sin(a) * (0.42 + r * 0.9) * (0.82 + 0.28 * Math.cos(2 * a)),
         z: d * 0.72 + Math.sin(3 * a + node.phase) * 0.16,
       };
     }
@@ -151,8 +148,7 @@ function getShapePosition(node: BaseNode, shape: MorphShapeId, time: number) {
     }
 
     case "speakBurst": {
-      const burst =
-        0.48 + r * (0.52 + 0.34 * Math.sin(3 * a + time * 0.9));
+      const burst = 0.48 + r * (0.52 + 0.34 * Math.sin(3 * a + time * 0.9));
       return {
         x: Math.cos(a) * burst,
         y: Math.sin(a) * burst * 0.76,
@@ -378,7 +374,8 @@ export function LandingSceneCanvas({ sectionIds }: { sectionIds: string[] }) {
 
       const activeScene = sceneRef.current;
       const motionState = timelineRef.current;
-      const { width, height, dpr, reducedMotion, isMobile } = viewportRef.current;
+      const { width, height, dpr, reducedMotion, isMobile } =
+        viewportRef.current;
       const isDark = isDarkRef.current;
 
       if (!width || !height) return;
@@ -397,45 +394,45 @@ export function LandingSceneCanvas({ sectionIds }: { sectionIds: string[] }) {
 
       const time = timestamp * 0.00042;
 
-const closeUp = clamp(activeScene.howCloseUp ?? 0, 0, 1);
-const centerPull = clamp(activeScene.centerPull ?? 0, 0, 1);
-const cinematicZoom = activeScene.cinematicZoom ?? 1;
+      const closeUp = clamp(activeScene.howCloseUp ?? 0, 0, 1);
+      const centerPull = clamp(activeScene.centerPull ?? 0, 0, 1);
+      const cinematicZoom = activeScene.cinematicZoom ?? 1;
 
-const spreadX = lerp(
-  1,
-  activeScene.spreadX * (isMobile ? 1.03 : 1.08),
-  closeUp,
-);
+      const spreadX = lerp(
+        1,
+        activeScene.spreadX * (isMobile ? 1.03 : 1.08),
+        closeUp,
+      );
 
-const spreadY = lerp(
-  1,
-  activeScene.spreadY * (isMobile ? 1.02 : 1.06),
-  closeUp,
-);
+      const spreadY = lerp(
+        1,
+        activeScene.spreadY * (isMobile ? 1.02 : 1.06),
+        closeUp,
+      );
 
-const sceneDepth = lerp(
-  1,
-  activeScene.depth * (isMobile ? 1.18 : 1.32),
-  closeUp,
-);
+      const sceneDepth = lerp(
+        1,
+        activeScene.depth * (isMobile ? 1.18 : 1.32),
+        closeUp,
+      );
 
-const baseAnchorX =
-  width * ((isMobile ? 0.5 : 0.66) + activeScene.focusX * 0.16);
+      const baseAnchorX =
+        width * ((isMobile ? 0.5 : 0.66) + activeScene.focusX * 0.16);
 
-const baseAnchorY = height * (0.5 + activeScene.focusY * 0.18);
+      const baseAnchorY = height * (0.5 + activeScene.focusY * 0.18);
 
-const anchorX = lerp(baseAnchorX, width * 0.5, centerPull);
-const anchorY = lerp(baseAnchorY, height * 0.5, centerPull);
+      const anchorX = lerp(baseAnchorX, width * 0.5, centerPull);
+      const anchorY = lerp(baseAnchorY, height * 0.5, centerPull);
 
-const zoomBoost = lerp(1, cinematicZoom, closeUp * 0.38);
+      const zoomBoost = lerp(1, cinematicZoom, closeUp * 0.38);
 
-const scale =
-  Math.min(width, height) *
-  lerp(0.4, isMobile ? 0.52 : 0.6, closeUp) *
-  activeScene.zoom *
-  zoomBoost;
+      const scale =
+        Math.min(width, height) *
+        lerp(0.4, isMobile ? 0.52 : 0.6, closeUp) *
+        activeScene.zoom *
+        zoomBoost;
 
-const cameraDistance = lerp(2.8, isMobile ? 2.45 : 2.18, closeUp);
+      const cameraDistance = lerp(2.8, isMobile ? 2.45 : 2.18, closeUp);
 
       drawBackground(width, height, activeScene, anchorX, anchorY);
 
@@ -444,10 +441,12 @@ const cameraDistance = lerp(2.8, isMobile ? 2.45 : 2.18, closeUp);
 
       const repulsionRadius = reducedMotion
         ? 0
-        : lerp(160, 220, closeUp) * lerp(0.9, 1.25, activeScene.pointerInfluence * 10);
+        : lerp(160, 220, closeUp) *
+          lerp(0.9, 1.25, activeScene.pointerInfluence * 10);
       const repulsionStrength = reducedMotion
         ? 0
-        : lerp(36, 72, closeUp) * lerp(0.8, 1.35, activeScene.pointerInfluence * 10);
+        : lerp(36, 72, closeUp) *
+          lerp(0.8, 1.35, activeScene.pointerInfluence * 10);
 
       for (const node of nodesRef.current) {
         const morph = getMorphPosition(
@@ -477,7 +476,7 @@ const cameraDistance = lerp(2.8, isMobile ? 2.45 : 2.18, closeUp);
         let y = (morph.y + orbitY) * spreadY;
         let z = (morph.z + orbitZ) * sceneDepth;
 
-z -= closeUp * (isMobile ? 0.65 : 1.05);
+        z -= closeUp * (isMobile ? 0.65 : 1.05);
 
         const rotatedY = rotateY(x, z, activeScene.rotationY);
         x = rotatedY.x;
@@ -567,7 +566,8 @@ z -= closeUp * (isMobile ? 0.65 : 1.05);
 
           const mx = (a.x + b.x) * 0.5;
           const my = (a.y + b.y) * 0.5;
-          const bend = Math.sin((a.x + b.y) * 0.003 + time) * lerp(10, 24, closeUp);
+          const bend =
+            Math.sin((a.x + b.y) * 0.003 + time) * lerp(10, 24, closeUp);
 
           ctx.strokeStyle = `rgba(153,51,49,${alpha * 0.46})`;
           ctx.beginPath();
@@ -609,7 +609,13 @@ z -= closeUp * (isMobile ? 0.65 : 1.05);
 
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(node.x, node.y, node.radius * lerp(3.6, 5.4, closeUp), 0, Math.PI * 2);
+        ctx.arc(
+          node.x,
+          node.y,
+          node.radius * lerp(3.6, 5.4, closeUp),
+          0,
+          Math.PI * 2,
+        );
         ctx.fill();
 
         ctx.fillStyle =

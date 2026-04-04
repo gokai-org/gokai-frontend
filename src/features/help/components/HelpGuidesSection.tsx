@@ -49,7 +49,12 @@ export function HelpGuidesSection({
           </button>
         );
 
-        if (!animationsEnabled) return <div key={guide.title} className="h-full">{card}</div>;
+        if (!animationsEnabled)
+          return (
+            <div key={guide.title} className="h-full">
+              {card}
+            </div>
+          );
 
         return (
           <motion.div

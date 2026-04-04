@@ -15,18 +15,23 @@ function lerp(a: number, b: number, t: number) {
   return a + (b - a) * t;
 }
 
-export function LandingExperienceBackground({ progress }: LandingExperienceBackgroundProps) {
-  const panelRise      = ss(0.06, 0.94, progress);
+export function LandingExperienceBackground({
+  progress,
+}: LandingExperienceBackgroundProps) {
+  const panelRise = ss(0.06, 0.94, progress);
   const panelTranslate = lerp(90, 0, panelRise);
-  const gridReveal     = ss(0.28, 0.88, progress);
-  const shadowOpacity  = lerp(0.14, 0.01, panelRise);
+  const gridReveal = ss(0.28, 0.88, progress);
+  const shadowOpacity = lerp(0.14, 0.01, panelRise);
 
   return (
     <div className="absolute inset-0 overflow-hidden">
       {/* Panel que sube desde abajo */}
       <div
         className="absolute inset-x-0 bottom-0 h-[130vh]"
-        style={{ transform: `translateY(${panelTranslate}vh)`, willChange: "transform" }}
+        style={{
+          transform: `translateY(${panelTranslate}vh)`,
+          willChange: "transform",
+        }}
       >
         {/* ── Base: blanco en light, negro de plataforma en dark ── */}
         <div className="absolute inset-0 rounded-t-[2.8rem] bg-white dark:bg-[#131313]" />

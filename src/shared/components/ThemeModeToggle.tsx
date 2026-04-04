@@ -28,7 +28,9 @@ export function ThemeModeToggle({ className }: ThemeModeToggleProps) {
   ].join(" ");
 
   if (!mounted) {
-    return <button type="button" disabled aria-label="Tema" className={baseClass} />;
+    return (
+      <button type="button" disabled aria-label="Tema" className={baseClass} />
+    );
   }
 
   return (
@@ -42,9 +44,7 @@ export function ThemeModeToggle({ className }: ThemeModeToggleProps) {
       <span
         className={[
           "absolute left-1.5 flex h-5 w-5 items-center justify-center transition-opacity duration-300",
-          isDark
-            ? "opacity-35"
-            : "opacity-70",
+          isDark ? "opacity-35" : "opacity-70",
         ].join(" ")}
       >
         <SunMedium className="h-3.5 w-3.5" />

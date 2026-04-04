@@ -34,10 +34,7 @@ export const scaleFade: Variants = {
 };
 
 /** Contenedor que dispersa la animación en sus hijos */
-export function staggerContainer(
-  stagger = 0.09,
-  delayChildren = 0,
-): Variants {
+export function staggerContainer(stagger = 0.09, delayChildren = 0): Variants {
   return {
     hidden: {},
     show: {
@@ -89,4 +86,3 @@ export const sectionReveal: Variants = {
     transition: { duration: 0.7, ease: EASE_BRAND },
   },
 };
-

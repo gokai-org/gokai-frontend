@@ -6,7 +6,10 @@ export { VocabThumbnail } from "./components/VocabThumbnail";
 export type { VocabThumbnailProps } from "./components/VocabThumbnail";
 export { ScriptCard } from "./components/ScriptCard";
 export type { ScriptCardProps } from "./components/ScriptCard";
-export type { VocabularyVariant, VariantConfig } from "./utils/vocabularyCardConfig";
+export type {
+  VocabularyVariant,
+  VariantConfig,
+} from "./utils/vocabularyCardConfig";
 export type { ScriptVariant, ScriptCardConfig } from "./utils/scriptCardConfig";
 export { LibraryHeader } from "./components/LibraryHeader";
 export { LibraryRecentPanel } from "./components/LibraryRecentPanel";

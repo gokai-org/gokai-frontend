@@ -99,7 +99,9 @@ export default function ConfigurationPage() {
 
           {settingsLoading && activeSection !== "account" ? (
             <div className="flex items-center justify-center py-12">
-              <div className="text-content-tertiary">Cargando configuración...</div>
+              <div className="text-content-tertiary">
+                Cargando configuración...
+              </div>
             </div>
           ) : (
             <div className="space-y-6 md:space-y-8">
@@ -912,7 +914,9 @@ function AccountSettings({
                     autoFocus
                   />
                 ) : (
-                  <p className="text-content-primary py-2">{user?.firstName || "—"}</p>
+                  <p className="text-content-primary py-2">
+                    {user?.firstName || "—"}
+                  </p>
                 )}
               </div>
 
@@ -934,7 +938,9 @@ function AccountSettings({
                     placeholder="Tu apellido"
                   />
                 ) : (
-                  <p className="text-content-primary py-2">{user?.lastName || "—"}</p>
+                  <p className="text-content-primary py-2">
+                    {user?.lastName || "—"}
+                  </p>
                 )}
               </div>
 
@@ -955,7 +961,9 @@ function AccountSettings({
                     className="w-full px-4 py-2 border border-border-default rounded-lg bg-surface-secondary text-content-tertiary cursor-not-allowed"
                   />
                 ) : (
-                  <p className="text-content-primary py-2">{user?.email || "—"}</p>
+                  <p className="text-content-primary py-2">
+                    {user?.email || "—"}
+                  </p>
                 )}
               </div>
 

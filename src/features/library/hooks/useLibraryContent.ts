@@ -92,7 +92,10 @@ export function useLibraryContent(searchQuery: string) {
 
   const allLibraryItems = useMemo<CombinedLibraryItem[]>(() => {
     return [
-      ...filteredKanjis.map((kanji) => ({ type: "kanji" as const, data: kanji })),
+      ...filteredKanjis.map((kanji) => ({
+        type: "kanji" as const,
+        data: kanji,
+      })),
       ...filteredHiraganas.map((hiragana) => ({
         type: "hiragana" as const,
         data: hiragana,
@@ -114,8 +117,7 @@ export function useLibraryContent(searchQuery: string) {
     allLibraryItems,
     normalizedQuery,
     isSearching: normalizedQuery.length > 0,
-    isGlobalLoading:
-      loadingKanjis || loadingKatakanas || loadingHiraganas,
+    isGlobalLoading: loadingKanjis || loadingKatakanas || loadingHiraganas,
     loadingKanjis,
     loadingKatakanas,
     loadingHiraganas,

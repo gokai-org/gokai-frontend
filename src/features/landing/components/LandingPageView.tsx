@@ -23,11 +23,7 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function FixedSplitRail({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+function FixedSplitRail({ children }: { children: React.ReactNode }) {
   return (
     <div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12 xl:gap-16">
       <div className="max-w-3xl lg:col-span-5 lg:col-start-1 lg:pt-10 xl:pt-14">
@@ -42,11 +38,7 @@ function FixedSplitRail({
   );
 }
 
-function SkillBlock({
-  section,
-}: {
-  section: (typeof SECTIONS)[number];
-}) {
+function SkillBlock({ section }: { section: (typeof SECTIONS)[number] }) {
   return (
     <FixedSplitRail>
       <div className="space-y-7">
@@ -58,7 +50,11 @@ function SkillBlock({
         />
 
         {section.cta && (
-          <motion.div variants={scaleFade} whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.98 }}>
+          <motion.div
+            variants={scaleFade}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
             <Link
               href={section.cta.href}
               className="inline-flex items-center gap-2 rounded-full border border-border-default/70 bg-surface-primary/72 px-5 py-3 text-sm font-semibold text-content-primary shadow-[var(--shadow-md)] backdrop-blur-xl"
@@ -85,10 +81,10 @@ export function LandingPageView() {
   const timeline = useLandingScrollTimeline(sectionIds);
   const sceneActiveId = timeline.activeId;
 
-  const howMetrics        = timeline.sections["como-funciona"];
-  const experienceMetrics  = timeline.sections["experiencia"];
-  const plansMetrics       = timeline.sections["planes"];
-  const viewportHeight     = timeline.viewport.height || 1;
+  const howMetrics = timeline.sections["como-funciona"];
+  const experienceMetrics = timeline.sections["experiencia"];
+  const plansMetrics = timeline.sections["planes"];
+  const viewportHeight = timeline.viewport.height || 1;
 
   const experienceSectionProgress = experienceMetrics
     ? clamp(
@@ -100,7 +96,8 @@ export function LandingPageView() {
     : 0;
   const plansExitProgress = plansMetrics
     ? clamp(
-        (viewportHeight * 1.1 - plansMetrics.viewportOffset) / (viewportHeight * 0.85),
+        (viewportHeight * 1.1 - plansMetrics.viewportOffset) /
+          (viewportHeight * 0.85),
         0,
         1,
       )
@@ -165,10 +162,14 @@ export function LandingPageView() {
   const heroSection = SECTIONS[0];
 
   const skillSections = SECTIONS.filter((section) =>
-    ["caracteristicas", "leer", "pensar", "hablar", "escuchar"].includes(section.id),
+    ["caracteristicas", "leer", "pensar", "hablar", "escuchar"].includes(
+      section.id,
+    ),
   );
 
-  const howSection = SECTIONS.find((section) => section.id === "como-funciona")!;
+  const howSection = SECTIONS.find(
+    (section) => section.id === "como-funciona",
+  )!;
   const plansSection = SECTIONS.find((section) => section.id === "planes")!;
   const contactSection = SECTIONS.find((section) => section.id === "contacto")!;
 
@@ -244,7 +245,9 @@ export function LandingPageView() {
           {/* Sección experiencia fuera de LandingSectionFrame — el motion.div con y-transform
               de LandingSectionFrame rompería position:sticky en los descendientes.
               El id="experiencia" vive en el propio LandingExperienceSection. */}
-          <LandingExperienceSection sectionProgress={experienceSectionProgress} />
+          <LandingExperienceSection
+            sectionProgress={experienceSectionProgress}
+          />
 
           <LandingSectionFrame
             id={plansSection.id}

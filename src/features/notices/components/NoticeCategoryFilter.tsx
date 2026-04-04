@@ -17,29 +17,29 @@ export function NoticeCategoryFilter({
   selectedCategory,
   onSelectCategory,
 }: NoticeCategoryFilterProps) {
-  const [orderedCategories, setOrderedCategories] = useState<NoticeCategoryItem[]>(
-    () => {
-      if (typeof window === "undefined") return categories;
+  const [orderedCategories, setOrderedCategories] = useState<
+    NoticeCategoryItem[]
+  >(() => {
+    if (typeof window === "undefined") return categories;
 
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return categories;
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return categories;
 
-      try {
-        const orderIds = JSON.parse(stored) as string[];
-        const ordered = orderIds
-          .map((id) => categories.find((cat) => cat.id === id))
-          .filter((cat): cat is NoticeCategoryItem => cat !== undefined);
+    try {
+      const orderIds = JSON.parse(stored) as string[];
+      const ordered = orderIds
+        .map((id) => categories.find((cat) => cat.id === id))
+        .filter((cat): cat is NoticeCategoryItem => cat !== undefined);
 
-        const newCategories = categories.filter(
-          (cat) => !orderIds.includes(cat.id),
-        );
+      const newCategories = categories.filter(
+        (cat) => !orderIds.includes(cat.id),
+      );
 
-        return [...ordered, ...newCategories];
-      } catch {
-        return categories;
-      }
-    },
-  );
+      return [...ordered, ...newCategories];
+    } catch {
+      return categories;
+    }
+  });
 
   useEffect(() => {
     const orderIds = orderedCategories.map((cat) => cat.id);

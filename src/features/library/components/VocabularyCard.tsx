@@ -36,7 +36,8 @@ export function VocabularyCard({
   index = 0,
   onClick,
 }: VocabularyCardProps) {
-  const { animationsEnabled, motionProps, hoverTransition, cardTransition } = useCardAnimation(index);
+  const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
+    useCardAnimation(index);
   const config = VARIANT_CONFIG[variant];
   const isWord = variant === "word";
 

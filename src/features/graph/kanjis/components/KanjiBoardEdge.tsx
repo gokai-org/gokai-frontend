@@ -24,15 +24,15 @@ function KanjiBoardEdge({
     curvature: 0.35,
   });
 
-  const status        = data?.status        ?? "locked";
-  const highlight     = data?.highlight     ?? false;
-  const widthScale    = data?.widthScale    ?? 1;
-  const opacityScale  = data?.opacityScale  ?? 1;
+  const status = data?.status ?? "locked";
+  const highlight = data?.highlight ?? false;
+  const widthScale = data?.widthScale ?? 1;
+  const opacityScale = data?.opacityScale ?? 1;
   const showLockedDash = data?.showLockedDash ?? true;
-  const qualityTier   = data?.qualityTier   ?? "medium";
-  const unlocking     = data?.unlocking     ?? false;
+  const qualityTier = data?.qualityTier ?? "medium";
+  const unlocking = data?.unlocking ?? false;
 
-  const isHighQuality  = qualityTier === "high";
+  const isHighQuality = qualityTier === "high";
   const isMediumOrHigh = qualityTier !== "low";
 
   const palette =
@@ -40,7 +40,7 @@ function KanjiBoardEdge({
       ? {
           stroke: "var(--kanji-edge-completed-stroke)",
           width: (highlight ? 3.0 : 2.5) * widthScale,
-          opacity: (highlight ? 0.97 : 0.90) * opacityScale,
+          opacity: (highlight ? 0.97 : 0.9) * opacityScale,
           dash: undefined,
         }
       : status === "available"
@@ -57,11 +57,11 @@ function KanjiBoardEdge({
             dash: showLockedDash ? "3 9" : undefined,
           };
 
-  const showAtmosphericBloom = status === "completed" && isHighQuality;   // high only
-  const showRimLight         = status === "completed" && isMediumOrHigh;  // medium + high
-  const showBrightCenter     = status === "completed" && isHighQuality;   // high only
-  const showAvailableGlow    = status === "available" && isMediumOrHigh;
-  const showDualDash         = status === "available" && isHighQuality && !unlocking; // high only
+  const showAtmosphericBloom = status === "completed" && isHighQuality; // high only
+  const showRimLight = status === "completed" && isMediumOrHigh; // medium + high
+  const showBrightCenter = status === "completed" && isHighQuality; // high only
+  const showAvailableGlow = status === "available" && isMediumOrHigh;
+  const showDualDash = status === "available" && isHighQuality && !unlocking; // high only
 
   return (
     <>
@@ -137,10 +137,16 @@ function KanjiBoardEdge({
         id={id}
         d={path}
         pathLength={unlocking ? 1 : undefined}
-        className={[
-          status === "available" && !unlocking ? "kanji-edge-available" : undefined,
-          unlocking ? "kanji-edge-unlocking" : undefined,
-        ].filter(Boolean).join(" ") || undefined}
+        className={
+          [
+            status === "available" && !unlocking
+              ? "kanji-edge-available"
+              : undefined,
+            unlocking ? "kanji-edge-unlocking" : undefined,
+          ]
+            .filter(Boolean)
+            .join(" ") || undefined
+        }
         style={{
           stroke: palette.stroke,
           strokeWidth: palette.width,
@@ -177,9 +183,9 @@ export default memo(KanjiBoardEdge, (previous, next) => {
     previous.sourceY === next.sourceY &&
     previous.targetX === next.targetX &&
     previous.targetY === next.targetY &&
-    previous.data?.status      === next.data?.status &&
-    previous.data?.highlight   === next.data?.highlight &&
+    previous.data?.status === next.data?.status &&
+    previous.data?.highlight === next.data?.highlight &&
     previous.data?.qualityTier === next.data?.qualityTier &&
-    previous.data?.unlocking   === next.data?.unlocking
+    previous.data?.unlocking === next.data?.unlocking
   );
 });

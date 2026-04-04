@@ -232,12 +232,21 @@ export function KanaWritingPracticeModal({
 
   const resultGrade = useMemo(() => {
     if (scorePercent >= 90)
-      return { label: "Excelente", color: "text-green-600 dark:text-green-400" };
+      return {
+        label: "Excelente",
+        color: "text-green-600 dark:text-green-400",
+      };
     if (scorePercent >= 70)
       return { label: "Bien hecho", color: "text-blue-600 dark:text-blue-400" };
     if (scorePercent >= 50)
-      return { label: "Aceptable", color: "text-amber-600 dark:text-amber-400" };
-    return { label: "Sigue practicando", color: "text-orange-600 dark:text-orange-400" };
+      return {
+        label: "Aceptable",
+        color: "text-amber-600 dark:text-amber-400",
+      };
+    return {
+      label: "Sigue practicando",
+      color: "text-orange-600 dark:text-orange-400",
+    };
   }, [scorePercent]);
 
   /* ── Framer-motion helpers ── */

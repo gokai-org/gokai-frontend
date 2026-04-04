@@ -18,11 +18,14 @@ import { useEffect, useRef } from "react";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
 import type { FontSize, JapaneseFont } from "@/shared/hooks/useTypography";
-import { FONT_SIZE_ATTR_MAP, JP_FONT_ATTR_MAP } from "@/shared/hooks/useTypography";
+import {
+  FONT_SIZE_ATTR_MAP,
+  JP_FONT_ATTR_MAP,
+} from "@/shared/hooks/useTypography";
 import { getUserSettings } from "@/features/configuration/services/api";
 
-const ANIM_KEY        = "gokai-animations-enabled";
-const HEAVY_ANIM_KEY  = "gokai-heavy-animations-enabled";
+const ANIM_KEY = "gokai-animations-enabled";
+const HEAVY_ANIM_KEY = "gokai-heavy-animations-enabled";
 
 export function SettingsBootstrap() {
   const { setTheme } = useTheme();
@@ -50,7 +53,7 @@ export function SettingsBootstrap() {
         // ── Animaciones ────────────────────────────────────────
         const noAnim = settings.accessibility.reduceAnimations;
         try {
-          localStorage.setItem(ANIM_KEY,       String(!noAnim));
+          localStorage.setItem(ANIM_KEY, String(!noAnim));
           localStorage.setItem(HEAVY_ANIM_KEY, String(!noAnim));
         } catch {}
 
@@ -63,7 +66,7 @@ export function SettingsBootstrap() {
       .catch(() => {
         // No bloquear la app si falla — los defaults del ThemeProvider aplican
       });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return null;

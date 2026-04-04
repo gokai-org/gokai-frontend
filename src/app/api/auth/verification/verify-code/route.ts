@@ -86,8 +86,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       success: true,
-      message:
-        (data?.message as string) || "Codigo verificado correctamente.",
+      message: (data?.message as string) || "Codigo verificado correctamente.",
     });
   } catch (err) {
     console.error("Error al verificar codigo:", err);

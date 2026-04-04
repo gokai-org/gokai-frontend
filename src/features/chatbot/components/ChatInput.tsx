@@ -170,9 +170,7 @@ export function ChatInput({
                 : "border-border-default bg-surface-secondary text-content-secondary hover:border-accent/15 hover:bg-surface-primary hover:text-accent",
               "disabled:cursor-not-allowed disabled:opacity-50",
             ].join(" ")}
-            aria-label={
-              isRecording ? "Detener grabación" : "Iniciar grabación"
-            }
+            aria-label={isRecording ? "Detener grabación" : "Iniciar grabación"}
           >
             <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
               <path d="M10 3a3 3 0 0 0-3 3v4a3 3 0 1 0 6 0V6a3 3 0 0 0-3-3Z" />

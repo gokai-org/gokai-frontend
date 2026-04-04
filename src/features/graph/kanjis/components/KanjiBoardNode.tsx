@@ -12,20 +12,44 @@ const _SY = 77; // sphere center Y
 const _SR = 46; // sphere radius
 
 const HANDLE_TOP: CSSProperties = {
-  opacity: 0, width: 6, height: 6, background: "transparent", border: "none",
-  top: _SY - _SR, left: _SX, transform: "translate(-50%, -50%)",
+  opacity: 0,
+  width: 6,
+  height: 6,
+  background: "transparent",
+  border: "none",
+  top: _SY - _SR,
+  left: _SX,
+  transform: "translate(-50%, -50%)",
 };
 const HANDLE_BOTTOM: CSSProperties = {
-  opacity: 0, width: 6, height: 6, background: "transparent", border: "none",
-  top: _SY + _SR, left: _SX, transform: "translate(-50%, -50%)",
+  opacity: 0,
+  width: 6,
+  height: 6,
+  background: "transparent",
+  border: "none",
+  top: _SY + _SR,
+  left: _SX,
+  transform: "translate(-50%, -50%)",
 };
 const HANDLE_LEFT: CSSProperties = {
-  opacity: 0, width: 6, height: 6, background: "transparent", border: "none",
-  top: _SY, left: _SX - _SR, transform: "translate(-50%, -50%)",
+  opacity: 0,
+  width: 6,
+  height: 6,
+  background: "transparent",
+  border: "none",
+  top: _SY,
+  left: _SX - _SR,
+  transform: "translate(-50%, -50%)",
 };
 const HANDLE_RIGHT: CSSProperties = {
-  opacity: 0, width: 6, height: 6, background: "transparent", border: "none",
-  top: _SY, left: _SX + _SR, transform: "translate(-50%, -50%)",
+  opacity: 0,
+  width: 6,
+  height: 6,
+  background: "transparent",
+  border: "none",
+  top: _SY,
+  left: _SX + _SR,
+  transform: "translate(-50%, -50%)",
 };
 
 function createGlow(
@@ -50,9 +74,24 @@ function getPlanetStyles(
   if (status === "completed") {
     return {
       glow: selected
-        ? createGlow(8, Math.round(22 + shadowScale * 6), 0.11, 0.22, glowScale, "186,72,66")
-        : createGlow(3, Math.round(13 + shadowScale * 4), 0.06, 0.12, glowScale, "186,72,66"),
-      sphereClass: "bg-gradient-to-br from-[#BA4845] to-[#C85148] border-white/[0.18] shadow-[0_4px_20px_rgba(186,72,66,0.36)] text-white kanji-node-sphere-completed-enter",
+        ? createGlow(
+            8,
+            Math.round(22 + shadowScale * 6),
+            0.11,
+            0.22,
+            glowScale,
+            "186,72,66",
+          )
+        : createGlow(
+            3,
+            Math.round(13 + shadowScale * 4),
+            0.06,
+            0.12,
+            glowScale,
+            "186,72,66",
+          ),
+      sphereClass:
+        "bg-gradient-to-br from-[#BA4845] to-[#C85148] border-white/[0.18] shadow-[0_4px_20px_rgba(186,72,66,0.36)] text-white kanji-node-sphere-completed-enter",
       ring: "rgba(186, 72, 66, 0.22)",
       orbit: "rgba(186, 72, 66, 0.36)",
       label: "text-content-primary",
@@ -62,9 +101,24 @@ function getPlanetStyles(
   if (status === "available") {
     return {
       glow: selected
-        ? createGlow(7, Math.round(19 + shadowScale * 5), 0.09, 0.18, glowScale, "186,72,66")
-        : createGlow(4, Math.round(14 + shadowScale * 3), 0.08, 0.14, glowScale, "186,72,66"),
-      sphereClass: "bg-gradient-to-br from-[#993331] to-[#BA5149] border-white/[0.14] shadow-[0_4px_16px_rgba(153,51,49,0.28)] text-white kanji-node-sphere-available-enter",
+        ? createGlow(
+            7,
+            Math.round(19 + shadowScale * 5),
+            0.09,
+            0.18,
+            glowScale,
+            "186,72,66",
+          )
+        : createGlow(
+            4,
+            Math.round(14 + shadowScale * 3),
+            0.08,
+            0.14,
+            glowScale,
+            "186,72,66",
+          ),
+      sphereClass:
+        "bg-gradient-to-br from-[#993331] to-[#BA5149] border-white/[0.14] shadow-[0_4px_16px_rgba(153,51,49,0.28)] text-white kanji-node-sphere-available-enter",
       ring: "rgba(186, 72, 66, 0.16)",
       orbit: "rgba(186, 72, 66, 0.27)",
       label: "text-content-primary",
@@ -73,9 +127,24 @@ function getPlanetStyles(
 
   return {
     glow: selected
-      ? createGlow(6, Math.round(17 + shadowScale * 4), 0.07, 0.15, glowScale, "120,112,126")
-      : createGlow(2, Math.round(9 + shadowScale * 2), 0.03, 0.07, glowScale, "120,112,126"),
-    sphereClass: "kanji-node-sphere-locked border-[#D8D2E4]/38 dark:border-white/[0.06]",
+      ? createGlow(
+          6,
+          Math.round(17 + shadowScale * 4),
+          0.07,
+          0.15,
+          glowScale,
+          "120,112,126",
+        )
+      : createGlow(
+          2,
+          Math.round(9 + shadowScale * 2),
+          0.03,
+          0.07,
+          glowScale,
+          "120,112,126",
+        ),
+    sphereClass:
+      "kanji-node-sphere-locked border-[#D8D2E4]/38 dark:border-white/[0.06]",
     ring: "rgba(120, 112, 126, 0.18)",
     orbit: "rgba(120, 112, 126, 0.28)",
     label: "text-content-secondary",
@@ -94,14 +163,54 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
 
   return (
     <>
-      <Handle id="target-top"    type="target" position={Position.Top}    style={HANDLE_TOP}    />
-      <Handle id="target-bottom" type="target" position={Position.Bottom} style={HANDLE_BOTTOM} />
-      <Handle id="target-left"   type="target" position={Position.Left}   style={HANDLE_LEFT}   />
-      <Handle id="target-right"  type="target" position={Position.Right}  style={HANDLE_RIGHT}  />
-      <Handle id="source-top"    type="source" position={Position.Top}    style={HANDLE_TOP}    />
-      <Handle id="source-bottom" type="source" position={Position.Bottom} style={HANDLE_BOTTOM} />
-      <Handle id="source-left"   type="source" position={Position.Left}   style={HANDLE_LEFT}   />
-      <Handle id="source-right"  type="source" position={Position.Right}  style={HANDLE_RIGHT}  />
+      <Handle
+        id="target-top"
+        type="target"
+        position={Position.Top}
+        style={HANDLE_TOP}
+      />
+      <Handle
+        id="target-bottom"
+        type="target"
+        position={Position.Bottom}
+        style={HANDLE_BOTTOM}
+      />
+      <Handle
+        id="target-left"
+        type="target"
+        position={Position.Left}
+        style={HANDLE_LEFT}
+      />
+      <Handle
+        id="target-right"
+        type="target"
+        position={Position.Right}
+        style={HANDLE_RIGHT}
+      />
+      <Handle
+        id="source-top"
+        type="source"
+        position={Position.Top}
+        style={HANDLE_TOP}
+      />
+      <Handle
+        id="source-bottom"
+        type="source"
+        position={Position.Bottom}
+        style={HANDLE_BOTTOM}
+      />
+      <Handle
+        id="source-left"
+        type="source"
+        position={Position.Left}
+        style={HANDLE_LEFT}
+      />
+      <Handle
+        id="source-right"
+        type="source"
+        position={Position.Right}
+        style={HANDLE_RIGHT}
+      />
 
       <div className="flex h-full w-full flex-col items-center justify-start pt-2">
         <div className="relative flex h-[138px] w-[138px] items-center justify-center">
@@ -113,7 +222,9 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
                 : progress.status === "available" && !selected
                   ? "kanji-node-available-breathe"
                   : "",
-            ].filter(Boolean).join(" ")}
+            ]
+              .filter(Boolean)
+              .join(" ")}
             style={{ boxShadow: styles.glow }}
           />
 
@@ -150,18 +261,22 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
             </span>
           </div>
 
-          <div className={[
-            "absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border",
-            progress.status === "locked"
-              ? "border-[#D8D2E4]/50 bg-[#F6F4FA]/90 text-[#C0B9CC] dark:border-white/10 dark:bg-black/44 dark:text-white/92"
-              : "border-black/20 bg-black/52 text-white/88 dark:border-white/10 dark:bg-black/44 dark:text-white/92",
-          ].join(" ")}>
+          <div
+            className={[
+              "absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border",
+              progress.status === "locked"
+                ? "border-[#D8D2E4]/50 bg-[#F6F4FA]/90 text-[#C0B9CC] dark:border-white/10 dark:bg-black/44 dark:text-white/92"
+                : "border-black/20 bg-black/52 text-white/88 dark:border-white/10 dark:bg-black/44 dark:text-white/92",
+            ].join(" ")}
+          >
             {progress.status === "locked" ? (
               <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2.2} />
             ) : progress.status === "completed" ? (
               <Sparkles className="h-3.5 w-3.5" strokeWidth={2.2} />
             ) : (
-              <span className="text-[11px] font-semibold">{progress.bestScore ?? 0}</span>
+              <span className="text-[11px] font-semibold">
+                {progress.bestScore ?? 0}
+              </span>
             )}
           </div>
 
@@ -195,7 +310,8 @@ export default memo(KanjiBoardNode, (previous, next) => {
     previous.data.selected === next.data.selected &&
     previous.data.progress.status === next.data.progress.status &&
     previous.data.progress.bestScore === next.data.progress.bestScore &&
-    previous.data.progress.primaryMeaning === next.data.progress.primaryMeaning &&
+    previous.data.progress.primaryMeaning ===
+      next.data.progress.primaryMeaning &&
     previous.data.qualityTier === next.data.qualityTier &&
     previous.data.unlocking === next.data.unlocking &&
     previous.data.shaking === next.data.shaking &&

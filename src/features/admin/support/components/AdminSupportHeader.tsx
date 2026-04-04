@@ -10,7 +10,9 @@ interface AdminSupportHeaderProps {
 export function AdminSupportHeader({ totalTickets }: AdminSupportHeaderProps) {
   return (
     <AdminPageHeader
-      icon={<LifeBuoy className="h-7 w-7 text-content-inverted" strokeWidth={2.5} />}
+      icon={
+        <LifeBuoy className="h-7 w-7 text-content-inverted" strokeWidth={2.5} />
+      }
       title="Soporte"
       japaneseText="支援"
       subtitle="Gestion de tickets, seguimiento y resolucion del equipo"

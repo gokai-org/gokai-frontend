@@ -139,7 +139,9 @@ export function WeeklyActivityChart({
     >
       <div className="flex items-start justify-between mb-1">
         <div>
-          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <h3 className="text-lg font-extrabold text-content-primary">
+            {title}
+          </h3>
           <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="text-right">
@@ -172,7 +174,11 @@ export function WeeklyActivityChart({
               dataKey="day"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "var(--text-tertiary)", fontWeight: 600 }}
+              tick={{
+                fontSize: 12,
+                fill: "var(--text-tertiary)",
+                fontWeight: 600,
+              }}
             />
             <YAxis
               axisLine={false}
@@ -194,7 +200,11 @@ export function WeeklyActivityChart({
               {data.map((entry) => (
                 <Cell
                   key={entry.day}
-                  fill={entry.day === highlightDay ? "var(--accent)" : "var(--text-primary)"}
+                  fill={
+                    entry.day === highlightDay
+                      ? "var(--accent)"
+                      : "var(--text-primary)"
+                  }
                   opacity={entry.day === highlightDay ? 1 : 0.85}
                 />
               ))}

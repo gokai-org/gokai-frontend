@@ -70,7 +70,10 @@ interface AdminSupportTicketDetailModalProps {
   saving: boolean;
   error: string | null;
   onClose: () => void;
-  onSave: (payload: { status: AdminTicketStatus; note: string | null }) => Promise<void>;
+  onSave: (payload: {
+    status: AdminTicketStatus;
+    note: string | null;
+  }) => Promise<void>;
 }
 
 export function AdminSupportTicketDetailModal({
@@ -98,7 +101,8 @@ export function AdminSupportTicketDetailModal({
 
   const hasChanges =
     ticket != null &&
-    (status !== normalizeStatus(ticket.status) || note.trim() !== (ticket.note ?? "").trim());
+    (status !== normalizeStatus(ticket.status) ||
+      note.trim() !== (ticket.note ?? "").trim());
 
   return (
     <AnimatePresence>
@@ -137,7 +141,8 @@ export function AdminSupportTicketDetailModal({
                       Detalle completo del ticket
                     </h2>
                     <p className="mt-1 text-sm text-white/70">
-                      Gestiona estado y respuesta administrativa desde una sola vista.
+                      Gestiona estado y respuesta administrativa desde una sola
+                      vista.
                     </p>
                     <p className="mt-2 text-xs font-semibold text-white/80">
                       Ticket ID: {ticket.id}
@@ -159,36 +164,58 @@ export function AdminSupportTicketDetailModal({
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.45fr_1fr]">
                 <section className="space-y-5">
                   <div className="rounded-2xl border border-border-subtle bg-surface-secondary p-4 sm:p-5">
-                    <h3 className="mb-4 text-sm font-bold text-content-primary">Informacion del ticket</h3>
+                    <h3 className="mb-4 text-sm font-bold text-content-primary">
+                      Informacion del ticket
+                    </h3>
 
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div className="rounded-xl border border-border-default bg-surface-primary p-3">
-                        <p className="text-xs font-semibold text-content-tertiary">Nombre</p>
-                        <p className="mt-1 text-sm font-semibold text-content-primary">{ticket.name}</p>
+                        <p className="text-xs font-semibold text-content-tertiary">
+                          Nombre
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-content-primary">
+                          {ticket.name}
+                        </p>
                       </div>
                       <div className="rounded-xl border border-border-default bg-surface-primary p-3">
-                        <p className="text-xs font-semibold text-content-tertiary">Correo</p>
-                        <p className="mt-1 text-sm font-semibold text-content-primary">{ticket.email}</p>
+                        <p className="text-xs font-semibold text-content-tertiary">
+                          Correo
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-content-primary">
+                          {ticket.email}
+                        </p>
                       </div>
                       <div className="rounded-xl border border-border-default bg-surface-primary p-3">
-                        <p className="text-xs font-semibold text-content-tertiary">Categoria</p>
+                        <p className="text-xs font-semibold text-content-tertiary">
+                          Categoria
+                        </p>
                         <p className="mt-1 text-sm font-semibold text-content-primary">
                           {CATEGORY_LABEL[normalizedCategory]}
                         </p>
                       </div>
                       <div className="rounded-xl border border-border-default bg-surface-primary p-3">
-                        <p className="text-xs font-semibold text-content-tertiary">Fecha</p>
-                        <p className="mt-1 text-sm font-semibold text-content-primary">{ticket.createdAt}</p>
+                        <p className="text-xs font-semibold text-content-tertiary">
+                          Fecha
+                        </p>
+                        <p className="mt-1 text-sm font-semibold text-content-primary">
+                          {ticket.createdAt}
+                        </p>
                       </div>
                     </div>
 
                     <div className="mt-4 rounded-xl border border-border-default bg-surface-primary p-4">
-                      <p className="text-xs font-semibold text-content-tertiary">Asunto</p>
-                      <p className="mt-1 text-sm font-semibold text-content-primary">{ticket.subject}</p>
+                      <p className="text-xs font-semibold text-content-tertiary">
+                        Asunto
+                      </p>
+                      <p className="mt-1 text-sm font-semibold text-content-primary">
+                        {ticket.subject}
+                      </p>
                     </div>
 
                     <div className="mt-4 rounded-xl border border-border-default bg-surface-primary p-4">
-                      <p className="text-xs font-semibold text-content-tertiary">Mensaje del usuario</p>
+                      <p className="text-xs font-semibold text-content-tertiary">
+                        Mensaje del usuario
+                      </p>
                       <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-content-secondary">
                         {ticket.message}
                       </p>
@@ -198,7 +225,9 @@ export function AdminSupportTicketDetailModal({
 
                 <section className="space-y-5">
                   <div className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm sm:p-5">
-                    <h3 className="mb-4 text-sm font-bold text-content-primary">Gestion administrativa</h3>
+                    <h3 className="mb-4 text-sm font-bold text-content-primary">
+                      Gestion administrativa
+                    </h3>
 
                     <div className="space-y-4">
                       <div>
@@ -226,7 +255,9 @@ export function AdminSupportTicketDetailModal({
                           className="w-full resize-y rounded-2xl border border-border-default bg-surface-primary px-4 py-3 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                         />
                         <p className="mt-2 text-xs text-content-tertiary">
-                          Si cambias el estado a <span className="font-semibold">cerrado</span>, se envia un correo con esta nota al usuario.
+                          Si cambias el estado a{" "}
+                          <span className="font-semibold">cerrado</span>, se
+                          envia un correo con esta nota al usuario.
                         </p>
                       </div>
 
@@ -246,7 +277,12 @@ export function AdminSupportTicketDetailModal({
                         </button>
                         <button
                           type="button"
-                          onClick={() => onSave({ status, note: note.trim() ? note.trim() : null })}
+                          onClick={() =>
+                            onSave({
+                              status,
+                              note: note.trim() ? note.trim() : null,
+                            })
+                          }
                           disabled={saving || !hasChanges}
                           className="inline-flex items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
                         >
@@ -267,7 +303,9 @@ export function AdminSupportTicketDetailModal({
                   </div>
 
                   <div className="rounded-2xl border border-border-subtle bg-surface-secondary p-4 sm:p-5">
-                    <h4 className="text-sm font-bold text-content-primary">Resumen rapido</h4>
+                    <h4 className="text-sm font-bold text-content-primary">
+                      Resumen rapido
+                    </h4>
                     <ul className="mt-3 space-y-2 text-sm text-content-secondary">
                       <li className="flex items-center gap-2">
                         <User className="h-4 w-4 text-accent" /> {ticket.name}
@@ -276,10 +314,12 @@ export function AdminSupportTicketDetailModal({
                         <Mail className="h-4 w-4 text-accent" /> {ticket.email}
                       </li>
                       <li className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-accent" /> Estado actual: {STATUS_LABEL[normalizeStatus(ticket.status)]}
+                        <Tag className="h-4 w-4 text-accent" /> Estado actual:{" "}
+                        {STATUS_LABEL[normalizeStatus(ticket.status)]}
                       </li>
                       <li className="flex items-center gap-2">
-                        <MessageSquareText className="h-4 w-4 text-accent" /> Asunto: {ticket.subject}
+                        <MessageSquareText className="h-4 w-4 text-accent" />{" "}
+                        Asunto: {ticket.subject}
                       </li>
                     </ul>
                   </div>

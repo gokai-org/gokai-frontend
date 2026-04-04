@@ -35,7 +35,8 @@ export function LandingExperienceBackdrop({
   const exitCurve = smoothstep(0, 1, exitProgress);
   const finalOpacity = opacity * (1 - exitCurve);
 
-  const visible = (isAfterExperience || experienceProgress > 0.01) && finalOpacity > 0.004;
+  const visible =
+    (isAfterExperience || experienceProgress > 0.01) && finalOpacity > 0.004;
 
   if (!visible) return null;
 

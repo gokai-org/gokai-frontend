@@ -131,25 +131,25 @@ export const LANDING_SCENE_PRESETS: Record<string, LandingScenePreset> = {
     pointerInfluence: 0,
   },
 
-"como-funciona": {
-  spreadX: 1.18,
-  spreadY: 1.08,
-  depth: 1.42,
-  zoom: 1,
-  rotationX: 0.02,
-  rotationY: 0.02,
-  drift: 0.86,
-  nodeAlpha: 0.95,
-  edgeAlpha: 0.68,
-  glow: 0.98,
-  haze: 0.3,
-  focusX: 0,
-  focusY: 0,
-  maxLinkDistance: 228,
-  backgroundFade: 0.5,
-  vignette: 0.12,
-  pointerInfluence: 0.01,
-},
+  "como-funciona": {
+    spreadX: 1.18,
+    spreadY: 1.08,
+    depth: 1.42,
+    zoom: 1,
+    rotationX: 0.02,
+    rotationY: 0.02,
+    drift: 0.86,
+    nodeAlpha: 0.95,
+    edgeAlpha: 0.68,
+    glow: 0.98,
+    haze: 0.3,
+    focusX: 0,
+    focusY: 0,
+    maxLinkDistance: 228,
+    backgroundFade: 0.5,
+    vignette: 0.12,
+    pointerInfluence: 0.01,
+  },
 
   experiencia: {
     spreadX: 1.08,
@@ -214,7 +214,6 @@ export const LANDING_SCENE_PRESETS: Record<string, LandingScenePreset> = {
 
 export function getLandingScenePreset(sectionId: string | null | undefined) {
   return (
-    LANDING_SCENE_PRESETS[sectionId ?? "inicio"] ??
-    LANDING_SCENE_PRESETS.inicio
+    LANDING_SCENE_PRESETS[sectionId ?? "inicio"] ?? LANDING_SCENE_PRESETS.inicio
   );
 }

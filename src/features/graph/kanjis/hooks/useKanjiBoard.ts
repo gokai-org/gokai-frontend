@@ -62,8 +62,12 @@ function normalizeResults(payload: unknown): KanjiLessonResult[] {
 }
 
 function buildSummary(items: KanjiBoardProgress[]): KanjiBoardSummary {
-  const completedCount = items.filter((item) => item.status === "completed").length;
-  const availableCount = items.filter((item) => item.status === "available").length;
+  const completedCount = items.filter(
+    (item) => item.status === "completed",
+  ).length;
+  const availableCount = items.filter(
+    (item) => item.status === "available",
+  ).length;
   const lockedCount = items.filter((item) => item.status === "locked").length;
   const attempts = items.filter((item) => item.bestScore !== null);
   const averageScore =
@@ -85,10 +89,13 @@ function buildSummary(items: KanjiBoardProgress[]): KanjiBoardSummary {
     completedCount,
     availableCount,
     lockedCount,
-    completionRate: items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0,
+    completionRate:
+      items.length > 0 ? Math.round((completedCount / items.length) * 100) : 0,
     averageScore,
     currentKanjiId:
-      items.find((item) => item.status === "available")?.id ?? items.at(-1)?.id ?? null,
+      items.find((item) => item.status === "available")?.id ??
+      items.at(-1)?.id ??
+      null,
     consecutiveCompletedCount,
   };
 }
@@ -133,7 +140,14 @@ export function useKanjiBoard() {
   }, [reload]);
 
   const resultsByKanji = useMemo(() => {
-    const byKanji = new Map<string, { bestScore: number; attemptCount: number; bestResult: KanjiLessonResult | null }>();
+    const byKanji = new Map<
+      string,
+      {
+        bestScore: number;
+        attemptCount: number;
+        bestResult: KanjiLessonResult | null;
+      }
+    >();
 
     for (const result of results) {
       const current = byKanji.get(result.kanjiId);
@@ -146,7 +160,8 @@ export function useKanjiBoard() {
         continue;
       }
 
-      const nextBestResult = result.score >= current.bestScore ? result : current.bestResult;
+      const nextBestResult =
+        result.score >= current.bestScore ? result : current.bestResult;
       byKanji.set(result.kanjiId, {
         bestScore: Math.max(current.bestScore, result.score),
         attemptCount: current.attemptCount + 1,
@@ -161,7 +176,8 @@ export function useKanjiBoard() {
     return kanjis.map<KanjiBoardProgress>((kanji, index) => {
       const resultData = resultsByKanji.get(kanji.id);
       const bestScore = resultData?.bestScore ?? null;
-      const isCompleted = bestScore !== null && bestScore >= KANJI_COMPLETION_SCORE;
+      const isCompleted =
+        bestScore !== null && bestScore >= KANJI_COMPLETION_SCORE;
       const isUnlocked = userPoints >= kanji.pointsToUnlock;
       const status = isCompleted
         ? "completed"

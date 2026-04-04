@@ -10,7 +10,10 @@ import type {
   KanjiQuizRoundResult,
 } from "@/features/kanji/types/quiz";
 import type { Kanji, KanjiLessonResult } from "@/features/kanji/types";
-import { QUIZ_QUESTIONS_PER_ROUND, QUIZ_TOTAL_ROUNDS } from "@/features/kanji/types/quiz";
+import {
+  QUIZ_QUESTIONS_PER_ROUND,
+  QUIZ_TOTAL_ROUNDS,
+} from "@/features/kanji/types/quiz";
 import { submitKanjiQuiz } from "@/features/kanji/api/kanjiQuizApi";
 import {
   getKanji,
@@ -61,9 +64,12 @@ function normalizeResults(payload: unknown): KanjiLessonResult[] {
       items?: unknown;
     };
 
-    if (Array.isArray(candidate.results)) return candidate.results as KanjiLessonResult[];
-    if (Array.isArray(candidate.data)) return candidate.data as KanjiLessonResult[];
-    if (Array.isArray(candidate.items)) return candidate.items as KanjiLessonResult[];
+    if (Array.isArray(candidate.results))
+      return candidate.results as KanjiLessonResult[];
+    if (Array.isArray(candidate.data))
+      return candidate.data as KanjiLessonResult[];
+    if (Array.isArray(candidate.items))
+      return candidate.items as KanjiLessonResult[];
   }
 
   return [];
@@ -88,7 +94,9 @@ function getCatalogOrderKanjis(args: {
 }) {
   const { allKanjis, currentKanji } = args;
   const catalog = uniqueKanjisById([...allKanjis, currentKanji]);
-  const currentIndex = catalog.findIndex((kanji) => kanji.id === currentKanji.id);
+  const currentIndex = catalog.findIndex(
+    (kanji) => kanji.id === currentKanji.id,
+  );
 
   return {
     catalog,
@@ -96,7 +104,9 @@ function getCatalogOrderKanjis(args: {
   };
 }
 
-function buildCompletedKanjiIds(results: readonly KanjiLessonResult[]): Set<string> {
+function buildCompletedKanjiIds(
+  results: readonly KanjiLessonResult[],
+): Set<string> {
   const bestScoreByKanji = new Map<string, number>();
 
   for (const result of results) {
@@ -129,8 +139,13 @@ function buildLearnedKanjiSequence(args: {
     }
   }
 
-  const boundedCatalog = maxAccessibleIndex >= 0 ? catalog.slice(0, maxAccessibleIndex + 1) : [currentKanji];
-  const learnedSequence = boundedCatalog.filter((kanji) => completedIds.has(kanji.id));
+  const boundedCatalog =
+    maxAccessibleIndex >= 0
+      ? catalog.slice(0, maxAccessibleIndex + 1)
+      : [currentKanji];
+  const learnedSequence = boundedCatalog.filter((kanji) =>
+    completedIds.has(kanji.id),
+  );
   const shouldIncludeCurrent =
     currentIndex >= 0 &&
     currentIndex === maxAccessibleIndex &&
@@ -262,7 +277,10 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   const quizDataRef = useRef(quizData);
   quizDataRef.current = quizData;
 
-  const currentRound = Math.min(QUIZ_TOTAL_ROUNDS, roundResultsRef.current.length + 1);
+  const currentRound = Math.min(
+    QUIZ_TOTAL_ROUNDS,
+    roundResultsRef.current.length + 1,
+  );
 
   // ── Derived values ──
   const currentQuestion = useMemo(() => {
@@ -286,12 +304,19 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     }
     const answered = state.questionResults.length;
     return Math.round((answered / totalQuestions) * 100);
-  }, [totalQuestions, state.step, state.questionResults.length, state.writingQuestionIndex, quizData]);
+  }, [
+    totalQuestions,
+    state.step,
+    state.questionResults.length,
+    state.writingQuestionIndex,
+    quizData,
+  ]);
 
   const finalScore = useMemo(() => {
     if (roundResults.length >= QUIZ_TOTAL_ROUNDS) {
       return Math.round(
-        roundResults.reduce((sum, result) => sum + result.score, 0) / roundResults.length,
+        roundResults.reduce((sum, result) => sum + result.score, 0) /
+          roundResults.length,
       );
     }
     if (quizData?.type === "writing") {
@@ -331,94 +356,111 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   }, []);
 
   // ── Start quiz (resets full session) ──
-  const startQuiz = useCallback(async (kanjiId: string) => {
-    setLoading(true);
-    setError(null);
-    setState(INITIAL_STATE);
-    setQuizData(null);
-    setIsPointsError(false);
-    setUpdatedPoints(null);
-    setPointsDelta(0);
-    roundResultsRef.current = [];
-    setRoundResults([]);
-    kanjiIdRef.current = kanjiId;
+  const startQuiz = useCallback(
+    async (kanjiId: string) => {
+      setLoading(true);
+      setError(null);
+      setState(INITIAL_STATE);
+      setQuizData(null);
+      setIsPointsError(false);
+      setUpdatedPoints(null);
+      setPointsDelta(0);
+      roundResultsRef.current = [];
+      setRoundResults([]);
+      kanjiIdRef.current = kanjiId;
 
-    try {
-      const [user, kanji, strokeData, kanjiPayload, resultsPayload] = await Promise.all([
-        getCurrentUser().catch(() => null),
-        getKanji(kanjiId),
-        getKanjiStrokes(kanjiId).catch(() => null),
-        listKanjis().catch(() => []),
-        getKanjiLessonResults({ limit: 500 }).catch(() => []),
-      ]);
+      try {
+        const [user, kanji, strokeData, kanjiPayload, resultsPayload] =
+          await Promise.all([
+            getCurrentUser().catch(() => null),
+            getKanji(kanjiId),
+            getKanjiStrokes(kanjiId).catch(() => null),
+            listKanjis().catch(() => []),
+            getKanjiLessonResults({ limit: 500 }).catch(() => []),
+          ]);
 
-      startingPointsRef.current = typeof user?.points === "number" ? user.points : null;
+        startingPointsRef.current =
+          typeof user?.points === "number" ? user.points : null;
 
-      const allKanjis = normalizeKanjis(kanjiPayload);
-      const lessonResults = normalizeResults(resultsPayload);
-      const completedIds = buildCompletedKanjiIds(lessonResults);
-      const learnedKanjis = buildLearnedKanjiSequence({
-        currentKanji: kanji,
-        allKanjis,
-        completedIds,
-        userPoints: typeof user?.points === "number" ? user.points : 0,
-      });
-      // ── Determine quiz depth based on catalog position ──────────────────
-      // Kanjis #1–#4 (index 0–3): intro mode — 1 question per type, only the
-      // current kanji as source so every exercise is unambiguously about it.
-      // Kanji #5+ (index 4+): full review — 4 questions per type drawn from
-      // the pool of already-learned kanjis.
-      const catalogIndex = allKanjis.findIndex((k) => k.id === kanji.id);
-      const isEarlyKanji = catalogIndex >= 0 && catalogIndex < 4;
+        const allKanjis = normalizeKanjis(kanjiPayload);
+        const lessonResults = normalizeResults(resultsPayload);
+        const completedIds = buildCompletedKanjiIds(lessonResults);
+        const learnedKanjis = buildLearnedKanjiSequence({
+          currentKanji: kanji,
+          allKanjis,
+          completedIds,
+          userPoints: typeof user?.points === "number" ? user.points : 0,
+        });
+        // ── Determine quiz depth based on catalog position ──────────────────
+        // Kanjis #1–#4 (index 0–3): intro mode — 1 question per type, only the
+        // current kanji as source so every exercise is unambiguously about it.
+        // Kanji #5+ (index 4+): full review — 4 questions per type drawn from
+        // the pool of already-learned kanjis.
+        const catalogIndex = allKanjis.findIndex((k) => k.id === kanji.id);
+        const isEarlyKanji = catalogIndex >= 0 && catalogIndex < 4;
 
-      const quizSourcePool = isEarlyKanji
-        ? [kanji]
-        : buildSmartQuizPool({ currentKanji: kanji, allKanjis, learnedKanjis });
-      const questionCount = isEarlyKanji ? 1 : QUIZ_QUESTIONS_PER_ROUND;
+        const quizSourcePool = isEarlyKanji
+          ? [kanji]
+          : buildSmartQuizPool({
+              currentKanji: kanji,
+              allKanjis,
+              learnedKanjis,
+            });
+        const questionCount = isEarlyKanji ? 1 : QUIZ_QUESTIONS_PER_ROUND;
 
-      const optionSourcePool = buildQuizOptionPool({
-        currentKanji: kanji,
-        allKanjis,
-        completedIds,
-        userPoints: typeof user?.points === "number" ? user.points : 0,
-      });
+        const optionSourcePool = buildQuizOptionPool({
+          currentKanji: kanji,
+          allKanjis,
+          completedIds,
+          userPoints: typeof user?.points === "number" ? user.points : 0,
+        });
 
-      const strokeEntries = await Promise.all(
-        quizSourcePool.map(async (quizKanji) => {
-          if (quizKanji.id === kanji.id) {
-            return [quizKanji.id, strokeData] as const;
-          }
+        const strokeEntries = await Promise.all(
+          quizSourcePool.map(async (quizKanji) => {
+            if (quizKanji.id === kanji.id) {
+              return [quizKanji.id, strokeData] as const;
+            }
 
-          const reviewStrokeData = await getKanjiStrokes(quizKanji.id).catch(() => null);
-          return [quizKanji.id, reviewStrokeData] as const;
-        }),
-      );
+            const reviewStrokeData = await getKanjiStrokes(quizKanji.id).catch(
+              () => null,
+            );
+            return [quizKanji.id, reviewStrokeData] as const;
+          }),
+        );
 
-      const strokeByKanjiId = new Map(strokeEntries);
+        const strokeByKanjiId = new Map(strokeEntries);
 
-      quizPlanRef.current = buildFixedKanjiQuizRounds(
-        quizSourcePool.map((quizKanji) => ({
-          kanji: quizKanji,
-          strokeData: strokeByKanjiId.get(quizKanji.id) ?? null,
-        })),
-        {
-          seedHint: kanjiId,
-          questionCount,
-          optionSources: optionSourcePool.map((quizKanji) => ({ kanji: quizKanji })),
-        },
-      );
-      loadRoundFromPlan(0);
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al cargar el quiz";
-      const is403 = msg.includes("403") || msg.toLowerCase().includes("puntos");
-      setIsPointsError(is403);
-      setError(
-        is403 ? "No se tienen los puntos necesarios para este ejercicio" : msg,
-      );
-      setState((s) => ({ ...s, step: "error" as KanjiQuizStep }));
-      setLoading(false);
-    }
-  }, [loadRoundFromPlan]);
+        quizPlanRef.current = buildFixedKanjiQuizRounds(
+          quizSourcePool.map((quizKanji) => ({
+            kanji: quizKanji,
+            strokeData: strokeByKanjiId.get(quizKanji.id) ?? null,
+          })),
+          {
+            seedHint: kanjiId,
+            questionCount,
+            optionSources: optionSourcePool.map((quizKanji) => ({
+              kanji: quizKanji,
+            })),
+          },
+        );
+        loadRoundFromPlan(0);
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Error al cargar el quiz";
+        const is403 =
+          msg.includes("403") || msg.toLowerCase().includes("puntos");
+        setIsPointsError(is403);
+        setError(
+          is403
+            ? "No se tienen los puntos necesarios para este ejercicio"
+            : msg,
+        );
+        setState((s) => ({ ...s, step: "error" as KanjiQuizStep }));
+        setLoading(false);
+      }
+    },
+    [loadRoundFromPlan],
+  );
 
   const finalizeQuiz = useCallback(async (results: KanjiQuizRoundResult[]) => {
     if (submittingRef.current) return;
@@ -479,13 +521,18 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
           }
         }
       } catch (quizSubmitErr) {
-        console.error("[QUIZ] Failed to submit round to study service:", quizSubmitErr);
+        console.error(
+          "[QUIZ] Failed to submit round to study service:",
+          quizSubmitErr,
+        );
       }
 
       try {
         const totalDuration = results.reduce((sum, r) => sum + r.duration, 0);
         const lessonAnswers = results.map((r) => ({
-          exerciseType: (r.type === "writing" ? "writing" : "meaning") as "writing" | "meaning",
+          exerciseType: (r.type === "writing" ? "writing" : "meaning") as
+            | "writing"
+            | "meaning",
           points: r.score,
           duration: r.duration,
           isCorrect: true,
@@ -513,7 +560,10 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
         }
       } catch (lessonErr) {
         // Non-critical: log but do not block the celebration screen.
-        console.error("[QUIZ] Failed to submit lesson result for points:", lessonErr);
+        console.error(
+          "[QUIZ] Failed to submit lesson result for points:",
+          lessonErr,
+        );
       }
 
       let nextPoints: number | null = null;
@@ -542,9 +592,12 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       // Wait 800 ms and retry once.
       if (
         nextPoints === null ||
-        (startingPointsRef.current !== null && nextPoints <= startingPointsRef.current)
+        (startingPointsRef.current !== null &&
+          nextPoints <= startingPointsRef.current)
       ) {
-        await new Promise<void>((resolve) => { setTimeout(resolve, 800); });
+        await new Promise<void>((resolve) => {
+          setTimeout(resolve, 800);
+        });
         try {
           const user = await getCurrentUser();
           if (user && typeof user.points === "number") {
@@ -564,7 +617,8 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       setPointsDelta(nextPointsDelta);
       setState((s) => ({ ...s, step: "celebration" as KanjiQuizStep }));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Error al enviar resultado";
+      const msg =
+        err instanceof Error ? err.message : "Error al enviar resultado";
       setError(msg);
       setState((s) => ({ ...s, step: "error" as KanjiQuizStep }));
     } finally {
@@ -573,23 +627,28 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     }
   }, []);
 
-  const completeRound = useCallback((quizType: KanjiQuizType, score: number) => {
-    const elapsed = Math.round((Date.now() - roundStartTimeRef.current) / 1000);
-    const newRoundResults: KanjiQuizRoundResult[] = [
-      ...roundResultsRef.current,
-      { type: quizType, score, duration: elapsed },
-    ];
+  const completeRound = useCallback(
+    (quizType: KanjiQuizType, score: number) => {
+      const elapsed = Math.round(
+        (Date.now() - roundStartTimeRef.current) / 1000,
+      );
+      const newRoundResults: KanjiQuizRoundResult[] = [
+        ...roundResultsRef.current,
+        { type: quizType, score, duration: elapsed },
+      ];
 
-    roundResultsRef.current = newRoundResults;
-    setRoundResults(newRoundResults);
+      roundResultsRef.current = newRoundResults;
+      setRoundResults(newRoundResults);
 
-    if (newRoundResults.length >= QUIZ_TOTAL_ROUNDS) {
-      void finalizeQuiz(newRoundResults);
-      return;
-    }
+      if (newRoundResults.length >= QUIZ_TOTAL_ROUNDS) {
+        void finalizeQuiz(newRoundResults);
+        return;
+      }
 
-    loadRoundFromPlan(newRoundResults.length);
-  }, [finalizeQuiz, loadRoundFromPlan]);
+      loadRoundFromPlan(newRoundResults.length);
+    },
+    [finalizeQuiz, loadRoundFromPlan],
+  );
 
   // ── Select option ──
   const selectOption = useCallback((optionIndex: number) => {
@@ -603,7 +662,11 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   const confirmAnswer = useCallback(() => {
     setState((s) => {
       if (s.selectedOptionIndex === null || s.isAnswered) return s;
-      return { ...s, isAnswered: true, step: "exercise-feedback" as KanjiQuizStep };
+      return {
+        ...s,
+        isAnswered: true,
+        step: "exercise-feedback" as KanjiQuizStep,
+      };
     });
   }, []);
 
@@ -617,7 +680,8 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     const question = qd.questions[s.currentQuestionIndex];
     if (!question) return;
 
-    const isCorrect = question.options[s.selectedOptionIndex ?? -1]?.correct ?? false;
+    const isCorrect =
+      question.options[s.selectedOptionIndex ?? -1]?.correct ?? false;
 
     const newResults: KanjiQuizQuestionResult[] = [
       ...s.questionResults,
@@ -641,7 +705,11 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     const correct = newResults.filter((r) => r.correct).length;
     const score = Math.round((correct / newResults.length) * 100);
 
-    setState({ ...s, questionResults: newResults, step: "loading" as KanjiQuizStep });
+    setState({
+      ...s,
+      questionResults: newResults,
+      step: "loading" as KanjiQuizStep,
+    });
     completeRound(qd.type, score);
   }, [completeRound]);
 
@@ -652,40 +720,43 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
 
   // ── Writing: complete a single writing question ──
   // Also kept outside setState for the same StrictMode safety reason.
-  const completeWritingQuestion = useCallback((score: number) => {
-    const s = stateRef.current;
-    const qd = quizDataRef.current;
-    if (!qd || qd.type !== "writing") return;
+  const completeWritingQuestion = useCallback(
+    (score: number) => {
+      const s = stateRef.current;
+      const qd = quizDataRef.current;
+      if (!qd || qd.type !== "writing") return;
 
-    const newScores = [...s.writingScores, score];
-    const nextIdx = s.writingQuestionIndex + 1;
+      const newScores = [...s.writingScores, score];
+      const nextIdx = s.writingQuestionIndex + 1;
 
-    if (nextIdx < qd.questions.length) {
-      const nextQuestion = qd.questions[nextIdx];
-      const hasValidStrokes = isValidWritingQuestion(nextQuestion);
+      if (nextIdx < qd.questions.length) {
+        const nextQuestion = qd.questions[nextIdx];
+        const hasValidStrokes = isValidWritingQuestion(nextQuestion);
+        setState({
+          ...s,
+          writingScores: newScores,
+          writingQuestionIndex: nextIdx,
+          writingPhase: hasValidStrokes ? "demo" : "done",
+        });
+        return;
+      }
+
+      // All writing questions done.
+      // Writing is a practice exercise: completion counts as 100% for scoring
+      // purposes. Stroke-level accuracy feedback is shown to the user in real time
+      // but does not gate the points award — that only depends on MCQ correctness.
+      const completionScore = 100;
+
       setState({
         ...s,
         writingScores: newScores,
-        writingQuestionIndex: nextIdx,
-        writingPhase: hasValidStrokes ? "demo" : "done",
+        writingPhase: "done",
+        step: "loading" as KanjiQuizStep,
       });
-      return;
-    }
-
-    // All writing questions done.
-    // Writing is a practice exercise: completion counts as 100% for scoring
-    // purposes. Stroke-level accuracy feedback is shown to the user in real time
-    // but does not gate the points award — that only depends on MCQ correctness.
-    const completionScore = 100;
-
-    setState({
-      ...s,
-      writingScores: newScores,
-      writingPhase: "done",
-      step: "loading" as KanjiQuizStep,
-    });
-    completeRound(qd.type, completionScore);
-  }, [completeRound]);
+      completeRound(qd.type, completionScore);
+    },
+    [completeRound],
+  );
 
   // ── Reset ──
   const reset = useCallback(() => {
@@ -731,4 +802,3 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     reset,
   };
 }
-

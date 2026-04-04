@@ -8,7 +8,10 @@ interface MembershipPickerProps {
   queryParams?: URLSearchParams | null;
 }
 
-function appendQuery(baseHref: string, params?: URLSearchParams | null): string {
+function appendQuery(
+  baseHref: string,
+  params?: URLSearchParams | null,
+): string {
   if (!params) return baseHref;
 
   const query = params.toString();

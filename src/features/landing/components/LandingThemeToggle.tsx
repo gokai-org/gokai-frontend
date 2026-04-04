@@ -6,8 +6,6 @@ interface LandingThemeToggleProps {
   className?: string;
 }
 
-export function LandingThemeToggle({
-  className,
-}: LandingThemeToggleProps) {
+export function LandingThemeToggle({ className }: LandingThemeToggleProps) {
   return <ThemeModeToggle className={className} />;
 }

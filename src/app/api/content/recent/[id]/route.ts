@@ -19,10 +19,13 @@ export async function DELETE(
   const { id } = await params;
   const token = normalizeBearerToken(raw);
 
-  const upstream = await fetch(`${apiConfig.contentApiBase}/content/recent/${id}`, {
-    method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const upstream = await fetch(
+    `${apiConfig.contentApiBase}/content/recent/${id}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
 
   const data = await upstream.json().catch(() => ({}));
   return NextResponse.json(data, { status: upstream.status });

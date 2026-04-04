@@ -126,18 +126,17 @@ export function KanjiStrokePlayer({
               className={onStrokeClick ? "cursor-pointer" : undefined}
             />
 
-          {renderNumber && (
-            <StrokeNumber
-              key={`${i}-${activeStrokeIndex}-${numberMode}`}
-              pathRef={pathRefs.current[i]}
-              index={i}
-            />
-          )}
+            {renderNumber && (
+              <StrokeNumber
+                key={`${i}-${activeStrokeIndex}-${numberMode}`}
+                pathRef={pathRefs.current[i]}
+                index={i}
+              />
+            )}
           </g>
         );
       })}
-
-      </svg>
+    </svg>
   );
 }
 

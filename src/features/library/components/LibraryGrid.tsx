@@ -47,7 +47,10 @@ export function LibraryGrid({
           return (
             <ScriptCard
               key={item.data.id}
-              {...kanjiToScriptCard(item.data, favoriteKanjis.has(item.data.id))}
+              {...kanjiToScriptCard(
+                item.data,
+                favoriteKanjis.has(item.data.id),
+              )}
               index={i}
               locked={isLocked}
               unlocking={newlyUnlockedKanjiIds?.has(item.data.id) ?? false}
@@ -61,8 +64,14 @@ export function LibraryGrid({
           <ScriptCard
             key={item.data.id}
             {...(item.type === "hiragana"
-              ? hiraganaToScriptCard(item.data, favoriteHiraganas.has(item.data.id))
-              : katakanaToScriptCard(item.data, favoriteKatakanas.has(item.data.id)))}
+              ? hiraganaToScriptCard(
+                  item.data,
+                  favoriteHiraganas.has(item.data.id),
+                )
+              : katakanaToScriptCard(
+                  item.data,
+                  favoriteKatakanas.has(item.data.id),
+                ))}
             index={i}
             onClick={() => onKanaClick(item.data)}
             onFavoriteToggle={

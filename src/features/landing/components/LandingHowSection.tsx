@@ -2,12 +2,18 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
 import {
-  HOW_TABS,
-  type HowTabId,
-} from "@/features/landing/data/landingData";
-import { staggerContainer, fadeUpSoft, EASE_BRAND } from "@/features/landing/lib/motionVariants";
+  motion,
+  AnimatePresence,
+  useScroll,
+  useTransform,
+} from "framer-motion";
+import { HOW_TABS, type HowTabId } from "@/features/landing/data/landingData";
+import {
+  staggerContainer,
+  fadeUpSoft,
+  EASE_BRAND,
+} from "@/features/landing/lib/motionVariants";
 
 interface LandingHowSectionProps {
   howTab: HowTabId;
@@ -38,7 +44,11 @@ export function LandingHowSection({
       <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 sm:gap-5">
         <motion.div
           variants={fadeUpSoft}
-          style={{ y: stageY, rotateX: stageRotate, transformPerspective: 1800 }}
+          style={{
+            y: stageY,
+            rotateX: stageRotate,
+            transformPerspective: 1800,
+          }}
           className="relative w-full"
         >
           <div className="relative aspect-[16/8.5] w-full overflow-visible">

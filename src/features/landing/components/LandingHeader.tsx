@@ -12,7 +12,7 @@ interface LandingHeaderProps {
 export function LandingHeader({ activeId }: LandingHeaderProps) {
   const handleAnchorClick = (
     e: React.MouseEvent<HTMLAnchorElement>,
-    targetId: string
+    targetId: string,
   ) => {
     e.preventDefault();
 
@@ -59,8 +59,12 @@ export function LandingHeader({ activeId }: LandingHeaderProps) {
           </a>
 
           <div className="flex flex-col items-center justify-center leading-none text-content-primary">
-            <span className="text-[0.85rem] font-semibold min-[400px]:text-[1rem] md:text-[1.35rem]">語</span>
-            <span className="mt-0.5 text-[0.85rem] font-semibold min-[400px]:text-[1rem] md:text-[1.35rem]">界</span>
+            <span className="text-[0.85rem] font-semibold min-[400px]:text-[1rem] md:text-[1.35rem]">
+              語
+            </span>
+            <span className="mt-0.5 text-[0.85rem] font-semibold min-[400px]:text-[1rem] md:text-[1.35rem]">
+              界
+            </span>
           </div>
         </div>
 
@@ -93,7 +97,9 @@ export function LandingHeader({ activeId }: LandingHeaderProps) {
             <LandingNavItem
               id="funciones"
               href="#como-funciona"
-              active={activeId === "como-funciona" || activeId === "experiencia"}
+              active={
+                activeId === "como-funciona" || activeId === "experiencia"
+              }
               onClick={(e) => handleAnchorClick(e, "como-funciona")}
             >
               Funciones

@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { KanjiStrokePlayer } from "@/features/kanji/components/KanjiStrokePlayer";
-import { KanjiWritingCanvas, type DrawnStroke } from "@/features/kanji/components/KanjiWritingCanvas";
+import {
+  KanjiWritingCanvas,
+  type DrawnStroke,
+} from "@/features/kanji/components/KanjiWritingCanvas";
 import {
   validateStroke,
   getPointsForFeedback,
@@ -11,7 +14,10 @@ import {
   getFeedbackColor,
   type StrokeValidationResult,
 } from "@/features/kanji/lib/strokeValidation";
-import type { KanjiLessonStrokeData, KanjiWritingPhase } from "@/features/kanji/types/lessonFlow";
+import type {
+  KanjiLessonStrokeData,
+  KanjiWritingPhase,
+} from "@/features/kanji/types/lessonFlow";
 
 const BASE_STROKE_POINTS = 10;
 
@@ -98,8 +104,15 @@ export function KanjiWritingExercise({
   const handleStrokeDrawn = useCallback(
     (stroke: DrawnStroke) => {
       const refPath = strokeData.strokes[practiceStrokeIndex];
-      const validation = validateStroke(stroke.points, refPath, strokeData.viewBox);
-      const pointsDelta = getPointsForFeedback(validation.feedback, BASE_STROKE_POINTS);
+      const validation = validateStroke(
+        stroke.points,
+        refPath,
+        strokeData.viewBox,
+      );
+      const pointsDelta = getPointsForFeedback(
+        validation.feedback,
+        BASE_STROKE_POINTS,
+      );
       const result: StrokeResult = { validation, pointsDelta };
 
       setStrokeResults((prev) => [...prev, result]);
@@ -118,9 +131,15 @@ export function KanjiWritingExercise({
       if (nextIdx >= totalStrokes) {
         // Calculate final score
         const allResults = [...strokeResults, result];
-        const totalScore = allResults.reduce((sum, r) => sum + r.pointsDelta, 0);
+        const totalScore = allResults.reduce(
+          (sum, r) => sum + r.pointsDelta,
+          0,
+        );
         const maxScore = totalStrokes * BASE_STROKE_POINTS;
-        const scorePercent = maxScore > 0 ? Math.round(Math.max(0, totalScore) / maxScore * 100) : 0;
+        const scorePercent =
+          maxScore > 0
+            ? Math.round((Math.max(0, totalScore) / maxScore) * 100)
+            : 0;
 
         setTimeout(() => onComplete(scorePercent), 600);
       } else {
@@ -155,9 +174,7 @@ export function KanjiWritingExercise({
         <p className="text-sm text-content-tertiary text-center max-w-[280px]">
           Observa el orden de los trazos de{" "}
           <span className="font-bold text-content-primary">{symbol}</span>
-          {meaning && (
-            <span className="text-content-muted"> ({meaning})</span>
-          )}
+          {meaning && <span className="text-content-muted"> ({meaning})</span>}
         </p>
 
         {/* Stroke player with numbers */}
@@ -189,29 +206,58 @@ export function KanjiWritingExercise({
             />
           </div>
           <p className="text-xs text-content-muted text-center mt-1.5 font-medium">
-            Trazo <span className="text-accent font-bold">{Math.min(demoStrokeIndex, totalStrokes)}</span> de {totalStrokes}
+            Trazo{" "}
+            <span className="text-accent font-bold">
+              {Math.min(demoStrokeIndex, totalStrokes)}
+            </span>{" "}
+            de {totalStrokes}
           </p>
         </div>
 
         {/* Demo controls */}
         <div className="flex items-center gap-1.5">
           <DemoButton
-            onClick={() => { setDemoStrokeIndex(0); setDemoAutoPlay(false); }}
+            onClick={() => {
+              setDemoStrokeIndex(0);
+              setDemoAutoPlay(false);
+            }}
             disabled={demoStrokeIndex === 0}
             title="Reiniciar"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
           </DemoButton>
 
           <DemoButton
-            onClick={() => demoStrokeIndex > 0 && setDemoStrokeIndex((p) => p - 1)}
+            onClick={() =>
+              demoStrokeIndex > 0 && setDemoStrokeIndex((p) => p - 1)
+            }
             disabled={demoStrokeIndex === 0}
             title="Anterior"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </DemoButton>
 
@@ -234,7 +280,11 @@ export function KanjiWritingExercise({
           >
             {demoAutoPlay ? (
               <>
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <rect x="6" y="4" width="4" height="16" rx="1" />
                   <rect x="14" y="4" width="4" height="16" rx="1" />
                 </svg>
@@ -242,7 +292,11 @@ export function KanjiWritingExercise({
               </>
             ) : (
               <>
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M8 5v14l11-7z" />
                 </svg>
                 Reproducir
@@ -251,12 +305,24 @@ export function KanjiWritingExercise({
           </motion.button>
 
           <DemoButton
-            onClick={() => demoStrokeIndex < totalStrokes && setDemoStrokeIndex((p) => p + 1)}
+            onClick={() =>
+              demoStrokeIndex < totalStrokes && setDemoStrokeIndex((p) => p + 1)
+            }
             disabled={demoStrokeIndex >= totalStrokes}
             title="Siguiente"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </DemoButton>
         </div>
@@ -271,8 +337,18 @@ export function KanjiWritingExercise({
           onClick={handleStartPractice}
           className="w-full max-w-[280px] py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold hover:shadow-xl hover:shadow-accent/20 transition-all shadow-lg shadow-accent/15 flex items-center justify-center gap-2.5 text-[15px]"
         >
-          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+            />
           </svg>
           Comenzar a escribir
         </motion.button>
@@ -329,11 +405,25 @@ export function KanjiWritingExercise({
 
       {/* Running score */}
       <div className="flex items-center gap-2 bg-surface-secondary rounded-xl px-4 py-2">
-        <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+        <svg
+          className="w-4 h-4 text-accent"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+          />
         </svg>
-        <span className="text-sm font-bold text-content-secondary">{runningScore}</span>
-        <span className="text-xs text-content-muted">/ {(practiceStrokeIndex + 1) * BASE_STROKE_POINTS} pts</span>
+        <span className="text-sm font-bold text-content-secondary">
+          {runningScore}
+        </span>
+        <span className="text-xs text-content-muted">
+          / {(practiceStrokeIndex + 1) * BASE_STROKE_POINTS} pts
+        </span>
       </div>
 
       {/* Progress dots */}
@@ -342,7 +432,10 @@ export function KanjiWritingExercise({
           const sr = strokeResults[i];
           let dotClass = "bg-surface-tertiary";
           if (sr) {
-            if (sr.validation.feedback === "perfect" || sr.validation.feedback === "good")
+            if (
+              sr.validation.feedback === "perfect" ||
+              sr.validation.feedback === "good"
+            )
               dotClass = "bg-emerald-500";
             else if (sr.validation.feedback === "acceptable")
               dotClass = "bg-amber-400";

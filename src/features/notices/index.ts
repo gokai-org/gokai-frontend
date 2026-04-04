@@ -1,8 +1,4 @@
-export type {
-  Notice,
-  NoticeCategory,
-  NoticeCategoryItem,
-} from "./types";
+export type { Notice, NoticeCategory, NoticeCategoryItem } from "./types";
 
 export { useNoticesMock } from "./hooks/useNoticesMock";
 export { useNoticeFilters } from "./hooks/useNoticeFilters";
@@ -23,11 +19,7 @@ export { ReviewNoticeCard } from "./cards/ReviewNoticeCard";
 export { StreakNoticeCard } from "./cards/StreakNoticeCard";
 export { SystemNoticeCard } from "./cards/SystemNoticeCard";
 
-export {
-  noticeCategoryConfig,
-  timeAgo,
-  cls,
-} from "./utils/noticeConfig";
+export { noticeCategoryConfig, timeAgo, cls } from "./utils/noticeConfig";
 
 export {
   lessonNoticeMocks,

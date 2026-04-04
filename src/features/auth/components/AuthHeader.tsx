@@ -113,7 +113,8 @@ export function AuthHeader({
             Recuperar contraseña
           </h2>
           <p className="mt-1 text-sm font-medium text-content-tertiary">
-            {forgotStep === "email" && "Ingresa tu correo para recibir el código."}
+            {forgotStep === "email" &&
+              "Ingresa tu correo para recibir el código."}
             {forgotStep === "code" && "Ingresa el código de verificación."}
             {forgotStep === "password" && "Crea tu nueva contraseña."}
           </p>

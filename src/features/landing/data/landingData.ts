@@ -91,7 +91,8 @@ export const SKILL_PANEL_CONTENT: Record<
   caracteristicas: {
     eyebrow: "Trazos con intención",
     stat: "Stroke Engine",
-    title: "La escritura se siente como una práctica guiada, no como una hoja vacía.",
+    title:
+      "La escritura se siente como una práctica guiada, no como una hoja vacía.",
     bullets: ["Canvas de escritura", "Corrección visual", "Memoria motriz"],
   },
   leer: {
@@ -104,19 +105,29 @@ export const SKILL_PANEL_CONTENT: Record<
     eyebrow: "Procesamiento natural",
     stat: "Thinking Path",
     title: "La plataforma empuja la intuición, no la traducción mecánica.",
-    bullets: ["Asociación de ideas", "Contexto cultural", "Comprensión profunda"],
+    bullets: [
+      "Asociación de ideas",
+      "Contexto cultural",
+      "Comprensión profunda",
+    ],
   },
   hablar: {
     eyebrow: "Confianza activa",
     stat: "Speech Loop",
-    title: "Practicar oralidad se convierte en una secuencia progresiva y medible.",
+    title:
+      "Practicar oralidad se convierte en una secuencia progresiva y medible.",
     bullets: ["Feedback de voz", "Entonación guiada", "Fluidez creciente"],
   },
   escuchar: {
     eyebrow: "Oído entrenado",
     stat: "Audio Sense",
-    title: "Tu oído se afina como parte del mismo sistema visual de aprendizaje.",
-    bullets: ["Comprensión auditiva", "Audio adaptativo", "Retención por patrones"],
+    title:
+      "Tu oído se afina como parte del mismo sistema visual de aprendizaje.",
+    bullets: [
+      "Comprensión auditiva",
+      "Audio adaptativo",
+      "Retención por patrones",
+    ],
   },
 };
 

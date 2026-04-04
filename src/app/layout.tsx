@@ -46,7 +46,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es" className={`${montserrat.variable} ${notoSansJP.variable}`} suppressHydrationWarning>
+    <html
+      lang="es"
+      className={`${montserrat.variable} ${notoSansJP.variable}`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
       </head>

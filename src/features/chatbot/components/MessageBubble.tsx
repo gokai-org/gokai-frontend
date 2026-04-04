@@ -39,8 +39,8 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           ].join(" ")}
         >
           {isAudio ? (
-              <div className="w-[260px] max-w-full sm:w-[320px]">
-                <AudioPlayer
+            <div className="w-[260px] max-w-full sm:w-[320px]">
+              <AudioPlayer
                 audioUrl={message.audioUrl || ""}
                 duration={message.audioDuration || "00:00"}
                 isUserMessage={!isBot}

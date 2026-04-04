@@ -40,19 +40,26 @@ export function KanjiWritingCanvas({
   const completedStrokes = useRef<DrawnStroke[]>([]);
   const rafId = useRef(0);
 
-  const cssColorsRef = useRef<{ grid: string; stroke: string; accent: string } | null>(null);
+  const cssColorsRef = useRef<{
+    grid: string;
+    stroke: string;
+    accent: string;
+  } | null>(null);
   useEffect(() => {
     const readColors = () => {
       const cs = getComputedStyle(document.documentElement);
       cssColorsRef.current = {
-        grid:   cs.getPropertyValue("--border-primary").trim()  || "#e5e7eb",
-        stroke: cs.getPropertyValue("--text-primary").trim()   || "#1a1a1a",
-        accent: cs.getPropertyValue("--accent").trim()         || "#993331",
+        grid: cs.getPropertyValue("--border-primary").trim() || "#e5e7eb",
+        stroke: cs.getPropertyValue("--text-primary").trim() || "#1a1a1a",
+        accent: cs.getPropertyValue("--accent").trim() || "#993331",
       };
     };
     readColors();
     const observer = new MutationObserver(readColors);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
     return () => observer.disconnect();
   }, []);
 
@@ -73,7 +80,7 @@ export function KanjiWritingCanvas({
     if (!ctx) return;
 
     const colors = cssColorsRef.current;
-    const gridColor   = colors?.grid   ?? "#e5e7eb";
+    const gridColor = colors?.grid ?? "#e5e7eb";
     const strokeColor = colors?.stroke ?? "#1a1a1a";
     const accentColor = colors?.accent ?? "#993331";
 

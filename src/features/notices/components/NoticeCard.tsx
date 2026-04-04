@@ -13,7 +13,11 @@ import {
   MailOpen,
 } from "lucide-react";
 import type { Notice } from "../types";
-import { noticeCategoryConfig as categoryConfig, timeAgo, cls } from "../utils/noticeConfig";
+import {
+  noticeCategoryConfig as categoryConfig,
+  timeAgo,
+  cls,
+} from "../utils/noticeConfig";
 
 interface NoticeCardProps {
   notice: Notice;
@@ -74,7 +78,9 @@ export default function NoticeCard({
                   <h3
                     className={cls(
                       "text-sm font-bold leading-snug",
-                      notice.read ? "text-content-secondary" : "text-content-primary",
+                      notice.read
+                        ? "text-content-secondary"
+                        : "text-content-primary",
                     )}
                   >
                     {notice.title}

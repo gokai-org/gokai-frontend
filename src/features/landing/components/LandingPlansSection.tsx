@@ -2,7 +2,10 @@
 
 import { motion } from "framer-motion";
 import { MembershipPicker } from "@/features/landing";
-import { staggerContainer, fadeUp } from "@/features/landing/lib/motionVariants";
+import {
+  staggerContainer,
+  fadeUp,
+} from "@/features/landing/lib/motionVariants";
 
 export function LandingPlansSection() {
   return (

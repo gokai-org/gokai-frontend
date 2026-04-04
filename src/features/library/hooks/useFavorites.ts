@@ -6,10 +6,7 @@ import {
   addFavorite as addFavoriteAPI,
   removeFavorite as removeFavoriteAPI,
 } from "@/features/library/services/api";
-import type {
-  FavoriteType,
-  FavoritesResponse,
-} from "@/features/library/types";
+import type { FavoriteType, FavoritesResponse } from "@/features/library/types";
 
 const EMPTY_RESPONSE: FavoritesResponse = {
   kanji: [],
