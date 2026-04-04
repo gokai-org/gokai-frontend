@@ -106,6 +106,37 @@ export function LandingPageView() {
       )
     : 0;
 
+  const isPortraitCompact =
+    timeline.viewport.width > 0 &&
+    timeline.viewport.width < 1024 &&
+    timeline.viewport.height > timeline.viewport.width;
+
+  const heroScrollMultiplier = timeline.viewport.isMobile
+    ? 1.45
+    : timeline.viewport.isTablet
+      ? 1.62
+      : 1.8;
+
+  const skillScrollMultiplier = timeline.viewport.isMobile
+    ? 1.22
+    : timeline.viewport.isTablet
+      ? 1.34
+      : 1.5;
+
+  const howScrollMultiplier = timeline.viewport.isMobile ? 1.52 : 1.7;
+
+  const plansScrollMultiplier = isPortraitCompact
+    ? 1
+    : timeline.viewport.isTablet
+      ? 1.76
+      : 2.2;
+
+  const contactScrollMultiplier = isPortraitCompact
+    ? 1
+    : timeline.viewport.isTablet
+      ? 1.48
+      : 1.8;
+
   // Fase 1 – arranca cuando "how" está al 76 % de su scroll (sale del viewport)
   // Llega hasta 0.45 para no cubrir el how completamente desde este lado.
   const fromHowSection = howMetrics
@@ -163,7 +194,7 @@ export function LandingPageView() {
             id={heroSection.id}
             className="pt-8 lg:pt-16"
             innerClassName="w-full"
-            scrollMultiplier={1.8}
+            scrollMultiplier={heroScrollMultiplier}
           >
             <FixedSplitRail>
               <LandingHeroSection
@@ -181,7 +212,7 @@ export function LandingPageView() {
               id={section.id}
               className=""
               innerClassName="w-full"
-              scrollMultiplier={1.5}
+              scrollMultiplier={skillScrollMultiplier}
             >
               <SkillBlock section={section} />
             </LandingSectionFrame>
@@ -191,7 +222,7 @@ export function LandingPageView() {
             id={howSection.id}
             className=""
             innerClassName="mx-auto w-full max-w-7xl"
-            scrollMultiplier={1.7}
+            scrollMultiplier={howScrollMultiplier}
           >
             <div className="text-center">
               <LandingSectionTitle
@@ -218,8 +249,8 @@ export function LandingPageView() {
           <LandingSectionFrame
             id={plansSection.id}
             className=""
-            innerClassName="mx-auto w-full max-w-7xl text-center"
-            scrollMultiplier={1.8}
+            innerClassName="mx-auto w-full max-w-7xl pb-28 text-center sm:pb-32 lg:pb-36"
+            scrollMultiplier={plansScrollMultiplier}
           >
             <LandingSectionTitle
               id={plansSection.id}
@@ -233,9 +264,9 @@ export function LandingPageView() {
 
           <LandingSectionFrame
             id={contactSection.id}
-            className="z-20"
-            innerClassName="mx-auto w-full max-w-6xl"
-            scrollMultiplier={1.4}
+            className=""
+            innerClassName="mx-auto w-full max-w-6xl pt-20 sm:pt-24 lg:pt-28"
+            scrollMultiplier={contactScrollMultiplier}
           >
             <LandingSectionTitle
               id={contactSection.id}

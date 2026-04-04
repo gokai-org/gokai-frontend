@@ -4,16 +4,18 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { LandingScrollTimeline, LandingViewportState } from "@/features/landing/types";
 import { clamp, smoothstep } from "@/features/landing/lib/landingSceneMath";
 
+const INITIAL_VIEWPORT: LandingViewportState = {
+  width: 0,
+  height: 0,
+  dpr: 1,
+  isMobile: false,
+  isTablet: false,
+  reducedMotion: false,
+};
+
 function getViewportState(): LandingViewportState {
   if (typeof window === "undefined") {
-    return {
-      width: 0,
-      height: 0,
-      dpr: 1,
-      isMobile: false,
-      isTablet: false,
-      reducedMotion: false,
-    };
+    return INITIAL_VIEWPORT;
   }
 
   const width = window.innerWidth;
@@ -41,11 +43,23 @@ export function useLandingScrollTimeline(sectionIds: string[]): LandingScrollTim
     activeProgress: 0,
     blendToNext: 0,
     sections: {},
-    viewport: getViewportState(),
+    viewport: INITIAL_VIEWPORT,
   });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    let sectionCache = ids.map((id) => ({
+      id,
+      element: document.getElementById(id),
+    }));
+
+    const refreshSectionCache = () => {
+      sectionCache = ids.map((id) => ({
+        id,
+        element: document.getElementById(id),
+      }));
+    };
 
     const update = () => {
       frameRef.current = null;
@@ -58,53 +72,52 @@ export function useLandingScrollTimeline(sectionIds: string[]): LandingScrollTim
         document.documentElement.scrollHeight - viewport.height,
       );
 
-      const sections = Object.fromEntries(
-        ids.map((id) => {
-          const element = document.getElementById(id);
-          if (!element) {
-            return [
-              id,
-              {
-                id,
-                top: 0,
-                height: viewport.height,
-                progress: 0,
-                focus: 0,
-                viewportOffset: 0,
-              },
-            ];
-          }
+      const sections: LandingScrollTimeline["sections"] = {};
+      let activeId = ids[0] ?? "inicio";
+      let maxFocus = -1;
 
-          const rect = element.getBoundingClientRect();
-          const top = scrollY + rect.top;
-          const height = Math.max(rect.height, viewport.height * 0.78);
-          const start = top - viewport.height * 0.72;
-          const end = top + height - viewport.height * 0.3;
-          const progress = clamp((scrollY - start) / Math.max(1, end - start), 0, 1);
-          const center = top + height / 2;
-          const distance = Math.abs(viewportCenter - center);
-          const focus = clamp(1 - distance / (height * 0.55 + viewport.height * 0.35), 0, 1);
+      for (const cached of sectionCache) {
+        const element = cached.element ?? document.getElementById(cached.id);
+        if (!cached.element && element) {
+          cached.element = element;
+        }
 
-          return [
-            id,
-            {
-              id,
-              top,
-              height,
-              progress,
-              focus,
-              viewportOffset: rect.top,
-            },
-          ];
-        }),
-      );
+        if (!element) {
+          sections[cached.id] = {
+            id: cached.id,
+            top: 0,
+            height: viewport.height,
+            progress: 0,
+            focus: 0,
+            viewportOffset: 0,
+          };
+          continue;
+        }
 
-      const activeId =
-        ids
-          .slice()
-          .sort((left, right) => (sections[right]?.focus ?? 0) - (sections[left]?.focus ?? 0))[0] ??
-        ids[0] ??
-        "inicio";
+        const rect = element.getBoundingClientRect();
+        const top = scrollY + rect.top;
+        const height = Math.max(rect.height, viewport.height * 0.78);
+        const start = top - viewport.height * 0.72;
+        const end = top + height - viewport.height * 0.3;
+        const progress = clamp((scrollY - start) / Math.max(1, end - start), 0, 1);
+        const center = top + height / 2;
+        const distance = Math.abs(viewportCenter - center);
+        const focus = clamp(1 - distance / (height * 0.55 + viewport.height * 0.35), 0, 1);
+
+        sections[cached.id] = {
+          id: cached.id,
+          top,
+          height,
+          progress,
+          focus,
+          viewportOffset: rect.top,
+        };
+
+        if (focus > maxFocus) {
+          maxFocus = focus;
+          activeId = cached.id;
+        }
+      }
 
       const activeIndex = Math.max(0, ids.indexOf(activeId));
       const nextId = ids[activeIndex + 1] ?? null;
@@ -126,13 +139,18 @@ export function useLandingScrollTimeline(sectionIds: string[]): LandingScrollTim
       frameRef.current = window.requestAnimationFrame(update);
     };
 
+    const handleResize = () => {
+      refreshSectionCache();
+      requestUpdate();
+    };
+
     update();
     window.addEventListener("scroll", requestUpdate, { passive: true });
-    window.addEventListener("resize", requestUpdate);
+    window.addEventListener("resize", handleResize);
 
     return () => {
       window.removeEventListener("scroll", requestUpdate);
-      window.removeEventListener("resize", requestUpdate);
+      window.removeEventListener("resize", handleResize);
       if (frameRef.current !== null) {
         window.cancelAnimationFrame(frameRef.current);
       }

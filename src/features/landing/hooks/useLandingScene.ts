@@ -28,21 +28,20 @@ export function useLandingScene(
     const mixed = mixScenePreset(current, next, sceneBlend);
 
     const howSection = timeline.sections["como-funciona"];
+    const listenSection = timeline.sections["escuchar"];
+    const experienceSection = timeline.sections["experiencia"];
+
+    const listenProgress = listenSection?.progress ?? 0;
     const howProgress = howSection?.progress ?? 0;
-    const howFocus = howSection?.focus ?? 0;
-    const isHowActive = timeline.activeId === "como-funciona";
+    const experienceProgress = experienceSection?.progress ?? 0;
 
-    const howEnter = smoothstep(0.12, 0.42, howProgress);
-    const howExpand = smoothstep(0.26, 0.74, howProgress);
-    const howFocusBoost = lerp(0.96, 1.02, howFocus);
+    // Curva continua: inicia al salir de la ultima skill (escuchar)
+    // y sigue creciendo en how/entrada a experiencia sin depender de activeId.
+    const fromListen = smoothstep(0.58, 1, listenProgress) * 0.35;
+    const fromHow = smoothstep(0.06, 0.9, howProgress) * 0.55;
+    const intoExperience = smoothstep(0, 0.36, experienceProgress) * 0.1;
 
-    const rawHowCloseUp = clamp(
-      Math.max(howEnter * 0.22, howExpand * howFocusBoost * 0.42),
-      0,
-      1,
-    );
-
-    const howCloseUp = isHowActive ? rawHowCloseUp : rawHowCloseUp * 0.04;
+    const howCloseUp = clamp(fromListen + fromHow + intoExperience, 0, 1);
 
     const cinematicZoom = lerp(
       1,

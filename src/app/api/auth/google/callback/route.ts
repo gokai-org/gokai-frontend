@@ -119,7 +119,7 @@ export async function GET(request: NextRequest) {
 
     if (!backendData.registered) {
       const gd = (backendData.googleData ?? {}) as Record<string, unknown>;
-      const url = new URL("/auth/login", request.url);
+      const url = new URL("/auth/membership", request.url);
 
       if (gd.email) url.searchParams.set("email", String(gd.email));
       if (gd.givenName) url.searchParams.set("firstName", String(gd.givenName));

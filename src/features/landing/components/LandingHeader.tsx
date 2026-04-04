@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { LandingNavItem, LandingThemeToggle } from "@/features/landing";
 
@@ -64,7 +65,7 @@ export function LandingHeader({ activeId }: LandingHeaderProps) {
         </div>
 
         <div className="flex items-center gap-2 md:gap-3">
-          <div className="relative hidden items-center gap-2 rounded-full border border-border-default/70 bg-surface-primary/80 p-1.5 shadow-[var(--shadow-md)] backdrop-blur-xl md:flex">
+          <div className="relative hidden items-center gap-2 rounded-full border border-border-default/70 bg-surface-primary/80 p-1.5 shadow-[var(--shadow-md)] backdrop-blur-xl lg:flex">
             <LandingNavItem
               id="inicio"
               href="#inicio"
@@ -116,25 +117,28 @@ export function LandingHeader({ activeId }: LandingHeaderProps) {
               Contacto
             </LandingNavItem>
 
-            <motion.a
-              href="/auth/login"
+            <motion.div
               whileHover={{ y: -1.5, scale: 1.015 }}
               whileTap={{ scale: 0.985 }}
               transition={{ type: "spring", stiffness: 420, damping: 28 }}
-              className="ml-2 inline-flex rounded-full bg-gradient-to-r from-accent via-accent to-accent-hover px-5 py-3 text-sm font-bold text-content-inverted shadow-lg shadow-accent/20"
             >
-              Iniciar sesión
-            </motion.a>
+              <Link
+                href="/auth/login"
+                className="ml-2 inline-flex rounded-full bg-gradient-to-r from-accent via-accent to-accent-hover px-5 py-3 text-sm font-bold text-content-inverted shadow-lg shadow-accent/20"
+              >
+                Iniciar sesión
+              </Link>
+            </motion.div>
           </div>
 
           <LandingThemeToggle />
 
-          <a
+          <Link
             href="/auth/login"
-            className="rounded-full bg-gradient-to-r from-accent to-accent-hover px-3 py-2 text-xs font-bold text-content-inverted shadow-lg shadow-accent/20 min-[400px]:px-4 min-[400px]:py-2.5 sm:px-5 sm:py-3 sm:text-sm md:hidden"
+            className="rounded-full bg-gradient-to-r from-accent to-accent-hover px-3 py-2 text-xs font-bold text-content-inverted shadow-lg shadow-accent/20 min-[400px]:px-4 min-[400px]:py-2.5 sm:px-5 sm:py-3 sm:text-sm lg:hidden"
           >
             Iniciar
-          </a>
+          </Link>
         </div>
       </div>
     </header>

@@ -1,31 +1,37 @@
 "use client";
 
+import { useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
 import { MembershipPicker } from "@/features/landing/components/MembershipPicker";
 
 export default function MembershipPage() {
+  const searchParams = useSearchParams();
+
+  const forwardedGoogleParams = useMemo(() => {
+    const params = new URLSearchParams();
+    const allowed = ["google", "email", "firstName", "lastName", "from"];
+
+    for (const key of allowed) {
+      const value = searchParams.get(key);
+      if (value) params.set(key, value);
+    }
+
+    return params.toString() ? params : null;
+  }, [searchParams]);
+
   return (
-    <main className="relative min-h-screen overflow-hidden bg-surface-secondary">
+    <main className="relative min-h-dvh overflow-x-hidden bg-surface-secondary">
       <AnimatedGraphBackground />
       <div className="absolute inset-0 bg-linear-to-b from-surface-primary/20 via-surface-primary/10 to-surface-primary/30" />
 
-      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-16">
+      <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-6 py-16">
         {/* Header */}
-        <motion.div
-          className="flex flex-col items-center text-center"
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        >
+        <div className="flex flex-col items-center text-center">
           <Link href="/" className="inline-block">
-            <motion.div
-              className="relative h-[72px] w-[72px]"
-              whileHover={{ rotate: 360, scale: 1.1 }}
-              transition={{ duration: 0.5 }}
-            >
+            <div className="relative h-[72px] w-[72px]">
               <Image
                 src="/logos/gokai-logo.svg"
                 alt="Gokai"
@@ -42,7 +48,7 @@ export default function MembershipPage() {
                 priority
                 className="hidden dark:block"
               />
-            </motion.div>
+            </div>
           </Link>
 
           <p className="mt-6 text-2xl md:text-4xl font-extrabold text-accent">
@@ -55,25 +61,19 @@ export default function MembershipPage() {
             Selecciona cómo quieres aprender. Siempre puedes mejorar tu plan
             después.
           </p>
-        </motion.div>
+        </div>
 
         {/* Plan cards */}
-        <motion.div
-          className="mt-12 w-full max-w-5xl"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3, duration: 0.6, ease: "easeOut" }}
-        >
-          <MembershipPicker mode="link" />
-        </motion.div>
+        <div className="mt-12 w-full max-w-5xl">
+          <MembershipPicker
+            mode="link"
+            animated={false}
+            queryParams={forwardedGoogleParams}
+          />
+        </div>
 
         {/* Footer link */}
-        <motion.p
-          className="mt-10 text-sm text-content-tertiary"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6, duration: 0.4 }}
-        >
+        <p className="mt-10 text-sm text-content-tertiary">
           ¿Ya tienes cuenta?{" "}
           <Link
             href="/auth/login"
@@ -82,7 +82,7 @@ export default function MembershipPage() {
           >
             Inicia sesión
           </Link>
-        </motion.p>
+        </p>
       </div>
     </main>
   );

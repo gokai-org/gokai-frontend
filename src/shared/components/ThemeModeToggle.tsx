@@ -15,8 +15,15 @@ export function ThemeModeToggle({ className }: ThemeModeToggleProps) {
 
   const isDark = mounted && theme === "dark";
 
+  const hasExplicitPosition =
+    typeof className === "string" &&
+    /(^|\s)(static|fixed|absolute|relative|sticky)(?=\s|$)/.test(className);
+
+  const positionClass = hasExplicitPosition ? "" : "relative";
+
   const baseClass = [
-    "relative inline-flex h-8 w-14 items-center rounded-full border border-border-default/60 bg-surface-primary/74 p-1 text-content-primary shadow-[var(--shadow-sm)] backdrop-blur-md transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-primary",
+    positionClass,
+    "inline-flex h-8 w-14 items-center rounded-full border border-border-default/60 bg-surface-primary/74 p-1 text-content-primary shadow-[var(--shadow-sm)] backdrop-blur-md transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-primary",
     className ?? "",
   ].join(" ");
 
@@ -30,10 +37,7 @@ export function ThemeModeToggle({ className }: ThemeModeToggleProps) {
       onClick={toggleTheme}
       aria-label={`Cambiar a modo ${isDark ? "claro" : "oscuro"}`}
       aria-pressed={isDark}
-      className={[
-        "relative inline-flex h-8 w-14 items-center rounded-full border border-border-default/60 bg-surface-primary/74 p-1 text-content-primary shadow-[var(--shadow-sm)] backdrop-blur-md transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/25 focus-visible:ring-offset-2 focus-visible:ring-offset-surface-primary",
-        className ?? "",
-      ].join(" ")}
+      className={baseClass}
     >
       <span
         className={[

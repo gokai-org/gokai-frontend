@@ -4,9 +4,25 @@ import { PlanCard } from "@/features/landing";
 
 interface MembershipPickerProps {
   mode?: "link" | "button";
+  animated?: boolean;
+  queryParams?: URLSearchParams | null;
 }
 
-export function MembershipPicker({ mode = "link" }: MembershipPickerProps) {
+function appendQuery(baseHref: string, params?: URLSearchParams | null): string {
+  if (!params) return baseHref;
+
+  const query = params.toString();
+  if (!query) return baseHref;
+
+  const separator = baseHref.includes("?") ? "&" : "?";
+  return `${baseHref}${separator}${query}`;
+}
+
+export function MembershipPicker({
+  mode = "link",
+  animated = true,
+  queryParams = null,
+}: MembershipPickerProps) {
   const plans = [
     {
       title: "Gratis",
@@ -40,7 +56,12 @@ export function MembershipPicker({ mode = "link" }: MembershipPickerProps) {
   return (
     <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 lg:grid-cols-2">
       {plans.map((plan) => (
-        <PlanCard key={plan.title} {...plan} />
+        <PlanCard
+          key={plan.title}
+          {...plan}
+          href={appendQuery(plan.href, queryParams)}
+          animated={animated}
+        />
       ))}
     </div>
   );

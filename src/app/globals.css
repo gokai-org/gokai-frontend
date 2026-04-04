@@ -249,18 +249,19 @@ body {
 
 html {
   background: var(--surface-primary);
+  font-size: calc(16px * var(--typography-scale, 1));
   transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 /* ── Typography scaling (driven by data-font-size on <html>) ─── */
-/* Uses CSS zoom so even hardcoded px values scale proportionally */
+/* Root font-size scaling avoids viewport clipping caused by CSS zoom. */
 :root {
-  --typography-zoom: 1;
+  --typography-scale: 1;
 }
-html[data-font-size="small"]   { --typography-zoom: 0.875; }
-html[data-font-size="medium"]  { --typography-zoom: 1; }
-html[data-font-size="large"]   { --typography-zoom: 1.125; }
-html[data-font-size="x-large"] { --typography-zoom: 1.25; }
+html[data-font-size="small"]   { --typography-scale: 0.9375; }
+html[data-font-size="medium"]  { --typography-scale: 1; }
+html[data-font-size="large"]   { --typography-scale: 1.0625; }
+html[data-font-size="x-large"] { --typography-scale: 1.125; }
 
 /* ── Japanese font families (driven by data-jp-font on <html>) ─ */
 /* These are injected as fallbacks in the font stack so CJK glyphs

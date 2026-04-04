@@ -1,5 +1,3 @@
-/** Tipos y datos estáticos para la landing page */
-
 export type Section = {
   id: string;
   nav: string;

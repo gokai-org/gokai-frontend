@@ -6,7 +6,7 @@ import { fadeUp } from "@/features/landing/lib/motionVariants";
 
 export function LandingContactSection() {
   return (
-    <motion.div className="mt-10" variants={fadeUp}>
+    <motion.div className="mt-20 sm:mt-24 lg:mt-24" variants={fadeUp}>
       <ContactCard />
     </motion.div>
   );

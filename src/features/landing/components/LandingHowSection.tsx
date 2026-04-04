@@ -63,32 +63,34 @@ export function LandingHowSection({
           </div>
         </motion.div>
 
-        <motion.div
-          className="grid w-full max-w-4xl gap-3 sm:grid-cols-3"
-          variants={staggerContainer(0.06, 0.05)}
-        >
-          {HOW_TABS.map((tab) => (
-            <motion.button
-              key={tab.id}
-              type="button"
-              onClick={() => setHowTab(tab.id)}
-              aria-pressed={tab.id === howTab}
-              variants={fadeUpSoft}
-              whileHover={{ y: -3 }}
-              whileTap={{ scale: 0.985 }}
-              className={[
-                "rounded-full border px-4 py-3.5 text-center transition-all duration-300 sm:px-5",
-                tab.id === howTab
-                  ? "border-accent/25 bg-accent text-content-inverted shadow-[0_16px_36px_-20px_rgba(153,51,49,0.75)]"
-                  : "border-border-default/70 bg-surface-primary/72 text-content-primary hover:border-accent/18 hover:bg-surface-primary/88",
-              ].join(" ")}
-            >
-              <span className="block text-sm font-semibold sm:text-base">
-                {tab.label}
-              </span>
-            </motion.button>
-          ))}
-        </motion.div>
+        <div className="w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:overflow-visible">
+          <motion.div
+            className="mx-auto flex w-max min-w-full items-stretch gap-2 px-0.5 sm:grid sm:w-full sm:max-w-4xl sm:grid-cols-3 sm:gap-3 sm:px-0"
+            variants={staggerContainer(0.06, 0.05)}
+          >
+            {HOW_TABS.map((tab) => (
+              <motion.button
+                key={tab.id}
+                type="button"
+                onClick={() => setHowTab(tab.id)}
+                aria-pressed={tab.id === howTab}
+                variants={fadeUpSoft}
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.985 }}
+                className={[
+                  "min-w-[138px] rounded-full border px-3 py-2.5 text-center transition-all duration-300 sm:min-w-0 sm:px-5 sm:py-3.5",
+                  tab.id === howTab
+                    ? "border-accent/25 bg-accent text-content-inverted shadow-[0_16px_36px_-20px_rgba(153,51,49,0.75)]"
+                    : "border-border-default/70 bg-surface-primary/72 text-content-primary hover:border-accent/18 hover:bg-surface-primary/88",
+                ].join(" ")}
+              >
+                <span className="block text-xs font-semibold leading-tight sm:text-base">
+                  {tab.label}
+                </span>
+              </motion.button>
+            ))}
+          </motion.div>
+        </div>
       </div>
     </motion.div>
   );

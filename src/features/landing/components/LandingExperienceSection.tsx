@@ -14,16 +14,6 @@ function ss(e0: number, e1: number, v: number) {
 
 const N = FEATURES.length;
 
-/*
- * Paleta de cards que usa tokens de la plataforma:
- *   - dark  → surface-tertiary  (#1c1c1c dark / #f3f4f6 light)
- *   - teal  → accent-subtle bg + content-primary text
- *   - brand → accent bg + white text
- *   - light → surface-secondary + content-primary
- *
- * Para lograr contraste visual se alternan fondos oscuro/teal/brand/light.
- * En dark-mode las variantes teal y brand se oscurecen con dark: overrides.
- */
 const CARD_STYLES: { bg: string; text: string; icon: string; kanji: string }[] = [
   {
     bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
@@ -93,7 +83,7 @@ export function LandingExperienceSection({ sectionProgress: sp }: LandingExperie
       data-section
       className="relative h-[300svh] scroll-mt-28"
     >
-      <div className="sticky top-0 flex h-[100svh] flex-col items-center justify-start overflow-y-auto overflow-x-clip pt-12 sm:pt-16 lg:justify-center lg:overflow-hidden lg:pt-0">
+      <div className="sticky top-0 flex h-[100svh] flex-col items-center justify-start overflow-hidden pt-12 sm:pt-16 lg:justify-center lg:pt-0">
 
         {/* ── FASE 0 — intro ───────────────────────────────────────── */}
         <div
@@ -106,20 +96,18 @@ export function LandingExperienceSection({ sectionProgress: sp }: LandingExperie
         >
           <div className="mx-auto w-full max-w-3xl text-center">
             <p className="font-sans text-[10px] font-black uppercase tracking-[0.30em] text-accent/75">
-              Our ethos
+              G O K A I
             </p>
-            <h2 className="font-sans mt-4 text-4xl font-black leading-[0.92] tracking-tight text-content-primary sm:text-6xl lg:text-7xl">
+            <h2 className="font-sans mt-4 text-4xl font-black leading-[1.02] tracking-tight text-content-primary sm:text-6xl lg:text-7xl">
               Una experiencia
               <br />
-              que cambia
+              que evoluciona contigo.
               <br />
-              el ritmo.
+              
             </h2>
             <div className="mx-auto mt-7 max-w-xl border-t border-content-primary/10 pt-6">
               <p className="font-sans text-base leading-relaxed text-content-primary/65 sm:text-lg">
-                GOKAI transforma la escena completa: el grafo cede lentamente,
-                el nuevo fondo emerge con un barrido vertical y el contenido aparece
-                solo cuando la transición ya está asentada.
+                Aprende japonés con inteligencia adaptativa, rutas personalizadas y práctica inmersiva.
               </p>
             </div>
           </div>
@@ -127,17 +115,17 @@ export function LandingExperienceSection({ sectionProgress: sp }: LandingExperie
 
         {/* ── FASE 1 — panel cards (edge-to-edge) ──────────────────── */}
         <div
-          className="absolute inset-0 z-10 flex items-center"
+          className="absolute inset-0 z-10 flex items-stretch overflow-hidden lg:items-center"
           style={{ opacity: deckAlpha, willChange: "opacity" }}
         >
-          {/* Mobile/Tablet: grid 2-col compacto, scrollable si necesario */}
-          <div className="grid w-full grid-cols-2 gap-2 px-3 py-4 sm:gap-3 sm:px-5 md:gap-4 md:px-8 lg:hidden auto-rows-min">
+          {/* Mobile/Tablet: usa la altura del viewport para evitar huecos grandes bajo la grilla */}
+          <div className="grid h-full min-h-full w-full grid-cols-1 content-stretch auto-rows-[minmax(180px,auto)] gap-3 px-3 pt-16 pb-10 min-[360px]:grid-cols-2 min-[360px]:grid-rows-3 min-[360px]:auto-rows-fr sm:gap-4 sm:px-5 sm:pt-20 sm:pb-12 md:gap-5 md:px-8 md:pt-24 md:pb-14 lg:hidden">
             {FEATURES.map((f, i) => {
               const t = cardEnterT(i, sp);
               return (
                 <div
                   key={f.title}
-                  className="w-full"
+                  className="h-full w-full min-h-0"
                   style={{
                     opacity: t,
                     transform: `translateY(${(1 - t) * 50}px)`,
@@ -163,7 +151,7 @@ export function LandingExperienceSection({ sectionProgress: sp }: LandingExperie
               return (
                 <div
                   key={f.title}
-                  className="relative transition-[flex] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
+                  className="relative min-w-0 basis-0 transition-[flex] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
                   style={{
                     flex: isExpanded ? 2.6 : hasHover ? 0.65 : 1,
                     opacity: t,
@@ -208,7 +196,7 @@ function PanelCard({
         // Mobile/Tablet: card compacta con rounded
         "w-full min-h-[110px] sm:min-h-[140px] md:min-h-[160px] rounded-2xl",
         // Desktop: llena el flex, sin width fijo
-        "lg:w-auto lg:min-h-0 lg:rounded-none lg:shrink",
+        "lg:min-w-0 lg:w-auto lg:min-h-0 lg:rounded-none lg:shrink",
       ].join(" ")}
     >
       {/* Kanji decorativo de fondo */}

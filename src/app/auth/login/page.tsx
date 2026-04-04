@@ -90,40 +90,57 @@ export default function LoginPage() {
   const [switchDir, setSwitchDir] = useState<"left" | "right">("left");
   const [switching, setSwitching] = useState(false);
   const switchTimeout = useRef<number | null>(null);
-
-  const fromGoogle =
-    typeof window !== "undefined" &&
-    new URLSearchParams(window.location.search).get("google") === "1";
+  const [fromGoogle, setFromGoogle] = useState(false);
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
-    const google = sp.get("google");
+    const google = sp.get("google") === "1";
     const urlMode = sp.get("mode");
     const urlIntent = sp.get("intent");
 
+    setFromGoogle(google);
+
+    const parsedIntent = parseIntent(urlIntent);
+
     if (urlMode === "register") {
-      const parsed = parseIntent(urlIntent);
-      if (parsed) {
-        setIntent(parsed);
+      if (parsedIntent) {
+        setIntent(parsedIntent);
         setMode("register");
       } else {
-        window.location.replace("/auth/membership");
+        const membershipUrl = new URL("/auth/membership", window.location.origin);
+        ["google", "email", "firstName", "lastName", "from"].forEach((key) => {
+          const value = sp.get(key);
+          if (value) membershipUrl.searchParams.set(key, value);
+        });
+        window.location.replace(membershipUrl.toString());
         return;
       }
     }
 
-    if (google === "1") {
+    if (google && urlMode !== "register") {
+      const membershipUrl = new URL("/auth/membership", window.location.origin);
+      ["google", "email", "firstName", "lastName", "from"].forEach((key) => {
+        const value = sp.get(key);
+        if (value) membershipUrl.searchParams.set(key, value);
+      });
+      window.location.replace(membershipUrl.toString());
+      return;
+    }
+
+    if (google) {
       const e = sp.get("email") || "";
       const fn = sp.get("firstName") || "";
       const ln = sp.get("lastName") || "";
 
-      setMode("register");
-      if (!intent) setIntent("free");
+      if (parsedIntent) {
+        setMode("register");
+        setIntent(parsedIntent);
+      }
       if (e) setRegEmail(e);
       if (fn) setFirstName(fn);
       if (ln) setLastName(ln);
     }
-  }, [intent]);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -552,14 +569,14 @@ export default function LoginPage() {
   ].join(" ");
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-surface-secondary">
+    <main className="relative min-h-dvh overflow-x-hidden bg-surface-secondary">
       <LoginHistoryHandler />
       <AnimatedGraphBackground />
       <div className="absolute inset-0 bg-linear-to-b from-surface-primary/20 via-surface-primary/10 to-surface-primary/30" />
 
       <AuthHero hero={hero} heroIndex={heroIndex} />
 
-      <div className="relative z-10 flex min-h-screen w-full items-center px-6 py-10 lg:pl-10 lg:pr-35 lg:pt-16 xl:pt-20">
+      <div className="relative z-10 flex min-h-dvh w-full items-center px-6 py-10 lg:pl-10 lg:pr-35 lg:pt-16 xl:pt-20">
         <div className="w-full">
           <section className="flex w-full justify-center lg:justify-end lg:self-center lg:mr-15 xl:mr-14">
             <motion.div

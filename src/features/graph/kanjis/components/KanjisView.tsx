@@ -481,7 +481,7 @@ export default function KanjisView() {
       ref={rootRef}
       data-kanji-interacting="false"
       data-kanji-quiz-active="false"
-      className="fixed inset-0 overflow-hidden bg-surface-primary"
+      className="absolute inset-0 overflow-hidden bg-surface-primary"
     >
       <div
         ref={backgroundRef}

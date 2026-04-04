@@ -11,7 +11,6 @@ interface LandingSectionFrameProps {
   className?: string;
   innerClassName?: string;
   children: React.ReactNode;
-  /** Multiplicador de altura para scroll lento. 1 = sin sticky, 1.6 = 60% extra. */
   scrollMultiplier?: number;
 }
 
@@ -28,7 +27,6 @@ export function LandingSectionFrame({
     offset: ["start end", "end start"],
   });
 
-  // Parallax suave para el contenido interior — sin transform en el sticky container
   const innerY = useTransform(scrollYProgress, [0, 0.5, 1], [32, 0, -16]);
   const innerOpacity = useTransform(scrollYProgress, [0, 0.15, 0.85, 1], [0, 1, 1, 0]);
 
