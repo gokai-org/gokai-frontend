@@ -128,11 +128,7 @@ export function LandingPageView() {
       ? 1.76
       : 2.2;
 
-  const contactScrollMultiplier = isPortraitCompact
-    ? 1
-    : timeline.viewport.isTablet
-      ? 1.48
-      : 1.8;
+  const contactScrollMultiplier = 1;
 
   // Fase 1 – arranca cuando "how" está al 76 % de su scroll (sale del viewport)
   // Llega hasta 0.45 para no cubrir el how completamente desde este lado.

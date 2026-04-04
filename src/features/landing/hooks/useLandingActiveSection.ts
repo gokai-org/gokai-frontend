@@ -36,25 +36,6 @@ export function useLandingActiveSection(defaultSection = "inicio") {
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    const currentHash = window.location.hash.replace("#", "");
-    if (!activeId) return;
-
-    if (activeId === defaultSection) {
-      if (currentHash) {
-        const cleanUrl = window.location.pathname + window.location.search;
-        window.history.replaceState(null, "", cleanUrl);
-      }
-      return;
-    }
-
-    if (currentHash !== activeId) {
-      window.history.replaceState(null, "", `#${activeId}`);
-    }
-  }, [activeId, defaultSection]);
-
-  useEffect(() => {
     const updateFromHash = () => {
       const rawHash = typeof window !== "undefined" ? window.location.hash : "";
       const hash = rawHash.replace("#", "");

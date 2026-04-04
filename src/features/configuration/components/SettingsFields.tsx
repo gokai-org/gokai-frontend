@@ -46,7 +46,9 @@ export function SettingsToggleItem({
 }: SettingsToggleItemProps) {
   return (
     <SettingsItem label={label} description={description} icon={icon}>
-      <Toggle enabled={enabled} onChange={onChange} disabled={disabled} />
+      <div className="w-full flex items-center justify-start sm:w-auto sm:justify-end">
+        <Toggle enabled={enabled} onChange={onChange} disabled={disabled} />
+      </div>
     </SettingsItem>
   );
 }
@@ -66,7 +68,7 @@ export function SettingsSelectItem({
         value={value}
         options={options}
         onChange={onChange}
-        className={className ?? "min-w-[220px] w-full sm:w-auto"}
+        className={className ?? "w-full sm:w-[220px]"}
       />
     </SettingsItem>
   );
@@ -85,17 +87,21 @@ export function SettingsToggleSelectItem({
 }: SettingsToggleSelectItemProps) {
   return (
     <SettingsItem label={label} description={description} icon={icon}>
-      <Toggle
-        enabled={toggleEnabled}
-        onChange={onToggleChange}
-        disabled={toggleDisabled}
-      />
-      <Dropdown
-        value={value}
-        options={options}
-        onChange={onChange}
-        className="min-w-[220px] w-full sm:w-auto"
-      />
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 w-full sm:w-auto">
+        <div className="w-full flex items-center justify-start sm:w-auto sm:justify-end">
+          <Toggle
+            enabled={toggleEnabled}
+            onChange={onToggleChange}
+            disabled={toggleDisabled}
+          />
+        </div>
+        <Dropdown
+          value={value}
+          options={options}
+          onChange={onChange}
+          className="w-full sm:w-[220px]"
+        />
+      </div>
     </SettingsItem>
   );
 }

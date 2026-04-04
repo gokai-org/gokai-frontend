@@ -23,7 +23,6 @@ const HERO_MESSAGES = [
 ] as const;
 
 type Mode = "login" | "register" | "forgot-password";
-type ForgotStep = "email" | "code" | "password";
 type RegisterStep = "form" | "verify-email";
 type MembershipIntent = "free" | "premium";
 type UserProfile = "admin" | "user";
@@ -57,15 +56,6 @@ export default function LoginPage() {
 
   const [mode, setMode] = useState<Mode>("login");
   const [intent, setIntent] = useState<MembershipIntent | null>(null);
-
-  const [forgotStep, setForgotStep] = useState<ForgotStep>("email");
-  const [forgotEmail, setForgotEmail] = useState("");
-  const [verificationCode, setVerificationCode] = useState(
-    Array(CODE_LEN).fill(""),
-  );
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const codeInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const [registerStep, setRegisterStep] = useState<RegisterStep>("form");
   const [regVerificationCode, setRegVerificationCode] = useState(
@@ -172,12 +162,6 @@ export default function LoginPage() {
 
     setRegisterStep("form");
     setRegVerificationCode(Array(CODE_LEN).fill(""));
-
-    setForgotStep("email");
-    setForgotEmail("");
-    setVerificationCode(Array(CODE_LEN).fill(""));
-    setNewPassword("");
-    setConfirmNewPassword("");
   }
 
   function startSwitch(next: Mode) {
@@ -349,127 +333,6 @@ export default function LoginPage() {
     window.location.href = "/api/auth/google";
   }
 
-  async function handleForgotPasswordEmail(e: React.FormEvent) {
-    e.preventDefault();
-    if (!forgotEmail) {
-      toast.error("Ingresa tu correo electrónico.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/verification/send-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail, type: "password-recovery" }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok)
-        throw new Error(data?.error || "No se pudo enviar el código.");
-
-      toast.success(`Código enviado a ${forgotEmail}`);
-      setForgotStep("code");
-      requestAnimationFrame(() => codeInputRefs.current[0]?.focus());
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Error desconocido");
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleVerificationCode(e: React.FormEvent) {
-    e.preventDefault();
-    const code = verificationCode.join("");
-
-    if (code.length !== CODE_LEN) {
-      toast.error("Ingresa el código completo");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const res = await fetch("/api/auth/verification/verify-code", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: forgotEmail,
-          code,
-          type: "password-recovery",
-        }),
-      });
-
-      const data = await res.json().catch(() => null);
-      if (!res.ok)
-        throw new Error(data?.error || "Código inválido o expirado.");
-
-      toast.success("Código verificado");
-      setForgotStep("password");
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Error desconocido");
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  async function handleResetPassword(e: React.FormEvent) {
-    e.preventDefault();
-
-    if (newPassword.length < 8) {
-      toast.error("La contraseña debe tener al menos 8 caracteres.");
-      return;
-    }
-    if (newPassword !== confirmNewPassword) {
-      toast.error("Las contraseñas no coinciden.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const code = verificationCode.join("");
-      const res = await fetch("/api/auth/verification/reset-password", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: forgotEmail, code, newPassword }),
-      });
-
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(data?.error || "No se pudo restablecer la contraseña.");
-      }
-
-      toast.success("¡Contraseña actualizada exitosamente!");
-      startSwitch("login");
-    } catch (err) {
-      const error = err instanceof Error ? err : new Error("Error desconocido");
-      toast.error(error.message);
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  function handleCodeInput(index: number, value: string) {
-    if (!/^[0-9]?$/.test(value)) return;
-
-    const newCode = [...verificationCode];
-    newCode[index] = value;
-    setVerificationCode(newCode);
-
-    if (value && index < CODE_LEN - 1) {
-      codeInputRefs.current[index + 1]?.focus();
-    }
-  }
-
-  function handleCodeKeyDown(
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) {
-    if (e.key === "Backspace" && !verificationCode[index] && index > 0) {
-      codeInputRefs.current[index - 1]?.focus();
-    }
-  }
-
   function handleRegCodeInput(index: number, value: string) {
     if (!/^[0-9]?$/.test(value)) return;
 
@@ -629,7 +492,6 @@ export default function LoginPage() {
                 >
                   <AuthHeader
                     mode={mode}
-                    forgotStep={forgotStep}
                     registerStep={registerStep}
                     intent={intent}
                     regEmail={regEmail}
@@ -708,26 +570,8 @@ export default function LoginPage() {
 
                   {mode === "forgot-password" && (
                     <ForgotPasswordFlow
-                      forgotStep={forgotStep}
-                      forgotEmail={forgotEmail}
-                      verificationCode={verificationCode}
-                      newPassword={newPassword}
-                      confirmNewPassword={confirmNewPassword}
-                      showPass={showPass}
-                      showPass2={showPass2}
-                      codeInputRefs={codeInputRefs}
-                      onForgotEmailChange={setForgotEmail}
-                      onNewPasswordChange={setNewPassword}
-                      onConfirmNewPasswordChange={setConfirmNewPassword}
-                      onToggleShowPass={() => setShowPass((s) => !s)}
-                      onToggleShowPass2={() => setShowPass2((s) => !s)}
-                      onCodeInput={handleCodeInput}
-                      onCodeKeyDown={handleCodeKeyDown}
-                      onSubmitEmail={handleForgotPasswordEmail}
-                      onSubmitCode={handleVerificationCode}
-                      onSubmitPassword={handleResetPassword}
-                      onBackToLogin={() => startSwitch("login")}
-                      onBackToEmail={() => setForgotStep("email")}
+                      onSuccess={() => startSwitch("login")}
+                      onBack={() => startSwitch("login")}
                     />
                   )}
 

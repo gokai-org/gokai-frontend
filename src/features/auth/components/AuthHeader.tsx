@@ -6,13 +6,11 @@ import { motion } from "framer-motion";
 import { PremiumStepIndicator } from "@/features/auth/components/PremiumStepIndicator";
 
 type Mode = "login" | "register" | "forgot-password";
-type ForgotStep = "email" | "code" | "password";
 type RegisterStep = "form" | "verify-email";
 type MembershipIntent = "free" | "premium";
 
 type Props = {
   mode: Mode;
-  forgotStep: ForgotStep;
   registerStep: RegisterStep;
   intent: MembershipIntent | null;
   regEmail: string;
@@ -20,7 +18,6 @@ type Props = {
 
 export function AuthHeader({
   mode,
-  forgotStep,
   registerStep,
   intent,
   regEmail,
@@ -113,10 +110,7 @@ export function AuthHeader({
             Recuperar contraseña
           </h2>
           <p className="mt-1 text-sm font-medium text-content-tertiary">
-            {forgotStep === "email" &&
-              "Ingresa tu correo para recibir el código."}
-            {forgotStep === "code" && "Ingresa el código de verificación."}
-            {forgotStep === "password" && "Crea tu nueva contraseña."}
+            Sigue los pasos para restablecer tu contraseña.
           </p>
         </>
       )}

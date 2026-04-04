@@ -49,15 +49,15 @@ export function BaseNoticeCard({
       mode={heavyAnimationsEnabled ? "default" : "light"}
     >
       <div
-        className={cls(
-          "group relative rounded-[24px] border bg-surface-primary transition-all duration-300",
-          notice.read
-            ? "border-border-subtle hover:border-border-default"
-            : "border-accent/20 shadow-[0_2px_16px_-4px_rgba(153,51,49,0.12)] hover:shadow-[0_8px_28px_-6px_rgba(153,51,49,0.22)]",
-        )}
-      >
+          className={cls(
+            "group relative overflow-hidden bg-surface-primary rounded-2xl border transition-colors duration-200",
+            notice.read
+              ? "border-border-subtle hover:border-border-default"
+              : "border-accent/15 shadow-sm shadow-accent/5 hover:shadow-md hover:shadow-accent/8",
+          )}
+        >
         {!notice.read && (
-          <div className="absolute left-0 top-0 h-full w-1 rounded-l-[24px] bg-gradient-to-b from-accent to-accent-hover" />
+          <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-accent to-accent-hover rounded-l-2xl" />
         )}
 
         <div className="p-5 pl-6">

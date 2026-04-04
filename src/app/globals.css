@@ -6,6 +6,7 @@
 
 /* ── Semantic color tokens ──────────────────────────── */
 :root {
+  color-scheme: light;
   /* Surfaces */
   --surface-primary: #ffffff;
   --surface-secondary: #f9fafb;
@@ -67,6 +68,8 @@
 }
 
 .dark {
+  color-scheme: dark;
+
   /* Surfaces */
   --surface-primary: #131313;
   --surface-secondary: #141414;
@@ -253,6 +256,23 @@ html {
   transition:
     background-color 0.2s ease,
     color 0.2s ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html::-webkit-scrollbar-track {
+  background: transparent;
+}
+html::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+}
+html::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* ── Typography scaling (driven by data-font-size on <html>) ─── */
