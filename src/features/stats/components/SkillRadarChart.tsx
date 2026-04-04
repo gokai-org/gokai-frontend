@@ -60,7 +60,9 @@ export function SkillRadarChart({
         className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
       >
         <div className="mb-4">
-          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <h3 className="text-lg font-extrabold text-content-primary">
+            {title}
+          </h3>
           <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="flex flex-col items-center justify-center py-12 gap-3">
@@ -117,7 +119,11 @@ export function SkillRadarChart({
             <PolarGrid stroke="var(--border-primary)" strokeDasharray="3 3" />
             <PolarAngleAxis
               dataKey="skill"
-              tick={{ fontSize: 11, fill: "var(--text-tertiary)", fontWeight: 600 }}
+              tick={{
+                fontSize: 11,
+                fill: "var(--text-tertiary)",
+                fontWeight: 600,
+              }}
             />
             <PolarRadiusAxis
               angle={30}

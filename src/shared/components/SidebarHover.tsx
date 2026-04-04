@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
@@ -180,26 +180,29 @@ export default function SidebarOnly() {
     };
   };
 
-  const handleDragMove = (e: MouseEvent | TouchEvent) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    setWasDragged(true);
-    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+  const handleDragMove = useCallback(
+    (e: MouseEvent | TouchEvent) => {
+      if (!isDragging) return;
+      e.preventDefault();
+      setWasDragged(true);
+      const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+      const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
 
-    const newX = Math.max(
-      0,
-      Math.min(window.innerWidth - 64, clientX - dragStart.current.x),
-    );
-    const newY = Math.max(
-      0,
-      Math.min(window.innerHeight - 64, clientY - dragStart.current.y),
-    );
+      const newX = Math.max(
+        0,
+        Math.min(window.innerWidth - 64, clientX - dragStart.current.x),
+      );
+      const newY = Math.max(
+        0,
+        Math.min(window.innerHeight - 64, clientY - dragStart.current.y),
+      );
 
-    setMenuPosition({ x: newX, y: newY });
-  };
+      setMenuPosition({ x: newX, y: newY });
+    },
+    [isDragging],
+  );
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setIsDragging(false);
 
     if (wasDragged) {
@@ -212,7 +215,7 @@ export default function SidebarOnly() {
         y: menuPosition.y,
       });
     }
-  };
+  }, [wasDragged, menuPosition]);
 
   useEffect(() => {
     if (isDragging) {
@@ -227,7 +230,7 @@ export default function SidebarOnly() {
         window.removeEventListener("touchend", handleDragEnd);
       };
     }
-  }, [isDragging, menuPosition]);
+  }, [isDragging, handleDragMove, handleDragEnd]);
 
   return (
     <>
@@ -253,7 +256,7 @@ export default function SidebarOnly() {
             type="button"
             onMouseDown={handleDragStart}
             onTouchStart={handleDragStart}
-            onClick={(e) => {
+            onClick={() => {
               if (!wasDragged) {
                 setMobileOpen(true);
               }
@@ -600,7 +603,10 @@ function Header({ expanded }: { expanded: boolean }) {
                 <div className="text-[28px] font-extrabold tracking-[0.09em] text-content-primary leading-none">
                   GOKAI
                 </div>
-                <span className="jp-vertical text-[13px] font-black text-content-secondary dark:text-content-tertiary select-none" style={{ lineHeight: 1.15 }}>
+                <span
+                  className="jp-vertical text-[13px] font-black text-content-secondary dark:text-content-tertiary select-none"
+                  style={{ lineHeight: 1.15 }}
+                >
                   語界
                 </span>
               </div>

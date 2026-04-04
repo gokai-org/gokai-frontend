@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Loader2, RefreshCcw } from "lucide-react";
 import {
   AdminFilterDropdown,
@@ -43,16 +43,16 @@ function AdminCouponsTableBase({
   const pageSizeNumber = Number(pageSize);
   const totalPages = Math.max(1, Math.ceil(coupons.length / pageSizeNumber));
 
-  useEffect(() => {
+  // Adjust state during render (React recommended pattern)
+  const [prevResetKey, setPrevResetKey] = useState({ pageSize, couponsLen: coupons.length });
+  if (pageSize !== prevResetKey.pageSize || coupons.length !== prevResetKey.couponsLen) {
+    setPrevResetKey({ pageSize, couponsLen: coupons.length });
     setPage(1);
-  }, [pageSize, coupons]);
+  }
 
-  useEffect(() => {
-    if (page <= totalPages) return;
-    setPage(totalPages);
-  }, [page, totalPages]);
+  const effectivePage = Math.max(1, Math.min(page, totalPages));
 
-  const pageStart = (page - 1) * pageSizeNumber;
+  const pageStart = (effectivePage - 1) * pageSizeNumber;
 
   const visibleCoupons = useMemo(
     () => coupons.slice(pageStart, pageStart + pageSizeNumber),
@@ -72,7 +72,9 @@ function AdminCouponsTableBase({
     <section className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h3 className="text-base font-bold text-content-primary">Todos los cupones</h3>
+          <h3 className="text-base font-bold text-content-primary">
+            Todos los cupones
+          </h3>
           <p className="text-xs text-content-tertiary">
             Ultimos cupones ({coupons.length} de {totalCoupons} cupones)
           </p>
@@ -102,15 +104,33 @@ function AdminCouponsTableBase({
         <table className="min-w-[780px] md:min-w-[880px] xl:min-w-0 w-full table-fixed bg-surface-primary">
           <thead className="bg-[#F8F6F4] text-left">
             <tr>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">ID</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Codigo</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Descripcion</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Meses</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Limite de canjes</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Vigencia</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Estado</th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Fecha de creacion</th>
-              <th className="px-2.5 py-2.5 text-center text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">Acciones</th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                ID
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Codigo
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Descripcion
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Meses
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Limite de canjes
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Vigencia
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Estado
+              </th>
+              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Fecha de creacion
+              </th>
+              <th className="px-2.5 py-2.5 text-center text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -128,7 +148,8 @@ function AdminCouponsTableBase({
       {coupons.length > 0 && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-content-tertiary">
-            Mostrando {visibleCoupons.length} cupones (pagina {page} de {totalPages})
+            Mostrando {visibleCoupons.length} cupones (pagina {effectivePage} de{" "}
+            {totalPages})
           </p>
 
           <div className="flex items-center gap-2">
@@ -145,7 +166,7 @@ function AdminCouponsTableBase({
             <button
               type="button"
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              disabled={page <= 1}
+              disabled={effectivePage <= 1}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Anterior
@@ -153,7 +174,7 @@ function AdminCouponsTableBase({
             <button
               type="button"
               onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={page >= totalPages}
+              disabled={effectivePage >= totalPages}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Siguiente

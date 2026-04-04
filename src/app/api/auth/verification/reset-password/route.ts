@@ -51,20 +51,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    const response = await fetch(
-      `${base}/users/verification/reset-password`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          code,
-          password: newPassword,
-          newPassword,
-          type: "password",
-        }),
-      },
-    );
+    const response = await fetch(`${base}/users/verification/reset-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email,
+        code,
+        password: newPassword,
+        newPassword,
+        type: "password",
+      }),
+    });
 
     const text = await response.text();
     let data: Record<string, unknown> | null = null;

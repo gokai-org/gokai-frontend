@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { appConfig, authConfig } from "@/shared/config";
 
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   if (!authConfig.googleClientId) {
     return NextResponse.json(
       { error: "Google OAuth no configurado (GOOGLE_CLIENT_ID)" },

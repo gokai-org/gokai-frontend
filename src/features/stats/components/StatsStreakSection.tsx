@@ -17,11 +17,7 @@ export function StatsStreakSection({
   animationsEnabled = true,
 }: StatsStreakSectionProps) {
   return (
-    <AnimatedEntrance
-      index={4}
-      disabled={!animationsEnabled}
-      className="mb-8"
-    >
+    <AnimatedEntrance index={4} disabled={!animationsEnabled} className="mb-8">
       <SectionHeader
         className="mb-5"
         title={

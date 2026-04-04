@@ -24,10 +24,7 @@ export function LandingSectionTitle({
 }: LandingSectionTitleProps) {
   if (id === "experiencia") {
     return (
-      <motion.div
-        className="text-center"
-        variants={staggerContainer(0.1)}
-      >
+      <motion.div className="text-center" variants={staggerContainer(0.1)}>
         <motion.p
           variants={fadeUpSoft}
           className="text-2xl font-extrabold text-accent md:text-4xl"
@@ -46,10 +43,7 @@ export function LandingSectionTitle({
 
   if (id === "planes") {
     return (
-      <motion.div
-        className="text-center"
-        variants={staggerContainer(0.1)}
-      >
+      <motion.div className="text-center" variants={staggerContainer(0.1)}>
         <motion.p
           variants={fadeUpSoft}
           className="text-3xl font-extrabold text-accent md:text-5xl"
@@ -60,8 +54,7 @@ export function LandingSectionTitle({
           variants={fadeUp}
           className="mt-2 text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl"
         >
-          Desbloquea todo con{" "}
-          <span className="text-accent">GOKAI+</span>
+          Desbloquea todo con <span className="text-accent">GOKAI+</span>
         </motion.h2>
       </motion.div>
     );
@@ -69,10 +62,7 @@ export function LandingSectionTitle({
 
   if (id === "contacto") {
     return (
-      <motion.div
-        className="text-center"
-        variants={staggerContainer(0.1)}
-      >
+      <motion.div className="text-center" variants={staggerContainer(0.1)}>
         <motion.h2
           variants={fadeUp}
           className="text-4xl font-extrabold tracking-tight md:text-6xl lg:text-7xl"
@@ -91,9 +81,7 @@ export function LandingSectionTitle({
   }
 
   return (
-    <motion.div
-      variants={staggerContainer(0.1)}
-    >
+    <motion.div variants={staggerContainer(0.1)}>
       <motion.h2
         variants={fadeUp}
         className={[

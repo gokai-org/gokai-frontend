@@ -12,7 +12,9 @@ import { normalizeQuizResponse } from "@/features/kanji/utils/quizParser";
  *
  * @throws Error with the backend message (e.g. "No se tienen los puntos necesarios")
  */
-export async function getKanjiQuiz(kanjiId: string): Promise<KanjiQuizResponse> {
+export async function getKanjiQuiz(
+  kanjiId: string,
+): Promise<KanjiQuizResponse> {
   const raw = await apiFetch<KanjiQuizResponseRaw>(
     `/api/content/kanji/quiz/${kanjiId}`,
     { cache: "no-store" },
@@ -29,11 +31,8 @@ export async function submitKanjiQuiz(
   kanjiId: string,
   body: KanjiQuizSubmitBody,
 ): Promise<{ success: boolean }> {
-  return apiFetch<{ success: boolean }>(
-    `/api/content/kanji/quiz/${kanjiId}`,
-    {
-      method: "POST",
-      body: JSON.stringify(body),
-    },
-  );
+  return apiFetch<{ success: boolean }>(`/api/content/kanji/quiz/${kanjiId}`, {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
 }

@@ -81,7 +81,12 @@ export type KanjiQuizRoundResult = {
  * Fixed order for the 4 quiz exercises.
  * The backend cycles through these sequentially per kanji.
  */
-export const QUIZ_ROUND_ORDER: KanjiQuizType[] = ["kanji", "meaning", "reading", "writing"];
+export const QUIZ_ROUND_ORDER: KanjiQuizType[] = [
+  "kanji",
+  "meaning",
+  "reading",
+  "writing",
+];
 export const QUIZ_TOTAL_ROUNDS = 4;
 export const QUIZ_QUESTIONS_PER_ROUND = 4;
 export const QUIZ_MEANING_OPTION_COUNT = 6;

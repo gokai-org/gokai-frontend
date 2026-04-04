@@ -115,7 +115,9 @@ export function Dropdown({
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center justify-between w-full px-3 py-2 text-sm bg-surface-primary border border-border-default rounded-lg hover:border-content-muted focus:outline-none focus:ring-2 focus:ring-accent/30 focus:border-accent/30 transition-all"
       >
-        <span className="text-content-secondary truncate pr-2">{selectedValue}</span>
+        <span className="text-content-secondary truncate pr-2">
+          {selectedValue}
+        </span>
         <svg
           className={`w-4 h-4 ml-2 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
           fill="none"

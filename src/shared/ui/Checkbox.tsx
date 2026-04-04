@@ -80,7 +80,9 @@ export function Checkbox({
       </motion.span>
 
       {label && (
-        <span className="text-sm font-medium text-content-secondary">{label}</span>
+        <span className="text-sm font-medium text-content-secondary">
+          {label}
+        </span>
       )}
     </label>
   );

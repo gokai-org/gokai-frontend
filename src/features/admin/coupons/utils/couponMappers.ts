@@ -1,4 +1,8 @@
-import type { AdminCoupon, AdminCouponStatus, BackendCoupon } from "../types/coupons";
+import type {
+  AdminCoupon,
+  AdminCouponStatus,
+  BackendCoupon,
+} from "../types/coupons";
 
 function deriveCouponStatus(vigency: string): AdminCouponStatus {
   const today = new Date();

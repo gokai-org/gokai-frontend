@@ -28,18 +28,26 @@ function authorizeAdmin(req: NextRequest) {
   if (!raw) return { error: "No autenticado", status: 401, token: "" };
 
   const token = normalizeBearerToken(raw);
-  const profileFromCookie = normalizeProfile(req.cookies.get(PROFILE_COOKIE)?.value);
+  const profileFromCookie = normalizeProfile(
+    req.cookies.get(PROFILE_COOKIE)?.value,
+  );
   const profileFromToken = getProfileFromToken(token);
   const profile = profileFromToken ?? profileFromCookie;
 
-  if (profile !== "admin") return { error: "Acceso restringido a administradores", status: 403, token: "" };
+  if (profile !== "admin")
+    return {
+      error: "Acceso restringido a administradores",
+      status: 403,
+      token: "",
+    };
 
   return { error: null, status: 200, token };
 }
 
 export async function GET(req: NextRequest) {
   const auth = authorizeAdmin(req);
-  if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  if (auth.error)
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const valid = req.nextUrl.searchParams.get("valid");
   const qs = valid === "true" ? "?valid=true" : "";
@@ -59,13 +67,17 @@ export async function GET(req: NextRequest) {
     const data = await upstream.json().catch(() => ({}));
     return NextResponse.json(data, { status: upstream.status });
   } catch {
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(req: NextRequest) {
   const auth = authorizeAdmin(req);
-  if (auth.error) return NextResponse.json({ error: auth.error }, { status: auth.status });
+  if (auth.error)
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
 
   const url = `${apiConfig.subscriptionsApiBase}/subscriptions/cupon`;
   const body = await req.text();
@@ -85,6 +97,9 @@ export async function POST(req: NextRequest) {
     const data = await upstream.json().catch(() => ({}));
     return NextResponse.json(data, { status: upstream.status });
   } catch {
-    return NextResponse.json({ error: "Error interno del servidor" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Error interno del servidor" },
+      { status: 500 },
+    );
   }
 }

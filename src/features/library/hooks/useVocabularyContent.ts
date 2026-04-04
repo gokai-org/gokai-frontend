@@ -14,7 +14,9 @@ export function useVocabularyContent(searchQuery: string) {
   const [words, setWords] = useState<Word[]>([]);
 
   const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
-  const [selectedSubtheme, setSelectedSubtheme] = useState<Subtheme | null>(null);
+  const [selectedSubtheme, setSelectedSubtheme] = useState<Subtheme | null>(
+    null,
+  );
 
   const [loadingThemes, setLoadingThemes] = useState(true);
   const [loadingSubthemes, setLoadingSubthemes] = useState(false);

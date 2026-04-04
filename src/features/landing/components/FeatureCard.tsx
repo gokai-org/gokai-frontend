@@ -11,6 +11,7 @@ interface FeatureCardProps {
   desc: string;
   jp: string;
   index?: number;
+  compact?: boolean;
 }
 
 export function FeatureCard({
@@ -18,56 +19,96 @@ export function FeatureCard({
   title,
   desc,
   jp,
+  compact = false,
 }: FeatureCardProps) {
   const isIconString = typeof icon === "string";
+
+  if (compact) {
+    return (
+      <article className="group relative flex flex-col overflow-hidden rounded-2xl border border-border-default/60 bg-surface-primary/90 shadow-[var(--shadow-md)] backdrop-blur-xl transition-all duration-300 hover:border-accent/18 hover:shadow-[var(--shadow-lg)] dark:bg-surface-secondary/80 dark:border-border-default/40 w-[260px]">
+        <div className="absolute inset-x-4 top-0 h-px bg-gradient-to-r from-transparent via-accent/40 to-transparent" />
+
+        {/* Icon header */}
+        <div className="flex items-center gap-3 px-5 pt-5 pb-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent-hover shadow-[0_6px_12px_-4px_rgba(153,51,49,0.38)]">
+            {isIconString ? (
+              <div className="relative h-5 w-5">
+                <Image
+                  src={icon as string}
+                  alt={title}
+                  fill
+                  className="object-contain"
+                />
+              </div>
+            ) : (
+              <div className="text-content-inverted [&_svg]:h-5 [&_svg]:w-5">
+                {icon}
+              </div>
+            )}
+          </div>
+          <div className="pointer-events-none text-[1.6rem] font-bold text-accent/12 dark:text-accent/8 select-none leading-none">
+            {jp}
+          </div>
+        </div>
+
+        {/* Content body */}
+        <div className="px-5 pb-5 flex-1">
+          <h3 className="text-[0.92rem] font-extrabold leading-tight tracking-tight text-content-primary">
+            {title}
+          </h3>
+          <p className="mt-2 text-[11.5px] leading-[1.55] text-content-secondary dark:text-content-tertiary line-clamp-3">
+            {desc}
+          </p>
+        </div>
+      </article>
+    );
+  }
 
   return (
     <motion.article
       variants={cardReveal}
-      whileHover={{ y: -6 }}
-      className="group relative flex h-full flex-col overflow-hidden rounded-[26px] border border-accent/10 bg-surface-primary p-5 shadow-[0_8px_24px_-10px_rgba(0,0,0,0.12)] transition-all duration-300 hover:border-accent/20 hover:shadow-[0_24px_52px_-20px_rgba(153,51,49,0.24)] sm:rounded-[30px] sm:p-7 md:p-8"
+      whileHover={{ y: -8 }}
+      className="group relative flex h-full min-h-[290px] flex-col overflow-hidden rounded-[30px] border border-border-default/70 bg-surface-primary/78 p-5 shadow-[var(--shadow-lg)] backdrop-blur-xl transition-all duration-300 hover:border-accent/18 hover:shadow-[var(--shadow-xl)] sm:p-7"
     >
-      <div className="absolute right-[-18px] top-[-18px] h-28 w-28 rounded-full bg-accent/[0.05]" />
-      <div className="absolute bottom-[-22px] left-[68%] h-20 w-20 rounded-full bg-accent/[0.035]" />
-      <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-accent via-[#b2413d] to-[#c85b55] sm:w-1.5" />
+      <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-accent/55 to-transparent" />
+      <div className="absolute right-[-18px] top-[-18px] h-32 w-32 rounded-full bg-accent/[0.06]" />
+      <div className="absolute bottom-[-18px] left-[62%] h-24 w-24 rounded-full bg-accent/[0.035]" />
 
-      {/* Kanji vertical decorativo */}
       <div className="pointer-events-none absolute right-3 top-3 z-0 flex flex-col items-center leading-none text-accent/10 select-none sm:right-6 sm:top-6 sm:text-accent/16 md:right-7 md:top-7">
         {jp.split("").map((char, charIndex) => (
           <span
             key={`${char}-${charIndex}`}
-            className="text-[2rem] font-semibold sm:text-[2.8rem] md:text-[3.4rem]"
+            className="text-[2rem] font-semibold sm:text-[2.6rem] md:text-[3.1rem]"
           >
             {char}
           </span>
         ))}
       </div>
 
-      <div className="relative z-10 flex h-full flex-col items-center justify-end text-center pb-2">
-        {/* Icono */}
-        <div className="mb-5 flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-accent to-accent-hover shadow-[0_8px_18px_-6px_rgba(153,51,49,0.4)] sm:mb-6 sm:h-16 sm:w-16 sm:rounded-[22px] md:mb-7 md:h-20 md:w-20 md:rounded-[24px] md:shadow-[0_12px_25px_-10px_rgba(153,51,49,0.45)]">
-          {isIconString ? (
-            <div className="relative h-6 w-6 sm:h-8 sm:w-8 md:h-10 md:w-10">
-              <Image
-                src={icon}
-                alt={title}
-                fill
-                className="object-contain"
-              />
-            </div>
-          ) : (
-            <div className="text-content-inverted [&_svg]:h-6 [&_svg]:w-6 sm:[&_svg]:h-8 sm:[&_svg]:w-8 md:[&_svg]:h-10 md:[&_svg]:w-10">
-              {icon}
-            </div>
-          )}
+      <div className="relative z-10 flex h-full flex-col pb-1">
+        <div className="mb-5 flex items-start justify-between gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-gradient-to-br from-accent to-accent-hover shadow-[0_10px_18px_-8px_rgba(153,51,49,0.4)] sm:h-14 sm:w-14">
+            {isIconString ? (
+              <div className="relative h-6 w-6 sm:h-7 sm:w-7">
+                <Image src={icon} alt={title} fill className="object-contain" />
+              </div>
+            ) : (
+              <div className="text-content-inverted [&_svg]:h-6 [&_svg]:w-6 sm:[&_svg]:h-7 sm:[&_svg]:w-7">
+                {icon}
+              </div>
+            )}
+          </div>
+
+          <div className="rounded-full border border-accent/10 bg-accent/[0.05] px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-accent">
+            Nodo
+          </div>
         </div>
 
-        {/* Texto */}
         <div className="min-w-0 flex-1 overflow-hidden">
-          <h3 className="text-[1.25rem] font-extrabold leading-[1.08] tracking-tight text-content-primary sm:text-[1.75rem] sm:leading-[1.02] md:text-[2rem]">
+          <h3 className="text-[1.35rem] font-extrabold leading-[1.06] tracking-tight text-content-primary sm:text-[1.7rem]">
             {title}
           </h3>
-          <p className="mt-2 text-[13px] leading-[1.5] text-content-secondary sm:mt-4 sm:text-[14.5px] sm:leading-[1.65] md:text-[15px]">
+          <p className="mt-3 text-sm leading-[1.7] text-content-secondary sm:text-[15px]">
             {desc}
           </p>
         </div>

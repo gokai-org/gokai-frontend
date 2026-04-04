@@ -10,7 +10,7 @@ export default function Page() {
   const completedActivities = 6;
 
   return (
-    <div className="fixed inset-0 w-screen h-screen overflow-hidden bg-surface-primary z-0">
+    <div className="absolute inset-0 h-full w-full overflow-hidden bg-surface-primary z-0">
       <UserGraph
         userId={userId}
         level={currentLevel}

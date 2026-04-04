@@ -138,8 +138,12 @@ export default function LessonDrawer({
             initial={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
             animate={
               writingActive
-                ? (isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 })
-                : (isMobile ? { y: 0, opacity: 1 } : { x: 0, opacity: 1 })
+                ? isMobile
+                  ? { y: 40, opacity: 0 }
+                  : { x: 60, opacity: 0 }
+                : isMobile
+                  ? { y: 0, opacity: 1 }
+                  : { x: 0, opacity: 1 }
             }
             exit={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 26 }}

@@ -1,6 +1,7 @@
 export { Checkbox } from "./Checkbox";
 export { DatePicker } from "./DatePicker";
 export { Dropdown } from "./Dropdown";
+export { LoadingButton } from "./LoadingButton";
 export { SectionHeader } from "./SectionHeader";
 export {
   SkeletonBox,

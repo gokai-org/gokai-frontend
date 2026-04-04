@@ -22,7 +22,9 @@ export function ExerciseOptionCard({
   kanjiMode = false,
 }: ExerciseOptionCardProps) {
   const isCorrect = option.correct;
-  const displayValue = kanjiMode ? option.value : normalizeKanjiDisplayText(option.value);
+  const displayValue = kanjiMode
+    ? option.value
+    : normalizeKanjiDisplayText(option.value);
 
   let borderClass = "border-border-subtle";
   let bgClass = "bg-surface-secondary hover:bg-surface-tertiary";
@@ -49,7 +51,11 @@ export function ExerciseOptionCard({
     <motion.button
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.045, duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      transition={{
+        delay: index * 0.045,
+        duration: 0.25,
+        ease: [0.22, 1, 0.36, 1],
+      }}
       whileHover={!revealed ? { scale: 1.015, y: -1 } : undefined}
       whileTap={!revealed ? { scale: 0.97 } : undefined}
       onClick={() => !revealed && onSelect(index)}
@@ -72,12 +78,32 @@ export function ExerciseOptionCard({
           }`}
         >
           {revealed && isCorrect ? (
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           ) : revealed && selected && !isCorrect ? (
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-3.5 h-3.5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={3}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           ) : (
             String.fromCharCode(65 + index)

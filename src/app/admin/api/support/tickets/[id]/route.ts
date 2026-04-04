@@ -41,7 +41,9 @@ export async function PUT(
   }
 
   const token = normalizeBearerToken(raw);
-  const profileFromCookie = normalizeProfile(req.cookies.get(PROFILE_COOKIE)?.value);
+  const profileFromCookie = normalizeProfile(
+    req.cookies.get(PROFILE_COOKIE)?.value,
+  );
   const profileFromToken = getProfileFromToken(token);
   const profile = profileFromToken ?? profileFromCookie;
 
@@ -98,8 +100,14 @@ export async function PUT(
   const url = `${apiConfig.usersApiBase}/support/tickets/${id}`;
 
   console.log("[PUT /admin/api/support/tickets/:id] url:", url);
-  console.log("[PUT /admin/api/support/tickets/:id] normalized token exists:", !!token);
-  console.log("[PUT /admin/api/support/tickets/:id] payload:", { status, note });
+  console.log(
+    "[PUT /admin/api/support/tickets/:id] normalized token exists:",
+    !!token,
+  );
+  console.log("[PUT /admin/api/support/tickets/:id] payload:", {
+    status,
+    note,
+  });
 
   try {
     const upstream = await fetch(url, {

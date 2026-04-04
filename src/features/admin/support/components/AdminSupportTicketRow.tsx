@@ -16,7 +16,8 @@ const statusLabel: Record<AdminTicketStatus, string> = {
 
 const statusTone: Record<AdminTicketStatus, string> = {
   open: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400",
-  in_progress: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",
+  in_progress:
+    "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",
   resolved: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400",
   closed: "bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400",
 };
@@ -31,11 +32,15 @@ const categoryLabel: Record<AdminTicketCategory, string> = {
 };
 
 const categoryTone: Record<AdminTicketCategory, string> = {
-  technical_issue: "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400",
-  billing: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400",
-  account_access: "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400",
+  technical_issue:
+    "bg-blue-50 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400",
+  billing:
+    "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400",
+  account_access:
+    "bg-violet-50 dark:bg-violet-950/30 text-violet-700 dark:text-violet-400",
   bug_report: "bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400",
-  feature_request: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",
+  feature_request:
+    "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",
   other: "bg-slate-100 dark:bg-slate-800/30 text-slate-600 dark:text-slate-400",
 };
 
@@ -69,7 +74,10 @@ function AdminSupportTicketRowBase({
   return (
     <tr className="border-b border-border-subtle last:border-0 hover:bg-accent/[0.03] transition-colors">
       <td className="px-2.5 py-2.5 text-xs font-semibold text-content-secondary sm:px-3 sm:text-sm lg:px-4">
-        <p className="max-w-[120px] truncate sm:max-w-[140px]" title={ticket.id}>
+        <p
+          className="max-w-[120px] truncate sm:max-w-[140px]"
+          title={ticket.id}
+        >
           {ticket.id}
         </p>
       </td>
@@ -79,20 +87,29 @@ function AdminSupportTicketRowBase({
           <span className="grid h-7 w-7 place-items-center rounded-full bg-accent/10 text-[11px] font-bold text-accent sm:h-8 sm:w-8 sm:text-xs">
             {avatarLabel(ticket.name)}
           </span>
-          <span className="max-w-[130px] truncate text-xs font-medium text-content-secondary sm:max-w-[180px] sm:text-sm" title={ticket.name}>
+          <span
+            className="max-w-[130px] truncate text-xs font-medium text-content-secondary sm:max-w-[180px] sm:text-sm"
+            title={ticket.name}
+          >
             {ticket.name}
           </span>
         </div>
       </td>
 
       <td className="px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
-        <p className="max-w-[130px] truncate sm:max-w-[180px] lg:max-w-[220px]" title={ticket.email}>
+        <p
+          className="max-w-[130px] truncate sm:max-w-[180px] lg:max-w-[220px]"
+          title={ticket.email}
+        >
           {ticket.email}
         </p>
       </td>
 
       <td className="px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
-        <p className="line-clamp-1 max-w-[150px] sm:max-w-[210px] lg:max-w-[260px]" title={ticket.subject}>
+        <p
+          className="line-clamp-1 max-w-[150px] sm:max-w-[210px] lg:max-w-[260px]"
+          title={ticket.subject}
+        >
           {ticket.subject}
         </p>
       </td>

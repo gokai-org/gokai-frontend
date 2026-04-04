@@ -60,11 +60,12 @@ export function KanaWritingPracticeModal({
 
   // Practice state
   const [practiceStrokeIndex, setPracticeStrokeIndex] = useState(0);
-  const [userStrokes, setUserStrokes] = useState<DrawnStroke[]>([]);
+  const [, setUserStrokes] = useState<DrawnStroke[]>([]);
   const [strokeResults, setStrokeResults] = useState<StrokeResult[]>([]);
   const [lastFeedback, setLastFeedback] = useState<StrokeResult | null>(null);
   const [flashError, setFlashError] = useState(false);
   const startTime = useRef<number>(0);
+  const [durationSec, setDurationSec] = useState("0");
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const kanaTypeLabel = kana.kanaType === "hiragana" ? "Hiragana" : "Katakana";
@@ -117,12 +118,15 @@ export function KanaWritingPracticeModal({
   // ── Demo auto-play ──
   useEffect(() => {
     if (!demoAutoPlay || !strokeData) return;
-    if (demoStrokeIndex >= strokeData.strokes.length) {
-      setDemoAutoPlay(false);
-      return;
-    }
+    if (demoStrokeIndex >= strokeData.strokes.length) return;
     demoTimer.current = setTimeout(() => {
-      setDemoStrokeIndex((prev) => prev + 1);
+      setDemoStrokeIndex((prev) => {
+        const next = prev + 1;
+        if (strokeData && next >= strokeData.strokes.length) {
+          setDemoAutoPlay(false);
+        }
+        return next;
+      });
     }, 800);
     return () => {
       if (demoTimer.current) clearTimeout(demoTimer.current);
@@ -191,6 +195,11 @@ export function KanaWritingPracticeModal({
 
       const nextIdx = practiceStrokeIndex + 1;
       if (nextIdx >= strokeData.strokes.length) {
+        const elapsed =
+          startTime.current > 0
+            ? ((Date.now() - startTime.current) / 1000).toFixed(1)
+            : "0";
+        setDurationSec(elapsed);
         setTimeout(() => setStep("result"), 500);
       } else {
         setPracticeStrokeIndex(nextIdx);
@@ -206,6 +215,7 @@ export function KanaWritingPracticeModal({
     setLastFeedback(null);
     setFlashError(false);
     startTime.current = Date.now();
+    setDurationSec("0");
     setStep("practice");
   }, []);
 
@@ -217,10 +227,6 @@ export function KanaWritingPracticeModal({
 
   // ── Derived values ──
   const totalStrokes = strokeData?.strokes.length ?? 0;
-  const durationSec =
-    startTime.current > 0
-      ? ((Date.now() - startTime.current) / 1000).toFixed(1)
-      : "0";
 
   const totalScore = useMemo(
     () => strokeResults.reduce((sum, r) => sum + r.pointsDelta, 0),
@@ -232,12 +238,21 @@ export function KanaWritingPracticeModal({
 
   const resultGrade = useMemo(() => {
     if (scorePercent >= 90)
-      return { label: "Excelente", color: "text-green-600 dark:text-green-400" };
+      return {
+        label: "Excelente",
+        color: "text-green-600 dark:text-green-400",
+      };
     if (scorePercent >= 70)
       return { label: "Bien hecho", color: "text-blue-600 dark:text-blue-400" };
     if (scorePercent >= 50)
-      return { label: "Aceptable", color: "text-amber-600 dark:text-amber-400" };
-    return { label: "Sigue practicando", color: "text-orange-600 dark:text-orange-400" };
+      return {
+        label: "Aceptable",
+        color: "text-amber-600 dark:text-amber-400",
+      };
+    return {
+      label: "Sigue practicando",
+      color: "text-orange-600 dark:text-orange-400",
+    };
   }, [scorePercent]);
 
   /* ── Framer-motion helpers ── */

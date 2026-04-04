@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
@@ -46,15 +46,18 @@ export function AdminCouponDetailModal({
   const [claimLimit, setClaimLimit] = useState(1);
   const [vigency, setVigency] = useState("");
 
-  useEffect(() => {
-    if (!coupon) return;
-
-    setCode(coupon.code);
-    setDescription(coupon.description ?? "");
-    setMonths(coupon.months);
-    setClaimLimit(coupon.claimLimit);
-    setVigency(toInputDate(coupon.vigency));
-  }, [coupon]);
+  // Adjust state during render when coupon changes (React recommended pattern)
+  const [prevCoupon, setPrevCoupon] = useState(coupon);
+  if (coupon !== prevCoupon) {
+    setPrevCoupon(coupon);
+    if (coupon) {
+      setCode(coupon.code);
+      setDescription(coupon.description ?? "");
+      setMonths(coupon.months);
+      setClaimLimit(coupon.claimLimit);
+      setVigency(toInputDate(coupon.vigency));
+    }
+  }
 
   const hasChanges =
     coupon != null &&
@@ -64,7 +67,11 @@ export function AdminCouponDetailModal({
       claimLimit !== coupon.claimLimit ||
       vigency !== toInputDate(coupon.vigency));
 
-  const isValid = code.trim().length > 0 && months >= 1 && claimLimit >= 1 && vigency.length > 0;
+  const isValid =
+    code.trim().length > 0 &&
+    months >= 1 &&
+    claimLimit >= 1 &&
+    vigency.length > 0;
 
   return (
     <AnimatePresence>
@@ -128,7 +135,9 @@ export function AdminCouponDetailModal({
                 {/* Left column - Form */}
                 <section className="space-y-5">
                   <div className="rounded-2xl border border-border-subtle bg-surface-secondary p-4 sm:p-5">
-                    <h3 className="mb-4 text-sm font-bold text-content-primary">Informacion del cupon</h3>
+                    <h3 className="mb-4 text-sm font-bold text-content-primary">
+                      Informacion del cupon
+                    </h3>
 
                     <div className="space-y-4">
                       <div>
@@ -138,7 +147,9 @@ export function AdminCouponDetailModal({
                         <input
                           type="text"
                           value={code}
-                          onChange={(e) => setCode(e.target.value.toUpperCase())}
+                          onChange={(e) =>
+                            setCode(e.target.value.toUpperCase())
+                          }
                           maxLength={20}
                           className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm font-semibold tracking-wider text-content-primary uppercase outline-none transition-colors hover:border-border-default focus:border-accent/40"
                         />
@@ -165,7 +176,9 @@ export function AdminCouponDetailModal({
                           <input
                             type="number"
                             value={months}
-                            onChange={(e) => setMonths(Math.max(1, Number(e.target.value)))}
+                            onChange={(e) =>
+                              setMonths(Math.max(1, Number(e.target.value)))
+                            }
                             min={1}
                             className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                           />
@@ -178,7 +191,9 @@ export function AdminCouponDetailModal({
                           <input
                             type="number"
                             value={claimLimit}
-                            onChange={(e) => setClaimLimit(Math.max(1, Number(e.target.value)))}
+                            onChange={(e) =>
+                              setClaimLimit(Math.max(1, Number(e.target.value)))
+                            }
                             min={1}
                             className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                           />
@@ -189,10 +204,7 @@ export function AdminCouponDetailModal({
                         <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                           Vigencia
                         </label>
-                        <DatePicker
-                          value={vigency}
-                          onChange={setVigency}
-                        />
+                        <DatePicker value={vigency} onChange={setVigency} />
                       </div>
                     </div>
                   </div>
@@ -201,7 +213,9 @@ export function AdminCouponDetailModal({
                 {/* Right column - Actions & Summary */}
                 <section className="space-y-5">
                   <div className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm sm:p-5">
-                    <h3 className="mb-4 text-sm font-bold text-content-primary">Acciones</h3>
+                    <h3 className="mb-4 text-sm font-bold text-content-primary">
+                      Acciones
+                    </h3>
 
                     <div className="space-y-4">
                       {error && (
@@ -222,7 +236,9 @@ export function AdminCouponDetailModal({
                               vigency,
                             })
                           }
-                          disabled={saving || deleting || !hasChanges || !isValid}
+                          disabled={
+                            saving || deleting || !hasChanges || !isValid
+                          }
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {saving ? (
@@ -267,19 +283,25 @@ export function AdminCouponDetailModal({
                   </div>
 
                   <div className="rounded-2xl border border-border-subtle bg-surface-secondary p-4 sm:p-5">
-                    <h4 className="text-sm font-bold text-content-primary">Resumen rapido</h4>
+                    <h4 className="text-sm font-bold text-content-primary">
+                      Resumen rapido
+                    </h4>
                     <ul className="mt-3 space-y-2 text-sm text-content-secondary">
                       <li className="flex items-center gap-2">
-                        <Tag className="h-4 w-4 text-accent" /> Codigo: {coupon.code}
+                        <Tag className="h-4 w-4 text-accent" /> Codigo:{" "}
+                        {coupon.code}
                       </li>
                       <li className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-accent" /> Meses: {coupon.months}
+                        <Calendar className="h-4 w-4 text-accent" /> Meses:{" "}
+                        {coupon.months}
                       </li>
                       <li className="flex items-center gap-2">
-                        <Hash className="h-4 w-4 text-accent" /> Limite: {coupon.claimLimit} canjes
+                        <Hash className="h-4 w-4 text-accent" /> Limite:{" "}
+                        {coupon.claimLimit} canjes
                       </li>
                       <li className="flex items-center gap-2">
-                        <Ticket className="h-4 w-4 text-accent" /> Estado: {coupon.status === "active" ? "Activo" : "Expirado"}
+                        <Ticket className="h-4 w-4 text-accent" /> Estado:{" "}
+                        {coupon.status === "active" ? "Activo" : "Expirado"}
                       </li>
                     </ul>
                   </div>

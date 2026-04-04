@@ -10,21 +10,24 @@ import { buildReviewItems } from "../utils/reviewMappers";
 
 export function useReviewPageData() {
   const [kanjis, setKanjis] = useState<Kanji[]>([]);
-  const [reviewStats, setReviewStats] = useState<OverviewStatsResponse | null>(null);
+  const [reviewStats, setReviewStats] = useState<OverviewStatsResponse | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [practiceKanji, setPracticeKanji] = useState<Kanji | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     Promise.allSettled([listKanjis(), getStatsOverview()]).then(
       ([kanjisResult, statsResult]) => {
         if (cancelled) return;
 
         if (kanjisResult.status === "fulfilled") {
-          setKanjis(Array.isArray(kanjisResult.value) ? kanjisResult.value : []);
+          setKanjis(
+            Array.isArray(kanjisResult.value) ? kanjisResult.value : [],
+          );
         } else {
           setError(kanjisResult.reason?.message ?? "Error al cargar repasos");
         }

@@ -105,7 +105,9 @@ function KanjiCard({
         <BadgeRow type="kanji" lastPracticed={item.lastPracticed} />
         <h3 className="text-lg font-extrabold text-content-primary truncate">
           {item.kanji.symbol}{" "}
-          <span className="text-content-tertiary font-bold text-base">({reading})</span>
+          <span className="text-content-tertiary font-bold text-base">
+            ({reading})
+          </span>
           <span className="text-accent ml-2 text-base">— {meaning}</span>
         </h3>
         <p className="text-xs text-content-tertiary mt-1">
@@ -250,11 +252,10 @@ function SpeakingCard({
 
 function CardShell({
   type,
-  lastPracticed: _lp,
   children,
 }: {
   type: ReviewItem["type"];
-  lastPracticed: string;
+  lastPracticed?: string;
   children: React.ReactNode;
 }) {
   const borderHover: Record<ReviewItem["type"], string> = {

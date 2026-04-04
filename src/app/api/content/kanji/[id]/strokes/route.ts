@@ -18,10 +18,13 @@ export async function GET(
   const token = normalizeBearerToken(raw);
   const { id } = await params;
 
-  const upstream = await fetch(`${apiConfig.contentApiBase}/content/kanjis/${id}`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
+  const upstream = await fetch(
+    `${apiConfig.contentApiBase}/content/kanjis/${id}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    },
+  );
 
   const data = await upstream.json().catch(() => ({}));
 

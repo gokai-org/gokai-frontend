@@ -134,7 +134,9 @@ export function MonthlyProgressChart({
     >
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <h3 className="text-lg font-extrabold text-content-primary">
+            {title}
+          </h3>
           <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-50">
@@ -173,7 +175,11 @@ export function MonthlyProgressChart({
               dataKey="month"
               axisLine={false}
               tickLine={false}
-              tick={{ fontSize: 12, fill: "var(--text-tertiary)", fontWeight: 600 }}
+              tick={{
+                fontSize: 12,
+                fill: "var(--text-tertiary)",
+                fontWeight: 600,
+              }}
             />
             <YAxis
               domain={[50, 100]}
@@ -208,7 +214,9 @@ export function MonthlyProgressChart({
       <div className="flex items-center gap-4 mt-2">
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-accent" />
-          <span className="text-xs text-content-tertiary font-medium">Precisión</span>
+          <span className="text-xs text-content-tertiary font-medium">
+            Precisión
+          </span>
         </div>
       </div>
     </Wrapper>

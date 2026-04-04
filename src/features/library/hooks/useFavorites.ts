@@ -6,10 +6,7 @@ import {
   addFavorite as addFavoriteAPI,
   removeFavorite as removeFavoriteAPI,
 } from "@/features/library/services/api";
-import type {
-  FavoriteType,
-  FavoritesResponse,
-} from "@/features/library/types";
+import type { FavoriteType, FavoritesResponse } from "@/features/library/types";
 
 const EMPTY_RESPONSE: FavoritesResponse = {
   kanji: [],
@@ -99,7 +96,7 @@ export function useFavorites() {
       // Optimistic update
       setter((prev) => {
         const next = new Set(prev);
-        wasFavorite ? next.delete(id) : next.add(id);
+        if (wasFavorite) { next.delete(id); } else { next.add(id); }
         return next;
       });
 
@@ -116,7 +113,7 @@ export function useFavorites() {
         // Revertir en caso de error
         setter((prev) => {
           const next = new Set(prev);
-          wasFavorite ? next.add(id) : next.delete(id);
+          if (wasFavorite) { next.add(id); } else { next.delete(id); }
           return next;
         });
       }

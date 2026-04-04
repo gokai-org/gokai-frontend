@@ -8,7 +8,6 @@ import {
   MessageCircle,
   Lightbulb,
   Rocket,
-  Shield,
   Zap,
   ChevronDown,
   Search,
@@ -285,7 +284,12 @@ export default function HelpPage() {
     <DashboardShell
       header={
         <DashboardHeader
-          icon={<HelpCircle className="w-7 h-7 text-content-inverted" strokeWidth={2.5} />}
+          icon={
+            <HelpCircle
+              className="w-7 h-7 text-content-inverted"
+              strokeWidth={2.5}
+            />
+          }
           title="Centro de Ayuda"
           subtitle="Todo lo que necesitas para dominar Gokai"
           japaneseText="助け"

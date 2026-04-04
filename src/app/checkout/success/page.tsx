@@ -14,6 +14,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
+import { ThemeModeToggle } from "@/shared/components";
 
 const UNLOCKED_FEATURES = [
   { icon: Bot, label: "Chatbot ilimitado con IA" },
@@ -45,7 +46,7 @@ function FloatingParticles() {
       {particles.map((p) => (
         <motion.div
           key={p.id}
-          className="absolute rounded-full bg-accent/10 blur-[1px]"
+          className="absolute rounded-full bg-surface-primary/18 blur-[1px] dark:bg-surface-primary/10"
           style={{
             width: p.size,
             height: p.size,
@@ -70,46 +71,14 @@ function FloatingParticles() {
   );
 }
 
-function OrbitalRings() {
-  return (
-    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-      <motion.div
-        className="absolute h-[240px] w-[240px] rounded-full border border-accent/10"
-        animate={{ rotate: 360, scale: [1, 1.03, 1] }}
-        transition={{
-          rotate: { duration: 24, repeat: Infinity, ease: "linear" },
-          scale: { duration: 8, repeat: Infinity, ease: "easeInOut" },
-        }}
-      />
-      <motion.div
-        className="absolute h-[320px] w-[320px] rounded-full border border-accent-hover/10"
-        animate={{ rotate: -360, scale: [1, 1.04, 1] }}
-        transition={{
-          rotate: { duration: 34, repeat: Infinity, ease: "linear" },
-          scale: { duration: 10, repeat: Infinity, ease: "easeInOut" },
-        }}
-      />
-      <motion.div
-        className="absolute h-[420px] w-[420px] rounded-full border border-accent/5"
-        animate={{ rotate: 360 }}
-        transition={{
-          duration: 42,
-          repeat: Infinity,
-          ease: "linear",
-        }}
-      />
-    </div>
-  );
-}
-
 function PremiumGlow() {
   return (
     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
       <motion.div
-        className="absolute h-[520px] w-[520px] rounded-full bg-accent/10 blur-3xl"
+        className="absolute h-[520px] w-[520px] rounded-full bg-surface-primary/10 blur-3xl"
         animate={{
           scale: [1, 1.08, 0.98, 1],
-          opacity: [0.22, 0.32, 0.2, 0.22],
+          opacity: [0.12, 0.18, 0.12, 0.12],
         }}
         transition={{
           duration: 9,
@@ -118,10 +87,10 @@ function PremiumGlow() {
         }}
       />
       <motion.div
-        className="absolute h-[300px] w-[300px] rounded-full bg-accent-hover/10 blur-3xl"
+        className="absolute h-[300px] w-[300px] rounded-full bg-surface-primary/8 blur-3xl"
         animate={{
           scale: [1, 1.16, 1],
-          opacity: [0.18, 0.3, 0.18],
+          opacity: [0.08, 0.14, 0.08],
         }}
         transition={{
           duration: 7,
@@ -151,14 +120,12 @@ export default function CheckoutSuccessPage() {
   }
 
   return (
-    <div className="force-light">
     <main className="relative min-h-screen overflow-hidden bg-surface-secondary">
+      <ThemeModeToggle className="fixed right-4 top-4 z-50 md:right-6 md:top-6" />
       <AnimatedGraphBackground />
       <PremiumGlow />
-      <OrbitalRings />
       <FloatingParticles />
 
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(255,255,255,0.92),rgba(255,255,255,0.72)_35%,rgba(255,255,255,0.88)_100%)]" />
       <div className="absolute inset-0 bg-gradient-to-b from-surface-primary/40 via-surface-primary/20 to-surface-primary/50" />
 
       <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-10 sm:px-6">
@@ -384,7 +351,7 @@ export default function CheckoutSuccessPage() {
                 {UNLOCKED_FEATURES.map((feature, idx) => (
                   <motion.div
                     key={feature.label}
-                    className="group relative overflow-hidden rounded-2xl border border-white/60 bg-surface-primary/75 p-4 shadow-[0_12px_40px_rgba(15,23,42,0.06)] backdrop-blur-xl"
+                    className="group relative overflow-hidden rounded-2xl border border-border-default/70 bg-surface-primary/78 p-4 shadow-[var(--shadow-md)] backdrop-blur-xl"
                     initial={{ opacity: 0, y: 26, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     transition={{
@@ -495,6 +462,15 @@ export default function CheckoutSuccessPage() {
                     width={92}
                     height={92}
                     priority
+                    className="dark:hidden"
+                  />
+                  <Image
+                    src="/logos/gokai-logo-dark.svg"
+                    alt=""
+                    width={92}
+                    height={92}
+                    priority
+                    className="hidden dark:block"
                   />
                 </motion.div>
               </motion.div>
@@ -573,6 +549,5 @@ export default function CheckoutSuccessPage() {
         </AnimatePresence>
       </div>
     </main>
-    </div>
   );
 }

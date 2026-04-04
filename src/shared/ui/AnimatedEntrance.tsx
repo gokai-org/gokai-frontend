@@ -40,9 +40,10 @@ export function AnimatedEntrance({
     return <div className={className}>{children}</div>;
   }
 
-  const effectiveMode = mode === "light" || platformMotion.entranceMode === "light"
-    ? "light"
-    : "default";
+  const effectiveMode =
+    mode === "light" || platformMotion.entranceMode === "light"
+      ? "light"
+      : "default";
   const isLight = effectiveMode === "light";
 
   const content = (

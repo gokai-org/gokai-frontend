@@ -40,19 +40,26 @@ export function KanjiWritingCanvas({
   const completedStrokes = useRef<DrawnStroke[]>([]);
   const rafId = useRef(0);
 
-  const cssColorsRef = useRef<{ grid: string; stroke: string; accent: string } | null>(null);
+  const cssColorsRef = useRef<{
+    grid: string;
+    stroke: string;
+    accent: string;
+  } | null>(null);
   useEffect(() => {
     const readColors = () => {
       const cs = getComputedStyle(document.documentElement);
       cssColorsRef.current = {
-        grid:   cs.getPropertyValue("--border-primary").trim()  || "#e5e7eb",
-        stroke: cs.getPropertyValue("--text-primary").trim()   || "#1a1a1a",
-        accent: cs.getPropertyValue("--accent").trim()         || "#993331",
+        grid: cs.getPropertyValue("--border-primary").trim() || "#e5e7eb",
+        stroke: cs.getPropertyValue("--text-primary").trim() || "#1a1a1a",
+        accent: cs.getPropertyValue("--accent").trim() || "#993331",
       };
     };
     readColors();
     const observer = new MutationObserver(readColors);
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
     return () => observer.disconnect();
   }, []);
 
@@ -62,8 +69,12 @@ export function KanjiWritingCanvas({
 
   const guideStrokesRef = useRef(guideStrokes);
   const activeStrokeIndexRef = useRef(activeStrokeIndex);
-  guideStrokesRef.current = guideStrokes;
-  activeStrokeIndexRef.current = activeStrokeIndex;
+  useEffect(() => {
+    guideStrokesRef.current = guideStrokes;
+  }, [guideStrokes]);
+  useEffect(() => {
+    activeStrokeIndexRef.current = activeStrokeIndex;
+  }, [activeStrokeIndex]);
 
   // ── Redraw  ──
   const redraw = useCallback(() => {
@@ -73,7 +84,7 @@ export function KanjiWritingCanvas({
     if (!ctx) return;
 
     const colors = cssColorsRef.current;
-    const gridColor   = colors?.grid   ?? "#e5e7eb";
+    const gridColor = colors?.grid ?? "#e5e7eb";
     const strokeColor = colors?.stroke ?? "#1a1a1a";
     const accentColor = colors?.accent ?? "#993331";
 
@@ -283,11 +294,9 @@ function scaleSvgPath(d: string, sx: number, sy: number): string {
 
   let result = "";
   let numIdx = 0;
-  let lastCmd = "";
 
   for (const token of tokens) {
     if (/^[a-zA-Z]$/.test(token)) {
-      lastCmd = token;
       numIdx = 0;
       result += token;
     } else {

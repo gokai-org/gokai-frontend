@@ -2,157 +2,284 @@
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
-import { sectionReveal, scaleFade } from "@/features/landing/lib/motionVariants";
 import { SECTIONS } from "@/features/landing/data/landingData";
 import { useLandingPage } from "@/features/landing/hooks/useLandingPage";
-import {
-  LandingHeader,
-  LandingLogoAside,
-  LandingSectionTitle,
-  LandingHowSection,
-  LandingExperienceSection,
-  LandingPlansSection,
-  LandingContactSection,
-  LandingFooter,
-} from "@/features/landing";
+import { useLandingScrollTimeline } from "@/features/landing/hooks/useLandingScrollTimeline";
+import { scaleFade } from "@/features/landing/lib/motionVariants";
+
+import { LandingHeader } from "@/features/landing/components/LandingHeader";
+import { LandingSceneShell } from "@/features/landing/components/LandingSceneShell";
+import { LandingSectionFrame } from "@/features/landing/components/LandingSectionFrame";
+import { LandingHeroSection } from "@/features/landing/components/LandingHeroSection";
+import { LandingSectionTitle } from "@/features/landing/components/LandingSectionTitle";
+import { LandingHowSection } from "@/features/landing/components/LandingHowSection";
+import { LandingExperienceSection } from "@/features/landing/components/LandingExperienceSection";
+import { LandingPlansSection } from "@/features/landing/components/LandingPlansSection";
+import { LandingContactSection } from "@/features/landing/components/LandingContactSection";
+import { LandingFooter } from "@/features/landing/components/LandingFooter";
+import { LandingExperienceBackdrop } from "@/features/landing/components/LandingExperienceBackdrop";
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function FixedSplitRail({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="grid items-center gap-8 lg:grid-cols-12 lg:gap-12 xl:gap-16">
+      <div className="max-w-3xl lg:col-span-5 lg:col-start-1 lg:pt-10 xl:pt-14">
+        {children}
+      </div>
+
+      <div
+        className="hidden lg:block lg:col-start-7 lg:col-span-6 lg:min-h-[360px] xl:min-h-[420px]"
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
+function SkillBlock({ section }: { section: (typeof SECTIONS)[number] }) {
+  return (
+    <FixedSplitRail>
+      <div className="space-y-7">
+        <LandingSectionTitle
+          id={section.id}
+          titleA={section.titleA}
+          titleB={section.titleB}
+          desc={section.desc}
+        />
+
+        {section.cta && (
+          <motion.div
+            variants={scaleFade}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Link
+              href={section.cta.href}
+              className="inline-flex items-center gap-2 rounded-full border border-border-default/70 bg-surface-primary/72 px-5 py-3 text-sm font-semibold text-content-primary shadow-[var(--shadow-md)] backdrop-blur-xl"
+            >
+              {section.cta.label}
+              <span>→</span>
+            </Link>
+          </motion.div>
+        )}
+      </div>
+    </FixedSplitRail>
+  );
+}
 
 export function LandingPageView() {
   const {
-    logoWrapRef,
-    logoMobileRef,
-    howSectionRef,
-    activeId,
-    showLogo,
+    sectionIds,
+    activeId: headerActiveId,
     howTab,
     setHowTab,
     how,
-    isCenterMode,
-    showGraph,
   } = useLandingPage();
 
+  const timeline = useLandingScrollTimeline(sectionIds);
+  const sceneActiveId = timeline.activeId;
+
+  const howMetrics = timeline.sections["como-funciona"];
+  const experienceMetrics = timeline.sections["experiencia"];
+  const plansMetrics = timeline.sections["planes"];
+  const viewportHeight = timeline.viewport.height || 1;
+
+  const experienceSectionProgress = experienceMetrics
+    ? clamp(
+        -experienceMetrics.viewportOffset /
+          Math.max(1, experienceMetrics.height - viewportHeight),
+        0,
+        1,
+      )
+    : 0;
+  const plansExitProgress = plansMetrics
+    ? clamp(
+        (viewportHeight * 1.1 - plansMetrics.viewportOffset) /
+          (viewportHeight * 0.85),
+        0,
+        1,
+      )
+    : 0;
+
+  const isPortraitCompact =
+    timeline.viewport.width > 0 &&
+    timeline.viewport.width < 1024 &&
+    timeline.viewport.height > timeline.viewport.width;
+
+  const heroScrollMultiplier = timeline.viewport.isMobile
+    ? 1.45
+    : timeline.viewport.isTablet
+      ? 1.62
+      : 1.8;
+
+  const skillScrollMultiplier = timeline.viewport.isMobile
+    ? 1.22
+    : timeline.viewport.isTablet
+      ? 1.34
+      : 1.5;
+
+  const howScrollMultiplier = timeline.viewport.isMobile ? 1.52 : 1.7;
+
+  const plansScrollMultiplier = isPortraitCompact
+    ? 1
+    : timeline.viewport.isTablet
+      ? 1.76
+      : 2.2;
+
+  const contactScrollMultiplier = 1;
+
+  // Fase 1 – arranca cuando "how" está al 76 % de su scroll (sale del viewport)
+  // Llega hasta 0.45 para no cubrir el how completamente desde este lado.
+  const fromHowSection = howMetrics
+    ? ((): number => {
+        const x = clamp((howMetrics.progress - 0.76) / 0.24, 0, 1);
+        return x * x * (3 - 2 * x) * 0.45;
+      })()
+    : 0;
+
+  // Fase 2 – completa el barrido conforme "experiencia" entra al viewport
+  const fromExpSection = experienceMetrics
+    ? clamp(
+        (viewportHeight * 0.64 - experienceMetrics.viewportOffset) /
+          (viewportHeight * 0.95),
+        0,
+        1,
+      )
+    : 0;
+
+  const experienceTakeoverProgress = clamp(
+    Math.max(fromHowSection, fromExpSection),
+    0,
+    1,
+  );
+
+  const heroSection = SECTIONS[0];
+
+  const skillSections = SECTIONS.filter((section) =>
+    ["caracteristicas", "leer", "pensar", "hablar", "escuchar"].includes(
+      section.id,
+    ),
+  );
+
+  const howSection = SECTIONS.find(
+    (section) => section.id === "como-funciona",
+  )!;
+  const plansSection = SECTIONS.find((section) => section.id === "planes")!;
+  const contactSection = SECTIONS.find((section) => section.id === "contacto")!;
+
   return (
-    <main className="relative min-h-screen overflow-x-hidden bg-white pt-[76px] text-content-primary">
-      <div className="pointer-events-none fixed inset-0 z-0">
-        <AnimatedGraphBackground
-          className={[
-            "transition-opacity duration-700",
-            showGraph ? "opacity-60" : "opacity-0",
-          ].join(" ")}
-          mode="screen"
-          variant="dimmed"
-          edgeMargin={140}
-          density={0.00006}
-          maxDist={180}
-          speed={0.2}
-        />
-      </div>
+    <main className="relative min-h-screen overflow-x-clip bg-surface-primary text-content-primary">
+      <LandingSceneShell
+        sectionIds={sectionIds}
+        activeId={sceneActiveId}
+        experienceProgress={experienceTakeoverProgress}
+      />
 
-      <LandingHeader activeId={activeId} />
+      <LandingExperienceBackdrop
+        activeId={sceneActiveId}
+        experienceProgress={experienceTakeoverProgress}
+        exitProgress={plansExitProgress}
+      />
 
-      <div className="relative z-10 mx-auto max-w-7xl px-4 md:px-6">
-        <div
-          className={[
-            "grid grid-cols-1 gap-10 lg:gap-16",
-            isCenterMode ? "lg:grid-cols-1" : "lg:grid-cols-2",
-          ].join(" ")}
-        >
-          <div
-            className={[
-              "py-10",
-              isCenterMode ? "lg:ml-0" : "lg:-ml-10 xl:-ml-16 2xl:-ml-24",
-              !isCenterMode ? "pr-[130px] sm:pr-[160px] lg:pr-0" : "",
-            ].join(" ")}
+      <LandingHeader activeId={headerActiveId} />
+
+      <div className="relative z-10 pb-10 pt-[88px]">
+        <div className="mx-auto max-w-[1480px] px-4 sm:px-6 lg:px-10 xl:px-12">
+          <LandingSectionFrame
+            id={heroSection.id}
+            className="pt-8 lg:pt-16"
+            innerClassName="w-full"
+            scrollMultiplier={heroScrollMultiplier}
           >
-            {SECTIONS.map((section) => {
-              const isActive = activeId === section.id;
-              const isCenter = (section.layout ?? "split") === "center";
+            <FixedSplitRail>
+              <LandingHeroSection
+                titleA={heroSection.titleA}
+                titleB={heroSection.titleB}
+                desc={heroSection.desc}
+                cta={heroSection.cta}
+              />
+            </FixedSplitRail>
+          </LandingSectionFrame>
 
-              return (
-                <motion.section
-                  key={section.id}
-                  id={section.id}
-                  data-section
-                  ref={section.id === "como-funciona" ? howSectionRef : undefined}
-                  variants={sectionReveal}
-                  initial="hidden"
-                  whileInView="show"
-                  viewport={{ once: true, amount: 0.15 }}
-                  className={[
-                    "scroll-mt-28",
-                    "min-h-[calc(100vh-76px)]",
-                    "flex items-center py-14 will-change-transform",
-                    isCenter ? "justify-center" : "",
-                  ].join(" ")}
-                >
-                  <div
-                    className={[
-                      isCenter
-                        ? "mx-auto w-full max-w-6xl text-center"
-                        : "max-w-2xl",
-                    ].join(" ")}
-                  >
-                    <LandingSectionTitle
-                      id={section.id}
-                      titleA={section.titleA}
-                      titleB={section.titleB}
-                      desc={section.desc}
-                      isCenter={isCenter}
-                    />
+          {skillSections.map((section) => (
+            <LandingSectionFrame
+              key={section.id}
+              id={section.id}
+              className=""
+              innerClassName="w-full"
+              scrollMultiplier={skillScrollMultiplier}
+            >
+              <SkillBlock section={section} />
+            </LandingSectionFrame>
+          ))}
 
-                    {section.cta && !isCenter && (
-                      <motion.div
-                        variants={scaleFade}
-                        className="mt-8"
-                      >
-                        <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.97 }}>
-                          <Link
-                            href={section.cta.href}
-                            className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2.5 text-sm font-semibold text-content-inverted shadow-lg shadow-accent/20 transition-all duration-300 sm:px-8 sm:py-4 sm:text-base hover:shadow-[0_20px_44px_-14px_rgba(153,51,49,0.52)]"
-                          >
-                            {section.cta.label}
-                            <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">&rarr;</span>
-                          </Link>
-                        </motion.div>
-                      </motion.div>
-                    )}
+          <LandingSectionFrame
+            id={howSection.id}
+            className=""
+            innerClassName="mx-auto w-full max-w-7xl"
+            scrollMultiplier={howScrollMultiplier}
+          >
+            <div className="text-center">
+              <LandingSectionTitle
+                id={howSection.id}
+                titleA={howSection.titleA}
+                titleB={howSection.titleB}
+                desc={howSection.desc}
+                isCenter
+              />
+            </div>
 
-                    {section.id === "inicio" && (
-                      <div className="mt-14 flex items-center gap-2 text-xs text-content-muted">
-                        <span>Desliza para ver más</span>
-                        <span className="translate-y-[1px]">↓</span>
-                      </div>
-                    )}
+            <LandingHowSection
+              howTab={howTab}
+              setHowTab={setHowTab}
+              how={how}
+            />
+          </LandingSectionFrame>
 
-                    {section.id === "como-funciona" && (
-                      <LandingHowSection
-                        howTab={howTab}
-                        setHowTab={setHowTab}
-                        how={how}
-                      />
-                    )}
-
-                    {section.id === "experiencia" && <LandingExperienceSection />}
-
-                    {section.id === "planes" && <LandingPlansSection />}
-
-                    {section.id === "contacto" && <LandingContactSection />}
-                  </div>
-                </motion.section>
-              );
-            })}
-          </div>
-
-          <LandingLogoAside
-            showLogo={showLogo}
-            isCenterMode={isCenterMode}
-            logoWrapRef={logoWrapRef}
-            logoMobileRef={logoMobileRef}
+          {/* Sección experiencia fuera de LandingSectionFrame — el motion.div con y-transform
+              de LandingSectionFrame rompería position:sticky en los descendientes.
+              El id="experiencia" vive en el propio LandingExperienceSection. */}
+          <LandingExperienceSection
+            sectionProgress={experienceSectionProgress}
           />
-        </div>
-      </div>
 
-      <LandingFooter />
+          <LandingSectionFrame
+            id={plansSection.id}
+            className=""
+            innerClassName="mx-auto w-full max-w-7xl pb-28 text-center sm:pb-32 lg:pb-36"
+            scrollMultiplier={plansScrollMultiplier}
+          >
+            <LandingSectionTitle
+              id={plansSection.id}
+              titleA={plansSection.titleA}
+              titleB={plansSection.titleB}
+              desc={plansSection.desc}
+              isCenter
+            />
+            <LandingPlansSection />
+          </LandingSectionFrame>
+
+          <LandingSectionFrame
+            id={contactSection.id}
+            className=""
+            innerClassName="mx-auto w-full max-w-6xl pt-20 sm:pt-24 lg:pt-28"
+            scrollMultiplier={contactScrollMultiplier}
+          >
+            <LandingSectionTitle
+              id={contactSection.id}
+              titleA={contactSection.titleA}
+              titleB={contactSection.titleB}
+              desc={contactSection.desc}
+              isCenter
+            />
+            <LandingContactSection />
+          </LandingSectionFrame>
+        </div>
+
+        <LandingFooter />
+      </div>
     </main>
   );
 }

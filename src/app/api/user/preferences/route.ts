@@ -23,14 +23,17 @@ export async function POST(request: NextRequest) {
 
     console.log("Enviando preferencia al backend:", { theme_id: themeId });
 
-    const response = await fetch(`${apiConfig.usersApiBase}/users/preferences`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
+    const response = await fetch(
+      `${apiConfig.usersApiBase}/users/preferences`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ theme_id: themeId }),
       },
-      body: JSON.stringify({ theme_id: themeId }),
-    });
+    );
 
     if (!response.ok) {
       const errorData = await response

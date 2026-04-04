@@ -24,11 +24,7 @@ export function StatsSkillsSection({
   animationsEnabled = true,
 }: StatsSkillsSectionProps) {
   return (
-    <AnimatedEntrance
-      index={3}
-      disabled={!animationsEnabled}
-      className="mb-8"
-    >
+    <AnimatedEntrance index={3} disabled={!animationsEnabled} className="mb-8">
       <SectionHeader
         className="mb-5"
         title={

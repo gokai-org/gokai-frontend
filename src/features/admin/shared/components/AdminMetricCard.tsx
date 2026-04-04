@@ -82,9 +82,17 @@ export function AdminMetricCard({
         )}
       </div>
 
-      <p className="text-2xl font-extrabold tracking-tight text-content-primary">{value}</p>
-      <h2 className="mt-1 text-xs font-medium text-content-tertiary">{title}</h2>
-      {hint && <p className="mt-1 line-clamp-2 text-xs text-content-tertiary">{hint}</p>}
+      <p className="text-2xl font-extrabold tracking-tight text-content-primary">
+        {value}
+      </p>
+      <h2 className="mt-1 text-xs font-medium text-content-tertiary">
+        {title}
+      </h2>
+      {hint && (
+        <p className="mt-1 line-clamp-2 text-xs text-content-tertiary">
+          {hint}
+        </p>
+      )}
     </Wrapper>
   );
 }

@@ -44,7 +44,10 @@ interface KanjiBoardMapProps {
 }
 
 function getPlanetFocusPoint(node: KanjiNode) {
-  const width = typeof node.style?.width === "number" ? node.style.width : PLANET_CENTER_X * 2;
+  const width =
+    typeof node.style?.width === "number"
+      ? node.style.width
+      : PLANET_CENTER_X * 2;
 
   return {
     x: node.position.x + width / 2,
@@ -133,7 +136,9 @@ function KanjiBoardMapInner({
     const previousViewport = savedViewport.current;
     savedViewport.current = null;
     lastFocusedNodeId.current = null;
-    void setViewport(previousViewport, { duration: qualityProfile.camera.restoreDuration });
+    void setViewport(previousViewport, {
+      duration: qualityProfile.camera.restoreDuration,
+    });
 
     const frame = window.requestAnimationFrame(() => {
       onViewportChange(getViewport());
@@ -230,7 +235,9 @@ function KanjiBoardMapInner({
   );
 }
 
-export const KanjiBoardMap = memo(function KanjiBoardMap(props: KanjiBoardMapProps) {
+export const KanjiBoardMap = memo(function KanjiBoardMap(
+  props: KanjiBoardMapProps,
+) {
   return (
     <ReactFlowProvider>
       <KanjiBoardMapInner {...props} />

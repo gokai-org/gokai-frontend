@@ -12,25 +12,60 @@ export function getMockKanjiLessonFlow(
   readings: string[],
 ): KanjiLessonFlowData {
   const primaryMeaning = meanings[0] || "Desconocido";
-  const primaryReading = readings[0] || "?";
 
   // Distractors for meaning questions
   const meaningDistractors = [
-    "Montaña", "Río", "Fuego", "Agua", "Persona",
-    "Grande", "Pequeño", "Cielo", "Tierra", "Sol",
-    "Luna", "Árbol", "Bosque", "Piedra", "Flor",
+    "Montaña",
+    "Río",
+    "Fuego",
+    "Agua",
+    "Persona",
+    "Grande",
+    "Pequeño",
+    "Cielo",
+    "Tierra",
+    "Sol",
+    "Luna",
+    "Árbol",
+    "Bosque",
+    "Piedra",
+    "Flor",
   ].filter((d) => !meanings.some((m) => m.toLowerCase() === d.toLowerCase()));
 
   // Distractors for kanji selection questions
   const kanjiDistractors = [
-    "山", "川", "火", "水", "人", "大", "小", "天",
-    "地", "日", "月", "木", "林", "石", "花", "雨",
+    "山",
+    "川",
+    "火",
+    "水",
+    "人",
+    "大",
+    "小",
+    "天",
+    "地",
+    "日",
+    "月",
+    "木",
+    "林",
+    "石",
+    "花",
+    "雨",
   ].filter((d) => d !== symbol);
 
   // Distractors for reading-based questions
-  const readingDistractors = [
-    "やま", "かわ", "ひ", "みず", "ひと", "おお",
-    "ちい", "てん", "ち", "つき", "き", "はやし",
+  const _readingDistractors = [
+    "やま",
+    "かわ",
+    "ひ",
+    "みず",
+    "ひと",
+    "おお",
+    "ちい",
+    "てん",
+    "ち",
+    "つき",
+    "き",
+    "はやし",
   ].filter((d) => !readings.some((r) => r === d));
 
   // Shuffle helper (Fisher-Yates)

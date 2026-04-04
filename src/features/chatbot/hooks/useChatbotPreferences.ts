@@ -1,25 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 const ANIMATIONS_STORAGE_KEY = "gokai-ui-animations-enabled";
 
 export function useChatbotPreferences() {
-  const [animationsEnabled, setAnimationsEnabled] = useState(true);
-
-  useEffect(() => {
+  const [animationsEnabled, setAnimationsEnabled] = useState(() => {
+    if (typeof window === "undefined") return true;
     try {
       const stored = localStorage.getItem(ANIMATIONS_STORAGE_KEY);
-      if (stored === null) {
-        setAnimationsEnabled(true);
-        return;
-      }
-
-      setAnimationsEnabled(stored === "true");
+      return stored === null ? true : stored === "true";
     } catch {
-      setAnimationsEnabled(true);
+      return true;
     }
-  }, []);
+  });
 
   return {
     animationsEnabled,

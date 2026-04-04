@@ -185,7 +185,10 @@ export function WordCardLayout({
               "opacity-[0.30] group-hover:opacity-[0.40] group-hover:scale-110",
               hoverTransition,
             ].join(" ")}
-            style={{ filter: "invert(22%) sepia(58%) saturate(900%) hue-rotate(328deg) brightness(75%) contrast(95%)" }}
+            style={{
+              filter:
+                "invert(22%) sepia(58%) saturate(900%) hue-rotate(328deg) brightness(75%) contrast(95%)",
+            }}
           />
         ) : (
           <span
@@ -251,4 +254,3 @@ export function WordCardLayout({
     </>
   );
 }
-

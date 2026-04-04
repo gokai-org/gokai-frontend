@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { KanjiStrokePlayer } from "@/features/kanji/components/KanjiStrokePlayer";
-import { KanjiWritingCanvas, type DrawnStroke } from "@/features/kanji/components/KanjiWritingCanvas";
+import {
+  KanjiWritingCanvas,
+  type DrawnStroke,
+} from "@/features/kanji/components/KanjiWritingCanvas";
 import {
   validateStroke,
   getPointsForFeedback,
@@ -52,7 +55,7 @@ export function KanjiQuizWritingExercise({
   const practiceSize = useCanvasSize(260, 64);
 
   const viewBox = question.viewBox || "0 0 109 109";
-  const strokes = question.strokes || [];
+  const strokes = useMemo(() => question.strokes || [], [question.strokes]);
   const totalStrokes = strokes.length;
 
   const [demoStrokeIndex, setDemoStrokeIndex] = useState(0);
@@ -65,23 +68,27 @@ export function KanjiQuizWritingExercise({
   const [flashError, setFlashError] = useState(false);
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  const [prevQuestionIndex, setPrevQuestionIndex] = useState(questionIndex);
+  if (questionIndex !== prevQuestionIndex) {
+    setPrevQuestionIndex(questionIndex);
     setDemoStrokeIndex(0);
     setDemoAutoPlay(false);
     setPracticeStrokeIndex(0);
     setStrokeResults([]);
     setLastFeedback(null);
     setFlashError(false);
-  }, [questionIndex]);
+  }
 
   useEffect(() => {
-    if (!demoAutoPlay) return;
-    if (demoStrokeIndex >= totalStrokes) {
-      setDemoAutoPlay(false);
-      return;
-    }
+    if (!demoAutoPlay || demoStrokeIndex >= totalStrokes) return;
     demoTimer.current = setTimeout(() => {
-      setDemoStrokeIndex((prev) => prev + 1);
+      setDemoStrokeIndex((prev) => {
+        const next = prev + 1;
+        if (next >= totalStrokes) {
+          setDemoAutoPlay(false);
+        }
+        return next;
+      });
     }, 800);
     return () => {
       if (demoTimer.current) clearTimeout(demoTimer.current);
@@ -108,7 +115,10 @@ export function KanjiQuizWritingExercise({
       if (!refPath) return;
 
       const validation = validateStroke(stroke.points, refPath, viewBox);
-      const pointsDelta = getPointsForFeedback(validation.feedback, BASE_STROKE_POINTS);
+      const pointsDelta = getPointsForFeedback(
+        validation.feedback,
+        BASE_STROKE_POINTS,
+      );
       const result: StrokeResult = { validation, pointsDelta };
 
       setStrokeResults((prev) => [...prev, result]);
@@ -127,15 +137,28 @@ export function KanjiQuizWritingExercise({
       if (nextIdx >= totalStrokes) {
         // Calculate final score for this question
         const allResults = [...strokeResults, result];
-        const totalScore = allResults.reduce((sum, r) => sum + r.pointsDelta, 0);
+        const totalScore = allResults.reduce(
+          (sum, r) => sum + r.pointsDelta,
+          0,
+        );
         const maxScore = totalStrokes * BASE_STROKE_POINTS;
-        const scorePercent = maxScore > 0 ? Math.round(Math.max(0, totalScore) / maxScore * 100) : 0;
+        const scorePercent =
+          maxScore > 0
+            ? Math.round((Math.max(0, totalScore) / maxScore) * 100)
+            : 0;
         setTimeout(() => onComplete(scorePercent), 600);
       } else {
         setPracticeStrokeIndex(nextIdx);
       }
     },
-    [practiceStrokeIndex, strokes, viewBox, totalStrokes, strokeResults, onComplete],
+    [
+      practiceStrokeIndex,
+      strokes,
+      viewBox,
+      totalStrokes,
+      strokeResults,
+      onComplete,
+    ],
   );
 
   const handleBackToDemo = useCallback(() => {
@@ -198,7 +221,9 @@ export function KanjiQuizWritingExercise({
 
         <p className="text-sm text-content-tertiary text-center max-w-[280px]">
           Observa el orden de los trazos para{" "}
-          <span className="font-bold text-content-primary">{question.kanji}</span>
+          <span className="font-bold text-content-primary">
+            {question.kanji}
+          </span>
         </p>
 
         <motion.div
@@ -229,29 +254,58 @@ export function KanjiQuizWritingExercise({
             />
           </div>
           <p className="text-xs text-content-muted text-center mt-1.5 font-medium">
-            Trazo <span className="text-accent font-bold">{Math.min(demoStrokeIndex, totalStrokes)}</span> de {totalStrokes}
+            Trazo{" "}
+            <span className="text-accent font-bold">
+              {Math.min(demoStrokeIndex, totalStrokes)}
+            </span>{" "}
+            de {totalStrokes}
           </p>
         </div>
 
         {/* Controls */}
         <div className="flex items-center gap-1.5">
           <DemoButton
-            onClick={() => { setDemoStrokeIndex(0); setDemoAutoPlay(false); }}
+            onClick={() => {
+              setDemoStrokeIndex(0);
+              setDemoAutoPlay(false);
+            }}
             disabled={demoStrokeIndex === 0}
             title="Reiniciar"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
             </svg>
           </DemoButton>
 
           <DemoButton
-            onClick={() => demoStrokeIndex > 0 && setDemoStrokeIndex((p) => p - 1)}
+            onClick={() =>
+              demoStrokeIndex > 0 && setDemoStrokeIndex((p) => p - 1)
+            }
             disabled={demoStrokeIndex === 0}
             title="Anterior"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </DemoButton>
 
@@ -274,7 +328,11 @@ export function KanjiQuizWritingExercise({
           >
             {demoAutoPlay ? (
               <>
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <rect x="6" y="4" width="4" height="16" rx="1" />
                   <rect x="14" y="4" width="4" height="16" rx="1" />
                 </svg>
@@ -282,7 +340,11 @@ export function KanjiQuizWritingExercise({
               </>
             ) : (
               <>
-                <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24">
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="currentColor"
+                  viewBox="0 0 24 24"
+                >
                   <path d="M8 5v14l11-7z" />
                 </svg>
                 Reproducir
@@ -291,12 +353,24 @@ export function KanjiQuizWritingExercise({
           </motion.button>
 
           <DemoButton
-            onClick={() => demoStrokeIndex < totalStrokes && setDemoStrokeIndex((p) => p + 1)}
+            onClick={() =>
+              demoStrokeIndex < totalStrokes && setDemoStrokeIndex((p) => p + 1)
+            }
             disabled={demoStrokeIndex >= totalStrokes}
             title="Siguiente"
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <svg
+              className="w-4 h-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
             </svg>
           </DemoButton>
         </div>
@@ -343,13 +417,20 @@ export function KanjiQuizWritingExercise({
         )}
 
         <p className="text-sm text-content-tertiary text-center">
-          Dibuja: <span className="font-bold text-content-primary">{question.kanji}</span>
+          Dibuja:{" "}
+          <span className="font-bold text-content-primary">
+            {question.kanji}
+          </span>
         </p>
 
         {/* Score display */}
         <div className="flex items-center gap-2">
-          <span className="text-xs text-content-muted font-medium">Puntos:</span>
-          <span className={`text-sm font-bold ${runningScore >= 0 ? "text-accent" : "text-red-500"}`}>
+          <span className="text-xs text-content-muted font-medium">
+            Puntos:
+          </span>
+          <span
+            className={`text-sm font-bold ${runningScore >= 0 ? "text-accent" : "text-red-500"}`}
+          >
             {runningScore >= 0 ? `+${runningScore}` : runningScore}
           </span>
         </div>
@@ -404,7 +485,9 @@ export function KanjiQuizWritingExercise({
             >
               {getFeedbackLabel(lastFeedback.validation.feedback)}
               <span className="ml-1.5 opacity-70">
-                {lastFeedback.pointsDelta >= 0 ? `+${lastFeedback.pointsDelta}` : lastFeedback.pointsDelta}
+                {lastFeedback.pointsDelta >= 0
+                  ? `+${lastFeedback.pointsDelta}`
+                  : lastFeedback.pointsDelta}
               </span>
             </motion.div>
           )}

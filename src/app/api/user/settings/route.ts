@@ -15,7 +15,7 @@ function getUserIdFromToken(token: string): string | null {
   }
 }
 
-function toSnakeCase(obj: Record<string, unknown>): Record<string, unknown> {
+function _toSnakeCase(obj: Record<string, unknown>): Record<string, unknown> {
   const result: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(obj)) {
@@ -25,7 +25,7 @@ function toSnakeCase(obj: Record<string, unknown>): Record<string, unknown> {
     );
 
     if (value && typeof value === "object" && !Array.isArray(value)) {
-      result[snakeKey] = toSnakeCase(value as Record<string, unknown>);
+      result[snakeKey] = _toSnakeCase(value as Record<string, unknown>);
     } else {
       result[snakeKey] = value;
     }

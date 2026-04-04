@@ -1,10 +1,10 @@
 /* ── Kanji Lesson Flow Types ──*/
 
 export type KanjiLessonExerciseKind =
-  | "meaning"           // select correct meaning
-  | "kanji_selection"   // select correct kanji
-  | "reading_meaning"   // select correct meaning from readings
-  | "writing";          // demo + freehand writing
+  | "meaning" // select correct meaning
+  | "kanji_selection" // select correct kanji
+  | "reading_meaning" // select correct meaning from readings
+  | "writing"; // demo + freehand writing
 
 export type KanjiLessonQuestionOption = {
   value: string;

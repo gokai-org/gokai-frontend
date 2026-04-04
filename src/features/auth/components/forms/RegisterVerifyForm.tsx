@@ -60,7 +60,8 @@ export function RegisterVerifyForm({
           onClick={onResend}
           className="text-sm font-medium text-content-secondary hover:text-accent transition"
         >
-          ¿No recibiste el código? <span className="font-semibold">Reenviar</span>
+          ¿No recibiste el código?{" "}
+          <span className="font-semibold">Reenviar</span>
         </button>
       </div>
 

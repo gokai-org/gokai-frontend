@@ -33,8 +33,15 @@ export async function getKanjiLessonExercise(
 ): Promise<KanjiLessonBlockPayload> {
   if (USE_MOCK) {
     await new Promise((r) => setTimeout(r, 300));
-    const flow = getMockKanjiLessonFlow(kanjiId, "八", ["Ocho; 8"], ["はち", "ハチ"]);
-    const block = flow.exercises.find((e: KanjiLessonBlockPayload) => e.type === exerciseType);
+    const flow = getMockKanjiLessonFlow(
+      kanjiId,
+      "八",
+      ["Ocho; 8"],
+      ["はち", "ハチ"],
+    );
+    const block = flow.exercises.find(
+      (e: KanjiLessonBlockPayload) => e.type === exerciseType,
+    );
     if (!block) throw new Error(`Exercise type "${exerciseType}" not found`);
     return block;
   }

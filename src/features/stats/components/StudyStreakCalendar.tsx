@@ -66,7 +66,6 @@ export function StudyStreakCalendar({
     for (let w = 0; w < weeks; w++) {
       const col: Array<{ date: string; minutes: number }> = [];
       for (let d = 0; d < 7; d++) {
-        const dayOffset = totalDays - 1 - (w * 7 + (6 - d));
         const dateObj = new Date(today);
         dateObj.setDate(dateObj.getDate() - (totalDays - 1 - (w * 7 + d)));
         const key = dateObj.toISOString().slice(0, 10);
@@ -109,7 +108,9 @@ export function StudyStreakCalendar({
     >
       <div className="flex items-start justify-between mb-5">
         <div>
-          <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
+          <h3 className="text-lg font-extrabold text-content-primary">
+            {title}
+          </h3>
           <p className="text-xs text-content-tertiary">{subtitle}</p>
         </div>
         <div className="flex gap-3">

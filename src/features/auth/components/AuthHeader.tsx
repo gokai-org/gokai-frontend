@@ -1,17 +1,16 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { PremiumStepIndicator } from "@/features/auth/components/PremiumStepIndicator";
 
 type Mode = "login" | "register" | "forgot-password";
-type ForgotStep = "email" | "code" | "password";
 type RegisterStep = "form" | "verify-email";
 type MembershipIntent = "free" | "premium";
 
 type Props = {
   mode: Mode;
-  forgotStep: ForgotStep;
   registerStep: RegisterStep;
   intent: MembershipIntent | null;
   regEmail: string;
@@ -19,16 +18,15 @@ type Props = {
 
 export function AuthHeader({
   mode,
-  forgotStep,
   registerStep,
   intent,
   regEmail,
 }: Props) {
   return (
     <div className="flex flex-col items-center text-center">
-      <a href="/" className="inline-block">
+      <Link href="/" className="inline-block">
         <motion.div
-          className="flex items-center justify-center"
+          className="relative flex h-[60px] w-[60px] items-center justify-center"
           whileHover={{ rotate: 360, scale: 1.1 }}
           transition={{ duration: 0.5 }}
         >
@@ -38,9 +36,18 @@ export function AuthHeader({
             width={60}
             height={60}
             priority
+            className="dark:hidden"
+          />
+          <Image
+            src="/logos/gokai-logo-dark.svg"
+            alt=""
+            width={60}
+            height={60}
+            priority
+            className="hidden dark:block"
           />
         </motion.div>
-      </a>
+      </Link>
 
       {mode === "login" ? (
         <>
@@ -103,9 +110,7 @@ export function AuthHeader({
             Recuperar contraseña
           </h2>
           <p className="mt-1 text-sm font-medium text-content-tertiary">
-            {forgotStep === "email" && "Ingresa tu correo para recibir el código."}
-            {forgotStep === "code" && "Ingresa el código de verificación."}
-            {forgotStep === "password" && "Crea tu nueva contraseña."}
+            Sigue los pasos para restablecer tu contraseña.
           </p>
         </>
       )}

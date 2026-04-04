@@ -59,7 +59,7 @@ export function buildTranslateExtent(
  * Returns the number of snake columns for the given node count.
  */
 function getBoardCols(count: number): number {
-  if (count <=  8) return 3;
+  if (count <= 8) return 3;
   if (count <= 20) return 4;
   if (count <= 35) return 5;
   if (count <= 54) return 6;
@@ -94,12 +94,12 @@ function buildGoPathPositions(count: number): Point[] {
   const cols = getBoardCols(count);
 
   return Array.from({ length: count }, (_, i) => {
-    const row      = Math.floor(i / cols);
+    const row = Math.floor(i / cols);
     const colInRow = i % cols;
     const snakeCol = row % 2 === 0 ? colInRow : cols - 1 - colInRow;
 
     const gx = (BOARD_ORIGIN_H + snakeCol) * HOSHI_STEP;
-    const gy = (BOARD_ORIGIN_V + row)      * HOSHI_STEP;
+    const gy = (BOARD_ORIGIN_V + row) * HOSHI_STEP;
 
     return {
       x: gx * GRID_PITCH - SPHERE_CENTER_X,
@@ -108,7 +108,10 @@ function buildGoPathPositions(count: number): Point[] {
   });
 }
 
-function getHandles(source: { x: number; y: number }, target: { x: number; y: number }) {
+function getHandles(
+  source: { x: number; y: number },
+  target: { x: number; y: number },
+) {
   const dx = target.x - source.x;
   const dy = target.y - source.y;
 
@@ -145,7 +148,10 @@ function createLayoutEdge(
   sourcePosition: { x: number; y: number },
   targetPosition: { x: number; y: number },
 ): LayoutEdge {
-  const { sourceHandle, targetHandle } = getHandles(sourcePosition, targetPosition);
+  const { sourceHandle, targetHandle } = getHandles(
+    sourcePosition,
+    targetPosition,
+  );
 
   return {
     id: edgeId,
@@ -173,9 +179,15 @@ function createSequentialLayoutEdges(ids: string[], positions: Point[]) {
 export function buildKanjiBoardLayout(ids: string[]): KanjiBoardLayout {
   const positions = buildGoPathPositions(ids.length);
 
-  let minX = 0, maxX = NODE_WIDTH, minY = 0, maxY = NODE_HEIGHT;
+  let minX = 0,
+    maxX = NODE_WIDTH,
+    minY = 0,
+    maxY = NODE_HEIGHT;
   if (positions.length > 0) {
-    minX = Infinity; maxX = -Infinity; minY = Infinity; maxY = -Infinity;
+    minX = Infinity;
+    maxX = -Infinity;
+    minY = Infinity;
+    maxY = -Infinity;
     for (const p of positions) {
       if (p.x < minX) minX = p.x;
       if (p.x > maxX) maxX = p.x;
@@ -223,24 +235,26 @@ export function createKanjiBoardGraph(
     const progress = itemsById.get(layoutNode.id);
     if (!progress) return [];
 
-    return [{
-      id: progress.id,
-      type: "kanji-planet",
-      position: layoutNode.position,
-      data: {
-        progress,
-        selected: progress.id === selectedId,
-        qualityTier: qualityProfile.tier,
-        glowScale: qualityProfile.node.glowScale,
-        shadowScale: qualityProfile.node.shadowScale,
-        showOrbitRings: qualityProfile.node.showOrbitRings,
-        shouldUsePulse: qualityProfile.node.shouldUsePulse,
-        unlocking: newlyUnlockedIds?.has(progress.id) ?? false,
-        shaking: progress.id === shakingNodeId,
+    return [
+      {
+        id: progress.id,
+        type: "kanji-planet",
+        position: layoutNode.position,
+        data: {
+          progress,
+          selected: progress.id === selectedId,
+          qualityTier: qualityProfile.tier,
+          glowScale: qualityProfile.node.glowScale,
+          shadowScale: qualityProfile.node.shadowScale,
+          showOrbitRings: qualityProfile.node.showOrbitRings,
+          shouldUsePulse: qualityProfile.node.shouldUsePulse,
+          unlocking: newlyUnlockedIds?.has(progress.id) ?? false,
+          shaking: progress.id === shakingNodeId,
+        },
+        draggable: false,
+        style: NODE_STYLE,
       },
-      draggable: false,
-      style: NODE_STYLE,
-    }];
+    ];
   });
 
   const edges: KanjiBoardEdge[] = layout.edges.flatMap((layoutEdge) => {
@@ -252,23 +266,25 @@ export function createKanjiBoardGraph(
       (newlyUnlockedIds?.has(layoutEdge.source) ?? false) ||
       (newlyUnlockedIds?.has(layoutEdge.target) ?? false);
 
-    return [{
-      id: layoutEdge.id,
-      source: layoutEdge.source,
-      target: layoutEdge.target,
-      type: "kanji-constellation",
-      sourceHandle: layoutEdge.sourceHandle,
-      targetHandle: layoutEdge.targetHandle,
-      data: {
-        status: getEdgeStatus(source, target),
-        highlight: selectedId === source.id || selectedId === target.id,
-        qualityTier: qualityProfile.tier,
-        widthScale: qualityProfile.edge.widthScale,
-        opacityScale: qualityProfile.edge.opacityScale,
-        showLockedDash: qualityProfile.edge.showLockedDash,
-        unlocking,
+    return [
+      {
+        id: layoutEdge.id,
+        source: layoutEdge.source,
+        target: layoutEdge.target,
+        type: "kanji-constellation",
+        sourceHandle: layoutEdge.sourceHandle,
+        targetHandle: layoutEdge.targetHandle,
+        data: {
+          status: getEdgeStatus(source, target),
+          highlight: selectedId === source.id || selectedId === target.id,
+          qualityTier: qualityProfile.tier,
+          widthScale: qualityProfile.edge.widthScale,
+          opacityScale: qualityProfile.edge.opacityScale,
+          showLockedDash: qualityProfile.edge.showLockedDash,
+          unlocking,
+        },
       },
-    }];
+    ];
   });
 
   return { nodes, edges };
@@ -299,24 +315,26 @@ export function createBaseKanjiBoardGraph(
     const progress = itemsById.get(layoutNode.id);
     if (!progress) return [];
 
-    return [{
-      id: progress.id,
-      type: "kanji-planet",
-      position: layoutNode.position,
-      data: {
-        progress,
-        selected: false,
-        qualityTier: qualityProfile.tier,
-        glowScale: qualityProfile.node.glowScale,
-        shadowScale: qualityProfile.node.shadowScale,
-        showOrbitRings: qualityProfile.node.showOrbitRings,
-        shouldUsePulse: qualityProfile.node.shouldUsePulse,
-        unlocking: false,
-        shaking: false,
+    return [
+      {
+        id: progress.id,
+        type: "kanji-planet",
+        position: layoutNode.position,
+        data: {
+          progress,
+          selected: false,
+          qualityTier: qualityProfile.tier,
+          glowScale: qualityProfile.node.glowScale,
+          shadowScale: qualityProfile.node.shadowScale,
+          showOrbitRings: qualityProfile.node.showOrbitRings,
+          shouldUsePulse: qualityProfile.node.shouldUsePulse,
+          unlocking: false,
+          shaking: false,
+        },
+        draggable: false,
+        style: NODE_STYLE,
       },
-      draggable: false,
-      style: NODE_STYLE,
-    }];
+    ];
   });
 
   const edges: KanjiBoardEdge[] = layout.edges.flatMap((layoutEdge) => {
@@ -324,23 +342,25 @@ export function createBaseKanjiBoardGraph(
     const target = itemsById.get(layoutEdge.target);
     if (!source || !target) return [];
 
-    return [{
-      id: layoutEdge.id,
-      source: layoutEdge.source,
-      target: layoutEdge.target,
-      type: "kanji-constellation",
-      sourceHandle: layoutEdge.sourceHandle,
-      targetHandle: layoutEdge.targetHandle,
-      data: {
-        status: getEdgeStatus(source, target),
-        highlight: false,
-        qualityTier: qualityProfile.tier,
-        widthScale: qualityProfile.edge.widthScale,
-        opacityScale: qualityProfile.edge.opacityScale,
-        showLockedDash: qualityProfile.edge.showLockedDash,
-        unlocking: false,
+    return [
+      {
+        id: layoutEdge.id,
+        source: layoutEdge.source,
+        target: layoutEdge.target,
+        type: "kanji-constellation",
+        sourceHandle: layoutEdge.sourceHandle,
+        targetHandle: layoutEdge.targetHandle,
+        data: {
+          status: getEdgeStatus(source, target),
+          highlight: false,
+          qualityTier: qualityProfile.tier,
+          widthScale: qualityProfile.edge.widthScale,
+          opacityScale: qualityProfile.edge.opacityScale,
+          showLockedDash: qualityProfile.edge.showLockedDash,
+          unlocking: false,
+        },
       },
-    }];
+    ];
   });
 
   return { nodes, edges };
@@ -359,14 +379,14 @@ export function applyBoardUIState(
   shakingNodeId: string | null,
 ): { nodes: KanjiBoardNode[]; edges: KanjiBoardEdge[] } {
   const nodes = base.nodes.map((node) => {
-    const selected  = node.id === selectedId;
+    const selected = node.id === selectedId;
     const unlocking = newlyUnlockedIds.has(node.id);
-    const shaking   = node.id === shakingNodeId;
+    const shaking = node.id === shakingNodeId;
 
     if (
-      node.data.selected  === selected  &&
+      node.data.selected === selected &&
       node.data.unlocking === unlocking &&
-      node.data.shaking   === shaking
+      node.data.shaking === shaking
     ) {
       return node; // stable ref — ReactFlow skips internal diff for this node
     }
@@ -379,7 +399,10 @@ export function applyBoardUIState(
     const unlocking =
       newlyUnlockedIds.has(edge.source) || newlyUnlockedIds.has(edge.target);
 
-    if (edge.data?.highlight === highlight && edge.data?.unlocking === unlocking) {
+    if (
+      edge.data?.highlight === highlight &&
+      edge.data?.unlocking === unlocking
+    ) {
       return edge; // stable ref
     }
 

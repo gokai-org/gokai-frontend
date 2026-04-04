@@ -55,7 +55,13 @@ export function AdminSupportPanel() {
       resolved: toPercent(summary.resolved),
       closed: toPercent(summary.closed),
     };
-  }, [summary.closed, summary.inProgress, summary.open, summary.resolved, summary.total]);
+  }, [
+    summary.closed,
+    summary.inProgress,
+    summary.open,
+    summary.resolved,
+    summary.total,
+  ]);
 
   const handleOpenTicket = useCallback((ticket: AdminSupportTicket) => {
     setDetailError(null);

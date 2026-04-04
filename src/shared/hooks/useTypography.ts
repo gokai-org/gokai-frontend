@@ -5,11 +5,7 @@ import { createContext, useContext } from "react";
 // ─── Types ───────────────────────────────────────────────────────
 
 export type FontSize = "Pequeño" | "Mediano" | "Grande" | "Muy grande";
-export type JapaneseFont =
-  | "Noto Sans JP"
-  | "Hiragino"
-  | "Yu Gothic"
-  | "Meiryo";
+export type JapaneseFont = "Noto Sans JP" | "Hiragino" | "Yu Gothic" | "Meiryo";
 
 export interface TypographyContextValue {
   fontSize: FontSize;
@@ -41,8 +37,9 @@ export const JP_FONT_STORAGE_KEY = "gokai-jp-font";
 
 // ─── Context & hook ──────────────────────────────────────────────
 
-export const TypographyContext =
-  createContext<TypographyContextValue | null>(null);
+export const TypographyContext = createContext<TypographyContextValue | null>(
+  null,
+);
 
 export function useTypography(): TypographyContextValue {
   const ctx = useContext(TypographyContext);

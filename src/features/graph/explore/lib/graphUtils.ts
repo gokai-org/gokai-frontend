@@ -1,10 +1,12 @@
-import { GraphNode, GraphEdge, NodeStatus } from "@/features/graph/lib/graphTypes";
-import { GRAPH_CONFIG } from "./graphConfig";
+import {
+  GraphNode,
+  NodeStatus,
+} from "@/features/graph/lib/graphTypes";
 
 /**
  * Calcula qué handle usar basándose en la posición relativa entre dos nodos
  */
-function getOptimalHandles(
+function _getOptimalHandles(
   sourceNode: GraphNode,
   targetNode: GraphNode,
 ): { sourceHandle: string; targetHandle: string } {

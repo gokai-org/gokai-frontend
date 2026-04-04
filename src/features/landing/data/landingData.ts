@@ -1,5 +1,3 @@
-/** Tipos y datos estáticos para la landing page */
-
 export type Section = {
   id: string;
   nav: string;
@@ -15,6 +13,11 @@ export type HowTabId = "explora" | "recompensas" | "repaso";
 export type HowTab = {
   readonly id: HowTabId;
   readonly label: string;
+  readonly eyebrow: string;
+  readonly title: string;
+  readonly desc: string;
+  readonly highlights: readonly string[];
+  readonly metric: string;
   readonly img: string;
 };
 
@@ -29,11 +32,104 @@ export const HOW_TABS: readonly HowTab[] = [
   {
     id: "explora",
     label: "Explora tus intereses",
+    eyebrow: "Mapa inicial",
+    title: "Tu ruta empieza desde lo que te mueve",
+    desc: "Selecciona temas, ritmos y objetivos. GOKAI reorganiza la escena de aprendizaje para que cada nodo tenga sentido dentro de tu camino.",
+    highlights: [
+      "Intereses prioritarios",
+      "Camino adaptativo",
+      "Progreso visible",
+    ],
+    metric: "Rutas vivas",
     img: "/mockups/explora.png",
   },
-  { id: "recompensas", label: "Recompensas", img: "/mockups/recompensas.png" },
-  { id: "repaso", label: "Repasa con IA", img: "/mockups/repaso.png" },
+  {
+    id: "recompensas",
+    label: "Recompensas",
+    eyebrow: "Momentum",
+    title: "Cada avance abre nuevas rutas dentro del grafo",
+    desc: "Las recompensas no son cosméticas: refuerzan el hábito, desbloquean contenido y convierten el progreso en algo tangible.",
+    highlights: [
+      "Puntos y badges",
+      "Desbloqueos progresivos",
+      "Motivación diaria",
+    ],
+    metric: "+30 puntos",
+    img: "/mockups/recompensas.png",
+  },
+  {
+    id: "repaso",
+    label: "Repasa con IA",
+    eyebrow: "Asistencia inteligente",
+    title: "La IA acompaña tu repaso justo donde lo necesitas",
+    desc: "GOKAI detecta patrones, refuerza huecos de memoria y propone repasos con contexto para que estudiar se sienta continuo, no fragmentado.",
+    highlights: [
+      "Refuerzo contextual",
+      "Repaso adaptativo",
+      "Feedback inmediato",
+    ],
+    metric: "IA en contexto",
+    img: "/mockups/repaso.png",
+  },
 ] as const;
+
+export const HERO_BADGES = [
+  "Kanji y vocabulario conectados",
+  "IA adaptativa",
+  "Rutas dinámicas de estudio",
+] as const;
+
+export const SKILL_PANEL_CONTENT: Record<
+  string,
+  {
+    eyebrow: string;
+    stat: string;
+    title: string;
+    bullets: string[];
+  }
+> = {
+  caracteristicas: {
+    eyebrow: "Trazos con intención",
+    stat: "Stroke Engine",
+    title:
+      "La escritura se siente como una práctica guiada, no como una hoja vacía.",
+    bullets: ["Canvas de escritura", "Corrección visual", "Memoria motriz"],
+  },
+  leer: {
+    eyebrow: "Comprensión viva",
+    stat: "Reading Layer",
+    title: "Cada lectura se integra a tu mapa personal de progreso.",
+    bullets: ["Textos por nivel", "Seguimiento semántico", "Nuevas conexiones"],
+  },
+  pensar: {
+    eyebrow: "Procesamiento natural",
+    stat: "Thinking Path",
+    title: "La plataforma empuja la intuición, no la traducción mecánica.",
+    bullets: [
+      "Asociación de ideas",
+      "Contexto cultural",
+      "Comprensión profunda",
+    ],
+  },
+  hablar: {
+    eyebrow: "Confianza activa",
+    stat: "Speech Loop",
+    title:
+      "Practicar oralidad se convierte en una secuencia progresiva y medible.",
+    bullets: ["Feedback de voz", "Entonación guiada", "Fluidez creciente"],
+  },
+  escuchar: {
+    eyebrow: "Oído entrenado",
+    stat: "Audio Sense",
+    title:
+      "Tu oído se afina como parte del mismo sistema visual de aprendizaje.",
+    bullets: [
+      "Comprensión auditiva",
+      "Audio adaptativo",
+      "Retención por patrones",
+    ],
+  },
+};
 
 export const FEATURES: Feature[] = [
   {

@@ -36,12 +36,18 @@ export default function GrammarLesson({
 
         <div className="mt-4 grid gap-3">
           <div className="rounded-2xl border border-border-subtle p-3">
-            <div className="text-xs font-semibold text-content-primary">Uso</div>
-            <div className="text-sm text-content-secondary">{g.useCases ?? "—"}</div>
+            <div className="text-xs font-semibold text-content-primary">
+              Uso
+            </div>
+            <div className="text-sm text-content-secondary">
+              {g.useCases ?? "—"}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-border-subtle p-3">
-            <div className="text-xs font-semibold text-content-primary">Ejemplos</div>
+            <div className="text-xs font-semibold text-content-primary">
+              Ejemplos
+            </div>
             <div className="text-sm text-content-secondary whitespace-pre-wrap">
               {g.examples ?? "—"}
             </div>

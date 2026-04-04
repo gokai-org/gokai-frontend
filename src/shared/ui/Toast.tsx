@@ -1,9 +1,44 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
+import { X, CheckCircle2, XCircle, AlertTriangle, Info } from "lucide-react";
 
 export type ToastType = "success" | "error" | "warning" | "info";
+
+const TOAST_CONFIG = {
+  success: {
+    label: "やった！ ¡Lo lograste!",
+    Icon: CheckCircle2,
+    bg: "bg-emerald-500",
+    ring: "ring-1 ring-emerald-400/30",
+    iconBg: "bg-emerald-700/40",
+    shadow: "shadow-emerald-600/30",
+  },
+  error: {
+    label: "しまった！ Algo salió mal",
+    Icon: XCircle,
+    bg: "bg-[#993331]",
+    ring: "ring-1 ring-[#ba5149]/30",
+    iconBg: "bg-[#7a2826]/50",
+    shadow: "shadow-[#993331]/30",
+  },
+  warning: {
+    label: "気をつけて · ¡Ojo!",
+    Icon: AlertTriangle,
+    bg: "bg-amber-500",
+    ring: "ring-1 ring-amber-400/30",
+    iconBg: "bg-amber-700/40",
+    shadow: "shadow-amber-600/30",
+  },
+  info: {
+    label: "ちょっと待って · Info",
+    Icon: Info,
+    bg: "bg-blue-500",
+    ring: "ring-1 ring-blue-400/30",
+    iconBg: "bg-blue-700/40",
+    shadow: "shadow-blue-600/30",
+  },
+} as const;
 
 interface ToastProps {
   id: string;
@@ -12,151 +47,77 @@ interface ToastProps {
   onClose: () => void;
 }
 
-export function Toast({ id, type, message, onClose }: ToastProps) {
-  const icons = {
-    success: CheckCircle,
-    error: AlertCircle,
-    warning: AlertTriangle,
-    info: Info,
-  };
-
-  const colors = {
-    success: {
-      bg: "from-emerald-50 to-green-50 dark:from-emerald-950/50 dark:to-green-900/40",
-      border: "border-emerald-200 dark:border-emerald-700/40",
-      text: "text-emerald-800 dark:text-emerald-200",
-      icon: "text-emerald-600 dark:text-emerald-400",
-      accent: "from-emerald-500 to-green-500",
-    },
-    error: {
-      bg: "from-red-50 to-red-100 dark:from-red-950/50 dark:to-red-900/40",
-      border: "border-red-200 dark:border-red-700/40",
-      text: "text-red-800 dark:text-red-200",
-      icon: "text-red-600 dark:text-red-400",
-      accent: "from-red-500 to-red-600",
-    },
-    warning: {
-      bg: "from-amber-50 to-amber-100 dark:from-amber-950/50 dark:to-amber-900/40",
-      border: "border-amber-200 dark:border-amber-700/40",
-      text: "text-amber-800 dark:text-amber-200",
-      icon: "text-amber-600 dark:text-amber-400",
-      accent: "from-amber-500 to-amber-600",
-    },
-    info: {
-      bg: "from-blue-50 to-blue-100 dark:from-blue-950/50 dark:to-blue-900/40",
-      border: "border-blue-200 dark:border-blue-700/40",
-      text: "text-blue-800 dark:text-blue-200",
-      icon: "text-blue-600 dark:text-blue-400",
-      accent: "from-blue-500 to-blue-600",
-    },
-  };
-
-  const Icon = icons[type];
-  const color = colors[type];
+export function Toast({ type, message, onClose }: ToastProps) {
+  const { label, Icon, bg, ring, iconBg, shadow } = TOAST_CONFIG[type];
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: -20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 100, scale: 0.95 }}
-      transition={{
-        type: "spring",
-        stiffness: 500,
-        damping: 30,
-      }}
-      className="relative overflow-hidden"
+      layout
+      initial={{ opacity: 0, x: 72, scale: 0.88 }}
+      animate={{ opacity: 1, x: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 80, scale: 0.88 }}
+      transition={{ type: "spring", stiffness: 420, damping: 28 }}
+      className={`relative overflow-hidden rounded-2xl ${bg} ${ring} shadow-2xl ${shadow} w-full sm:w-auto sm:min-w-[300px] sm:max-w-[400px]`}
     >
-      {/* Borde decorativo japonés */}
-      <div
-        className={`absolute top-0 left-0 right-0 h-1 bg-gradient-to-r ${color.accent}`}
+      {/* Blob 1 — esquina superior derecha */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -top-8 -right-8 h-28 w-28 rounded-full bg-white/10"
+      />
+      {/* Blob 2 — esquina inferior izquierda */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute -bottom-10 -left-6 h-24 w-24 rounded-full bg-black/10"
+      />
+      {/* Blob 3 — centro derecho, pequeño */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/2 right-14 -translate-y-1/2 h-7 w-7 rounded-full bg-white/10"
       />
 
-      <div
-        className={`
-        relative bg-gradient-to-br ${color.bg} 
-        border ${color.border} 
-        rounded-lg shadow-lg backdrop-blur-sm
-        dark:shadow-black/40
-        p-4
-        min-w-[320px] max-w-md
-      `}
-      >
-        {/* Patrón japonés sutil de fondo */}
-        <div className="absolute inset-0 opacity-5">
-          <svg width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-              <pattern
-                id="seigaiha"
-                x="0"
-                y="0"
-                width="40"
-                height="20"
-                patternUnits="userSpaceOnUse"
-              >
-                <circle
-                  cx="10"
-                  cy="20"
-                  r="10"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                />
-                <circle
-                  cx="30"
-                  cy="20"
-                  r="10"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1"
-                />
-              </pattern>
-            </defs>
-            <rect width="100%" height="100%" fill="url(#seigaiha)" />
-          </svg>
-        </div>
-
-        {/* Botón cerrar - posición absoluta en la esquina superior derecha */}
-        <motion.button
-          onClick={onClose}
-          whileHover={{ scale: 1.1, rotate: 90 }}
-          whileTap={{ scale: 0.9 }}
-          className={`
-            absolute top-2 right-2 z-10
-            ${color.text} hover:opacity-80
-            transition-opacity rounded-full
-            p-1.5
-          `}
-        >
-          <X className="w-4 h-4" />
-        </motion.button>
-
-        <div className="relative flex items-start gap-3 pr-8">
-          {/* Agregado pr-8 para dar espacio al botón cerrar */}
-          {/* Icono animado */}
-          <motion.div
-            initial={{ scale: 0, rotate: -180 }}
-            animate={{ scale: 1, rotate: 0 }}
-            transition={{ delay: 0.1, type: "spring", stiffness: 400 }}
-          >
-            <Icon className={`w-5 h-5 ${color.icon} flex-shrink-0`} />
-          </motion.div>
-
-          {/* Mensaje */}
-          <div className="flex-1 pt-0.5">
-            <p className={`text-sm font-medium ${color.text} leading-relaxed`}>
-              {message}
-            </p>
-          </div>
-        </div>
-
-        {/* Barra de progreso */}
+      {/* Contenido */}
+      <div className="relative z-10 flex items-center gap-4 px-5 py-4 pr-12">
+        {/* Círculo del ícono */}
         <motion.div
-          initial={{ scaleX: 1 }}
-          animate={{ scaleX: 0 }}
-          transition={{ duration: 4, ease: "linear" }}
-          className={`absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r ${color.accent} origin-left`}
-        />
+          initial={{ scale: 0, rotate: -120 }}
+          animate={{ scale: 1, rotate: 0 }}
+          transition={{ delay: 0.06, type: "spring", stiffness: 500, damping: 22 }}
+          className={`flex-shrink-0 ${iconBg} rounded-full p-2.5`}
+        >
+          <Icon className="w-5 h-5 text-white" strokeWidth={2.5} />
+        </motion.div>
+
+        {/* Texto */}
+        <div className="flex-1 min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-white/60 mb-0.5 leading-none">
+            {label}
+          </p>
+          <p className="text-sm font-semibold text-white leading-snug break-words">
+            {message}
+          </p>
+        </div>
       </div>
+
+      {/* Botón cerrar */}
+      <motion.button
+        type="button"
+        aria-label="Cerrar notificación"
+        onClick={onClose}
+        whileHover={{ scale: 1.2, rotate: 90 }}
+        whileTap={{ scale: 0.85 }}
+        transition={{ type: "spring", stiffness: 500, damping: 20 }}
+        className="absolute right-3 top-3 z-20 rounded-full p-1.5 text-white/60 hover:text-white hover:bg-white/15 transition-colors"
+      >
+        <X className="w-3.5 h-3.5" />
+      </motion.button>
+
+      {/* Barra de progreso */}
+      <motion.div
+        initial={{ scaleX: 1 }}
+        animate={{ scaleX: 0 }}
+        transition={{ duration: 4, ease: "linear" }}
+        className="absolute bottom-0 left-0 right-0 h-[3px] bg-white/30 origin-left"
+      />
     </motion.div>
   );
 }
@@ -172,8 +133,8 @@ interface ToastContainerProps {
 
 export function ToastContainer({ toasts, onClose }: ToastContainerProps) {
   return (
-    <div className="fixed top-4 right-4 z-[9999] pointer-events-none">
-      <div className="flex flex-col gap-3 pointer-events-auto">
+    <div className="fixed bottom-6 right-4 sm:right-6 left-4 sm:left-auto z-[9999] pointer-events-none">
+      <div className="flex flex-col gap-3 items-stretch sm:items-end pointer-events-auto">
         <AnimatePresence mode="popLayout">
           {toasts.map((toast) => (
             <Toast

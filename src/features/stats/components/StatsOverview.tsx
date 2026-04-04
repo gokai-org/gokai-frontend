@@ -111,21 +111,17 @@ function AnimatedCounter({
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    let start = 0;
     const end = Number.isFinite(value) ? value : 0;
 
-    if (!animationsEnabled) {
-      setCount(end);
-      return;
+    if (!animationsEnabled || end <= 0) {
+      const finalValue = end <= 0 ? 0 : end;
+      const raf = requestAnimationFrame(() => setCount(finalValue));
+      return () => cancelAnimationFrame(raf);
     }
 
+    let start = 0;
     const step = end / (duration * 60);
     let raf: number;
-
-    if (end <= 0) {
-      setCount(0);
-      return;
-    }
 
     const animate = () => {
       start += step;
@@ -244,7 +240,9 @@ function StatOverviewCard({
         )}
       </p>
 
-      <p className="text-xs text-content-tertiary font-medium mt-1">{stat.label}</p>
+      <p className="text-xs text-content-tertiary font-medium mt-1">
+        {stat.label}
+      </p>
     </CardWrapper>
   );
 }

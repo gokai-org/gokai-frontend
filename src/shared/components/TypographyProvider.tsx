@@ -44,10 +44,10 @@ export function TypographyProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [fontSize, setFontSizeState] =
-    useState<FontSize>(getInitialFontSize);
-  const [japaneseFont, setJapaneseFontState] =
-    useState<JapaneseFont>(getInitialJapaneseFont);
+  const [fontSize, setFontSizeState] = useState<FontSize>(getInitialFontSize);
+  const [japaneseFont, setJapaneseFontState] = useState<JapaneseFont>(
+    getInitialJapaneseFont,
+  );
 
   const setFontSize = useCallback((size: FontSize) => {
     setFontSizeState(size);

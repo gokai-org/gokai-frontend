@@ -148,7 +148,9 @@ export function SkeletonSection({
       {showHeader && (
         <div className="flex items-center justify-between mb-4">
           {title ? (
-            <h3 className="text-lg font-semibold text-content-primary">{title}</h3>
+            <h3 className="text-lg font-semibold text-content-primary">
+              {title}
+            </h3>
           ) : (
             <div className="h-5 w-28 bg-skeleton-base rounded animate-pulse" />
           )}

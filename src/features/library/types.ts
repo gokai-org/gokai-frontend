@@ -108,4 +108,3 @@ export interface RecentItemsResponse {
   grammar_lesson: BackendRecentItem[];
   word: BackendRecentItem[];
 }
-

@@ -74,7 +74,11 @@ function pickDistractors(
   ).slice(0, count);
 }
 
-function buildOptions(correct: string, distractors: string[], seed: number): KanjiQuizOption[] {
+function buildOptions(
+  correct: string,
+  distractors: string[],
+  seed: number,
+): KanjiQuizOption[] {
   return seededShuffle(
     [
       { value: correct, correct: true },
@@ -120,7 +124,10 @@ function uniqueValues(values: string[]) {
 function expandSourcesToCount<T>(sources: readonly T[], count: number): T[] {
   if (sources.length === 0) return [];
 
-  return Array.from({ length: count }, (_, index) => sources[index % sources.length]!);
+  return Array.from(
+    { length: count },
+    (_, index) => sources[index % sources.length]!,
+  );
 }
 
 function prepareQuizSource(source: KanjiQuizSource): PreparedKanjiQuizSource {
@@ -133,7 +140,8 @@ function prepareQuizSource(source: KanjiQuizSource): PreparedKanjiQuizSource {
     meanings,
     readings,
     primaryMeaning: meanings[0] || "Sin significado",
-    writingViewBox: source.strokeData?.viewBox ?? source.kanji.viewBox ?? "0 0 109 109",
+    writingViewBox:
+      source.strokeData?.viewBox ?? source.kanji.viewBox ?? "0 0 109 109",
     writingStrokes: source.strokeData?.strokes ?? source.kanji.strokes ?? [],
   };
 }
@@ -142,12 +150,17 @@ export function buildFixedKanjiQuizRounds(
   sources: readonly KanjiQuizSource[],
   options: BuildFixedKanjiQuizRoundsOptions = {},
 ): KanjiQuizResponse[] {
-  const preparedSources = sources.map(prepareQuizSource).filter((source) => source.symbol.length > 0);
+  const preparedSources = sources
+    .map(prepareQuizSource)
+    .filter((source) => source.symbol.length > 0);
   if (preparedSources.length === 0) return [];
   const preparedOptionSources = (options.optionSources ?? sources)
     .map(prepareQuizSource)
     .filter((source) => source.symbol.length > 0);
-  const effectiveQuestionCount = Math.max(1, options.questionCount ?? QUIZ_QUESTIONS_PER_ROUND);
+  const effectiveQuestionCount = Math.max(
+    1,
+    options.questionCount ?? QUIZ_QUESTIONS_PER_ROUND,
+  );
 
   const baseSeed = hashString(
     `${options.seedHint ?? ""}:${preparedSources.map((source) => source.kanji.id).join("|")}`,

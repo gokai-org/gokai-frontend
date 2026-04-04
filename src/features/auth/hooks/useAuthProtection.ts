@@ -1,19 +1,16 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 
 /**
  * Hook para proteger rutas autenticadas y manejar correctamente el historial del navegador
  * Previene que usuarios autenticados vuelvan al login usando el botón "atrás"
  */
 export function useAuthProtection() {
-  const router = useRouter();
-
   useEffect(() => {
     async function checkAuth() {
       try {
-        const res = await fetch("/api/auth/me", {
+        const res = await fetch("/api/auth/user", {
           method: "GET",
           credentials: "include",
         });
@@ -27,7 +24,7 @@ export function useAuthProtection() {
     }
 
     checkAuth();
-  }, [router]);
+  }, []);
 
   useEffect(() => {
     function handlePopState(e: PopStateEvent) {

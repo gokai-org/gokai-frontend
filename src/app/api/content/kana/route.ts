@@ -109,7 +109,9 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  return NextResponse.json(flat.map(normalizeKana), { status: upstream.status });
+  return NextResponse.json(flat.map(normalizeKana), {
+    status: upstream.status,
+  });
 }
 
 /**

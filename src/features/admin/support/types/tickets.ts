@@ -1,8 +1,4 @@
-export type AdminTicketStatus =
-  | "open"
-  | "in_progress"
-  | "resolved"
-  | "closed";
+export type AdminTicketStatus = "open" | "in_progress" | "resolved" | "closed";
 
 export type AdminTicketCategory =
   | "technical_issue"
@@ -24,7 +20,10 @@ export interface BackendSupportTicket {
   created_at: string;
 }
 
-export type BackendSupportTicketsGrouped = Record<string, BackendSupportTicket[]>;
+export type BackendSupportTicketsGrouped = Record<
+  string,
+  BackendSupportTicket[]
+>;
 
 export interface UpdateSupportTicketStatusRequest {
   status: AdminTicketStatus;

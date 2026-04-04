@@ -37,8 +37,8 @@ export function HelpSupportCTA({
             ¿No encontraste lo que buscabas?
           </h3>
           <p className="text-sm leading-relaxed text-content-tertiary">
-            Nuestro equipo de soporte está aquí para ayudarte con dudas,
-            errores o comentarios sobre tu experiencia en Gokai.
+            Nuestro equipo de soporte está aquí para ayudarte con dudas, errores
+            o comentarios sobre tu experiencia en Gokai.
           </p>
         </div>
 

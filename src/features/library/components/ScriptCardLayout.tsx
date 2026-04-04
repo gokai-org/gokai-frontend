@@ -41,7 +41,11 @@ interface ScriptSymbolBoxProps {
   textOverride?: string;
 }
 
-export function ScriptSymbolBox({ symbol, gradient, hoverTransition }: ScriptSymbolBoxProps) {
+export function ScriptSymbolBox({
+  symbol,
+  gradient,
+  hoverTransition,
+}: ScriptSymbolBoxProps) {
   return (
     <div
       className={[
@@ -61,7 +65,12 @@ export function ScriptSymbolBox({ symbol, gradient, hoverTransition }: ScriptSym
 
 // ─── MahjongSymbolBox (katakana) ────────────────────────────────────────────
 
-export function MahjongSymbolBox({ symbol, gradient, hoverTransition, textOverride }: ScriptSymbolBoxProps) {
+export function MahjongSymbolBox({
+  symbol,
+  gradient,
+  hoverTransition,
+  textOverride,
+}: ScriptSymbolBoxProps) {
   return (
     <div
       className={[
@@ -82,18 +91,29 @@ export function MahjongSymbolBox({ symbol, gradient, hoverTransition, textOverri
 
 // ─── ShogiSymbolBox (hiragana) ────────────────────────────────────────────────
 
-export function ShogiSymbolBox({ symbol, gradient, hoverTransition, textOverride }: ScriptSymbolBoxProps) {
+export function ShogiSymbolBox({
+  symbol,
+  gradient,
+  hoverTransition,
+  textOverride,
+}: ScriptSymbolBoxProps) {
   const shogiPath =
     "path('M 18 3 Q 22 0 26 3 L 40 15 Q 44 18 44 23 L 44 50 Q 44 56 38 56 L 6 56 Q 0 56 0 50 L 0 23 Q 0 18 4 15 Z')";
 
   return (
     <div
-      className={["relative inline-flex h-[56px] w-[44px] group-hover:scale-110", hoverTransition].join(" ")}
+      className={[
+        "relative inline-flex h-[56px] w-[44px] group-hover:scale-110",
+        hoverTransition,
+      ].join(" ")}
       style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.30))" }}
     >
       {/* Ring border — scales slightly outward on hover, follows shogi shape */}
       <div
-        className={["absolute inset-0 opacity-0 group-hover:opacity-100 scale-[1.09] bg-white/25", hoverTransition].join(" ")}
+        className={[
+          "absolute inset-0 opacity-0 group-hover:opacity-100 scale-[1.09] bg-white/25",
+          hoverTransition,
+        ].join(" ")}
         style={{ clipPath: shogiPath }}
       />
       {/* Gradient fill */}
@@ -170,7 +190,9 @@ export function ScriptCardLayout({
               ? "opacity-[0.04]"
               : "opacity-[0.03] group-hover:opacity-[0.06]",
             locked ? "" : hoverTransition,
-          ].filter(Boolean).join(" ")}
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
           {symbol}
         </span>
@@ -207,23 +229,33 @@ export function ScriptCardLayout({
                   ].join(" "),
             ].join(" ")}
           >
-            <span className={locked ? "opacity-[0.72]" : ""}>
-              {symbol}
-            </span>
+            <span className={locked ? "opacity-[0.72]" : ""}>{symbol}</span>
           </div>
         ) : config.symbolShape === "mahjong" ? (
           <MahjongSymbolBox
             symbol={symbol}
-            gradient={locked ? "from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30]" : config.thumbGradient}
+            gradient={
+              locked
+                ? "from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30]"
+                : config.thumbGradient
+            }
             hoverTransition={locked ? "" : hoverTransition}
-            textOverride={locked ? "text-[#C4BDD2] dark:text-white/40" : undefined}
+            textOverride={
+              locked ? "text-[#C4BDD2] dark:text-white/40" : undefined
+            }
           />
         ) : (
           <ShogiSymbolBox
             symbol={symbol}
-            gradient={locked ? "from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30]" : config.thumbGradient}
+            gradient={
+              locked
+                ? "from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30]"
+                : config.thumbGradient
+            }
             hoverTransition={locked ? "" : hoverTransition}
-            textOverride={locked ? "text-[#C4BDD2] dark:text-white/40" : undefined}
+            textOverride={
+              locked ? "text-[#C4BDD2] dark:text-white/40" : undefined
+            }
           />
         )}
 
@@ -252,7 +284,9 @@ export function ScriptCardLayout({
               ? "text-content-muted dark:text-white/40"
               : "text-content-primary group-hover:text-content-inverted",
             locked ? "" : hoverTransition,
-          ].filter(Boolean).join(" ")}
+          ]
+            .filter(Boolean)
+            .join(" ")}
         >
           {title}
         </h3>
@@ -265,7 +299,9 @@ export function ScriptCardLayout({
                 ? "text-content-muted/70 dark:text-white/25"
                 : "text-content-muted group-hover:text-white/60",
               locked ? "" : hoverTransition,
-            ].filter(Boolean).join(" ")}
+            ]
+              .filter(Boolean)
+              .join(" ")}
           >
             {subtitle}
           </p>
@@ -280,7 +316,9 @@ export function ScriptCardLayout({
             e.stopPropagation();
             onFavoriteToggle();
           }}
-          aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+          aria-label={
+            isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"
+          }
           className={[
             "absolute bottom-4 right-4 z-20 rounded-full border p-2 shadow-sm",
             "hover:scale-105 active:scale-95",
@@ -300,4 +338,3 @@ export function ScriptCardLayout({
     </>
   );
 }
-

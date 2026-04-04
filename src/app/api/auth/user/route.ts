@@ -32,12 +32,15 @@ export async function GET(req: NextRequest) {
           return NextResponse.json({ user: null }, { status: 401 });
         }
 
-        const response = await fetch(`${apiConfig.usersApiBase}/users/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+        const response = await fetch(
+          `${apiConfig.usersApiBase}/users/${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
           },
-        });
+        );
 
         console.log("Backend response status:", response.status);
 
@@ -74,20 +77,33 @@ export async function GET(req: NextRequest) {
         let subscribed = false;
 
         try {
-          const subRes = await fetch(
+          const subHeaders = {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            ...(userId ? { "X-User-Id": String(userId) } : {}),
+            ...(payload?.email ? { "X-User-Email": String(payload.email) } : {}),
+          };
+
+          const subscriptionUrls = [
             `${apiConfig.subscriptionsApiBase}/subscriptions/${userId}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            },
-          );
+            `${apiConfig.subscriptionsApiBase}/subscriptions/me`,
+          ];
 
-          if (subRes.ok) {
-            const subData = await subRes.json();
+          let subData: Record<string, unknown> | null = null;
 
-            if (subData?.status === "active") {
+          for (const url of subscriptionUrls) {
+            const subRes = await fetch(url, { headers: subHeaders });
+            if (!subRes.ok) continue;
+
+            subData = await subRes.json().catch(() => null);
+            if (subData) break;
+          }
+
+          if (subData) {
+            const status = String(subData.status ?? "").toLowerCase();
+            const activeStatuses = new Set(["active", "trialing", "paid"]);
+
+            if (activeStatuses.has(status)) {
               plan = "premium";
               subscribed = true;
             }

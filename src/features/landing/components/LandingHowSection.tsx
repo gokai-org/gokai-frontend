@@ -1,12 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import { motion, AnimatePresence } from "framer-motion";
+import { useRef } from "react";
 import {
-  HOW_TABS,
-  type HowTabId,
-} from "@/features/landing/data/landingData";
-import { staggerContainer, fadeUpSoft, EASE_BRAND } from "@/features/landing/lib/motionVariants";
+  motion,
+  AnimatePresence,
+  useScroll,
+  useTransform,
+} from "framer-motion";
+import { HOW_TABS, type HowTabId } from "@/features/landing/data/landingData";
+import {
+  staggerContainer,
+  fadeUpSoft,
+  EASE_BRAND,
+} from "@/features/landing/lib/motionVariants";
 
 interface LandingHowSectionProps {
   howTab: HowTabId;
@@ -19,65 +26,82 @@ export function LandingHowSection({
   setHowTab,
   how,
 }: LandingHowSectionProps) {
-  return (
-    <div className="mt-8">
-      {/* Imagen con transición al cambiar tab */}
-      <motion.div
-        variants={fadeUpSoft}
-        className="mx-auto w-full max-w-[1280px]"
-      >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={howTab}
-            initial={{ opacity: 0, scale: 0.96, y: 16 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.96, y: -12 }}
-            transition={{ duration: 0.35, ease: EASE_BRAND }}
-            className="relative mx-auto aspect-[16/10] w-full overflow-visible"
-          >
-            <Image
-              src={how.img}
-              alt={how.label}
-              fill
-              className="object-contain drop-shadow-[0_24px_48px_rgba(0,0,0,0.20)]"
-              priority
-            />
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
+  const ref = useRef<HTMLDivElement | null>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start end", "end start"],
+  });
 
-      {/* Tabs con stagger */}
-      <motion.div
-        className="mt-8 flex flex-wrap items-center justify-center gap-4 md:gap-5"
-        variants={staggerContainer(0.08, 0.1)}
-      >
-        {HOW_TABS.map((tab) => (
-          <motion.button
-            key={tab.id}
-            type="button"
-            onClick={() => setHowTab(tab.id)}
-            variants={fadeUpSoft}
-            whileHover={{ y: -3, scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
-            className={[
-              "relative min-w-[210px] rounded-full px-8 py-4 text-base font-bold transition-all duration-300 md:min-w-[250px] md:px-10 md:py-4 md:text-[1.05rem]",
-              tab.id === howTab
-                ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-[0_16px_34px_-14px_rgba(153,51,49,0.55)]"
-                : "border border-border-subtle bg-surface-primary/85 text-content-secondary shadow-sm hover:border-accent/15 hover:text-accent hover:shadow-md",
-            ].join(" ")}
+  const stageY = useTransform(scrollYProgress, [0, 1], [28, -14]);
+  const stageRotate = useTransform(scrollYProgress, [0, 1], [2, -1.5]);
+
+  return (
+    <motion.div
+      ref={ref}
+      className="mt-2 sm:mt-4"
+      variants={staggerContainer(0.08, 0.04)}
+    >
+      <div className="mx-auto flex max-w-5xl flex-col items-center gap-4 sm:gap-5">
+        <motion.div
+          variants={fadeUpSoft}
+          style={{
+            y: stageY,
+            rotateX: stageRotate,
+            transformPerspective: 1800,
+          }}
+          className="relative w-full"
+        >
+          <div className="relative aspect-[16/8.5] w-full overflow-visible">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={howTab}
+                initial={{ opacity: 0, scale: 0.97, y: 18 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.985, y: -10 }}
+                transition={{ duration: 0.4, ease: EASE_BRAND }}
+                className="absolute inset-0"
+              >
+                <Image
+                  src={how.img}
+                  alt={how.label}
+                  fill
+                  className="object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.28)]"
+                  priority
+                />
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </motion.div>
+
+        <div className="w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:overflow-visible">
+          <motion.div
+            className="mx-auto flex w-max min-w-full items-stretch gap-2 px-0.5 sm:grid sm:w-full sm:max-w-4xl sm:grid-cols-3 sm:gap-3 sm:px-0"
+            variants={staggerContainer(0.06, 0.05)}
           >
-            {tab.id === howTab && (
-              <motion.span
-                layoutId="how-tab-indicator"
-                className="absolute inset-0 rounded-full bg-gradient-to-r from-accent to-accent-hover"
-                style={{ zIndex: -1 }}
-                transition={{ type: "spring", stiffness: 380, damping: 36 }}
-              />
-            )}
-            {tab.label}
-          </motion.button>
-        ))}
-      </motion.div>
-    </div>
+            {HOW_TABS.map((tab) => (
+              <motion.button
+                key={tab.id}
+                type="button"
+                onClick={() => setHowTab(tab.id)}
+                aria-pressed={tab.id === howTab}
+                variants={fadeUpSoft}
+                whileHover={{ y: -3 }}
+                whileTap={{ scale: 0.985 }}
+                className={[
+                  "min-w-[138px] rounded-full border px-3 py-2.5 text-center transition-all duration-300 sm:min-w-0 sm:px-5 sm:py-3.5",
+                  tab.id === howTab
+                    ? "border-accent/25 bg-accent text-content-inverted shadow-[0_16px_36px_-20px_rgba(153,51,49,0.75)]"
+                    : "border-border-default/70 bg-surface-primary/72 text-content-primary hover:border-accent/18 hover:bg-surface-primary/88",
+                ].join(" ")}
+              >
+                <span className="block text-xs font-semibold leading-tight sm:text-base">
+                  {tab.label}
+                </span>
+              </motion.button>
+            ))}
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
   );
 }

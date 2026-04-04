@@ -11,9 +11,11 @@ const statusLabel: Record<AdminCouponStatus, string> = {
 };
 
 const statusTone: Record<AdminCouponStatus, string> = {
-  active: "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400",
+  active:
+    "bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400",
   expired: "bg-rose-50 dark:bg-rose-950/30 text-rose-700 dark:text-rose-400",
-  depleted: "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",
+  depleted:
+    "bg-amber-50 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400",
 };
 
 interface AdminCouponRowProps {
@@ -25,7 +27,10 @@ function AdminCouponRowBase({ coupon, onViewCoupon }: AdminCouponRowProps) {
   return (
     <tr className="border-b border-border-subtle last:border-0 hover:bg-accent/[0.03] transition-colors">
       <td className="px-2.5 py-2.5 text-xs font-semibold text-content-secondary sm:px-3 sm:text-sm lg:px-4">
-        <p className="max-w-[120px] truncate sm:max-w-[140px]" title={coupon.id}>
+        <p
+          className="max-w-[120px] truncate sm:max-w-[140px]"
+          title={coupon.id}
+        >
           {coupon.id.slice(0, 8)}...
         </p>
       </td>
@@ -37,7 +42,10 @@ function AdminCouponRowBase({ coupon, onViewCoupon }: AdminCouponRowProps) {
       </td>
 
       <td className="px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
-        <p className="line-clamp-1 max-w-[180px] sm:max-w-[240px]" title={coupon.description ?? ""}>
+        <p
+          className="line-clamp-1 max-w-[180px] sm:max-w-[240px]"
+          title={coupon.description ?? ""}
+        >
           {coupon.description || "—"}
         </p>
       </td>

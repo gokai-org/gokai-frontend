@@ -14,10 +14,13 @@ export async function GET(req: NextRequest) {
 
   const token = normalizeBearerToken(raw);
 
-  const upstream = await fetch(`${apiConfig.contentApiBase}/content/favorites`, {
-    headers: { Authorization: `Bearer ${token}` },
-    cache: "no-store",
-  });
+  const upstream = await fetch(
+    `${apiConfig.contentApiBase}/content/favorites`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+      cache: "no-store",
+    },
+  );
 
   const data = await upstream.json().catch(() => ({}));
   return NextResponse.json(data, { status: upstream.status });
@@ -33,14 +36,17 @@ export async function POST(req: NextRequest) {
   const token = normalizeBearerToken(raw);
   const body = await req.json();
 
-  const upstream = await fetch(`${apiConfig.contentApiBase}/content/favorites`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
+  const upstream = await fetch(
+    `${apiConfig.contentApiBase}/content/favorites`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
     },
-    body: JSON.stringify(body),
-  });
+  );
 
   const data = await upstream.json().catch(() => ({}));
   return NextResponse.json(data, { status: upstream.status });

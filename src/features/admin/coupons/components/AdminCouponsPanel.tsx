@@ -18,14 +18,20 @@ import {
   updateAdminCoupon,
   deleteAdminCoupon,
 } from "../services/api";
-import { mapBackendCouponToAdmin } from "../utils/couponMappers";
-import type { AdminCoupon, CreateCouponRequest, UpdateCouponRequest } from "../types/coupons";
+// import { mapBackendCouponToAdmin } from "../utils/couponMappers";
+import type {
+  AdminCoupon,
+  CreateCouponRequest,
+  UpdateCouponRequest,
+} from "../types/coupons";
 
 export function AdminCouponsPanel() {
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
   const toast = useToast();
-  const [selectedCoupon, setSelectedCoupon] = useState<AdminCoupon | null>(null);
+  const [selectedCoupon, setSelectedCoupon] = useState<AdminCoupon | null>(
+    null,
+  );
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -47,7 +53,7 @@ export function AdminCouponsPanel() {
     filteredCoupons,
     allCoupons,
     reloadCoupons,
-    replaceCoupon,
+    replaceCoupon: _replaceCoupon,
     removeCoupon,
   } = useAdminCoupons();
 
@@ -89,9 +95,7 @@ export function AdminCouponsPanel() {
         setIsDetailOpen(false);
       } catch (err) {
         const message =
-          err instanceof Error
-            ? err.message
-            : "No se pudo actualizar el cupon";
+          err instanceof Error ? err.message : "No se pudo actualizar el cupon";
 
         setModalError(message);
         toast.error(message);

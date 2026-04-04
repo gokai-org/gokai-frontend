@@ -35,7 +35,10 @@ function compactJapaneseText(value?: string | null) {
   return value.replace(/\s+/g, " ").trim();
 }
 
-function buildJapanesePreview(primary?: string | null, secondary?: string | null) {
+function buildJapanesePreview(
+  primary?: string | null,
+  secondary?: string | null,
+) {
   const p = compactJapaneseText(primary);
   const s = compactJapaneseText(secondary);
 
@@ -46,7 +49,8 @@ function buildJapanesePreview(primary?: string | null, secondary?: string | null
 function pickWordThumbnail(word: Word) {
   if (word.icon && word.icon.trim()) return word.icon.trim();
   if (word.kanji && word.kanji.trim()) return "語";
-  if (word.hiragana && word.hiragana.trim()) return word.hiragana.trim().slice(0, 2);
+  if (word.hiragana && word.hiragana.trim())
+    return word.hiragana.trim().slice(0, 2);
   return "語";
 }
 
@@ -347,7 +351,10 @@ export function subthemeToCard(subtheme: Subtheme) {
 export function wordToCard(word: Word) {
   const mainTitle = word.kanji || word.hiragana || "Palabra";
   const meaningsText = (word.meanings ?? []).join(", ");
-  const subtitle = [word.kanji && word.hiragana ? word.hiragana : null, meaningsText]
+  const subtitle = [
+    word.kanji && word.hiragana ? word.hiragana : null,
+    meaningsText,
+  ]
     .filter(Boolean)
     .join(" • ");
 

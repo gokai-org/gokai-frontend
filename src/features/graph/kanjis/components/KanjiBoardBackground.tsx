@@ -21,9 +21,11 @@ export const KanjiBoardBackground = memo(
     const showStars = graphicsProfile.maxBackgroundEffects >= 2;
     const showAtmosphere = graphicsProfile.maxBackgroundEffects >= 3;
     const animateStars =
-      graphicsProfile.shouldAnimateBackground && qualityProfile.background.animateTwinkle;
+      graphicsProfile.shouldAnimateBackground &&
+      qualityProfile.background.animateTwinkle;
     const animateBreathe =
-      graphicsProfile.shouldAnimateBackground && qualityProfile.background.animateBreathe;
+      graphicsProfile.shouldAnimateBackground &&
+      qualityProfile.background.animateBreathe;
 
     return (
       <div
@@ -60,9 +62,12 @@ export const KanjiBoardBackground = memo(
   },
   (prev, next) =>
     prev.qualityProfile.tier === next.qualityProfile.tier &&
-    prev.qualityProfile.background.animateTwinkle === next.qualityProfile.background.animateTwinkle &&
-    prev.qualityProfile.background.animateBreathe === next.qualityProfile.background.animateBreathe &&
-    prev.graphicsProfile.shouldAnimateBackground === next.graphicsProfile.shouldAnimateBackground &&
-    prev.graphicsProfile.maxBackgroundEffects === next.graphicsProfile.maxBackgroundEffects,
+    prev.qualityProfile.background.animateTwinkle ===
+      next.qualityProfile.background.animateTwinkle &&
+    prev.qualityProfile.background.animateBreathe ===
+      next.qualityProfile.background.animateBreathe &&
+    prev.graphicsProfile.shouldAnimateBackground ===
+      next.graphicsProfile.shouldAnimateBackground &&
+    prev.graphicsProfile.maxBackgroundEffects ===
+      next.graphicsProfile.maxBackgroundEffects,
 );
-

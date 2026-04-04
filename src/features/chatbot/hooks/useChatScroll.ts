@@ -7,10 +7,7 @@ interface UseChatScrollParams {
   anchorRef: RefObject<HTMLDivElement | null>;
 }
 
-export function useChatScroll({
-  dependency,
-  anchorRef,
-}: UseChatScrollParams) {
+export function useChatScroll({ dependency, anchorRef }: UseChatScrollParams) {
   useEffect(() => {
     anchorRef.current?.scrollIntoView({
       behavior: "smooth",

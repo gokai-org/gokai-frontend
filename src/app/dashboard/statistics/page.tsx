@@ -34,23 +34,23 @@ export default function StatsPage() {
 
   return (
     <DashboardShell>
-    <div className="mb-6 flex justify-end">
-      <StatsPeriodFilter period={period} onChange={setPeriod} />
-    </div>
-    <AnimatedEntrance
-      index={0}
-      disabled={!animationsEnabled}
-      mode={heavyAnimationsEnabled ? "default" : "light"}
-    >
-<StatsBanner
-        title={banner.title}
-        subtitle={banner.subtitle}
-        averageScore={averageScore}
-        streak={streak}
-        loading={loading}
-        animationsEnabled={animationsEnabled}
-        heavyAnimationsEnabled={heavyAnimationsEnabled}
-      />
+      <div className="mb-6 flex justify-end">
+        <StatsPeriodFilter period={period} onChange={setPeriod} />
+      </div>
+      <AnimatedEntrance
+        index={0}
+        disabled={!animationsEnabled}
+        mode={heavyAnimationsEnabled ? "default" : "light"}
+      >
+        <StatsBanner
+          title={banner.title}
+          subtitle={banner.subtitle}
+          averageScore={averageScore}
+          streak={streak}
+          loading={loading}
+          animationsEnabled={animationsEnabled}
+          heavyAnimationsEnabled={heavyAnimationsEnabled}
+        />
       </AnimatedEntrance>
 
       <AnimatedEntrance

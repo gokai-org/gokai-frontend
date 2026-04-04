@@ -43,7 +43,8 @@ export function ScriptCard({
   onClick,
   onFavoriteToggle,
 }: ScriptCardProps) {
-  const { animationsEnabled, motionProps, hoverTransition, cardTransition } = useCardAnimation(index);
+  const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
+    useCardAnimation(index);
   const config = SCRIPT_CARD_CONFIG[variant];
 
   // ── Long-press to toggle favourite on mobile ──────────────────────────────
@@ -90,7 +91,9 @@ export function ScriptCard({
           onClick
             ? `cursor-pointer hover:-translate-y-1 hover:border-transparent focus:outline-none focus-visible:ring-2 ${config.ring}`
             : "",
-        ].filter(Boolean).join(" "),
+        ]
+          .filter(Boolean)
+          .join(" "),
     cardTransition,
     longPressActive ? `ring-2 ${config.ring} scale-[0.97]` : "",
   ]
@@ -137,9 +140,14 @@ export function ScriptCard({
   const lockedOverlay = locked ? (
     <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2">
       <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#C4BDD0]/65 bg-[#EDE9F2]/90 dark:border-white/10 dark:bg-black/40">
-        <LockKeyhole className="h-4.5 w-4.5 text-[#C8C2D4] dark:text-white/60" strokeWidth={2.2} />
+        <LockKeyhole
+          className="h-4.5 w-4.5 text-[#C8C2D4] dark:text-white/60"
+          strokeWidth={2.2}
+        />
       </div>
-      <span className="text-[11px] font-medium text-[#CEC8D8] dark:text-white/40">Bloqueado</span>
+      <span className="text-[11px] font-medium text-[#CEC8D8] dark:text-white/40">
+        Bloqueado
+      </span>
     </div>
   ) : null;
 
@@ -157,7 +165,10 @@ export function ScriptCard({
         initial={{ opacity: 0.78 }}
         animate={{ opacity: 0 }}
         transition={{ duration: animationsEnabled ? 1.9 : 0.8 }}
-        style={{ background: "radial-gradient(circle, rgba(186,72,69,0.48) 0%, transparent 70%)" }}
+        style={{
+          background:
+            "radial-gradient(circle, rgba(186,72,69,0.48) 0%, transparent 70%)",
+        }}
       />
       {/* Expanding ring — skipped on reduced animations */}
       {animationsEnabled && (
@@ -175,7 +186,11 @@ export function ScriptCard({
         initial={{ y: 10, opacity: 0, scale: 0.68 }}
         animate={
           animationsEnabled
-            ? { y: [10, -2, -30, -38], opacity: [0, 1, 1, 0], scale: [0.68, 1.05, 1, 0.94] }
+            ? {
+                y: [10, -2, -30, -38],
+                opacity: [0, 1, 1, 0],
+                scale: [0.68, 1.05, 1, 0.94],
+              }
             : { y: -22, opacity: [0, 1, 0], scale: 1 }
         }
         transition={{
@@ -184,7 +199,9 @@ export function ScriptCard({
           ease: [0.22, 1, 0.36, 1],
         }}
       >
-        <span className="text-[13px] font-black tracking-wide text-white">+30</span>
+        <span className="text-[13px] font-black tracking-wide text-white">
+          +30
+        </span>
       </motion.div>
     </motion.div>
   ) : null;
@@ -200,13 +217,14 @@ export function ScriptCard({
       hasFavoriteToggle={Boolean(onFavoriteToggle)}
       config={config}
       hoverTransition={hoverTransition}
-      onFavoriteToggle={onFavoriteToggle ? () => onFavoriteToggle(id) : undefined}
+      onFavoriteToggle={
+        onFavoriteToggle ? () => onFavoriteToggle(id) : undefined
+      }
       locked={locked}
     />
   );
 
   const effectiveOnClick = locked ? undefined : onClick;
-  const effectiveOnFavoriteToggle = locked ? undefined : onFavoriteToggle;
 
   const cardEl = effectiveOnClick ? (
     <div

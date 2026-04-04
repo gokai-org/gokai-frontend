@@ -11,7 +11,12 @@ interface ReviewHeaderProps {
 export function ReviewHeader({ pendingCount }: ReviewHeaderProps) {
   return (
     <DashboardHeader
-      icon={<RefreshCw className="w-7 h-7 text-content-inverted" strokeWidth={2.5} />}
+      icon={
+        <RefreshCw
+          className="w-7 h-7 text-content-inverted"
+          strokeWidth={2.5}
+        />
+      }
       title="Repaso"
       japaneseText="復習"
       subtitle="Refuerza lo que has aprendido con repasos inteligentes"

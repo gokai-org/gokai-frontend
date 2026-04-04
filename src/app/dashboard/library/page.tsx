@@ -1,7 +1,7 @@
 "use client";
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
@@ -36,14 +36,17 @@ import {
   themeToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
-import { getPrimaryMeaning } from "@/features/kanji";
+// import { getPrimaryMeaning } from "@/features/kanji";
 
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKanji, setSelectedKanji] = useState<Kanji | null>(null);
   const [selectedKana, setSelectedKana] = useState<Kana | null>(null);
-  const [quizKanji, setQuizKanji] = useState<{ id: string; symbol: string } | null>(null);
+  const [quizKanji, setQuizKanji] = useState<{
+    id: string;
+    symbol: string;
+  } | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
@@ -52,7 +55,7 @@ export default function LibraryPage() {
     kanjis,
     katakanas,
     hiraganas,
-    filteredKanjis,
+    filteredKanjis: _filteredKanjis,
     filteredKatakanas,
     filteredHiraganas,
     allLibraryItems,
@@ -63,10 +66,15 @@ export default function LibraryPage() {
     loadingHiraganas,
   } = useLibraryContent(searchQuery);
 
-  const { lockedKanjiIds, reload: reloadLockedStatus } = useKanjiLockedStatus(kanjis);
-  const [newlyUnlockedKanjiIds, setNewlyUnlockedKanjiIds] = useState<ReadonlySet<string>>(new Set());
+  const { lockedKanjiIds, reload: reloadLockedStatus } =
+    useKanjiLockedStatus(kanjis);
+  const [newlyUnlockedKanjiIds, setNewlyUnlockedKanjiIds] = useState<
+    ReadonlySet<string>
+  >(new Set());
   const lockedKanjiIdsBeforeQuizRef = useRef<Set<string> | null>(null);
-  const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const {
     themes,
@@ -90,7 +98,7 @@ export default function LibraryPage() {
     favoriteHiraganas,
     favoriteKatakanas,
     favoriteData,
-    isFavorite,
+    isFavorite: _isFavorite,
     toggleFavorite,
     toggleFavoriteKanji,
     getTotalFavorites,
@@ -110,11 +118,14 @@ export default function LibraryPage() {
     setSelectedKanji(kanji);
   };
 
-  const handleQuizStart = useCallback((kanji: Kanji) => {
-    lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
-    setSelectedKanji(null);
-    setQuizKanji({ id: kanji.id, symbol: kanji.symbol });
-  }, [lockedKanjiIds]);
+  const handleQuizStart = useCallback(
+    (kanji: Kanji) => {
+      lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
+      setSelectedKanji(null);
+      setQuizKanji({ id: kanji.id, symbol: kanji.symbol });
+    },
+    [lockedKanjiIds],
+  );
 
   const handleQuizClose = useCallback(async () => {
     setQuizKanji(null);
@@ -127,7 +138,11 @@ export default function LibraryPage() {
     if (!lockedIdsBeforeQuiz) return;
 
     const unlockedIds = kanjis
-      .filter((kanji) => lockedIdsBeforeQuiz.has(kanji.id) && nextUserPoints >= kanji.pointsToUnlock)
+      .filter(
+        (kanji) =>
+          lockedIdsBeforeQuiz.has(kanji.id) &&
+          nextUserPoints >= kanji.pointsToUnlock,
+      )
       .map((kanji) => kanji.id);
 
     if (unlockedIds.length === 0) return;
@@ -161,14 +176,15 @@ export default function LibraryPage() {
     }
   };
 
-  const totalBaseContentCount = kanjis.length + katakanas.length + hiraganas.length;
+  const totalBaseContentCount =
+    kanjis.length + katakanas.length + hiraganas.length;
   const vocabularyCurrentCount = selectedSubtheme
     ? filteredWords.length
     : selectedTheme
       ? filteredSubthemes.length
       : filteredThemes.length;
 
-  const kanaItems: CombinedLibraryItem[] = [
+  const _kanaItems: CombinedLibraryItem[] = [
     ...filteredHiraganas.map((data) => ({ type: "hiragana" as const, data })),
     ...filteredKatakanas.map((data) => ({ type: "katakana" as const, data })),
   ];
@@ -351,8 +367,14 @@ export default function LibraryPage() {
                               index={i}
                               locked={isLocked}
                               unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
-                              onClick={isLocked ? undefined : () => handleKanjiClick(kanji)}
-                              onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
+                              onClick={
+                                isLocked
+                                  ? undefined
+                                  : () => handleKanjiClick(kanji)
+                              }
+                              onFavoriteToggle={
+                                isLocked ? undefined : toggleFavoriteKanji
+                              }
                             />
                           );
                         })}
@@ -462,8 +484,8 @@ export default function LibraryPage() {
                       No tienes favoritos aún
                     </h3>
                     <p className="max-w-md text-center text-content-secondary">
-                      Agrega contenido a favoritos haciendo clic en el corazón en
-                      cualquier elemento.
+                      Agrega contenido a favoritos haciendo clic en el corazón
+                      en cualquier elemento.
                     </p>
                   </div>
                 )}
@@ -491,12 +513,19 @@ export default function LibraryPage() {
                       return (
                         <ScriptCard
                           key={kanji.id}
-                          {...kanjiToScriptCard(kanji, favoriteKanjis.has(kanji.id))}
+                          {...kanjiToScriptCard(
+                            kanji,
+                            favoriteKanjis.has(kanji.id),
+                          )}
                           index={i}
                           locked={isLocked}
                           unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
-                          onClick={isLocked ? undefined : () => handleKanjiClick(kanji)}
-                          onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
+                          onClick={
+                            isLocked ? undefined : () => handleKanjiClick(kanji)
+                          }
+                          onFavoriteToggle={
+                            isLocked ? undefined : toggleFavoriteKanji
+                          }
                         />
                       );
                     })}
@@ -524,7 +553,10 @@ export default function LibraryPage() {
                     {katakanas.map((katakana, i) => (
                       <ScriptCard
                         key={katakana.id}
-                        {...katakanaToScriptCard(katakana, favoriteKatakanas.has(katakana.id))}
+                        {...katakanaToScriptCard(
+                          katakana,
+                          favoriteKatakanas.has(katakana.id),
+                        )}
                         index={i}
                         onClick={() => handleKanaClick(katakana)}
                         onFavoriteToggle={(id) =>
@@ -556,7 +588,10 @@ export default function LibraryPage() {
                     {hiraganas.map((hiragana, i) => (
                       <ScriptCard
                         key={hiragana.id}
-                        {...hiraganaToScriptCard(hiragana, favoriteHiraganas.has(hiragana.id))}
+                        {...hiraganaToScriptCard(
+                          hiragana,
+                          favoriteHiraganas.has(hiragana.id),
+                        )}
                         index={i}
                         onClick={() => handleKanaClick(hiragana)}
                         onFavoriteToggle={(id) =>
@@ -602,7 +637,9 @@ export default function LibraryPage() {
                       }}
                       className="rounded-full border border-border-default bg-surface-primary px-4 py-2 text-sm font-semibold text-content-secondary transition-colors hover:border-accent/20 hover:text-accent"
                     >
-                      {selectedSubtheme ? "Volver a subtemas" : "Volver a temas"}
+                      {selectedSubtheme
+                        ? "Volver a subtemas"
+                        : "Volver a temas"}
                     </button>
                   )}
 
@@ -661,25 +698,25 @@ export default function LibraryPage() {
                     </div>
                   )}
 
-                  {selectedSubtheme && filteredWords.length > 0 && (
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {filteredWords.map((word, i) => {
-                        const card = wordToCard(word);
+                {selectedSubtheme && filteredWords.length > 0 && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {filteredWords.map((word, i) => {
+                      const card = wordToCard(word);
 
-                        return (
-                          <VocabularyCard
-                            key={word.id}
-                            id={word.id}
-                            title={card.title}
-                            subtitle={card.subtitle}
-                            thumbnail={card.thumbnail}
-                            variant="word"
-                            index={i}
-                          />
-                        );
-                      })}
-                    </div>
-                  )}
+                      return (
+                        <VocabularyCard
+                          key={word.id}
+                          id={word.id}
+                          title={card.title}
+                          subtitle={card.subtitle}
+                          thumbnail={card.thumbnail}
+                          variant="word"
+                          index={i}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
               </LibraryCategorySection>
             </AnimatedEntrance>
           )}
@@ -707,12 +744,21 @@ export default function LibraryPage() {
                         return (
                           <ScriptCard
                             key={r.id}
-                            {...kanjiToScriptCard(kanji, favoriteKanjis.has(kanji.id))}
+                            {...kanjiToScriptCard(
+                              kanji,
+                              favoriteKanjis.has(kanji.id),
+                            )}
                             index={i}
                             locked={isLocked}
                             unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
-                            onClick={isLocked ? undefined : () => handleKanjiClick(kanji)}
-                            onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
+                            onClick={
+                              isLocked
+                                ? undefined
+                                : () => handleKanjiClick(kanji)
+                            }
+                            onFavoriteToggle={
+                              isLocked ? undefined : toggleFavoriteKanji
+                            }
                           />
                         );
                       }

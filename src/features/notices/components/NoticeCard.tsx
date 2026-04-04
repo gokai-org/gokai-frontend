@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import {
   Check,
-  CheckCheck,
   Pin,
   PinOff,
   Trash2,
@@ -13,7 +12,11 @@ import {
   MailOpen,
 } from "lucide-react";
 import type { Notice } from "../types";
-import { noticeCategoryConfig as categoryConfig, timeAgo, cls } from "../utils/noticeConfig";
+import {
+  noticeCategoryConfig as categoryConfig,
+  timeAgo,
+  cls,
+} from "../utils/noticeConfig";
 
 interface NoticeCardProps {
   notice: Notice;
@@ -74,7 +77,9 @@ export default function NoticeCard({
                   <h3
                     className={cls(
                       "text-sm font-bold leading-snug",
-                      notice.read ? "text-content-secondary" : "text-content-primary",
+                      notice.read
+                        ? "text-content-secondary"
+                        : "text-content-primary",
                     )}
                   >
                     {notice.title}

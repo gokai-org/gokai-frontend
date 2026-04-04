@@ -245,41 +245,42 @@ export function useAudioRecorder(): UseAudioRecorderReturn {
     }
   }, [isPreparing, isRecording, startAudioAnalysis]);
 
-  const stopRecording = useCallback(async (): Promise<RecordedAudioResult | null> => {
-    const recorder = mediaRecorderRef.current;
+  const stopRecording =
+    useCallback(async (): Promise<RecordedAudioResult | null> => {
+      const recorder = mediaRecorderRef.current;
 
-    if (!recorder || !isRecording) return null;
+      if (!recorder || !isRecording) return null;
 
-    return new Promise((resolve) => {
-      recorder.onstop = () => {
-        const blob = new Blob(chunksRef.current, {
-          type: mimeTypeRef.current || "audio/webm",
-        });
+      return new Promise((resolve) => {
+        recorder.onstop = () => {
+          const blob = new Blob(chunksRef.current, {
+            type: mimeTypeRef.current || "audio/webm",
+          });
 
-        const url = URL.createObjectURL(blob);
+          const url = URL.createObjectURL(blob);
 
-        const result: RecordedAudioResult = {
-          blob,
-          url,
-          durationInSeconds,
-          mimeType: mimeTypeRef.current || "audio/webm",
-          waveform: [...waveformRef.current],
+          const result: RecordedAudioResult = {
+            blob,
+            url,
+            durationInSeconds,
+            mimeType: mimeTypeRef.current || "audio/webm",
+            waveform: [...waveformRef.current],
+          };
+
+          clearTimer();
+          clearAudioAnalysis();
+          stopTracks();
+
+          mediaRecorderRef.current = null;
+          chunksRef.current = [];
+          setIsRecording(false);
+
+          resolve(result);
         };
 
-        clearTimer();
-        clearAudioAnalysis();
-        stopTracks();
-
-        mediaRecorderRef.current = null;
-        chunksRef.current = [];
-        setIsRecording(false);
-
-        resolve(result);
-      };
-
-      recorder.stop();
-    });
-  }, [durationInSeconds, isRecording]);
+        recorder.stop();
+      });
+    }, [durationInSeconds, isRecording]);
 
   const cancelRecording = useCallback(() => {
     const recorder = mediaRecorderRef.current;

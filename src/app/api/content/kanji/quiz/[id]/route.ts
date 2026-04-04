@@ -27,12 +27,11 @@ export async function GET(
     console.log("[QUIZ GET] fetching:", upstreamGetUrl);
 
     const upstream = await fetch(upstreamGetUrl, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-    );
+    });
 
     const text = await upstream.text();
     console.log("[QUIZ GET] upstream status:", upstream.status);
@@ -85,9 +84,17 @@ export async function POST(
   const token = normalizeBearerToken(raw);
   const body = await req.json().catch(() => null);
 
-  if (!body || !body.type || typeof body.score !== "number" || typeof body.duration !== "number") {
+  if (
+    !body ||
+    !body.type ||
+    typeof body.score !== "number" ||
+    typeof body.duration !== "number"
+  ) {
     return NextResponse.json(
-      { message: "Body inválido: se requiere type, score y duration", success: false },
+      {
+        message: "Body inválido: se requiere type, score y duration",
+        success: false,
+      },
       { status: 400 },
     );
   }
@@ -143,7 +150,10 @@ export async function POST(
       data = { success: true };
     }
 
-    console.log("[QUIZ POST] respuesta final al cliente:", JSON.stringify(data));
+    console.log(
+      "[QUIZ POST] respuesta final al cliente:",
+      JSON.stringify(data),
+    );
     return NextResponse.json(data);
   } catch (error) {
     console.error("[API] Error submitting kanji quiz:", error);

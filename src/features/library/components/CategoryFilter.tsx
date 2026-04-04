@@ -42,10 +42,11 @@ export function CategoryFilter({
   );
 
   // Detectar si es dispositivo touch para deshabilitar drag y habilitar scroll nativo
-  const [isTouch, setIsTouch] = useState(false);
-  useEffect(() => {
-    setIsTouch(window.matchMedia("(pointer: coarse)").matches);
-  }, []);
+  const [isTouch] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(pointer: coarse)").matches
+      : false,
+  );
 
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +65,7 @@ export function CategoryFilter({
             order: orderMap.get(cat.id) ?? Infinity,
           }))
           .sort((a, b) => a.order - b.order)
-          .map(({ order, ...cat }) => cat);
+          .map(({ order: _order, ...cat }) => cat);
       });
     });
   }, [categories]);
@@ -105,7 +106,9 @@ export function CategoryFilter({
         onClick={() => onSelectCategory(null)}
         className={[
           baseButtonClass,
-          selectedCategory === null ? getActiveClass("todos") : getInactiveClass("todos"),
+          selectedCategory === null
+            ? getActiveClass("todos")
+            : getInactiveClass("todos"),
         ].join(" ")}
       >
         <span>Todos</span>

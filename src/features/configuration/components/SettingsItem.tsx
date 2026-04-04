@@ -37,7 +37,9 @@ export function SettingsItem({
           )}
         </div>
       </div>
-      <div className="flex items-center gap-2 sm:flex-shrink-0">{children}</div>
+      <div className="w-full min-w-0 flex flex-col gap-2 sm:w-auto sm:flex-row sm:items-center sm:justify-end sm:flex-shrink-0">
+        {children}
+      </div>
     </motion.div>
   );
 }

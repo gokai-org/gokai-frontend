@@ -10,7 +10,9 @@ interface AdminCouponsHeaderProps {
 export function AdminCouponsHeader({ totalCoupons }: AdminCouponsHeaderProps) {
   return (
     <AdminPageHeader
-      icon={<Ticket className="h-7 w-7 text-content-inverted" strokeWidth={2.5} />}
+      icon={
+        <Ticket className="h-7 w-7 text-content-inverted" strokeWidth={2.5} />
+      }
       title="Cupones"
       japaneseText="割引"
       subtitle="Gestion de cupones, creacion y seguimiento de canjes"
