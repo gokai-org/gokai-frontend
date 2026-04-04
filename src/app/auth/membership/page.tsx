@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
 import { MembershipPicker } from "@/features/landing/components/MembershipPicker";
 
-export default function MembershipPage() {
+function MembershipContent() {
   const searchParams = useSearchParams();
 
   const forwardedGoogleParams = useMemo(() => {
@@ -85,5 +85,13 @@ export default function MembershipPage() {
         </p>
       </div>
     </main>
+  );
+}
+
+export default function MembershipPage() {
+  return (
+    <Suspense>
+      <MembershipContent />
+    </Suspense>
   );
 }

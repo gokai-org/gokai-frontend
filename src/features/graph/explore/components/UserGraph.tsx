@@ -25,7 +25,6 @@ interface UserGraphProps {
 }
 
 export default function UserGraph({
-  userId,
   level = 1,
   completedActivities = 0,
 }: UserGraphProps) {

@@ -276,6 +276,26 @@ export default function LoginPage() {
         const data = await res.json().catch(() => null);
         if (!res.ok) throw new Error(data?.error || "No se pudo registrar.");
 
+        const loginRes = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: regEmail,
+            password: regPassword,
+            remember: true,
+          }),
+        });
+
+        const loginData = await loginRes.json().catch(() => null);
+        if (!loginRes.ok) {
+          toast.error(
+            loginData?.error || "No se pudo iniciar sesión automáticamente.",
+          );
+          const dest = getPostRegisterDestination();
+          window.location.replace(`/auth/login?from=${encodeURIComponent(dest)}`);
+          return;
+        }
+
         toast.success("¡Cuenta creada exitosamente!");
         window.location.replace(getPostRegisterDestination());
         return;

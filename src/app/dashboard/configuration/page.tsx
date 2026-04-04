@@ -4,13 +4,11 @@ import { useState, useEffect, type FormEvent } from "react";
 import { motion } from "framer-motion";
 import { SettingsSidebar } from "@/features/configuration/components/SettingsSidebar";
 import { SettingsSection } from "@/features/configuration/components/SettingsSection";
-import { SettingsItem } from "@/features/configuration/components/SettingsItem";
 import {
   SettingsSelectItem,
   SettingsToggleItem,
   SettingsToggleSelectItem,
 } from "@/features/configuration/components/SettingsFields";
-import { IntegrationButton } from "@/features/configuration/components/IntegrationButton";
 import { getCurrentUser } from "@/features/auth/services/api";
 import type { User } from "@/features/auth/types";
 import { useToast } from "@/shared/ui/ToastProvider";
@@ -18,7 +16,6 @@ import { useSettings } from "@/features/configuration/hooks/useSettings";
 import type { UserSettings } from "@/features/configuration/types";
 import { UpgradePlanModal } from "@/features/configuration/components/UpgradePlanModal";
 import { CancelSubscriptionModal } from "@/features/configuration/components/CancelSubscriptionModal";
-import { billingConfig } from "@/shared/config";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
 import type { FontSize, JapaneseFont } from "@/shared/hooks/useTypography";
@@ -478,7 +475,7 @@ function AccountSettings({
   loading: boolean;
 }) {
   const toast = useToast();
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [, setShowPasswordModal] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileData, setProfileData] = useState({
@@ -488,6 +485,7 @@ function AccountSettings({
     birthdate: "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [subscription, setSubscription] = useState<any>(null);
   const [subscriptionLoading, setSubscriptionLoading] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -499,8 +497,6 @@ function AccountSettings({
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
-
-  const stripePriceId = billingConfig.publicSubscriptionPriceId;
 
   const formatBirthdateForInput = (birthdate?: string | Date | null) => {
     if (!birthdate) return "";
@@ -541,7 +537,7 @@ function AccountSettings({
       const loadSubscription = async () => {
         setSubscriptionLoading(true);
         try {
-          const response = await fetch(`/api/subscription/${user.id}`);
+          const response = await fetch("/api/subscription/me");
           if (response.ok) {
             const data = await response.json();
             setSubscription(data);
@@ -554,6 +550,7 @@ function AccountSettings({
       };
       loadSubscription();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
 
   const handleSaveProfile = async (e?: FormEvent) => {
@@ -689,7 +686,7 @@ function AccountSettings({
     if (!updatedUser) return;
 
     setUser(updatedUser);
-    const subRes = await fetch(`/api/subscription/${updatedUser.id}`);
+    const subRes = await fetch("/api/subscription/me");
     if (subRes.ok) {
       const subData = await subRes.json();
       setSubscription(subData);
@@ -767,18 +764,11 @@ function AccountSettings({
       return;
     }
 
-    if (!stripePriceId) {
-      setStripeError("Error de configuración: falta el priceId de Stripe");
-      setStripeLoading(false);
-      return;
-    }
-
     try {
       const res = await fetch("/api/subscription/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId: stripePriceId,
           successUrl: window.location.href,
         }),
       });

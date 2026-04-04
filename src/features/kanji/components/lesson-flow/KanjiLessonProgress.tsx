@@ -15,7 +15,6 @@ interface KanjiLessonProgressProps {
 
 export function KanjiLessonProgress({
   currentIndex,
-  totalExercises,
   exerciseTypes,
   overallProgress,
 }: KanjiLessonProgressProps) {

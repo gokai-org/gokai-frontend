@@ -1,7 +1,7 @@
 "use client";
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
@@ -36,7 +36,7 @@ import {
   themeToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
-import { getPrimaryMeaning } from "@/features/kanji";
+// import { getPrimaryMeaning } from "@/features/kanji";
 
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -55,7 +55,7 @@ export default function LibraryPage() {
     kanjis,
     katakanas,
     hiraganas,
-    filteredKanjis,
+    filteredKanjis: _filteredKanjis,
     filteredKatakanas,
     filteredHiraganas,
     allLibraryItems,
@@ -98,7 +98,7 @@ export default function LibraryPage() {
     favoriteHiraganas,
     favoriteKatakanas,
     favoriteData,
-    isFavorite,
+    isFavorite: _isFavorite,
     toggleFavorite,
     toggleFavoriteKanji,
     getTotalFavorites,
@@ -184,7 +184,7 @@ export default function LibraryPage() {
       ? filteredSubthemes.length
       : filteredThemes.length;
 
-  const kanaItems: CombinedLibraryItem[] = [
+  const _kanaItems: CombinedLibraryItem[] = [
     ...filteredHiraganas.map((data) => ({ type: "hiragana" as const, data })),
     ...filteredKatakanas.map((data) => ({ type: "katakana" as const, data })),
   ];

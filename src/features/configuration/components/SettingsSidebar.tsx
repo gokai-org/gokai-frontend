@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import {
   Settings,
   Bell,
   Palette,
-  Globe,
   BookOpen,
   Accessibility,
   Lock,

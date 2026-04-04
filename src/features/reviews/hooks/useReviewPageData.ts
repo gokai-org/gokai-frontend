@@ -19,7 +19,6 @@ export function useReviewPageData() {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
 
     Promise.allSettled([listKanjis(), getStatsOverview()]).then(
       ([kanjisResult, statsResult]) => {

@@ -28,7 +28,6 @@ export interface VocabularyCardProps {
 // ─── VocabularyCard ───────────────────────────────────────────────────────────
 
 export function VocabularyCard({
-  id: _id,
   title,
   subtitle,
   thumbnail,

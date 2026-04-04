@@ -69,8 +69,12 @@ export function KanjiWritingCanvas({
 
   const guideStrokesRef = useRef(guideStrokes);
   const activeStrokeIndexRef = useRef(activeStrokeIndex);
-  guideStrokesRef.current = guideStrokes;
-  activeStrokeIndexRef.current = activeStrokeIndex;
+  useEffect(() => {
+    guideStrokesRef.current = guideStrokes;
+  }, [guideStrokes]);
+  useEffect(() => {
+    activeStrokeIndexRef.current = activeStrokeIndex;
+  }, [activeStrokeIndex]);
 
   // ── Redraw  ──
   const redraw = useCallback(() => {
@@ -290,11 +294,9 @@ function scaleSvgPath(d: string, sx: number, sy: number): string {
 
   let result = "";
   let numIdx = 0;
-  let lastCmd = "";
 
   for (const token of tokens) {
     if (/^[a-zA-Z]$/.test(token)) {
-      lastCmd = token;
       numIdx = 0;
       result += token;
     } else {

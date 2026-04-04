@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Loader2, RefreshCcw } from "lucide-react";
 import {
   AdminFilterDropdown,
@@ -44,16 +44,16 @@ function AdminSupportTicketTableBase({
 
   const totalPages = Math.max(1, Math.ceil(tickets.length / pageSizeNumber));
 
-  useEffect(() => {
+  // Adjust state during render (React recommended pattern)
+  const [prevResetKey, setPrevResetKey] = useState({ pageSize, ticketsLen: tickets.length });
+  if (pageSize !== prevResetKey.pageSize || tickets.length !== prevResetKey.ticketsLen) {
+    setPrevResetKey({ pageSize, ticketsLen: tickets.length });
     setPage(1);
-  }, [pageSize, tickets]);
+  }
 
-  useEffect(() => {
-    if (page <= totalPages) return;
-    setPage(totalPages);
-  }, [page, totalPages]);
+  const effectivePage = Math.max(1, Math.min(page, totalPages));
 
-  const pageStart = (page - 1) * pageSizeNumber;
+  const pageStart = (effectivePage - 1) * pageSizeNumber;
 
   const visibleTickets = useMemo(
     () => tickets.slice(pageStart, pageStart + pageSizeNumber),
@@ -146,7 +146,7 @@ function AdminSupportTicketTableBase({
       {tickets.length > 0 && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-content-tertiary">
-            Mostrando {visibleTickets.length} tickets (pagina {page} de{" "}
+            Mostrando {visibleTickets.length} tickets (pagina {effectivePage} de{" "}
             {totalPages})
           </p>
 
@@ -164,7 +164,7 @@ function AdminSupportTicketTableBase({
             <button
               type="button"
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              disabled={page <= 1}
+              disabled={effectivePage <= 1}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Anterior
@@ -172,7 +172,7 @@ function AdminSupportTicketTableBase({
             <button
               type="button"
               onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={page >= totalPages}
+              disabled={effectivePage >= totalPages}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Siguiente

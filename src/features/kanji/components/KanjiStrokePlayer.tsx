@@ -22,12 +22,21 @@ export function KanjiStrokePlayer({
   size = 300,
 }: KanjiStrokePlayerProps) {
   const [animatedLengths, setAnimatedLengths] = useState<number[]>([]);
+  const [strokePositions, setStrokePositions] = useState<
+    ({ cx: number; cy: number } | null)[]
+  >([]);
   const pathRefs = useRef<(SVGPathElement | null)[]>([]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       const lengths = pathRefs.current.map((p) => (p ? p.getTotalLength() : 0));
+      const positions = pathRefs.current.map((p) => {
+        if (!p) return null;
+        const pt = p.getPointAtLength(0);
+        return { cx: pt.x + 2, cy: pt.y - 2 };
+      });
       setAnimatedLengths(lengths);
+      setStrokePositions(positions);
     });
     return () => cancelAnimationFrame(id);
   }, [strokes]);
@@ -129,7 +138,7 @@ export function KanjiStrokePlayer({
             {renderNumber && (
               <StrokeNumber
                 key={`${i}-${activeStrokeIndex}-${numberMode}`}
-                pathRef={pathRefs.current[i]}
+                pos={strokePositions[i] ?? null}
                 index={i}
               />
             )}
@@ -141,24 +150,12 @@ export function KanjiStrokePlayer({
 }
 
 function StrokeNumber({
-  pathRef,
+  pos,
   index,
 }: {
-  pathRef: SVGPathElement | null;
+  pos: { cx: number; cy: number } | null;
   index: number;
 }) {
-  // Defer getPointAtLength out of React render phase to avoid forced synchronous layout.
-  const [pos, setPos] = useState<{ cx: number; cy: number } | null>(null);
-
-  useEffect(() => {
-    if (!pathRef) return;
-    const raf = requestAnimationFrame(() => {
-      const pt = pathRef.getPointAtLength(0);
-      setPos({ cx: pt.x + 2, cy: pt.y - 2 });
-    });
-    return () => cancelAnimationFrame(raf);
-  }, [pathRef]);
-
   if (!pos) return null;
 
   const { cx, cy } = pos;

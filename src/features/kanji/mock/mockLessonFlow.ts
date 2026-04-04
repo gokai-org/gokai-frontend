@@ -12,7 +12,6 @@ export function getMockKanjiLessonFlow(
   readings: string[],
 ): KanjiLessonFlowData {
   const primaryMeaning = meanings[0] || "Desconocido";
-  const primaryReading = readings[0] || "?";
 
   // Distractors for meaning questions
   const meaningDistractors = [
@@ -54,7 +53,7 @@ export function getMockKanjiLessonFlow(
   ].filter((d) => d !== symbol);
 
   // Distractors for reading-based questions
-  const readingDistractors = [
+  const _readingDistractors = [
     "やま",
     "かわ",
     "ひ",

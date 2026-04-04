@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useEffect, useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Loader2, RefreshCcw } from "lucide-react";
 import {
   AdminFilterDropdown,
@@ -43,16 +43,16 @@ function AdminCouponsTableBase({
   const pageSizeNumber = Number(pageSize);
   const totalPages = Math.max(1, Math.ceil(coupons.length / pageSizeNumber));
 
-  useEffect(() => {
+  // Adjust state during render (React recommended pattern)
+  const [prevResetKey, setPrevResetKey] = useState({ pageSize, couponsLen: coupons.length });
+  if (pageSize !== prevResetKey.pageSize || coupons.length !== prevResetKey.couponsLen) {
+    setPrevResetKey({ pageSize, couponsLen: coupons.length });
     setPage(1);
-  }, [pageSize, coupons]);
+  }
 
-  useEffect(() => {
-    if (page <= totalPages) return;
-    setPage(totalPages);
-  }, [page, totalPages]);
+  const effectivePage = Math.max(1, Math.min(page, totalPages));
 
-  const pageStart = (page - 1) * pageSizeNumber;
+  const pageStart = (effectivePage - 1) * pageSizeNumber;
 
   const visibleCoupons = useMemo(
     () => coupons.slice(pageStart, pageStart + pageSizeNumber),
@@ -148,7 +148,7 @@ function AdminCouponsTableBase({
       {coupons.length > 0 && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-content-tertiary">
-            Mostrando {visibleCoupons.length} cupones (pagina {page} de{" "}
+            Mostrando {visibleCoupons.length} cupones (pagina {effectivePage} de{" "}
             {totalPages})
           </p>
 
@@ -166,7 +166,7 @@ function AdminCouponsTableBase({
             <button
               type="button"
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
-              disabled={page <= 1}
+              disabled={effectivePage <= 1}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Anterior
@@ -174,7 +174,7 @@ function AdminCouponsTableBase({
             <button
               type="button"
               onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-              disabled={page >= totalPages}
+              disabled={effectivePage >= totalPages}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Siguiente

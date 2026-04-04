@@ -55,7 +55,7 @@ export function KanjiQuizWritingExercise({
   const practiceSize = useCanvasSize(260, 64);
 
   const viewBox = question.viewBox || "0 0 109 109";
-  const strokes = question.strokes || [];
+  const strokes = useMemo(() => question.strokes || [], [question.strokes]);
   const totalStrokes = strokes.length;
 
   const [demoStrokeIndex, setDemoStrokeIndex] = useState(0);
@@ -68,23 +68,27 @@ export function KanjiQuizWritingExercise({
   const [flashError, setFlashError] = useState(false);
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  useEffect(() => {
+  const [prevQuestionIndex, setPrevQuestionIndex] = useState(questionIndex);
+  if (questionIndex !== prevQuestionIndex) {
+    setPrevQuestionIndex(questionIndex);
     setDemoStrokeIndex(0);
     setDemoAutoPlay(false);
     setPracticeStrokeIndex(0);
     setStrokeResults([]);
     setLastFeedback(null);
     setFlashError(false);
-  }, [questionIndex]);
+  }
 
   useEffect(() => {
-    if (!demoAutoPlay) return;
-    if (demoStrokeIndex >= totalStrokes) {
-      setDemoAutoPlay(false);
-      return;
-    }
+    if (!demoAutoPlay || demoStrokeIndex >= totalStrokes) return;
     demoTimer.current = setTimeout(() => {
-      setDemoStrokeIndex((prev) => prev + 1);
+      setDemoStrokeIndex((prev) => {
+        const next = prev + 1;
+        if (next >= totalStrokes) {
+          setDemoAutoPlay(false);
+        }
+        return next;
+      });
     }, 800);
     return () => {
       if (demoTimer.current) clearTimeout(demoTimer.current);

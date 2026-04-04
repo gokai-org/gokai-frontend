@@ -1,12 +1,9 @@
 "use client";
 
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import {
   motion,
   AnimatePresence,
-  useMotionValue,
-  useTransform,
-  animate,
 } from "framer-motion";
 import {
   X,
@@ -34,16 +31,7 @@ export function GuideTourOverlay() {
   const { activeTour, currentStep, nextStep, prevStep, closeTour, goToStep } =
     useGuideTour();
   const direction = useDirection();
-  const [visible, setVisible] = useState(false);
-
-  // Animación suave de entrada/salida del overlay entero
-  useEffect(() => {
-    if (activeTour) {
-      setVisible(true);
-    } else {
-      setVisible(false);
-    }
-  }, [activeTour]);
+  const visible = !!activeTour;
 
   // Cerrar con Escape, navegar con flechas
   const handleKeyDown = useCallback(

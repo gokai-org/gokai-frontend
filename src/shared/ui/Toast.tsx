@@ -12,7 +12,7 @@ interface ToastProps {
   onClose: () => void;
 }
 
-export function Toast({ id, type, message, onClose }: ToastProps) {
+export function Toast({ type, message, onClose }: ToastProps) {
   const icons = {
     success: CheckCircle,
     error: AlertCircle,

@@ -74,13 +74,15 @@ export function KanjiWritingExercise({
 
   // Demo auto-play
   useEffect(() => {
-    if (!demoAutoPlay) return;
-    if (demoStrokeIndex >= totalStrokes) {
-      setDemoAutoPlay(false);
-      return;
-    }
+    if (!demoAutoPlay || demoStrokeIndex >= totalStrokes) return;
     demoTimer.current = setTimeout(() => {
-      setDemoStrokeIndex((prev) => prev + 1);
+      setDemoStrokeIndex((prev) => {
+        const next = prev + 1;
+        if (next >= totalStrokes) {
+          setDemoAutoPlay(false);
+        }
+        return next;
+      });
     }, 800);
     return () => {
       if (demoTimer.current) clearTimeout(demoTimer.current);

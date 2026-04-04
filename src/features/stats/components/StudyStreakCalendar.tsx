@@ -66,7 +66,6 @@ export function StudyStreakCalendar({
     for (let w = 0; w < weeks; w++) {
       const col: Array<{ date: string; minutes: number }> = [];
       for (let d = 0; d < 7; d++) {
-        const dayOffset = totalDays - 1 - (w * 7 + (6 - d));
         const dateObj = new Date(today);
         dateObj.setDate(dateObj.getDate() - (totalDays - 1 - (w * 7 + d)));
         const key = dateObj.toISOString().slice(0, 10);

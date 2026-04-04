@@ -225,7 +225,6 @@ export function ScriptCard({
   );
 
   const effectiveOnClick = locked ? undefined : onClick;
-  const effectiveOnFavoriteToggle = locked ? undefined : onFavoriteToggle;
 
   const cardEl = effectiveOnClick ? (
     <div

@@ -8,7 +8,6 @@ import {
   MessageCircle,
   Lightbulb,
   Rocket,
-  Shield,
   Zap,
   ChevronDown,
   Search,

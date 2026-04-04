@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
@@ -87,12 +87,15 @@ export function AdminSupportTicketDetailModal({
   const [status, setStatus] = useState<AdminTicketStatus>("open");
   const [note, setNote] = useState("");
 
-  useEffect(() => {
-    if (!ticket) return;
-
-    setStatus(normalizeStatus(ticket.status));
-    setNote(ticket.note ?? "");
-  }, [ticket]);
+  // Adjust state during render when ticket changes (React recommended pattern)
+  const [prevTicket, setPrevTicket] = useState(ticket);
+  if (ticket !== prevTicket) {
+    setPrevTicket(ticket);
+    if (ticket) {
+      setStatus(normalizeStatus(ticket.status));
+      setNote(ticket.note ?? "");
+    }
+  }
 
   const normalizedCategory = useMemo(
     () => normalizeCategory(ticket?.category ?? "other"),

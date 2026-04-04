@@ -88,9 +88,12 @@ export function DatePicker({
   const [insideForceLight, setInsideForceLight] = useState(false);
 
   useEffect(() => {
-    if (containerRef.current?.closest(".force-light")) {
-      setInsideForceLight(true);
-    }
+    const id = requestAnimationFrame(() => {
+      if (containerRef.current?.closest(".force-light")) {
+        setInsideForceLight(true);
+      }
+    });
+    return () => cancelAnimationFrame(id);
   }, []);
 
   useEffect(() => {

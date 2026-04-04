@@ -203,18 +203,7 @@ export default function KanjisView() {
 
   const baseGraph = useMemo(
     () => createBaseKanjiBoardGraph(items, layout, qualityProfile),
-    [
-      items,
-      layout,
-      qualityProfile.tier,
-      qualityProfile.node.glowScale,
-      qualityProfile.node.shadowScale,
-      qualityProfile.node.showOrbitRings,
-      qualityProfile.node.shouldUsePulse,
-      qualityProfile.edge.widthScale,
-      qualityProfile.edge.opacityScale,
-      qualityProfile.edge.showLockedDash,
-    ],
+    [items, layout, qualityProfile],
   );
 
   // Phase 2 — UI state patch: fast O(n) pass; only changed nodes/edges get new
@@ -250,10 +239,7 @@ export default function KanjisView() {
     } as React.CSSProperties;
   }, [
     graphicsProfile.shouldUseParallax,
-    graphicsProfile.signals.width,
-    graphicsProfile.signals.height,
-    graphicsProfile.signals.pointerType,
-    graphicsProfile.signals.devicePixelRatio,
+    graphicsProfile.signals,
     qualityProfile.background.parallaxStrength,
     qualityProfile.background.zoomStrength,
   ]);
@@ -330,10 +316,12 @@ export default function KanjisView() {
     const firstUnlockedId = unlockedIds[0];
     const nextUnlockedIds = new Set(unlockedIds);
 
-    setDetailNodeId(null);
-    setManualSelectedId(firstUnlockedId);
-    setUnlockFocusNodeId(firstUnlockedId);
-    setNewlyUnlockedIds(nextUnlockedIds);
+    const raf = requestAnimationFrame(() => {
+      setDetailNodeId(null);
+      setManualSelectedId(firstUnlockedId);
+      setUnlockFocusNodeId(firstUnlockedId);
+      setNewlyUnlockedIds(nextUnlockedIds);
+    });
 
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedIds(new Set());
@@ -341,6 +329,8 @@ export default function KanjisView() {
     unlockFocusTimerRef.current = setTimeout(() => {
       setUnlockFocusNodeId(null);
     }, 2500);
+
+    return () => cancelAnimationFrame(raf);
   }, [items]);
 
   useEffect(() => {

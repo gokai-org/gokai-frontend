@@ -252,11 +252,10 @@ function SpeakingCard({
 
 function CardShell({
   type,
-  lastPracticed: _lp,
   children,
 }: {
   type: ReviewItem["type"];
-  lastPracticed: string;
+  lastPracticed?: string;
   children: React.ReactNode;
 }) {
   const borderHover: Record<ReviewItem["type"], string> = {

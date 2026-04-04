@@ -11,7 +11,10 @@ interface ThemeModeToggleProps {
 export function ThemeModeToggle({ className }: ThemeModeToggleProps) {
   const { theme, toggleTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   const isDark = mounted && theme === "dark";
 

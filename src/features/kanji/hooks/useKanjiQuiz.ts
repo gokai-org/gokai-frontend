@@ -332,6 +332,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   const duration = useMemo(() => {
     if (roundStartTimeRef.current === 0) return 0;
     return Math.round((Date.now() - roundStartTimeRef.current) / 1000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.step]);
 
   const loadRoundFromPlan = useCallback((roundIndex: number) => {

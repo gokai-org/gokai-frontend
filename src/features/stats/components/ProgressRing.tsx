@@ -59,12 +59,8 @@ function Ring({
   const center = size / 2;
 
   useEffect(() => {
-    if (!animationsEnabled) {
-      setAnimated(true);
-      return;
-    }
-
-    const t = setTimeout(() => setAnimated(true), 100);
+    const delay = animationsEnabled ? 100 : 0;
+    const t = setTimeout(() => setAnimated(true), delay);
     return () => clearTimeout(t);
   }, [animationsEnabled]);
 

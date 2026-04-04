@@ -18,7 +18,7 @@ import {
   updateAdminCoupon,
   deleteAdminCoupon,
 } from "../services/api";
-import { mapBackendCouponToAdmin } from "../utils/couponMappers";
+// import { mapBackendCouponToAdmin } from "../utils/couponMappers";
 import type {
   AdminCoupon,
   CreateCouponRequest,
@@ -53,7 +53,7 @@ export function AdminCouponsPanel() {
     filteredCoupons,
     allCoupons,
     reloadCoupons,
-    replaceCoupon,
+    replaceCoupon: _replaceCoupon,
     removeCoupon,
   } = useAdminCoupons();
 

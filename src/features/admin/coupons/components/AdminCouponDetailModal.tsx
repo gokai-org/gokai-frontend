@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertCircle,
@@ -46,15 +46,18 @@ export function AdminCouponDetailModal({
   const [claimLimit, setClaimLimit] = useState(1);
   const [vigency, setVigency] = useState("");
 
-  useEffect(() => {
-    if (!coupon) return;
-
-    setCode(coupon.code);
-    setDescription(coupon.description ?? "");
-    setMonths(coupon.months);
-    setClaimLimit(coupon.claimLimit);
-    setVigency(toInputDate(coupon.vigency));
-  }, [coupon]);
+  // Adjust state during render when coupon changes (React recommended pattern)
+  const [prevCoupon, setPrevCoupon] = useState(coupon);
+  if (coupon !== prevCoupon) {
+    setPrevCoupon(coupon);
+    if (coupon) {
+      setCode(coupon.code);
+      setDescription(coupon.description ?? "");
+      setMonths(coupon.months);
+      setClaimLimit(coupon.claimLimit);
+      setVigency(toInputDate(coupon.vigency));
+    }
+  }
 
   const hasChanges =
     coupon != null &&

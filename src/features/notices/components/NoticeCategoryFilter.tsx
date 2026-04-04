@@ -56,7 +56,7 @@ export function NoticeCategoryFilter({
             order: orderMap.get(cat.id) ?? Infinity,
           }))
           .sort((a, b) => a.order - b.order)
-          .map(({ order, ...cat }) => cat);
+          .map(({ order: _order, ...cat }) => cat);
       });
     });
   }, [categories]);

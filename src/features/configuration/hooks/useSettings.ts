@@ -67,8 +67,9 @@ export function useSettings(): UseSettingsReturn {
   useEffect(() => {
     fetchSettings();
     // Limpiar timers al desmontar
+    const currentTimers = timers.current;
     return () => {
-      Object.values(timers.current).forEach((t) => t && clearTimeout(t));
+      Object.values(currentTimers).forEach((t) => t && clearTimeout(t));
     };
   }, [fetchSettings]);
 

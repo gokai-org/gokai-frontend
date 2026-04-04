@@ -1,7 +1,6 @@
 import { apiFetch } from "@/shared/lib/api/client";
 import type {
   UserSettings,
-  UserSettingsUpdate,
   SettingsApiResponse,
 } from "@/features/configuration/types";
 

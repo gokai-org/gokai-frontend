@@ -16,7 +16,6 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
-import { billingConfig } from "@/shared/config";
 import { ThemeModeToggle } from "@/shared/components";
 
 const PLAN_FEATURES = [
@@ -67,8 +66,6 @@ export default function CheckoutPage() {
     const t = setTimeout(() => setReady(true), 100);
     return () => clearTimeout(t);
   }, []);
-
-  const stripePriceId = billingConfig.publicSubscriptionPriceId;
 
   async function claimCoupon(
     code: string,
@@ -135,18 +132,11 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!stripePriceId) {
-      setError("Error de configuración: falta el identificador de precio.");
-      setLoading(false);
-      return;
-    }
-
     try {
       const res = await fetch("/api/subscription/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          priceId: stripePriceId,
           successUrl: `${window.location.origin}/checkout/success`,
         }),
       });

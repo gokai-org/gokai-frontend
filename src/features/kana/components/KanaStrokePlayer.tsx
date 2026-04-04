@@ -22,11 +22,20 @@ export function KanaStrokePlayer({
   size = 300,
 }: KanaStrokePlayerProps) {
   const [animatedLengths, setAnimatedLengths] = useState<number[]>([]);
+  const [strokePositions, setStrokePositions] = useState<
+    ({ cx: number; cy: number } | null)[]
+  >([]);
   const pathRefs = useRef<(SVGPathElement | null)[]>([]);
 
   useEffect(() => {
     const lengths = pathRefs.current.map((p) => (p ? p.getTotalLength() : 0));
+    const positions = pathRefs.current.map((p) => {
+      if (!p) return null;
+      const pt = p.getPointAtLength(0);
+      return { cx: pt.x + 2, cy: pt.y - 2 };
+    });
     setAnimatedLengths(lengths);
+    setStrokePositions(positions);
   }, [strokes]);
 
   const setPathRef = useCallback(
@@ -124,7 +133,7 @@ export function KanaStrokePlayer({
             {renderNumber && (
               <StrokeNumber
                 key={`${i}-${activeStrokeIndex}-${numberMode}`}
-                pathRef={pathRefs.current[i]}
+                pos={strokePositions[i] ?? null}
                 index={i}
               />
             )}
@@ -146,16 +155,14 @@ export function KanaStrokePlayer({
 }
 
 function StrokeNumber({
-  pathRef,
+  pos,
   index,
 }: {
-  pathRef: SVGPathElement | null;
+  pos: { cx: number; cy: number } | null;
   index: number;
 }) {
-  if (!pathRef) return null;
-  const pt = pathRef.getPointAtLength(0);
-  const cx = pt.x + 2;
-  const cy = pt.y - 2;
+  if (!pos) return null;
+  const { cx, cy } = pos;
 
   return (
     <g

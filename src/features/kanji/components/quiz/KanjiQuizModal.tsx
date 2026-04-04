@@ -116,10 +116,7 @@ export function KanjiQuizModal({
     currentQuestion,
     totalQuestions,
     overallProgress,
-    finalScore,
-    loading,
     error,
-    submitting,
     isPointsError,
     updatedPoints,
     pointsDelta,
@@ -127,7 +124,7 @@ export function KanjiQuizModal({
     currentRound,
   } = quiz;
 
-  const isTransitioning =
+  const _isTransitioning =
     state.step === "submitting" ||
     (state.step === "loading" && roundResults.length > 0);
 

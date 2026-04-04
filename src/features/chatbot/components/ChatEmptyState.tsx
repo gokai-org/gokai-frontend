@@ -1,12 +1,10 @@
 "use client";
 
-import { PrimaryActionButton } from "@/shared/ui/PrimaryActionButton";
-
 interface ChatEmptyStateProps {
   onReset?: () => void;
 }
 
-export function ChatEmptyState({ onReset }: ChatEmptyStateProps) {
+export function ChatEmptyState(_props: ChatEmptyStateProps) {
   return (
     <div className="flex flex-1 items-center justify-center py-10">
       <div className="w-full max-w-xl rounded-[28px] border border-dashed border-border-default bg-surface-primary p-8 text-center shadow-sm">
