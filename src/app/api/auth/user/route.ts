@@ -62,6 +62,7 @@ export async function GET(req: NextRequest) {
               : undefined,
             twoFactorEnabled: false,
             points: 0,
+            kanaPoints: 0,
           };
 
           return NextResponse.json({ user });
@@ -129,6 +130,12 @@ export async function GET(req: NextRequest) {
           subscribed,
           twoFactorEnabled: false,
           points: typeof userData.points === "number" ? userData.points : 0,
+          kanaPoints:
+            typeof userData.kanaPoints === "number"
+              ? userData.kanaPoints
+              : typeof userData.kana_points === "number"
+                ? userData.kana_points
+                : 0,
         };
 
         return NextResponse.json({ user });
@@ -248,6 +255,16 @@ export async function PATCH(request: NextRequest) {
       plan: "free",
       createdAt: userData.createdAt || userData.created_at,
       twoFactorEnabled: false,
+      points:
+        typeof userData.points === "number"
+          ? userData.points
+          : 0,
+      kanaPoints:
+        typeof userData.kanaPoints === "number"
+          ? userData.kanaPoints
+          : typeof userData.kana_points === "number"
+            ? userData.kana_points
+            : 0,
     };
 
     console.log("Frontend will receive user:", user);

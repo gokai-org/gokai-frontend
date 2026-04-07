@@ -1,12 +1,31 @@
 import { apiFetch } from "@/shared/lib/api/client";
 import type {
   Kana,
+  KanaExamResponse,
+  KanaExamResponseRaw,
   KanaStrokeData,
   KanaType,
-  KanaExerciseAnswer,
+  KanaListResponse,
+  SaveKanaQuizResponseRequest,
+  UserKanaProgressDetailedResponse,
 } from "@/features/kana/types";
+import { normalizeKanaQuizQuestion } from "@/features/kana/utils/quizParser";
 
 /* ── Funciones unificadas ──────────────────────────────── */
+
+function normalizeKanaExamResponse(raw: KanaExamResponseRaw): KanaExamResponse {
+  const questions = Array.isArray(raw) ? raw : raw.questions ?? [];
+
+  return {
+    questions: questions.map(normalizeKanaQuizQuestion),
+  };
+}
+
+export function listKanaCatalog() {
+  return apiFetch<KanaListResponse>("/api/content/kana", {
+    cache: "no-store",
+  });
+}
 
 export function listKana(kanaType: KanaType) {
   return apiFetch<Kana[]>(`/api/content/kana?kana_type=${kanaType}`, {
@@ -27,17 +46,31 @@ export function getKanaStrokes(id: string) {
   });
 }
 
-/**
- * Envía una respuesta de ejercicio de escritura/lectura de kana.
- */
-export function submitKanaExerciseAnswer(body: {
-  kanaId: string;
-  exerciseType: "writing" | "reading";
-  duration: number;
-  points: number;
-  isCorrect: boolean;
-}) {
-  return apiFetch<KanaExerciseAnswer>("/api/user/kana-exercises/answers", {
+export function getKanaProgress() {
+  return apiFetch<UserKanaProgressDetailedResponse[]>(
+    "/api/content/kana/progress",
+    {
+      cache: "no-store",
+    },
+  );
+}
+
+export async function getKanaExam(kanaType: KanaType) {
+  const raw = await apiFetch<KanaExamResponseRaw>(
+    `/api/content/kana/exam/${kanaType}`,
+    {
+      cache: "no-store",
+    },
+  );
+
+  return normalizeKanaExamResponse(raw);
+}
+
+export function submitKanaExam(
+  kanaType: KanaType,
+  body: SaveKanaQuizResponseRequest,
+) {
+  return apiFetch<{ success: boolean }>(`/api/content/kana/exam/${kanaType}`, {
     method: "POST",
     body: JSON.stringify(body),
   });

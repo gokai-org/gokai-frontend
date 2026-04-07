@@ -15,8 +15,30 @@ type RawKana = {
   points_to_unlock?: number;
   viewBox?: string;
   view_box?: string;
-  strokes?: string[];
+  strokes?: string | string[];
 };
+
+function parseStrokeList(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.filter(
+      (item): item is string => typeof item === "string" && item.length > 0,
+    );
+  }
+
+  if (typeof raw !== "string") {
+    return [];
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is string => typeof item === "string" && item.length > 0,
+    );
+  } catch {
+    return raw.startsWith("M") || raw.startsWith("m") ? [raw] : [];
+  }
+}
 
 function normalizeKana(raw: RawKana) {
   return {
@@ -26,7 +48,7 @@ function normalizeKana(raw: RawKana) {
     romaji: raw.romaji ?? "",
     pointsToUnlock: raw.pointsToUnlock ?? raw.points_to_unlock ?? 0,
     viewBox: raw.viewBox ?? raw.view_box,
-    strokes: Array.isArray(raw.strokes) ? raw.strokes : [],
+    strokes: parseStrokeList(raw.strokes),
   };
 }
 

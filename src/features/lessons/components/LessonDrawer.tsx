@@ -22,12 +22,12 @@ type Props = {
   mode: LessonMode;
   userId: string;
   entityId?: string | null;
-  entityKind?: "kanji" | "subtheme" | "grammar" | null;
+  entityKind?: "kanji" | "kana" | "subtheme" | "grammar" | null;
   kanjiCtaDisabled?: boolean;
   kanjiCtaDisabledReason?: string;
   writingActive?: boolean;
   onWritingStart?: (kanji: Kanji) => void;
-  onQuizStart?: (kanji: Kanji) => void;
+  onQuizStart?: (entity: { id: string; symbol: string }) => void;
 };
 
 export default function LessonDrawer({
@@ -89,6 +89,15 @@ export default function LessonDrawer({
         title: `${modeTitle[mode]} de Kanji`,
         subtitle: `${k.symbol} • ${k.symbol ? "Kanji" : ""}`,
         pill: "Kanji",
+      };
+    }
+    if (active?.kind === "kana") {
+      const k = active.kana;
+      const typeLabel = k.kanaType === "hiragana" ? "Hiragana" : "Katakana";
+      return {
+        title: `${modeTitle[mode]} de ${typeLabel}`,
+        subtitle: `${k.symbol} • ${k.romaji ?? ""}`,
+        pill: typeLabel,
       };
     }
     if (active?.kind === "grammar") {

@@ -312,6 +312,12 @@ export interface WritingBoardViewProps {
   edgeTypes: EdgeTypes;
   loading?: boolean;
   error?: string | null;
+  /** Called when an unlocked node is clicked. Receives the progress item. */
+  onNodeAction?: (item: WritingBoardProgress) => void;
+  /** Whether a quiz overlay is active (pauses parallax & sets data-attributes). */
+  quizActive?: boolean;
+  /** Overlay content rendered on top of the board (e.g. quiz modals). */
+  children?: React.ReactNode;
 }
 
 export function WritingBoardView({
@@ -322,6 +328,9 @@ export function WritingBoardView({
   edgeTypes,
   loading = false,
   error = null,
+  onNodeAction,
+  quizActive = false,
+  children,
 }: WritingBoardViewProps) {
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useWritingBoardQuality(graphicsProfile);
@@ -511,7 +520,8 @@ export function WritingBoardView({
       return;
     }
     setSelectedId(nodeId);
-  }, []);
+    if (item && onNodeAction) onNodeAction(item);
+  }, [onNodeAction]);
 
   // ── Parallax viewport sync ──────────────────────────────────────────────
 
@@ -690,6 +700,7 @@ export function WritingBoardView({
     <div
       ref={rootRef}
       data-kanji-interacting="false"
+      data-kanji-quiz-active={quizActive ? "true" : "false"}
       className="absolute inset-0 overflow-hidden bg-surface-primary"
     >
       <div
@@ -727,6 +738,8 @@ export function WritingBoardView({
           />
         </ReactFlowProvider>
       </div>
+
+      {children}
     </div>
   );
 }

@@ -19,6 +19,7 @@ interface LibraryGridProps {
   lockedHiraganaIds?: Set<string>;
   lockedKatakanaIds?: Set<string>;
   newlyUnlockedKanjiIds?: ReadonlySet<string>;
+  newlyUnlockedKanaIds?: ReadonlySet<string>;
   toggleFavoriteKanji: (id: string) => void;
   toggleFavoriteHiragana: (id: string) => void;
   toggleFavoriteKatakana: (id: string) => void;
@@ -36,6 +37,7 @@ export function LibraryGrid({
   lockedHiraganaIds,
   lockedKatakanaIds,
   newlyUnlockedKanjiIds,
+  newlyUnlockedKanaIds,
   toggleFavoriteKanji,
   toggleFavoriteHiragana,
   toggleFavoriteKatakana,
@@ -75,6 +77,7 @@ export function LibraryGrid({
               )}
               index={i}
               locked={isLocked}
+              unlocking={newlyUnlockedKanaIds?.has(item.data.id) ?? false}
               onClick={isLocked ? undefined : () => onKanaClick(item.data)}
               onFavoriteToggle={isLocked ? undefined : toggleFavoriteHiragana}
             />
@@ -92,6 +95,7 @@ export function LibraryGrid({
             )}
             index={i}
             locked={isLocked}
+            unlocking={newlyUnlockedKanaIds?.has(item.data.id) ?? false}
             onClick={isLocked ? undefined : () => onKanaClick(item.data)}
             onFavoriteToggle={isLocked ? undefined : toggleFavoriteKatakana}
           />

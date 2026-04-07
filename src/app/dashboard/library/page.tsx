@@ -1,7 +1,7 @@
 "use client";
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
@@ -19,14 +19,13 @@ import { useFavorites } from "@/features/library/hooks/useFavorites";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
 import { useVocabularyContent } from "@/features/library/hooks/useVocabularyContent";
 import { useKanjiLockedStatus } from "@/features/library/hooks/useKanjiLockedStatus";
-import {
-  CombinedLibraryItem,
-  useLibraryContent,
-} from "@/features/library/hooks/useLibraryContent";
+import { useKanaLockedStatus } from "@/features/library/hooks/useKanaLockedStatus";
+import { useLibraryContent } from "@/features/library/hooks/useLibraryContent";
 import type { Kanji } from "@/features/kanji/types";
 import type { Kana } from "@/features/kana/types";
 import { getKana } from "@/features/kana/api/kanaApi";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
+import { KanaQuizModal } from "@/features/kana/components/quiz";
 import {
   buildLibraryCategories,
   kanjiToScriptCard,
@@ -47,6 +46,11 @@ export default function LibraryPage() {
     id: string;
     symbol: string;
   } | null>(null);
+  const [quizKana, setQuizKana] = useState<{
+    id: string;
+    symbol: string;
+    kanaType: "hiragana" | "katakana";
+  } | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
@@ -56,8 +60,6 @@ export default function LibraryPage() {
     katakanas,
     hiraganas,
     filteredKanjis: _filteredKanjis,
-    filteredKatakanas,
-    filteredHiraganas,
     allLibraryItems,
     isSearching,
     isGlobalLoading,
@@ -66,29 +68,22 @@ export default function LibraryPage() {
     loadingHiraganas,
   } = useLibraryContent(searchQuery);
 
-  const { lockedKanjiIds, userPoints, reload: reloadLockedStatus } =
+  const { lockedKanjiIds, reload: reloadLockedStatus } =
     useKanjiLockedStatus(kanjis);
-
-  // Derive locked kana IDs from the same userPoints (no extra API call)
-  const lockedHiraganaIds = useMemo(() => {
-    const s = new Set<string>();
-    for (const h of hiraganas) {
-      if (userPoints < h.pointsToUnlock) s.add(h.id);
-    }
-    return s;
-  }, [hiraganas, userPoints]);
-
-  const lockedKatakanaIds = useMemo(() => {
-    const s = new Set<string>();
-    for (const k of katakanas) {
-      if (userPoints < k.pointsToUnlock) s.add(k.id);
-    }
-    return s;
-  }, [katakanas, userPoints]);
+  const {
+    lockedHiraganaIds,
+    lockedKatakanaIds,
+    reload: reloadKanaLockedStatus,
+  } = useKanaLockedStatus(hiraganas, katakanas);
   const [newlyUnlockedKanjiIds, setNewlyUnlockedKanjiIds] = useState<
     ReadonlySet<string>
   >(new Set());
+  const [newlyUnlockedKanaIds, setNewlyUnlockedKanaIds] = useState<
+    ReadonlySet<string>
+  >(new Set());
   const lockedKanjiIdsBeforeQuizRef = useRef<Set<string> | null>(null);
+  const lockedHiraganaIdsBeforeQuizRef = useRef<Set<string> | null>(null);
+  const lockedKatakanaIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -115,7 +110,6 @@ export default function LibraryPage() {
     favoriteHiraganas,
     favoriteKatakanas,
     favoriteData,
-    isFavorite: _isFavorite,
     toggleFavorite,
     toggleFavoriteKanji,
     getTotalFavorites,
@@ -184,6 +178,59 @@ export default function LibraryPage() {
     }
   };
 
+  const handleKanaQuizStart = useCallback((kana: Kana) => {
+    lockedHiraganaIdsBeforeQuizRef.current = new Set(lockedHiraganaIds);
+    lockedKatakanaIdsBeforeQuizRef.current = new Set(lockedKatakanaIds);
+    setSelectedKana(null);
+    setQuizKana({
+      id: kana.id,
+      symbol: kana.symbol,
+      kanaType: kana.kanaType,
+    });
+  }, [lockedHiraganaIds, lockedKatakanaIds]);
+
+  const handleKanaQuizClose = useCallback(async () => {
+    setQuizKana(null);
+
+    const lockedHiraganaIdsBeforeQuiz = lockedHiraganaIdsBeforeQuizRef.current;
+    const lockedKatakanaIdsBeforeQuiz = lockedKatakanaIdsBeforeQuizRef.current;
+    lockedHiraganaIdsBeforeQuizRef.current = null;
+    lockedKatakanaIdsBeforeQuizRef.current = null;
+
+    const nextKanaState = await reloadKanaLockedStatus();
+
+    if (!lockedHiraganaIdsBeforeQuiz && !lockedKatakanaIdsBeforeQuiz) return;
+
+    const unlockedIds = [
+      ...hiraganas
+        .filter(
+          (kana) =>
+            lockedHiraganaIdsBeforeQuiz?.has(kana.id) &&
+            nextKanaState.userKanaPoints >= kana.pointsToUnlock,
+        )
+        .map((kana) => kana.id),
+      ...katakanas
+        .filter(
+          (kana) =>
+            lockedKatakanaIdsBeforeQuiz?.has(kana.id) &&
+            nextKanaState.userKanaPoints >= kana.pointsToUnlock,
+        )
+        .map((kana) => kana.id),
+    ];
+
+    if (unlockedIds.length === 0) return;
+
+    if (unlockAnimationTimerRef.current !== null) {
+      clearTimeout(unlockAnimationTimerRef.current);
+    }
+
+    const nextUnlockedIds = new Set(unlockedIds);
+    setNewlyUnlockedKanaIds(nextUnlockedIds);
+    unlockAnimationTimerRef.current = setTimeout(() => {
+      setNewlyUnlockedKanaIds(new Set());
+    }, 2500);
+  }, [hiraganas, katakanas, reloadKanaLockedStatus]);
+
   const handleCategoryChange = (cat: string | null) => {
     setSelectedCategory(cat);
     setSearchQuery("");
@@ -200,11 +247,6 @@ export default function LibraryPage() {
     : selectedTheme
       ? filteredSubthemes.length
       : filteredThemes.length;
-
-  const _kanaItems: CombinedLibraryItem[] = [
-    ...filteredHiraganas.map((data) => ({ type: "hiragana" as const, data })),
-    ...filteredKatakanas.map((data) => ({ type: "katakana" as const, data })),
-  ];
 
   return (
     <DashboardShell>
@@ -264,6 +306,7 @@ export default function LibraryPage() {
                     lockedHiraganaIds={lockedHiraganaIds}
                     lockedKatakanaIds={lockedKatakanaIds}
                     newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
+                    newlyUnlockedKanaIds={newlyUnlockedKanaIds}
                     toggleFavoriteKanji={toggleFavoriteKanji}
                     toggleFavoriteHiragana={(id) =>
                       void toggleFavorite(id, "hiragana")
@@ -331,6 +374,7 @@ export default function LibraryPage() {
                     lockedHiraganaIds={lockedHiraganaIds}
                     lockedKatakanaIds={lockedKatakanaIds}
                     newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
+                    newlyUnlockedKanaIds={newlyUnlockedKanaIds}
                     toggleFavoriteKanji={toggleFavoriteKanji}
                     toggleFavoriteHiragana={(id) =>
                       void toggleFavorite(id, "hiragana")
@@ -440,6 +484,7 @@ export default function LibraryPage() {
                               {...hiraganaToScriptCard(kana, true)}
                               index={i}
                               locked={isLocked}
+                              unlocking={newlyUnlockedKanaIds.has(kana.id)}
                               onClick={
                                 isLocked ? undefined : () => handleKanaClick(kana)
                               }
@@ -473,6 +518,7 @@ export default function LibraryPage() {
                               {...katakanaToScriptCard(kana, true)}
                               index={i}
                               locked={isLocked}
+                              unlocking={newlyUnlockedKanaIds.has(kana.id)}
                               onClick={
                                 isLocked ? undefined : () => handleKanaClick(kana)
                               }
@@ -594,6 +640,7 @@ export default function LibraryPage() {
                           )}
                           index={i}
                           locked={isLocked}
+                          unlocking={newlyUnlockedKanaIds.has(katakana.id)}
                           onClick={
                             isLocked ? undefined : () => handleKanaClick(katakana)
                           }
@@ -637,6 +684,7 @@ export default function LibraryPage() {
                           )}
                           index={i}
                           locked={isLocked}
+                          unlocking={newlyUnlockedKanaIds.has(hiragana.id)}
                           onClick={
                             isLocked ? undefined : () => handleKanaClick(hiragana)
                           }
@@ -874,6 +922,16 @@ export default function LibraryPage() {
             <KanaDetailModal
               kana={selectedKana}
               onClose={() => setSelectedKana(null)}
+              onQuizStart={() => handleKanaQuizStart(selectedKana)}
+            />
+          )}
+
+          {quizKana !== null && (
+            <KanaQuizModal
+              kanaId={quizKana.id}
+              label={quizKana.symbol}
+              kanaType={quizKana.kanaType}
+              onClose={handleKanaQuizClose}
             />
           )}
         </>
