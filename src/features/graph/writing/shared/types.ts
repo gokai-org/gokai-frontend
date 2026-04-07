@@ -1,43 +1,43 @@
 import type { Edge, Node } from "reactflow";
-import type { Kanji, KanjiLessonResult } from "@/features/kanji";
 import type {
   GraphicsProfile,
   GraphicsQualitySignals,
   GraphicsQualityTier,
 } from "@/shared/hooks/useGraphicsProfile";
 
-export const KANJI_COMPLETION_SCORE = 70;
+export const WRITING_COMPLETION_SCORE = 70;
 
-export type KanjiBoardStatus = "completed" | "available" | "locked";
-export type KanjiBoardQualityTier = GraphicsQualityTier;
+export type WritingBoardStatus = "completed" | "available" | "locked";
+export type WritingBoardQualityTier = GraphicsQualityTier;
+export type WritingScriptType = "hiragana" | "katakana" | "kanji";
 
-export interface KanjiBoardProgress {
+export interface WritingBoardProgress {
   id: string;
   index: number;
-  kanji: Kanji;
-  primaryMeaning: string;
+  symbol: string;
+  romaji: string;
+  unlockPoints: number;
   bestScore: number | null;
   attemptCount: number;
-  status: KanjiBoardStatus;
+  status: WritingBoardStatus;
   completionScore: number;
   progressPercent: number;
-  bestResult: KanjiLessonResult | null;
 }
 
-export interface KanjiBoardSummary {
+export interface WritingBoardSummary {
   totalCount: number;
   completedCount: number;
   availableCount: number;
   lockedCount: number;
   completionRate: number;
   averageScore: number;
-  currentKanjiId: string | null;
+  currentItemId: string | null;
   consecutiveCompletedCount: number;
 }
 
-export type KanjiBoardQualitySignals = GraphicsQualitySignals;
+export type WritingBoardQualitySignals = GraphicsQualitySignals;
 
-export interface KanjiBoardCameraProfile {
+export interface WritingBoardCameraProfile {
   overviewZoom: number;
   focusZoom: number;
   initialDuration: number;
@@ -45,9 +45,9 @@ export interface KanjiBoardCameraProfile {
   restoreDuration: number;
 }
 
-export interface KanjiBoardQualityProfile {
-  tier: KanjiBoardQualityTier;
-  signals: KanjiBoardQualitySignals;
+export interface WritingBoardQualityProfile {
+  tier: WritingBoardQualityTier;
+  signals: WritingBoardQualitySignals;
   graphics: GraphicsProfile;
   allowMotion: boolean;
   allowHeavyMotion: boolean;
@@ -81,13 +81,14 @@ export interface KanjiBoardQualityProfile {
     showLockedDash: boolean;
     curvature: number;
   };
-  camera: KanjiBoardCameraProfile;
+  camera: WritingBoardCameraProfile;
 }
 
-export interface KanjiBoardNodeData {
-  progress: KanjiBoardProgress;
+export interface WritingBoardNodeData {
+  progress: WritingBoardProgress;
   selected: boolean;
-  qualityTier: KanjiBoardQualityTier;
+  scriptType: WritingScriptType;
+  qualityTier: WritingBoardQualityTier;
   glowScale: number;
   shadowScale: number;
   showOrbitRings: boolean;
@@ -96,17 +97,18 @@ export interface KanjiBoardNodeData {
   shaking?: boolean;
 }
 
-export interface KanjiBoardEdgeData {
-  status: KanjiBoardStatus;
+export interface WritingBoardEdgeData {
+  status: WritingBoardStatus;
   highlight: boolean;
-  qualityTier: KanjiBoardQualityTier;
+  scriptType: WritingScriptType;
+  qualityTier: WritingBoardQualityTier;
   widthScale: number;
   opacityScale: number;
   showLockedDash: boolean;
   unlocking?: boolean;
-  /** @deprecated — passed but not consumed by KanjiBoardEdge; kept optional for forward compat */
-  curvature?: number;
+  /** Required user points for the target node of this connection */
+  requiredPoints?: number;
 }
 
-export type KanjiBoardNode = Node<KanjiBoardNodeData>;
-export type KanjiBoardEdge = Edge<KanjiBoardEdgeData>;
+export type WritingBoardNode = Node<WritingBoardNodeData>;
+export type WritingBoardEdge = Edge<WritingBoardEdgeData>;

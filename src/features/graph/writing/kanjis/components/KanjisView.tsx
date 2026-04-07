@@ -17,6 +17,7 @@ import { useKanjiBoardQuality } from "../hooks/useKanjiBoardQuality";
 import type { KanjiBoardQualitySignals } from "../types";
 import { KanjiBoardBackground } from "./KanjiBoardBackground";
 import { KanjiBoardMap } from "./KanjiBoardMap";
+import WritingBoardLoading from "../../shared/components/WritingBoardLoading";
 
 const GRAPH_USER_ID = "user123";
 
@@ -98,7 +99,7 @@ function formatBackgroundViewportState(
 }
 
 export default function KanjisView() {
-  const { items, summary, reload } = useKanjiBoard();
+  const { items, summary, reload, loading } = useKanjiBoard();
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useKanjiBoardQuality(graphicsProfile);
   const { setHidden } = useSidebar();
@@ -170,7 +171,12 @@ export default function KanjisView() {
       return manualSelectedId;
     }
 
-    return summary.currentKanjiId ?? items[0]?.id ?? null;
+    return (
+      [...items].reverse().find((item) => item.status !== "locked")?.id ??
+      summary.currentKanjiId ??
+      items[0]?.id ??
+      null
+    );
   }, [detailNodeId, items, manualSelectedId, summary.currentKanjiId]);
 
   const layoutIds = useMemo(() => items.map((item) => item.id), [items]);
@@ -523,6 +529,14 @@ export default function KanjisView() {
       lastFrameTime.current = null;
     };
   }, []);
+
+  if (loading) {
+    return (
+      <div className="absolute inset-0 bg-surface-primary">
+        <WritingBoardLoading scriptType="kanji" />
+      </div>
+    );
+  }
 
   return (
     <div

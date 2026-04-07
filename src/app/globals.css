@@ -390,11 +390,31 @@ html[data-jp-font="meiryo"] {
   --kanji-edge-locked-stroke: rgba(28, 22, 32, 1);
   --kanji-edge-available-stroke: rgba(172, 56, 52, 1);
   --kanji-edge-completed-stroke: rgba(172, 56, 52, 1);
+
+  /* Hiragana (purple) */
+  --hiragana-edge-locked-stroke: rgba(28, 22, 32, 0.8);
+  --hiragana-edge-available-stroke: rgba(123, 63, 138, 1);
+  --hiragana-edge-completed-stroke: rgba(168, 102, 181, 1);
+
+  /* Katakana (blue) */
+  --katakana-edge-locked-stroke: rgba(22, 28, 38, 0.8);
+  --katakana-edge-available-stroke: rgba(27, 80, 120, 1);
+  --katakana-edge-completed-stroke: rgba(46, 130, 181, 1);
 }
 .dark {
   --kanji-edge-locked-stroke: rgba(210, 200, 220, 1);
   --kanji-edge-available-stroke: rgba(210, 78, 72, 1);
   --kanji-edge-completed-stroke: rgba(218, 84, 78, 1);
+
+  /* Hiragana (purple) */
+  --hiragana-edge-locked-stroke: rgba(210, 200, 220, 0.6);
+  --hiragana-edge-available-stroke: rgba(155, 86, 168, 1);
+  --hiragana-edge-completed-stroke: rgba(188, 128, 204, 1);
+
+  /* Katakana (blue) */
+  --katakana-edge-locked-stroke: rgba(200, 210, 220, 0.6);
+  --katakana-edge-available-stroke: rgba(46, 130, 181, 1);
+  --katakana-edge-completed-stroke: rgba(79, 168, 216, 1);
 }
 
 /* ── Kanji node / edge animations ── */
@@ -584,16 +604,16 @@ html[data-jp-font="meiryo"] {
   animation: kanji-edge-unlock-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ── Locked sphere: pearl gray in light mode, deep in dark mode ── */
+/* ── Locked sphere: neutral gray matching library locked card design ── */
 .kanji-node-sphere-locked {
-  background: linear-gradient(135deg, #f6f4fa 0%, #efecf5 100%);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
-  color: rgba(60, 50, 88, 1);
+  background: var(--surface-tertiary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  color: rgba(156, 163, 175, 0.6);
 }
 .dark .kanji-node-sphere-locked {
-  background: linear-gradient(135deg, #383438 0%, #1c181e 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.36);
-  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.25);
 }
 
 /* ── Unlock ring: double-halo burst expanding from unlocked node ── */
@@ -871,8 +891,174 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
    SVG presentation attributes have lowest CSS specificity, so class selectors win. */
 .dark .kanji-bg-board-lines svg line,
 .dark .kanji-bg-board-lines svg path {
-  stroke: rgba(200, 200, 210, 0.42);
+  stroke: rgba(214, 214, 226, 0.92);
 }
 .dark .kanji-bg-board-hoshi svg circle {
-  fill: rgba(200, 200, 210, 0.64);
+  fill: rgba(226, 226, 236, 0.96);
+}
+
+/* ── Per-script background tints (hiragana=purple, katakana=blue) ── */
+/* data-script is set on .kanji-bg-scene by WritingBoardBackground */
+
+.dark [data-script="hiragana"] .kanji-bg-parallax-layer {
+  background-image:
+    radial-gradient(
+      ellipse 44% 34% at 18% 26%,
+      rgba(100, 20, 140, 0.07) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 38% 30% at 78% 62%,
+      rgba(70, 10, 110, 0.05) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 56% 40% at 52% 84%,
+      rgba(90, 14, 130, 0.04) 0%,
+      transparent 68%
+    );
+}
+
+.dark [data-script="hiragana"] .kanji-bg-atmosphere {
+  background:
+    radial-gradient(
+      ellipse 58% 44% at 50% 42%,
+      rgba(130, 20, 180, 0.09) 0%,
+      rgba(70, 8, 110, 0.04) 54%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 34% 26% at 22% 22%,
+      rgba(100, 14, 150, 0.05) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 76% 74%,
+      rgba(90, 16, 140, 0.04) 0%,
+      transparent 56%
+    );
+}
+
+.dark [data-script="katakana"] .kanji-bg-parallax-layer {
+  background-image:
+    radial-gradient(
+      ellipse 44% 34% at 18% 26%,
+      rgba(10, 50, 130, 0.07) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 38% 30% at 78% 62%,
+      rgba(8, 35, 100, 0.05) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 56% 40% at 52% 84%,
+      rgba(10, 42, 120, 0.04) 0%,
+      transparent 68%
+    );
+}
+
+.dark [data-script="katakana"] .kanji-bg-atmosphere {
+  background:
+    radial-gradient(
+      ellipse 58% 44% at 50% 42%,
+      rgba(14, 60, 160, 0.09) 0%,
+      rgba(8, 35, 100, 0.04) 54%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 34% 26% at 22% 22%,
+      rgba(10, 50, 140, 0.05) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 76% 74%,
+      rgba(12, 45, 130, 0.04) 0%,
+      transparent 56%
+    );
+}
+
+/* ── Writing board loading: theme-aware node glass colors ── */
+/* Used by WritingBoardLoading to adapt node gradients across light/dark themes */
+:root {
+  --writing-loading-center-stop: rgba(218, 212, 226, 0.92);
+  --writing-loading-node-border: rgba(0, 0, 0, 0.10);
+  --writing-loading-node-inner: rgba(0, 0, 0, 0.04);
+  --writing-loading-side-bg: linear-gradient(180deg, rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.04));
+}
+.dark {
+  --writing-loading-center-stop: rgba(24, 24, 28, 0.98);
+  --writing-loading-node-border: rgba(255, 255, 255, 0.08);
+  --writing-loading-node-inner: rgba(255, 255, 255, 0.05);
+  --writing-loading-side-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+}
+
+/* ── Edge score label: circular badge shown at arc midpoint ── */
+.edge-score-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+  min-width: 44px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  border-width: 1.5px;
+  border-style: solid;
+  background: #ffffff;
+  white-space: nowrap;
+  transform-origin: center;
+  box-shadow:
+    0 4px 10px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.dark .edge-score-label {
+  background: #2a2a2a;
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.edge-score-value {
+  display: block;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  transform: translateY(-0.2px);
+}
+
+/* Completed state: keep same capsule style */
+.edge-score-label-complete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  border-width: 1.5px;
+  border-style: solid;
+  border-color: #22c55e;
+  color: #22c55e;
+  background: #ffffff;
+  white-space: nowrap;
+  box-shadow:
+    0 4px 12px rgba(34, 197, 94, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.dark .edge-score-label-complete {
+  background: #2a2a2a;
+  box-shadow:
+    0 4px 12px rgba(34, 197, 94, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }

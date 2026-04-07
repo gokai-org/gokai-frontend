@@ -5,11 +5,18 @@ import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 import { useSidebar } from "@/shared/components/SidebarContext";
 
+const MotionLink = motion(Link);
+
 const TABS = [
   { label: "Explorar", href: "/dashboard/graph" },
   { label: "Gramática", href: "/dashboard/graph/grammar" },
-  { label: "Kanjis", href: "/dashboard/graph/kanjis" },
+  { label: "Escritura", href: "/dashboard/graph/writing" },
 ] as const;
+
+function isTabActive(pathname: string, href: string) {
+  if (href === "/dashboard/graph") return pathname === href;
+  return pathname.startsWith(href);
+}
 
 export default function GraphNavBar() {
   const pathname = usePathname();
@@ -21,27 +28,46 @@ export default function GraphNavBar() {
         initial={{ y: -20, opacity: 0 }}
         animate={hidden ? { y: -20, opacity: 0 } : { y: 0, opacity: 1 }}
         transition={hidden ? { duration: 0.2 } : { delay: 0.2 }}
-        className={`flex gap-2 bg-surface-primary/90 backdrop-blur-md rounded-xl p-1.5 shadow-lg border border-border-subtle ${
+        className={`flex gap-1 sm:gap-1.5 md:gap-2 bg-surface-primary/90 backdrop-blur-md rounded-xl p-1 sm:p-1.5 shadow-lg border border-border-subtle max-w-[calc(100vw-2rem)] ${
           hidden ? "pointer-events-none" : "pointer-events-auto"
         }`}
       >
         {TABS.map((tab) => {
-          const isActive = pathname === tab.href;
+          const isActive = isTabActive(pathname, tab.href);
+          const isWriting = tab.href === "/dashboard/graph/writing";
           return (
-            <Link
+            <MotionLink
               key={tab.href}
               href={tab.href}
-              className={`
-                px-8 py-2.5 rounded-lg text-sm font-semibold transition-all duration-200
-                ${
-                  isActive
-                    ? "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-md shadow-accent/30"
-                    : "text-content-secondary hover:bg-surface-tertiary"
+              {...(isWriting ? { "data-writing-nav-escritura": "true" } : {})}
+              onClick={(e) => {
+                if (isActive && isWriting) {
+                  e.preventDefault();
+                  window.dispatchEvent(new CustomEvent("writing-submenu-toggle"));
                 }
-              `}
+              }}
+              className="relative px-3 py-2 sm:px-5 sm:py-2.5 md:px-8 rounded-lg text-xs sm:text-sm font-semibold transition-colors duration-200"
+              whileHover={{ scale: 1.04 }}
+              whileTap={{ scale: 0.96 }}
+              transition={{ type: "spring", stiffness: 500, damping: 30 }}
             >
-              {tab.label}
-            </Link>
+              {isActive && (
+                <motion.span
+                  layoutId="graph-nav-active"
+                  className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent to-accent-hover shadow-md shadow-accent/30"
+                  transition={{ type: "spring", stiffness: 500, damping: 32 }}
+                />
+              )}
+              <span
+                className={`relative z-10 ${
+                  isActive
+                    ? "text-content-inverted"
+                    : "text-content-secondary hover:text-content-primary"
+                }`}
+              >
+                {tab.label}
+              </span>
+            </MotionLink>
           );
         })}
       </motion.div>

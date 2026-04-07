@@ -3,7 +3,7 @@
 import { memo } from "react";
 import type { CSSProperties } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
-import { LockKeyhole, Sparkles } from "lucide-react";
+import { LockKeyhole } from "lucide-react";
 import type { KanjiBoardNodeData } from "../types";
 
 // ── Sphere geometry within the node bounding box (168 × 196) ──────────────
@@ -144,7 +144,7 @@ function getPlanetStyles(
           "120,112,126",
         ),
     sphereClass:
-      "kanji-node-sphere-locked border-[#D8D2E4]/38 dark:border-white/[0.06]",
+      "kanji-node-sphere-locked border-black/[0.06] dark:border-white/[0.06]",
     ring: "rgba(120, 112, 126, 0.18)",
     orbit: "rgba(120, 112, 126, 0.28)",
     label: "text-content-secondary",
@@ -244,39 +244,33 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
 
           {/* Unlock ring — quality-tiered halo burst */}
           {data.unlocking && data.qualityTier !== "low" && (
-            <div className="kanji-node-unlock-ring pointer-events-none absolute inset-[18px]" />
+            <div
+              className="kanji-node-unlock-ring pointer-events-none absolute inset-[18px]"
+              style={{ borderColor: "rgba(186, 72, 69, 0.64)" }}
+            />
           )}
           {data.unlocking && data.qualityTier === "high" && (
             <div
               className="kanji-node-unlock-ring pointer-events-none absolute inset-[10px]"
-              style={{ animationDelay: "0.22s" }}
+              style={{
+                animationDelay: "0.22s",
+                borderColor: "rgba(186, 72, 69, 0.64)",
+              }}
             />
           )}
 
           <div
-            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border text-[42px] font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}${data.unlocking ? " kanji-node-unlocking" : ""}${data.shaking ? " kanji-node-shaking" : ""}`}
-          >
-            <span className={progress.status === "locked" ? "opacity-72" : ""}>
-              {progress.kanji.symbol}
-            </span>
-          </div>
-
-          <div
-            className={[
-              "absolute right-3 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full border",
-              progress.status === "locked"
-                ? "border-[#D8D2E4]/50 bg-[#F6F4FA]/90 text-[#C0B9CC] dark:border-white/10 dark:bg-black/44 dark:text-white/92"
-                : "border-black/20 bg-black/52 text-white/88 dark:border-white/10 dark:bg-black/44 dark:text-white/92",
-            ].join(" ")}
+            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}${data.unlocking ? " kanji-node-unlocking" : ""}${data.shaking ? " kanji-node-shaking" : ""}`}
           >
             {progress.status === "locked" ? (
-              <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2.2} />
-            ) : progress.status === "completed" ? (
-              <Sparkles className="h-3.5 w-3.5" strokeWidth={2.2} />
+              <div className="flex flex-col items-center justify-center gap-1.5">
+                <span className="text-[30px] leading-none opacity-40">
+                  {progress.kanji.symbol}
+                </span>
+                <LockKeyhole className="h-3.5 w-3.5 opacity-45" strokeWidth={2} />
+              </div>
             ) : (
-              <span className="text-[11px] font-semibold">
-                {progress.bestScore ?? 0}
-              </span>
+              <span className="text-[42px]">{progress.kanji.symbol}</span>
             )}
           </div>
 

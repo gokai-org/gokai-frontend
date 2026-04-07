@@ -282,6 +282,7 @@ export function createKanjiBoardGraph(
           opacityScale: qualityProfile.edge.opacityScale,
           showLockedDash: qualityProfile.edge.showLockedDash,
           unlocking,
+          requiredPoints: target.kanji.pointsToUnlock,
         },
       },
     ];
@@ -358,6 +359,7 @@ export function createBaseKanjiBoardGraph(
           opacityScale: qualityProfile.edge.opacityScale,
           showLockedDash: qualityProfile.edge.showLockedDash,
           unlocking: false,
+          requiredPoints: target.kanji.pointsToUnlock,
         },
       },
     ];

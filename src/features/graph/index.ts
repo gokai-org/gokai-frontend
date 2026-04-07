@@ -18,7 +18,7 @@ export {
 export { GrammarView } from "./grammar";
 
 // Kanjis
-export { KanjisView } from "./kanjis";
+export { KanjisView } from "./writing/kanjis";
 
 // Domain types
 export type {

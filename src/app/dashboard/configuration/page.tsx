@@ -1,7 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect, type FormEvent } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import { SettingsSidebar } from "@/features/configuration/components/SettingsSidebar";
 import { SettingsSection } from "@/features/configuration/components/SettingsSection";
 import {
@@ -11,7 +10,7 @@ import {
 } from "@/features/configuration/components/SettingsFields";
 import { getCurrentUser } from "@/features/auth/services/api";
 import type { User } from "@/features/auth/types";
-import { useToast } from "@/shared/ui/ToastProvider";
+
 import { useSettings } from "@/features/configuration/hooks/useSettings";
 import type { UserSettings } from "@/features/configuration/types";
 import { AccountSettings } from "@/features/configuration/components/AccountSettings";

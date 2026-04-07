@@ -1,7 +1,7 @@
 "use client";
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
@@ -66,8 +66,25 @@ export default function LibraryPage() {
     loadingHiraganas,
   } = useLibraryContent(searchQuery);
 
-  const { lockedKanjiIds, reload: reloadLockedStatus } =
+  const { lockedKanjiIds, userPoints, reload: reloadLockedStatus } =
     useKanjiLockedStatus(kanjis);
+
+  // Derive locked kana IDs from the same userPoints (no extra API call)
+  const lockedHiraganaIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const h of hiraganas) {
+      if (userPoints < h.pointsToUnlock) s.add(h.id);
+    }
+    return s;
+  }, [hiraganas, userPoints]);
+
+  const lockedKatakanaIds = useMemo(() => {
+    const s = new Set<string>();
+    for (const k of katakanas) {
+      if (userPoints < k.pointsToUnlock) s.add(k.id);
+    }
+    return s;
+  }, [katakanas, userPoints]);
   const [newlyUnlockedKanjiIds, setNewlyUnlockedKanjiIds] = useState<
     ReadonlySet<string>
   >(new Set());
@@ -244,6 +261,8 @@ export default function LibraryPage() {
                     favoriteHiraganas={favoriteHiraganas}
                     favoriteKatakanas={favoriteKatakanas}
                     lockedKanjiIds={lockedKanjiIds}
+                    lockedHiraganaIds={lockedHiraganaIds}
+                    lockedKatakanaIds={lockedKatakanaIds}
                     newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
                     toggleFavoriteKanji={toggleFavoriteKanji}
                     toggleFavoriteHiragana={(id) =>
@@ -309,6 +328,8 @@ export default function LibraryPage() {
                     favoriteHiraganas={favoriteHiraganas}
                     favoriteKatakanas={favoriteKatakanas}
                     lockedKanjiIds={lockedKanjiIds}
+                    lockedHiraganaIds={lockedHiraganaIds}
+                    lockedKatakanaIds={lockedKatakanaIds}
                     newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
                     toggleFavoriteKanji={toggleFavoriteKanji}
                     toggleFavoriteHiragana={(id) =>
@@ -412,14 +433,20 @@ export default function LibraryPage() {
                       {favoriteData.hiragana.map((fav, i) => {
                         const kana = hiraganas.find((h) => h.id === fav.id);
                         if (kana) {
+                          const isLocked = lockedHiraganaIds.has(kana.id);
                           return (
                             <ScriptCard
                               key={fav.id}
                               {...hiraganaToScriptCard(kana, true)}
                               index={i}
-                              onClick={() => handleKanaClick(kana)}
-                              onFavoriteToggle={(id) =>
-                                void toggleFavorite(id, "hiragana")
+                              locked={isLocked}
+                              onClick={
+                                isLocked ? undefined : () => handleKanaClick(kana)
+                              }
+                              onFavoriteToggle={
+                                isLocked
+                                  ? undefined
+                                  : (id) => void toggleFavorite(id, "hiragana")
                               }
                             />
                           );
@@ -439,14 +466,20 @@ export default function LibraryPage() {
                       {favoriteData.katakana.map((fav, i) => {
                         const kana = katakanas.find((k) => k.id === fav.id);
                         if (kana) {
+                          const isLocked = lockedKatakanaIds.has(kana.id);
                           return (
                             <ScriptCard
                               key={fav.id}
                               {...katakanaToScriptCard(kana, true)}
                               index={i}
-                              onClick={() => handleKanaClick(kana)}
-                              onFavoriteToggle={(id) =>
-                                void toggleFavorite(id, "katakana")
+                              locked={isLocked}
+                              onClick={
+                                isLocked ? undefined : () => handleKanaClick(kana)
+                              }
+                              onFavoriteToggle={
+                                isLocked
+                                  ? undefined
+                                  : (id) => void toggleFavorite(id, "katakana")
                               }
                             />
                           );
@@ -550,20 +583,28 @@ export default function LibraryPage() {
               >
                 {katakanas.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {katakanas.map((katakana, i) => (
-                      <ScriptCard
-                        key={katakana.id}
-                        {...katakanaToScriptCard(
-                          katakana,
-                          favoriteKatakanas.has(katakana.id),
-                        )}
-                        index={i}
-                        onClick={() => handleKanaClick(katakana)}
-                        onFavoriteToggle={(id) =>
-                          void toggleFavorite(id, "katakana")
-                        }
-                      />
-                    ))}
+                    {katakanas.map((katakana, i) => {
+                      const isLocked = lockedKatakanaIds.has(katakana.id);
+                      return (
+                        <ScriptCard
+                          key={katakana.id}
+                          {...katakanaToScriptCard(
+                            katakana,
+                            favoriteKatakanas.has(katakana.id),
+                          )}
+                          index={i}
+                          locked={isLocked}
+                          onClick={
+                            isLocked ? undefined : () => handleKanaClick(katakana)
+                          }
+                          onFavoriteToggle={
+                            isLocked
+                              ? undefined
+                              : (id) => void toggleFavorite(id, "katakana")
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </LibraryCategorySection>
@@ -585,20 +626,28 @@ export default function LibraryPage() {
               >
                 {hiraganas.length > 0 && (
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {hiraganas.map((hiragana, i) => (
-                      <ScriptCard
-                        key={hiragana.id}
-                        {...hiraganaToScriptCard(
-                          hiragana,
-                          favoriteHiraganas.has(hiragana.id),
-                        )}
-                        index={i}
-                        onClick={() => handleKanaClick(hiragana)}
-                        onFavoriteToggle={(id) =>
-                          void toggleFavorite(id, "hiragana")
-                        }
-                      />
-                    ))}
+                    {hiraganas.map((hiragana, i) => {
+                      const isLocked = lockedHiraganaIds.has(hiragana.id);
+                      return (
+                        <ScriptCard
+                          key={hiragana.id}
+                          {...hiraganaToScriptCard(
+                            hiragana,
+                            favoriteHiraganas.has(hiragana.id),
+                          )}
+                          index={i}
+                          locked={isLocked}
+                          onClick={
+                            isLocked ? undefined : () => handleKanaClick(hiragana)
+                          }
+                          onFavoriteToggle={
+                            isLocked
+                              ? undefined
+                              : (id) => void toggleFavorite(id, "hiragana")
+                          }
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </LibraryCategorySection>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getKanjiLessonResults,
   getPrimaryMeaning,
@@ -106,9 +106,12 @@ export function useKanjiBoard() {
   const [userPoints, setUserPoints] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const hasLoadedOnceRef = useRef(false);
 
   const reload = useCallback(async () => {
-    setLoading(true);
+    if (!hasLoadedOnceRef.current) {
+      setLoading(true);
+    }
     setError(null);
 
     try {
@@ -131,6 +134,7 @@ export function useKanjiBoard() {
       setKanjis([]);
       setResults([]);
     } finally {
+      hasLoadedOnceRef.current = true;
       setLoading(false);
     }
   }, []);

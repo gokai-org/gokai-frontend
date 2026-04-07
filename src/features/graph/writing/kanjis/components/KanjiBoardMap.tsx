@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useRef } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import ReactFlow, {
   Background,
   BackgroundVariant,
@@ -61,13 +61,15 @@ function KanjiBoardMapInner({
   layout,
   onSelect,
   onViewportChange,
-  initialNodeId,
+  initialNodeId: _initialNodeId,
   focusedNodeId,
   onInteractionChange,
   qualityProfile,
   translateExtent: translateExtentProp,
 }: KanjiBoardMapProps) {
   const { setCenter, getViewport, setViewport } = useReactFlow();
+  const [stableNodeTypes] = useState(() => nodeTypes);
+  const [stableEdgeTypes] = useState(() => edgeTypes);
   const hasInitializedViewport = useRef(false);
   const savedViewport = useRef<Viewport | null>(null);
   const lastFocusedNodeId = useRef<string | null>(null);
@@ -77,16 +79,19 @@ function KanjiBoardMapInner({
 
     const frame = window.requestAnimationFrame(() => {
       hasInitializedViewport.current = true;
-      const initialNode =
-        nodes.find((node) => node.id === initialNodeId) ??
-        nodes.find((node) => node.data.progress.status === "available") ??
-        nodes[0];
+      // Entrance focus: last available node = most recently unlocked frontier
+      // Falls back to nodes[0] if all are locked or all are completed
+      const lastAvailableNode = [...nodes]
+        .slice()
+        .reverse()
+        .find((node) => node.data.progress.status === "available");
+      const initialNode = lastAvailableNode ?? nodes[0];
 
       if (!initialNode) return;
 
       const focusPoint = getPlanetFocusPoint(initialNode);
       void setCenter(focusPoint.x, focusPoint.y, {
-        zoom: qualityProfile.camera.overviewZoom,
+        zoom: qualityProfile.camera.focusZoom,
         duration: qualityProfile.camera.initialDuration,
       });
 
@@ -98,11 +103,10 @@ function KanjiBoardMapInner({
     return () => window.cancelAnimationFrame(frame);
   }, [
     getViewport,
-    initialNodeId,
     nodes,
     onViewportChange,
     qualityProfile.camera.initialDuration,
-    qualityProfile.camera.overviewZoom,
+    qualityProfile.camera.focusZoom,
     setCenter,
   ]);
 
@@ -191,8 +195,8 @@ function KanjiBoardMapInner({
       onMove={handleMove}
       onMoveStart={handleMoveStart}
       onMoveEnd={handleMoveEnd}
-      nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
+      nodeTypes={stableNodeTypes}
+      edgeTypes={stableEdgeTypes}
       onlyRenderVisibleElements
       minZoom={qualityProfile.camera.overviewZoom}
       maxZoom={qualityProfile.camera.focusZoom}
@@ -221,15 +225,15 @@ function KanjiBoardMapInner({
         className="kanji-bg-board-lines"
         variant={BackgroundVariant.Lines}
         gap={160}
-        lineWidth={0.9}
-        color="rgba(18, 18, 22, 0.15)"
+        lineWidth={1.15}
+        color="rgba(18, 18, 22, 0.20)"
       />
       <Background
         className="kanji-bg-board-hoshi"
         variant={BackgroundVariant.Dots}
         gap={480}
-        size={2.8}
-        color="rgba(18, 18, 22, 0.28)"
+        size={3.2}
+        color="rgba(18, 18, 22, 0.34)"
       />
     </ReactFlow>
   );
