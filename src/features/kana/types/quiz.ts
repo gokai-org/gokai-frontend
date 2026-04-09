@@ -83,6 +83,14 @@ export type KanaQuizSessionState = {
   canvasScores: number[];
 };
 
+export const KANA_QUIZ_TOTAL_ROUNDS = 3;
+
+export type KanaQuizRoundResult = {
+  type: KanaQuizType;
+  score: number;
+  duration: number;
+};
+
 /** Human-readable labels for each kana quiz type */
 export const KANA_QUIZ_TYPE_LABELS: Record<KanaQuizSessionType, string> = {
   from_kana: "Pronunciacion",

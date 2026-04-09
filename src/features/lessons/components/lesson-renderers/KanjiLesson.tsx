@@ -113,27 +113,6 @@ export default function KanjiLesson({
         </div>
       </div>
 
-      {/* CTA */}
-      <LessonCTA
-        variant={ctaDisabled ? "disabled" : "start"}
-        label={
-          ctaDisabled
-            ? "Aún bloqueado"
-            : mode === "writing"
-              ? "Comenzar escritura"
-              : "Comenzar"
-        }
-        onClick={() => {
-          if (ctaDisabled) return;
-
-          if (mode === "writing") {
-            onWritingStart?.(k);
-          } else {
-            console.log("start", data.lesson.id, "kanji", k.id);
-          }
-        }}
-      />
-
       {/* Quiz CTA */}
       {onQuizStart && (
         <LessonCTA

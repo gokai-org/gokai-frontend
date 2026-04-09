@@ -20,8 +20,9 @@ export type {
   KanaQuizSubmitBody,
   KanaQuizSessionState,
   KanaQuizStep,
+  KanaQuizRoundResult,
 } from "./types/quiz";
-export { KANA_QUIZ_TYPE_LABELS } from "./types/quiz";
+export { KANA_QUIZ_TYPE_LABELS, KANA_QUIZ_TOTAL_ROUNDS } from "./types/quiz";
 export { getKanaLabel } from "./utils/kanaText";
 export {
   listKanaCatalog,

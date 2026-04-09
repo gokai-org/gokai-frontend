@@ -3,8 +3,8 @@ import type {
   KanjiQuizQuestion,
   KanjiQuizResponseRaw,
   KanjiQuizResponse,
+  KanjiQuizExerciseQuestion,
 } from "@/features/kanji/types/quiz";
-import type { KanjiLessonQuestion } from "@/features/kanji/types/lessonFlow";
 
 export function parseKanjiQuizStrokes(
   raw: string | undefined | null,
@@ -30,9 +30,17 @@ export function parseKanjiQuizStrokes(
 export function normalizeQuizQuestion(
   raw: KanjiQuizQuestionRaw,
 ): KanjiQuizQuestion {
+  const rawOptions = raw.options ?? [];
+  const seen = new Set<string>();
+  const uniqueOptions = rawOptions.filter((opt) => {
+    if (seen.has(opt.value)) return false;
+    seen.add(opt.value);
+    return true;
+  });
+
   return {
     kanji: raw.kanji,
-    options: raw.options ?? [],
+    options: uniqueOptions,
     viewBox: raw.viewBox,
     strokes: raw.strokes ? parseKanjiQuizStrokes(raw.strokes) : undefined,
   };
@@ -56,20 +64,18 @@ export function isValidWritingQuestion(question: KanjiQuizQuestion): boolean {
   );
 }
 
-export function quizQuestionToLessonQuestion(
+/**
+ * Adapts a backend quiz question to the shape expected by exercise components.
+ * For "meaning" type the kanji field carries the prompt text (meaning),
+ * so it is moved to `prompt` and `kanji` is cleared.
+ */
+export function toExerciseQuestion(
   question: KanjiQuizQuestion,
   quizType: "kanji" | "meaning" | "reading",
-): KanjiLessonQuestion {
+): KanjiQuizExerciseQuestion {
   return {
-    // "meaning" shows a written meaning → the kanji field is unused; the meaning
-    // text travels through `prompt` so KanjiSelectionExercise can render it.
-    // "kanji" and "reading" both show the kanji symbol as the large prompt.
     kanji: quizType !== "meaning" ? question.kanji : "",
-    kanjiId: "",
     prompt: quizType === "meaning" ? question.kanji : undefined,
-    options: question.options.map((opt) => ({
-      value: opt.value,
-      correct: opt.correct,
-    })),
+    options: question.options,
   };
 }

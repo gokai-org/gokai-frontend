@@ -253,8 +253,7 @@ export function applyWritingBoardUIState(
 
   const edges = base.edges.map((edge) => {
     const highlight = selectedId === edge.source || selectedId === edge.target;
-    const unlocking =
-      newlyUnlockedIds.has(edge.source) || newlyUnlockedIds.has(edge.target);
+    const unlocking = newlyUnlockedIds.has(edge.target);
 
     if (
       edge.data?.highlight === highlight &&

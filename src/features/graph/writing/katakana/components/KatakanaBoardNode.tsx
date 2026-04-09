@@ -144,11 +144,11 @@ function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
             )}
           </div>
 
-          {/* +30 points float */}
+          {/* +5 points float */}
           {data.unlocking && (
             <div className="pointer-events-none absolute top-0 right-0 z-30">
               <span className="kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#1B5078] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(27,80,120,0.52)]">
-                +30
+                +5
               </span>
             </div>
           )}

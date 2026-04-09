@@ -159,6 +159,9 @@ export async function POST(
       data = { success: true };
     }
 
+    console.log("[KANA QUIZ POST] upstream response status:", upstream.status);
+    console.log("[KANA QUIZ POST] upstream response body:", text.substring(0, 500));
+
     return NextResponse.json(data);
   } catch (error) {
     console.error("[API] Error submitting kana quiz:", error);

@@ -78,15 +78,15 @@ export function KanaQuizModal({
   );
 
   useEffect(() => {
-    quiz.startQuiz(kanaId);
+    quiz.startQuiz(kanaId, { kanaType, label });
     return () => quiz.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kanaId, kanaType]);
 
   const handleRetry = useCallback(() => {
     quiz.reset();
-    quiz.startQuiz(kanaId);
-  }, [quiz, kanaId]);
+    quiz.startQuiz(kanaId, { kanaType, label });
+  }, [quiz, kanaId, kanaType, label]);
 
   const handleClose = useCallback(() => {
     if (
@@ -114,6 +114,24 @@ export function KanaQuizModal({
   } = quiz;
 
   const kanaTypeLabel = kanaType === "katakana" ? "Katakana" : "Hiragana";
+  const strokeAccentColor = kanaType === "katakana" ? "#1B5078" : "#7B3F8A";
+
+  const kanaAccentVars =
+    kanaType === "katakana"
+      ? ({
+          "--accent": "#1B5078",
+          "--accent-hover": "#2E82B5",
+          "--accent-subtle": "rgba(27,80,120,0.1)",
+          "--accent-muted": "rgba(27,80,120,0.06)",
+          "--accent-glow": "rgba(27,80,120,0.52)",
+        } as React.CSSProperties)
+      : ({
+          "--accent": "#7B3F8A",
+          "--accent-hover": "#A866B5",
+          "--accent-subtle": "rgba(123,63,138,0.1)",
+          "--accent-muted": "rgba(123,63,138,0.06)",
+          "--accent-glow": "rgba(123,63,138,0.52)",
+        } as React.CSSProperties);
   const currentQuestionType = currentQuestion?.type ?? quizData?.type;
   const quizTypeLabel = currentQuestionType
     ? KANA_QUIZ_TYPE_LABELS[currentQuestionType]
@@ -146,17 +164,13 @@ export function KanaQuizModal({
             "max-sm:max-w-none max-sm:mx-auto max-sm:w-[calc(100vw-2rem)]",
             "max-sm:max-h-[92dvh] max-sm:rounded-3xl",
           ].join(" ")}
+          style={kanaAccentVars}
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Header ── */}
           <div className="shrink-0 rounded-t-3xl overflow-hidden">
             <div className="bg-gradient-to-r from-accent to-accent-hover px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-surface-primary/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
-                  <span className="text-2xl font-bold text-content-inverted select-none">
-                    {label || "あ"}
-                  </span>
-                </div>
                 <div>
                   <h2 className="text-base font-bold text-content-inverted leading-tight">
                     Quiz de {kanaTypeLabel}
@@ -329,6 +343,7 @@ export function KanaQuizModal({
                           phase={state.canvasPhase}
                           onPhaseChange={quiz.setCanvasPhase}
                           onComplete={quiz.completeCanvasQuestion}
+                          accentColor={strokeAccentColor}
                         />
                       )}
 
@@ -401,7 +416,8 @@ export function KanaQuizModal({
                       duration: 0.55,
                       ease: [0.34, 1.56, 0.64, 1],
                     }}
-                    className="relative z-10 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-hover shadow-[0_0_48px_rgba(186,72,66,0.52)]"
+                    className="relative z-10 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-hover"
+                    style={{ boxShadow: "0 0 48px var(--accent-glow, rgba(186,72,66,0.52))" }}
                   >
                     <span className="text-5xl font-bold text-white select-none">
                       {label || "あ"}

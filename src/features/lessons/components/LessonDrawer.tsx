@@ -52,6 +52,24 @@ export default function LessonDrawer({
     () => lessons[activeIndex] ?? null,
     [lessons, activeIndex],
   );
+
+  const kanaAccentVars: React.CSSProperties = useMemo(() => {
+    if (active?.kind !== "kana") return {};
+    const kt = active.kana.kanaType;
+    return kt === "katakana"
+      ? ({
+          "--accent": "#1B5078",
+          "--accent-hover": "#2E82B5",
+          "--accent-subtle": "rgba(27,80,120,0.1)",
+          "--accent-muted": "rgba(27,80,120,0.06)",
+        } as React.CSSProperties)
+      : ({
+          "--accent": "#7B3F8A",
+          "--accent-hover": "#A866B5",
+          "--accent-subtle": "rgba(123,63,138,0.1)",
+          "--accent-muted": "rgba(123,63,138,0.06)",
+        } as React.CSSProperties);
+  }, [active]);
   const isMobile =
     typeof window !== "undefined" &&
     window.matchMedia("(max-width: 640px)").matches;
@@ -156,7 +174,10 @@ export default function LessonDrawer({
             }
             exit={isMobile ? { y: 40, opacity: 0 } : { x: 60, opacity: 0 }}
             transition={{ type: "spring", stiffness: 260, damping: 26 }}
-            style={writingActive ? { pointerEvents: "none" } : undefined}
+            style={{
+              ...(writingActive ? { pointerEvents: "none" as const } : {}),
+              ...kanaAccentVars,
+            }}
           >
             {/* Header sticky */}
             <div className="sticky top-0 z-10 bg-surface-primary/90 backdrop-blur-md border-b border-border-subtle rounded-t-3xl">

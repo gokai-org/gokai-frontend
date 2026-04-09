@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Kana, KanaStrokeData } from "@/features/kana/types";
 import { getKanaStrokes } from "@/features/kana/api/kanaApi";
@@ -69,6 +69,24 @@ export function KanaWritingPracticeModal({
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const kanaTypeLabel = kana.kanaType === "hiragana" ? "Hiragana" : "Katakana";
+
+  const kanaAccentColor =
+    kana.kanaType === "katakana" ? "#1B5078" : "#7B3F8A";
+  const kanaAccentVars = (
+    kana.kanaType === "katakana"
+      ? {
+          "--accent": "#1B5078",
+          "--accent-hover": "#2E82B5",
+          "--accent-subtle": "rgba(27,80,120,0.1)",
+          "--accent-muted": "rgba(27,80,120,0.06)",
+        }
+      : {
+          "--accent": "#7B3F8A",
+          "--accent-hover": "#A866B5",
+          "--accent-subtle": "rgba(123,63,138,0.1)",
+          "--accent-muted": "rgba(123,63,138,0.06)",
+        }
+  ) as React.CSSProperties;
 
   // ── Load stroke data ──
   useEffect(() => {
@@ -312,6 +330,7 @@ export function KanaWritingPracticeModal({
             "max-sm:max-w-none max-sm:mx-auto max-sm:w-[calc(100vw-2rem)]",
             "max-sm:max-h-[92dvh] max-sm:rounded-3xl",
           ].join(" ")}
+          style={kanaAccentVars}
           onClick={(e) => e.stopPropagation()}
         >
           {/* ── Header ── */}
@@ -661,6 +680,7 @@ export function KanaWritingPracticeModal({
                       onStrokeDrawn={handleStrokeDrawn}
                       size={practiceSize}
                       flashError={flashError}
+                      accentColor={kanaAccentColor}
                     />
                   </div>
 

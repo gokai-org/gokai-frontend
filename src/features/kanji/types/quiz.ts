@@ -11,6 +11,13 @@ export type KanjiQuizOption = {
   value: string;
 };
 
+/** Minimal question shape consumed by MCQ exercise components */
+export type KanjiQuizExerciseQuestion = {
+  kanji: string;
+  prompt?: string;
+  options: KanjiQuizOption[];
+};
+
 export type KanjiQuizQuestionRaw = {
   kanji: string;
   options?: KanjiQuizOption[];

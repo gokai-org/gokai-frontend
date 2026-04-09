@@ -1,11 +1,11 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { KanjiLessonQuestionOption } from "@/features/kanji/types/lessonFlow";
+import type { KanjiQuizOption } from "@/features/kanji/types/quiz";
 import { normalizeKanjiDisplayText } from "@/features/kanji/utils/kanjiText";
 
 interface ExerciseOptionCardProps {
-  option: KanjiLessonQuestionOption;
+  option: KanjiQuizOption;
   index: number;
   selected: boolean;
   revealed: boolean;
@@ -65,7 +65,6 @@ export function ExerciseOptionCard({
       } ${kanjiMode ? "p-4" : "px-4 py-3.5"}`}
     >
       <div className="flex items-center gap-3">
-        {/* Option letter badge */}
         <div
           className={`shrink-0 w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
             revealed && isCorrect
@@ -110,7 +109,6 @@ export function ExerciseOptionCard({
           )}
         </div>
 
-        {/* Option text or kanji */}
         <span
           className={`${textClass} font-semibold ${
             kanjiMode ? "text-3xl leading-none py-1" : "text-sm"

@@ -4,7 +4,7 @@ import { useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKanjiQuiz } from "@/features/kanji/hooks/useKanjiQuiz";
 import {
-  quizQuestionToLessonQuestion,
+  toExerciseQuestion,
   isValidWritingQuestion,
 } from "@/features/kanji/utils/quizParser";
 import {
@@ -16,9 +16,9 @@ import type {
   KanjiQuizRoundResult,
   KanjiQuizType,
 } from "@/features/kanji/types/quiz";
-import { KanjiMeaningExercise } from "@/features/kanji/components/lesson-flow/KanjiMeaningExercise";
-import { KanjiSelectionExercise } from "@/features/kanji/components/lesson-flow/KanjiSelectionExercise";
-import { KanjiReadingExercise } from "@/features/kanji/components/lesson-flow/KanjiReadingExercise";
+import { KanjiMeaningExercise } from "./KanjiMeaningExercise";
+import { KanjiSelectionExercise } from "./KanjiSelectionExercise";
+import { KanjiReadingExercise } from "./KanjiReadingExercise";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { KanjiQuizWritingExercise } from "./KanjiQuizWritingExercise";
 
@@ -159,11 +159,6 @@ export function KanjiQuizModal({
           <div className="shrink-0 rounded-t-3xl overflow-hidden">
             <div className="bg-gradient-to-r from-accent to-accent-hover px-5 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-surface-primary/20 backdrop-blur-sm flex items-center justify-center shadow-inner">
-                  <span className="text-2xl font-bold text-content-inverted select-none">
-                    {label || "漢"}
-                  </span>
-                </div>
                 <div>
                   <h2 className="text-base font-bold text-content-inverted leading-tight">
                     Quiz de Kanji
@@ -351,7 +346,7 @@ export function KanjiQuizModal({
                   >
                     {quizData.type === "kanji" && (
                       <KanjiMeaningExercise
-                        question={quizQuestionToLessonQuestion(
+                        question={toExerciseQuestion(
                           currentQuestion,
                           "kanji",
                         )}
@@ -364,7 +359,7 @@ export function KanjiQuizModal({
 
                     {quizData.type === "meaning" && (
                       <KanjiSelectionExercise
-                        question={quizQuestionToLessonQuestion(
+                        question={toExerciseQuestion(
                           currentQuestion,
                           "meaning",
                         )}
@@ -377,7 +372,7 @@ export function KanjiQuizModal({
 
                     {quizData.type === "reading" && (
                       <KanjiReadingExercise
-                        question={quizQuestionToLessonQuestion(
+                        question={toExerciseQuestion(
                           currentQuestion,
                           "reading",
                         )}

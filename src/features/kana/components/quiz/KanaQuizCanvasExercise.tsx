@@ -41,6 +41,8 @@ interface KanaQuizCanvasExerciseProps {
   phase: "demo" | "practice" | "done";
   onPhaseChange: (phase: "demo" | "practice" | "done") => void;
   onComplete: (score: number) => void;
+  /** Stroke/guide accent colour (hiragana purple, katakana blue). */
+  accentColor?: string;
 }
 
 export function KanaQuizCanvasExercise({
@@ -50,6 +52,7 @@ export function KanaQuizCanvasExercise({
   phase,
   onPhaseChange,
   onComplete,
+  accentColor,
 }: KanaQuizCanvasExerciseProps) {
   const demoSize = useCanvasSize(240, 80);
   const practiceSize = useCanvasSize(260, 64);
@@ -156,11 +159,6 @@ export function KanaQuizCanvasExercise({
     setDemoAutoPlay(false);
     onPhaseChange("demo");
   }, [onPhaseChange]);
-
-  const runningScore = useMemo(
-    () => strokeResults.reduce((sum, r) => sum + r.pointsDelta, 0),
-    [strokeResults],
-  );
 
   const kanaTypeLabel =
     question.type === "canvas"
@@ -378,13 +376,7 @@ export function KanaQuizCanvasExercise({
           </span>
         </p>
 
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-content-muted font-medium">Puntos:</span>
-          <span className={`text-sm font-bold ${runningScore >= 0 ? "text-accent" : "text-red-500"}`}>
-            {runningScore >= 0 ? `+${runningScore}` : runningScore}
-          </span>
-        </div>
-
+        {/* Canvas with floating feedback toast */}
         <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
@@ -398,7 +390,34 @@ export function KanaQuizCanvasExercise({
             activeStrokeIndex={practiceStrokeIndex}
             size={practiceSize}
             onStrokeDrawn={handleStrokeDrawn}
+            accentColor={accentColor}
+            hideActiveGuide
           />
+
+          <AnimatePresence>
+            {lastFeedback && (
+              <motion.div
+                initial={{ opacity: 0, y: -12, scale: 0.85 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.85 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="absolute top-3 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
+              >
+                <div
+                  className={`px-4 py-2 rounded-2xl backdrop-blur-md shadow-lg flex items-center gap-2 ${getFeedbackColor(lastFeedback.validation.feedback)}`}
+                >
+                  <span className="text-sm font-bold">
+                    {getFeedbackLabel(lastFeedback.validation.feedback)}
+                  </span>
+                  <span className="text-sm font-bold opacity-70">
+                    {lastFeedback.pointsDelta >= 0
+                      ? `+${lastFeedback.pointsDelta}`
+                      : lastFeedback.pointsDelta}
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
 
         <div className="flex items-center gap-2">
@@ -420,24 +439,6 @@ export function KanaQuizCanvasExercise({
             ))}
           </div>
         </div>
-
-        <AnimatePresence>
-          {lastFeedback && (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.9 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.9 }}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold ${getFeedbackColor(lastFeedback.validation.feedback)}`}
-            >
-              {getFeedbackLabel(lastFeedback.validation.feedback)}
-              <span className="ml-1.5 opacity-70">
-                {lastFeedback.pointsDelta >= 0
-                  ? `+${lastFeedback.pointsDelta}`
-                  : lastFeedback.pointsDelta}
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         <button
           onClick={handleBackToDemo}

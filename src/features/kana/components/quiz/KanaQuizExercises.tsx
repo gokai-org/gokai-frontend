@@ -124,9 +124,16 @@ export function KanaFromKanaExercise({
       transition={{ duration: 0.35 }}
       className="flex flex-col items-center gap-5 w-full"
     >
-      <p className="text-sm text-content-tertiary text-center">
-        ¿Cual es la pronunciacion de este caracter?
-      </p>
+      {question.options.length === 1 ? (
+        <div className="flex flex-col items-center gap-1 text-center">
+          <p className="text-sm font-semibold text-content-primary">Aprendiendo a resolver un quiz</p>
+          <p className="text-xs text-content-tertiary">Selecciona la opción para ver cómo funciona</p>
+        </div>
+      ) : (
+        <p className="text-sm text-content-tertiary text-center">
+          ¿Cual es la pronunciacion de este caracter?
+        </p>
+      )}
 
       <motion.div
         initial={{ scale: 0.8, opacity: 0 }}
@@ -197,9 +204,16 @@ export function KanaFromRomajiExercise({
       transition={{ duration: 0.35 }}
       className="flex flex-col items-center gap-5 w-full"
     >
-      <p className="text-sm text-content-tertiary text-center">
-        ¿Cual es el caracter correcto para esta pronunciacion?
-      </p>
+      {question.options.length === 1 ? (
+        <div className="flex flex-col items-center gap-1 text-center">
+          <p className="text-sm font-semibold text-content-primary">Aprendiendo a resolver un quiz</p>
+          <p className="text-xs text-content-tertiary">Selecciona la opción para ver cómo funciona</p>
+        </div>
+      ) : (
+        <p className="text-sm text-content-tertiary text-center">
+          ¿Cual es el caracter correcto para esta pronunciacion?
+        </p>
+      )}
 
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}

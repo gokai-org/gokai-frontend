@@ -1,19 +1,19 @@
 "use client";
 
 import { motion } from "framer-motion";
-import type { KanjiLessonQuestion } from "@/features/kanji/types/lessonFlow";
+import type { KanjiQuizExerciseQuestion } from "@/features/kanji/types/quiz";
 import { normalizeKanjiDisplayText } from "@/features/kanji/utils/kanjiText";
 import { ExerciseOptionCard } from "./ExerciseOptionCard";
 
 interface KanjiSelectionExerciseProps {
-  question: KanjiLessonQuestion;
+  question: KanjiQuizExerciseQuestion;
   selectedIndex: number | null;
   revealed: boolean;
   onSelect: (index: number) => void;
   onConfirm: () => void;
 }
 
-/** Exercise 2: Show meaning → select correct kanji */
+/** Exercise: Show meaning -> select correct kanji */
 export function KanjiSelectionExercise({
   question,
   selectedIndex,
@@ -30,12 +30,10 @@ export function KanjiSelectionExercise({
       transition={{ duration: 0.35 }}
       className="flex flex-col items-center gap-5 w-full"
     >
-      {/* Instruction */}
       <p className="text-sm text-content-tertiary text-center">
-        ¿Cuál es el kanji correcto para este significado?
+        ¿Cual es el kanji correcto para este significado?
       </p>
 
-      {/* Meaning display */}
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -47,7 +45,6 @@ export function KanjiSelectionExercise({
         </p>
       </motion.div>
 
-      {/* Kanji options */}
       <div className="w-full max-w-md grid grid-cols-2 gap-2.5 sm:grid-cols-3">
         {question.options.map((opt, i) => (
           <ExerciseOptionCard
@@ -62,7 +59,6 @@ export function KanjiSelectionExercise({
         ))}
       </div>
 
-      {/* Confirm button */}
       {!revealed && (
         <motion.button
           initial={{ opacity: 0 }}
