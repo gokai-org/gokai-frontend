@@ -262,9 +262,7 @@ export function createKanjiBoardGraph(
     const target = itemsById.get(layoutEdge.target);
     if (!source || !target) return [];
 
-    const unlocking =
-      (newlyUnlockedIds?.has(layoutEdge.source) ?? false) ||
-      (newlyUnlockedIds?.has(layoutEdge.target) ?? false);
+    const unlocking = newlyUnlockedIds?.has(layoutEdge.target) ?? false;
 
     return [
       {
@@ -398,8 +396,7 @@ export function applyBoardUIState(
 
   const edges = base.edges.map((edge) => {
     const highlight = selectedId === edge.source || selectedId === edge.target;
-    const unlocking =
-      newlyUnlockedIds.has(edge.source) || newlyUnlockedIds.has(edge.target);
+    const unlocking = newlyUnlockedIds.has(edge.target);
 
     if (
       edge.data?.highlight === highlight &&

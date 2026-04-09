@@ -269,6 +269,8 @@ export default function KanjisView() {
 
   const handleQuizStart = useCallback(
     (kanji: { id: string; symbol: string }) => {
+      // Close detail drawer before opening quiz overlay.
+      setDetailNodeId(null);
       // Freeze parallax & board animations while the quiz overlay is active.
       quizActiveRef.current = true;
       lockedIdsBeforeQuizRef.current = new Set(

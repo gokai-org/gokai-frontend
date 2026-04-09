@@ -12,8 +12,7 @@ import { ScriptCard } from "@/features/library/components/ScriptCard";
 import { LibraryGrid } from "@/features/library/components/LibraryGrid";
 import { LibraryRecentPanel } from "@/features/library/components/LibraryRecentPanel";
 import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
-import { KanjiDetailModal } from "@/features/kanji/components/KanjiDetailModal";
-import { KanaDetailModal } from "@/features/kana/components/KanaDetailModal";
+import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import { LibrarySkeleton } from "@/shared/ui/Skeleton";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
@@ -23,7 +22,6 @@ import { useKanaLockedStatus } from "@/features/library/hooks/useKanaLockedStatu
 import { useLibraryContent } from "@/features/library/hooks/useLibraryContent";
 import type { Kanji } from "@/features/kanji/types";
 import type { Kana } from "@/features/kana/types";
-import { getKana } from "@/features/kana/api/kanaApi";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import { KanaQuizModal } from "@/features/kana/components/quiz";
 import {
@@ -40,8 +38,11 @@ import {
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedKanji, setSelectedKanji] = useState<Kanji | null>(null);
-  const [selectedKana, setSelectedKana] = useState<Kana | null>(null);
+  const [drawerEntity, setDrawerEntity] = useState<{
+    id: string;
+    kind: "kanji" | "kana";
+    kanaType?: "hiragana" | "katakana";
+  } | null>(null);
   const [quizKanji, setQuizKanji] = useState<{
     id: string;
     symbol: string;
@@ -126,16 +127,25 @@ export default function LibraryPage() {
 
   const handleKanjiClick = (kanji: Kanji) => {
     addRecentItem("kanji", kanji.id);
-    setSelectedKanji(kanji);
+    setDrawerEntity({ id: kanji.id, kind: "kanji" });
   };
 
-  const handleQuizStart = useCallback(
-    (kanji: Kanji) => {
-      lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
-      setSelectedKanji(null);
-      setQuizKanji({ id: kanji.id, symbol: kanji.symbol });
+  const handleDrawerQuizStart = useCallback(
+    (entity: { id: string; symbol: string }) => {
+      if (!drawerEntity) return;
+      const kind = drawerEntity.kind;
+      const kanaType = drawerEntity.kanaType;
+      setDrawerEntity(null);
+      if (kind === "kanji") {
+        lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
+        setQuizKanji({ id: entity.id, symbol: entity.symbol });
+      } else {
+        lockedHiraganaIdsBeforeQuizRef.current = new Set(lockedHiraganaIds);
+        lockedKatakanaIdsBeforeQuizRef.current = new Set(lockedKatakanaIds);
+        setQuizKana({ id: entity.id, symbol: entity.symbol, kanaType: kanaType ?? "hiragana" });
+      }
     },
-    [lockedKanjiIds],
+    [drawerEntity, lockedKanjiIds, lockedHiraganaIds, lockedKatakanaIds],
   );
 
   const handleQuizClose = useCallback(async () => {
@@ -169,25 +179,9 @@ export default function LibraryPage() {
     }, 2500);
   }, [kanjis, reloadLockedStatus]);
 
-  const handleKanaClick = async (kana: Kana) => {
-    try {
-      const detail = await getKana(kana.id);
-      setSelectedKana(detail);
-    } catch {
-      setSelectedKana(kana);
-    }
+  const handleKanaClick = (kana: Kana) => {
+    setDrawerEntity({ id: kana.id, kind: "kana", kanaType: kana.kanaType });
   };
-
-  const handleKanaQuizStart = useCallback((kana: Kana) => {
-    lockedHiraganaIdsBeforeQuizRef.current = new Set(lockedHiraganaIds);
-    lockedKatakanaIdsBeforeQuizRef.current = new Set(lockedKatakanaIds);
-    setSelectedKana(null);
-    setQuizKana({
-      id: kana.id,
-      symbol: kana.symbol,
-      kanaType: kana.kanaType,
-    });
-  }, [lockedHiraganaIds, lockedKatakanaIds]);
 
   const handleKanaQuizClose = useCallback(async () => {
     setQuizKana(null);
@@ -900,14 +894,25 @@ export default function LibraryPage() {
             </AnimatedEntrance>
           )}
 
-          <KanjiDetailModal
-            kanji={selectedKanji}
-            onClose={() => setSelectedKanji(null)}
-            practiceDisabled={
-              selectedKanji ? lockedKanjiIds.has(selectedKanji.id) : false
+          <LessonDrawer
+            open={drawerEntity !== null}
+            onClose={() => setDrawerEntity(null)}
+            nodeId={drawerEntity?.id ?? null}
+            entityId={drawerEntity?.id ?? null}
+            entityKind={drawerEntity?.kind ?? null}
+            mode="writing"
+            userId="user123"
+            kanjiCtaDisabled={
+              drawerEntity?.kind === "kanji"
+                ? lockedKanjiIds.has(drawerEntity.id)
+                : drawerEntity?.kind === "kana"
+                  ? drawerEntity.kanaType === "hiragana"
+                    ? lockedHiraganaIds.has(drawerEntity.id)
+                    : lockedKatakanaIds.has(drawerEntity.id)
+                  : false
             }
-            practiceDisabledReason="Completa el kanji anterior con al menos 70% para desbloquear."
-            onQuizStart={handleQuizStart}
+            kanjiCtaDisabledReason="Completa la lección anterior para desbloquear."
+            onQuizStart={handleDrawerQuizStart}
           />
 
           {quizKanji !== null && (
@@ -915,14 +920,6 @@ export default function LibraryPage() {
               kanjiId={quizKanji.id}
               label={quizKanji.symbol}
               onClose={handleQuizClose}
-            />
-          )}
-
-          {selectedKana && (
-            <KanaDetailModal
-              kana={selectedKana}
-              onClose={() => setSelectedKana(null)}
-              onQuizStart={() => handleKanaQuizStart(selectedKana)}
             />
           )}
 

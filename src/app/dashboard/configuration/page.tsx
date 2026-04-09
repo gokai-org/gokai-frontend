@@ -409,16 +409,23 @@ function AccessibilitySettings({
           label="Alto contraste"
           description="Aumenta el contraste para mejor legibilidad"
           enabled={ac.highContrast}
-          onChange={(v) => updateSection("accessibility", { highContrast: v })}
+          onChange={(v) => {
+            updateSection("accessibility", { highContrast: v });
+            document.documentElement.classList.toggle("high-contrast", v);
+          }}
         />
 
         <SettingsToggleItem
           label="Reducir animaciones"
           description="Minimiza animaciones y transiciones"
           enabled={ac.reduceAnimations}
-          onChange={(v) =>
-            updateSection("accessibility", { reduceAnimations: v })
-          }
+          onChange={(v) => {
+            updateSection("accessibility", { reduceAnimations: v });
+            try {
+              localStorage.setItem("gokai-animations-enabled", String(!v));
+              localStorage.setItem("gokai-heavy-animations-enabled", String(!v));
+            } catch {}
+          }}
         />
       </SettingsSection>
 

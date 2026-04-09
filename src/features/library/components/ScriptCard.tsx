@@ -18,6 +18,7 @@ export interface ScriptCardProps {
   title: string;
   subtitle?: string;
   pointsBadge?: string;
+  unlockPoints?: number;
   variant: ScriptVariant;
   index?: number;
   isFavorite?: boolean;
@@ -35,6 +36,7 @@ export function ScriptCard({
   title,
   subtitle,
   pointsBadge,
+  unlockPoints,
   variant,
   index = 0,
   isFavorite = false,
@@ -46,6 +48,16 @@ export function ScriptCard({
   const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
     useCardAnimation(index);
   const config = SCRIPT_CARD_CONFIG[variant];
+
+  // ── Variant-aware unlock overlay colors ───────────────────────────────────
+  const unlockColor = {
+    kanji:    { hex: "#BA4845", rgba: "186,72,69" },
+    hiragana: { hex: "#7B3F8A", rgba: "123,63,138" },
+    katakana: { hex: "#1B5078", rgba: "27,80,120" },
+  }[variant];
+  const unlockBadgeText = unlockPoints != null
+    ? `+${unlockPoints}`
+    : variant === "kanji" ? "+30" : "+5";
 
   // ── Long-press to toggle favourite on mobile ──────────────────────────────
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -178,30 +190,33 @@ export function ScriptCard({
       animate={{ opacity: 0 }}
       transition={{ delay: animationsEnabled ? 2.1 : 0.9, duration: 0.4 }}
     >
-      {/* Radial glow in kanji crimson */}
+      {/* Radial glow — variant color */}
       <motion.div
         className="absolute inset-0 rounded-[22px]"
         initial={{ opacity: 0.78 }}
         animate={{ opacity: 0 }}
         transition={{ duration: animationsEnabled ? 1.9 : 0.8 }}
         style={{
-          background:
-            "radial-gradient(circle, rgba(186,72,69,0.48) 0%, transparent 70%)",
+          background: `radial-gradient(circle, rgba(${unlockColor.rgba},0.48) 0%, transparent 70%)`,
         }}
       />
       {/* Expanding ring — skipped on reduced animations */}
       {animationsEnabled && (
         <motion.div
-          className="absolute rounded-[24px] border-2 border-[#BA4845]/52"
+          className="absolute rounded-[24px] border-2"
           initial={{ opacity: 0.92, scale: 0.52 }}
           animate={{ opacity: 0, scale: 1.48 }}
           transition={{ duration: 0.88, ease: [0.22, 1, 0.36, 1] }}
-          style={{ inset: 0 }}
+          style={{ inset: 0, borderColor: `rgba(${unlockColor.rgba},0.52)` }}
         />
       )}
-      {/* +30 points badge floating up */}
+      {/* Points badge floating up — variant color */}
       <motion.div
-        className="relative z-10 flex items-center gap-1 rounded-full bg-[#BA4845] px-3 py-[5px] shadow-[0_3px_12px_rgba(186,72,66,0.52)]"
+        className="relative z-10 flex items-center gap-1 rounded-full px-3 py-[5px]"
+        style={{
+          background: unlockColor.hex,
+          boxShadow: `0 3px 12px rgba(${unlockColor.rgba},0.52)`,
+        }}
         initial={{ y: 10, opacity: 0, scale: 0.68 }}
         animate={
           animationsEnabled
@@ -219,7 +234,7 @@ export function ScriptCard({
         }}
       >
         <span className="text-[13px] font-black tracking-wide text-white">
-          +30
+          {unlockBadgeText}
         </span>
       </motion.div>
     </motion.div>

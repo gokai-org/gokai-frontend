@@ -9,6 +9,8 @@ function getInitialTheme(): ThemeMode {
   if (typeof window === "undefined") return "light";
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "dark" || stored === "light") return stored;
+  // Respect OS/browser preference as fallback
+  if (window.matchMedia?.("(prefers-color-scheme: dark)").matches) return "dark";
   return "light";
 }
 

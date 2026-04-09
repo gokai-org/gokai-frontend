@@ -193,6 +193,137 @@
   --chart-label: #6b7280;
 }
 
+/* ── High contrast (light): stronger contrast for accessibility ── */
+.high-contrast {
+  /* Surfaces — starker contrast between layers */
+  --surface-primary: #ffffff;
+  --surface-secondary: #f0f0f0;
+  --surface-tertiary: #e0e0e0;
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(0, 0, 0, 0.55);
+  --surface-inset: #e8e8e8;
+
+  /* Text — maximum readability */
+  --text-primary: #000000;
+  --text-secondary: #1a1a1a;
+  --text-tertiary: #333333;
+  --text-muted: #555555;
+  --text-inverted: #ffffff;
+
+  /* Borders — clearly visible */
+  --border-primary: #888888;
+  --border-secondary: #aaaaaa;
+  --border-focus: rgba(153, 51, 49, 0.6);
+
+  /* Accent — bolder for visibility */
+  --accent: #7a1a18;
+  --accent-hover: #993331;
+  --accent-subtle: rgba(122, 26, 24, 0.18);
+  --accent-muted: rgba(122, 26, 24, 0.1);
+
+  /* Status — stronger colors */
+  --success: #0d7a30;
+  --success-subtle: rgba(13, 122, 48, 0.15);
+  --error: #b91c1c;
+  --error-subtle: rgba(185, 28, 28, 0.15);
+  --warning: #a8590a;
+  --warning-subtle: rgba(168, 89, 10, 0.15);
+  --info: #1d4ed8;
+  --info-subtle: rgba(29, 78, 216, 0.15);
+
+  /* Shadows — more pronounced */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.25);
+
+  /* Sidebar */
+  --sidebar-bg: rgba(255, 255, 255, 0.95);
+  --sidebar-ring: rgba(0, 0, 0, 0.2);
+  --sidebar-icon-stroke: rgba(0, 0, 0, 0.85);
+
+  /* Skeleton */
+  --skeleton-base: rgba(200, 200, 200, 0.8);
+  --skeleton-shine: rgba(255, 255, 255, 0.6);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(122, 26, 24, 0.35);
+  --scrollbar-thumb-hover: rgba(122, 26, 24, 0.55);
+
+  /* Chart */
+  --chart-grid: #cccccc;
+  --chart-label: #333333;
+}
+
+/* ── High contrast (dark): boosted readability on dark backgrounds ── */
+.dark.high-contrast {
+  /* Surfaces — wider separation between layers */
+  --surface-primary: #0a0a0a;
+  --surface-secondary: #111111;
+  --surface-tertiary: #1a1a1a;
+  --surface-elevated: #141414;
+  --surface-overlay: rgba(0, 0, 0, 0.75);
+  --surface-inset: #080808;
+
+  /* Text — brighter for maximum contrast */
+  --text-primary: #ffffff;
+  --text-secondary: #d4d4d4;
+  --text-tertiary: #a3a3a3;
+  --text-muted: #737373;
+  --text-inverted: #ffffff;
+
+  /* Borders — clearly visible on dark */
+  --border-primary: #555555;
+  --border-secondary: #404040;
+  --border-focus: rgba(239, 108, 106, 0.6);
+
+  /* Accent — brighter for visibility on dark */
+  --accent: #ef6c6a;
+  --accent-hover: #f59290;
+  --accent-subtle: rgba(239, 108, 106, 0.22);
+  --accent-muted: rgba(239, 108, 106, 0.12);
+
+  /* Status */
+  --success: #4ade80;
+  --success-subtle: rgba(74, 222, 128, 0.18);
+  --error: #f87171;
+  --error-subtle: rgba(248, 113, 113, 0.18);
+  --warning: #fbbf24;
+  --warning-subtle: rgba(251, 191, 36, 0.18);
+  --info: #60a5fa;
+  --info-subtle: rgba(96, 165, 250, 0.18);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.7);
+  --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.75);
+
+  /* Sidebar */
+  --sidebar-bg: rgba(14, 14, 14, 0.95);
+  --sidebar-ring: rgba(255, 255, 255, 0.15);
+  --sidebar-icon-stroke: rgba(255, 255, 255, 0.85);
+
+  /* Skeleton */
+  --skeleton-base: rgba(50, 50, 50, 0.9);
+  --skeleton-shine: rgba(255, 255, 255, 0.08);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(239, 108, 106, 0.4);
+  --scrollbar-thumb-hover: rgba(239, 108, 106, 0.6);
+
+  /* Chart */
+  --chart-grid: #404040;
+  --chart-label: #a3a3a3;
+}
+
+/* ── High contrast: utility overrides ──────────────── */
+.high-contrast * {
+  /* Sharper text rendering */
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
 /* ── Expose tokens to Tailwind v4 ──────────────────── */
 @theme inline {
   --color-surface-primary: var(--surface-primary);

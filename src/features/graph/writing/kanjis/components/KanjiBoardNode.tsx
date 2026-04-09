@@ -288,7 +288,7 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
           <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-content-secondary">
             Kanji {String(progress.index + 1).padStart(2, "0")}
           </span>
-          <div className="max-w-[160px] rounded-full border border-black/12 bg-white/98 px-3.5 py-1 text-[12px] font-semibold dark:border-white/18 dark:bg-white/10">
+          <div className="max-w-[160px] rounded-full border border-border-default bg-surface-primary px-3.5 py-1 text-[12px] font-semibold dark:bg-surface-secondary">
             <span className={styles.label}>{progress.primaryMeaning}</span>
           </div>
         </div>

@@ -35,9 +35,14 @@ export function KanjiReadingExercise({
         initial={{ scale: 0.8, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.1, type: "spring", stiffness: 300, damping: 20 }}
-        className="w-28 h-28 rounded-2xl bg-gradient-to-b from-blue-500/[0.08] to-transparent border border-blue-200 dark:border-blue-800 flex items-center justify-center shadow-sm"
+        className="w-full max-w-sm rounded-2xl bg-gradient-to-b from-blue-500/[0.08] to-transparent border border-blue-200 dark:border-blue-800 flex items-center justify-center shadow-sm overflow-hidden px-4 py-4 min-h-[5rem]"
       >
-        <span className="text-6xl font-bold text-content-primary select-none">
+        <span
+          className={[
+            "font-bold text-content-primary select-none text-center leading-tight",
+            question.kanji.length <= 1 ? "text-6xl" : question.kanji.length <= 4 ? "text-4xl" : "text-2xl",
+          ].join(" ")}
+        >
           {question.kanji}
         </span>
       </motion.div>
