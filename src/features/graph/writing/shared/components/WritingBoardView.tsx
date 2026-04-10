@@ -34,10 +34,17 @@ import type {
 import { WritingBoardBackground } from "./WritingBoardBackground";
 import WritingBoardLoading from "./WritingBoardLoading";
 
-// ── Viewport helpers ──────────────────────────────────────────────────────
+type BackgroundViewportState = {
+  x: number;
+  y: number;
+  zoom: number;
+};
 
-type BackgroundViewportState = { x: number; y: number; zoom: number };
-type BackgroundViewportCssState = { x: string; y: string; zoom: string };
+type BackgroundViewportCssState = {
+  x: string;
+  y: string;
+  zoom: string;
+};
 
 function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
@@ -50,6 +57,7 @@ function snap(v: number, step: number) {
 function getBackgroundViewportConfig(signals: WritingBoardQualitySignals) {
   const compact = signals.width <= 1180 || signals.pointerType === "coarse";
   const positionStep = compact || signals.devicePixelRatio >= 2 ? 0.5 : 1;
+
   return {
     compact,
     positionStep,
@@ -70,6 +78,7 @@ function normalizeViewportForBackground(
   signals: WritingBoardQualitySignals,
 ) {
   const cfg = getBackgroundViewportConfig(signals);
+
   return {
     x: snap(clamp(viewport.x, -cfg.xLimit, cfg.xLimit), cfg.positionStep),
     y: snap(clamp(viewport.y, -cfg.yLimit, cfg.yLimit), cfg.positionStep),
@@ -85,14 +94,13 @@ function formatBgViewport(
   const x = snap(state.x, cfg.positionStep);
   const y = snap(state.y, cfg.positionStep);
   const zoom = snap(state.zoom, cfg.zoomStep);
+
   return {
     x: `${x.toFixed(cfg.positionStep < 1 ? 1 : 0)}px`,
     y: `${y.toFixed(cfg.positionStep < 1 ? 1 : 0)}px`,
     zoom: zoom.toFixed(4),
   };
 }
-
-// ── Inner map (inside ReactFlowProvider) ──────────────────────────────────
 
 const PLANET_CENTER_X = 84;
 const PLANET_CENTER_Y = 78;
@@ -102,11 +110,17 @@ function getPlanetFocusPoint(node: WritingBoardNode) {
     typeof node.style?.width === "number"
       ? node.style.width
       : PLANET_CENTER_X * 2;
-  return { x: node.position.x + width / 2, y: node.position.y + PLANET_CENTER_Y };
+
+  return {
+    x: node.position.x + width / 2,
+    y: node.position.y + PLANET_CENTER_Y,
+  };
 }
 
 function getLastUnlockedNodeId(items: WritingBoardProgress[]) {
-  return [...items].reverse().find((item) => item.status !== "locked")?.id ?? null;
+  return (
+    [...items].reverse().find((item) => item.status !== "locked")?.id ?? null
+  );
 }
 
 interface InnerMapProps {
@@ -151,15 +165,15 @@ function WritingBoardMapInner({
     const frame = window.requestAnimationFrame(() => {
       hasInitializedViewport.current = true;
 
-      // Entrance focus: last available node = most recently unlocked frontier
-      // Falls back to nodes[0] if all are locked or all are completed
       const initialNode =
-        (initialNodeId ? nodes.find((node) => node.id === initialNodeId) : null) ??
-        nodes[0];
+        (initialNodeId
+          ? nodes.find((node) => node.id === initialNodeId)
+          : null) ?? nodes[0];
 
       if (!initialNode) return;
 
       const fp = getPlanetFocusPoint(initialNode);
+
       void setCenter(fp.x, fp.y, {
         zoom: qualityProfile.camera.focusZoom,
         duration: qualityProfile.camera.initialDuration,
@@ -174,8 +188,8 @@ function WritingBoardMapInner({
     initialNodeId,
     nodes,
     onViewportChange,
-    qualityProfile.camera.initialDuration,
     qualityProfile.camera.focusZoom,
+    qualityProfile.camera.initialDuration,
     setCenter,
   ]);
 
@@ -192,6 +206,7 @@ function WritingBoardMapInner({
       }
 
       const focusPoint = getPlanetFocusPoint(focusedNode);
+
       void setCenter(focusPoint.x, focusPoint.y, {
         zoom: qualityProfile.camera.focusZoom,
         duration: qualityProfile.camera.focusDuration,
@@ -209,6 +224,7 @@ function WritingBoardMapInner({
     const previousViewport = savedViewport.current;
     savedViewport.current = null;
     lastFocusedNodeId.current = null;
+
     void setViewport(previousViewport, {
       duration: qualityProfile.camera.restoreDuration,
     });
@@ -223,8 +239,8 @@ function WritingBoardMapInner({
     getViewport,
     nodes,
     onViewportChange,
-    qualityProfile.camera.focusDuration,
     qualityProfile.camera.focusZoom,
+    qualityProfile.camera.focusDuration,
     qualityProfile.camera.restoreDuration,
     setCenter,
     setViewport,
@@ -302,8 +318,6 @@ function WritingBoardMapInner({
   );
 }
 
-// ── Public WritingBoardView ───────────────────────────────────────────────
-
 export interface WritingBoardViewProps {
   items: WritingBoardProgress[];
   summary: WritingBoardSummary;
@@ -312,12 +326,11 @@ export interface WritingBoardViewProps {
   edgeTypes: EdgeTypes;
   loading?: boolean;
   error?: string | null;
-  /** Called when an unlocked node is clicked. Receives the progress item. */
   onNodeAction?: (item: WritingBoardProgress) => void;
-  /** Whether a quiz overlay is active (pauses parallax & sets data-attributes). */
   quizActive?: boolean;
-  /** Overlay content rendered on top of the board (e.g. quiz modals). */
   children?: React.ReactNode;
+  initialNodeId?: string | null;
+  focusedNodeId?: string | null;
 }
 
 export function WritingBoardView({
@@ -331,10 +344,13 @@ export function WritingBoardView({
   onNodeAction,
   quizActive = false,
   children,
+  initialNodeId: initialNodeIdProp = null,
+  focusedNodeId: focusedNodeIdProp = null,
 }: WritingBoardViewProps) {
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useWritingBoardQuality(graphicsProfile);
   const { setHidden: _setHidden } = useSidebar();
+
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [shakingNodeId, setShakingNodeId] = useState<string | null>(null);
   const [newlyUnlockedIds, setNewlyUnlockedIds] =
@@ -342,6 +358,7 @@ export function WritingBoardView({
   const [unlockFocusNodeId, setUnlockFocusNodeId] = useState<string | null>(
     null,
   );
+
   const shakingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -351,6 +368,7 @@ export function WritingBoardView({
   );
   const hasInitializedUnlockSnapshotRef = useRef(false);
   const previousLockedIdsRef = useRef<Set<string> | null>(null);
+
   const backgroundRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const viewportFrame = useRef<number | null>(null);
@@ -373,22 +391,51 @@ export function WritingBoardView({
     zoom: 1,
   });
   const itemsRef = useRef(items);
+
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
 
   const effectiveSelectedId = useMemo(() => {
     if (
+      focusedNodeIdProp &&
+      items.some((item) => item.id === focusedNodeIdProp)
+    ) {
+      return focusedNodeIdProp;
+    }
+
+    if (
+      initialNodeIdProp &&
+      items.some((item) => item.id === initialNodeIdProp)
+    ) {
+      return initialNodeIdProp;
+    }
+
+    if (
       unlockFocusNodeId &&
-      items.some((i) => i.id === unlockFocusNodeId)
+      items.some((item) => item.id === unlockFocusNodeId)
     ) {
       return unlockFocusNodeId;
     }
 
-    if (selectedId && items.some((i) => i.id === selectedId))
+    if (selectedId && items.some((item) => item.id === selectedId)) {
       return selectedId;
-    return getLastUnlockedNodeId(items) ?? summary.currentItemId ?? items[0]?.id ?? null;
-  }, [unlockFocusNodeId, selectedId, items, summary.currentItemId]);
+    }
+
+    return (
+      getLastUnlockedNodeId(items) ??
+      summary.currentItemId ??
+      items[0]?.id ??
+      null
+    );
+  }, [
+    focusedNodeIdProp,
+    initialNodeIdProp,
+    unlockFocusNodeId,
+    selectedId,
+    items,
+    summary.currentItemId,
+  ]);
 
   const layoutIds = useMemo(() => items.map((i) => i.id), [items]);
   const layout = useMemo(
@@ -403,7 +450,11 @@ export function WritingBoardView({
         graphicsProfile.signals.width,
         graphicsProfile.signals.height,
       ),
-    [layout.nodeBounds, graphicsProfile.signals.width, graphicsProfile.signals.height],
+    [
+      layout.nodeBounds,
+      graphicsProfile.signals.width,
+      graphicsProfile.signals.height,
+    ],
   );
 
   const baseGraph = useMemo(
@@ -472,6 +523,7 @@ export function WritingBoardView({
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedIds(new Set());
     }, 2200);
+
     unlockFocusTimerRef.current = setTimeout(() => {
       setUnlockFocusNodeId(null);
     }, 2200);
@@ -508,22 +560,24 @@ export function WritingBoardView({
     qualityProfile.background.zoomStrength,
   ]);
 
-  const handleSelect = useCallback((nodeId: string) => {
-    const item = itemsRef.current.find((i) => i.id === nodeId);
-    if (item?.status === "locked") {
-      if (shakingTimerRef.current) clearTimeout(shakingTimerRef.current);
-      setShakingNodeId(nodeId);
-      shakingTimerRef.current = setTimeout(
-        () => setShakingNodeId(null),
-        640,
-      );
-      return;
-    }
-    setSelectedId(nodeId);
-    if (item && onNodeAction) onNodeAction(item);
-  }, [onNodeAction]);
+  const handleSelect = useCallback(
+    (nodeId: string) => {
+      const item = itemsRef.current.find((i) => i.id === nodeId);
 
-  // ── Parallax viewport sync ──────────────────────────────────────────────
+      if (item?.status === "locked") {
+        if (shakingTimerRef.current) clearTimeout(shakingTimerRef.current);
+        setShakingNodeId(nodeId);
+        shakingTimerRef.current = setTimeout(() => {
+          setShakingNodeId(null);
+        }, 640);
+        return;
+      }
+
+      setSelectedId(nodeId);
+      if (item && onNodeAction) onNodeAction(item);
+    },
+    [onNodeAction],
+  );
 
   useEffect(() => {
     qualityProfileRef.current = qualityProfile;
@@ -538,10 +592,17 @@ export function WritingBoardView({
     ) => {
       const fmt = formatBgViewport(state, signals);
       const prev = appliedViewportCss.current;
-      if (fmt.x !== prev.x) layer.style.setProperty("--kanji-camera-x", fmt.x);
-      if (fmt.y !== prev.y) layer.style.setProperty("--kanji-camera-y", fmt.y);
-      if (fmt.zoom !== prev.zoom)
+
+      if (fmt.x !== prev.x) {
+        layer.style.setProperty("--kanji-camera-x", fmt.x);
+      }
+      if (fmt.y !== prev.y) {
+        layer.style.setProperty("--kanji-camera-y", fmt.y);
+      }
+      if (fmt.zoom !== prev.zoom) {
         layer.style.setProperty("--kanji-camera-zoom", fmt.zoom);
+      }
+
       appliedViewportCss.current = fmt;
     },
     [],
@@ -586,18 +647,15 @@ export function WritingBoardView({
         zoom: prev.zoom + (target.zoom - prev.zoom) * smoothing,
       };
 
-      if (
-        Math.abs(target.x - next.x) < profile.background.epsilonPosition
-      )
+      if (Math.abs(target.x - next.x) < profile.background.epsilonPosition) {
         next.x = target.x;
-      if (
-        Math.abs(target.y - next.y) < profile.background.epsilonPosition
-      )
+      }
+      if (Math.abs(target.y - next.y) < profile.background.epsilonPosition) {
         next.y = target.y;
-      if (
-        Math.abs(target.zoom - next.zoom) < profile.background.epsilonZoom
-      )
+      }
+      if (Math.abs(target.zoom - next.zoom) < profile.background.epsilonZoom) {
         next.zoom = target.zoom;
+      }
 
       const hasMeaningfulChange =
         Math.abs(prev.x - next.x) >=
@@ -657,9 +715,14 @@ export function WritingBoardView({
     (isInteracting: boolean) => {
       isInteractingRef.current = isInteracting;
       const val = isInteracting ? "true" : "false";
-      if (backgroundRef.current)
+
+      if (backgroundRef.current) {
         backgroundRef.current.dataset.kanjiInteracting = val;
-      if (rootRef.current) rootRef.current.dataset.kanjiInteracting = val;
+      }
+      if (rootRef.current) {
+        rootRef.current.dataset.kanjiInteracting = val;
+      }
+
       if (!shouldUseParallaxRef.current) return;
       ensureViewportAnimation();
     },
@@ -668,14 +731,18 @@ export function WritingBoardView({
 
   useEffect(() => {
     return () => {
-      if (viewportFrame.current !== null)
+      if (viewportFrame.current !== null) {
         window.cancelAnimationFrame(viewportFrame.current);
-      if (shakingTimerRef.current !== null)
+      }
+      if (shakingTimerRef.current !== null) {
         clearTimeout(shakingTimerRef.current);
-      if (unlockAnimationTimerRef.current !== null)
+      }
+      if (unlockAnimationTimerRef.current !== null) {
         clearTimeout(unlockAnimationTimerRef.current);
-      if (unlockFocusTimerRef.current !== null)
+      }
+      if (unlockFocusTimerRef.current !== null) {
         clearTimeout(unlockFocusTimerRef.current);
+      }
       lastFrameTime.current = null;
     };
   }, []);
@@ -711,7 +778,12 @@ export function WritingBoardView({
           graphicsProfile.shouldUseParallax ? "active" : "inactive"
         }
         className="absolute inset-0"
-        style={{ contain: "layout paint style", ...backgroundStyle } as React.CSSProperties}
+        style={
+          {
+            contain: "layout paint style",
+            ...backgroundStyle,
+          } as React.CSSProperties
+        }
       >
         <WritingBoardBackground
           qualityProfile={qualityProfile}
@@ -729,7 +801,7 @@ export function WritingBoardView({
             onSelect={handleSelect}
             onViewportChange={syncViewportToScene}
             initialNodeId={effectiveSelectedId}
-            focusedNodeId={unlockFocusNodeId}
+            focusedNodeId={focusedNodeIdProp ?? unlockFocusNodeId}
             onInteractionChange={handleInteractionChange}
             qualityProfile={qualityProfile}
             translateExtent={translateExtent}

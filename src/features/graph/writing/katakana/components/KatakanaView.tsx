@@ -19,15 +19,52 @@ const GRAPH_USER_ID = "user123";
 export default function KatakanaView() {
   const { items, summary, loading, error, reload } = useKatakanaBoard();
   const { setHidden } = useSidebar();
+
+  const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
-  const [quizItem, setQuizItem] = useState<{ id: string; label: string } | null>(null);
+  const [quizItem, setQuizItem] = useState<{ id: string; label: string } | null>(
+    null,
+  );
+
+  const hasUnlockedNodes = useMemo(
+    () => items.some((item) => item.status !== "locked"),
+    [items],
+  );
+
+  const selectedId = useMemo(() => {
+    if (detailNodeId && items.some((item) => item.id === detailNodeId)) {
+      return detailNodeId;
+    }
+
+    if (
+      manualSelectedId &&
+      items.some((item) => item.id === manualSelectedId)
+    ) {
+      return manualSelectedId;
+    }
+
+    return (
+      [...items].reverse().find((item) => item.status !== "locked")?.id ??
+      items[0]?.id ??
+      null
+    );
+  }, [detailNodeId, items, manualSelectedId]);
+
+  const forcedInitialNodeId = !hasUnlockedNodes
+    ? (items[0]?.id ?? null)
+    : selectedId;
+
+  const forcedFocusedNodeId = detailNodeId ?? (!hasUnlockedNodes
+    ? (items[0]?.id ?? null)
+    : null);
 
   const selectedProgress = useMemo(
-    () => items.find((item) => item.id === detailNodeId) ?? null,
-    [detailNodeId, items],
+    () => items.find((item) => item.id === selectedId) ?? null,
+    [items, selectedId],
   );
 
   const handleNodeAction = useCallback((item: WritingBoardProgress) => {
+    setManualSelectedId(item.id);
     setDetailNodeId(item.id);
   }, []);
 
@@ -43,17 +80,17 @@ export default function KatakanaView() {
     [],
   );
 
+  const handleQuizEnd = useCallback(() => {
+    setQuizItem(null);
+    void reload();
+  }, [reload]);
+
   useEffect(() => {
     setHidden(detailNodeId !== null);
     return () => {
       setHidden(false);
     };
   }, [detailNodeId, setHidden]);
-
-  const handleQuizEnd = useCallback(() => {
-    setQuizItem(null);
-    void reload();
-  }, [reload]);
 
   return (
     <WritingBoardView
@@ -66,6 +103,8 @@ export default function KatakanaView() {
       error={error}
       onNodeAction={handleNodeAction}
       quizActive={quizItem !== null}
+      initialNodeId={forcedInitialNodeId}
+      focusedNodeId={forcedFocusedNodeId}
     >
       <LessonDrawer
         open={detailNodeId !== null}

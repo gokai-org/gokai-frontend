@@ -183,76 +183,128 @@ export default function KanaLesson({
           exit={{ opacity: 0, y: -5 }}
           transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
         >
-          {activeTab === "meaning" && (
-            <div className="space-y-3">
-              <div className="overflow-hidden rounded-2xl sm:rounded-[20px] border border-border-subtle bg-gradient-to-b from-surface-elevated to-surface-secondary">
-                <div className="h-1 bg-gradient-to-r from-accent to-accent-hover" />
+{activeTab === "meaning" && (
+  <div className="space-y-3">
+    <div className="overflow-hidden rounded-3xl border border-border-subtle bg-gradient-to-b from-surface-elevated via-surface-elevated to-surface-secondary shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:rounded-[28px]">
+      <div className="h-1.5 bg-gradient-to-r from-accent via-accent-hover to-accent" />
 
-                <div className="flex flex-col items-center gap-3 p-4 pb-4 sm:gap-4 sm:p-6 sm:pb-5">
-                  <motion.div
-                    animate={{ scale: [1, 1.04, 1] }}
-                    transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
-                    className="relative"
-                  >
-                    <div className="absolute -inset-4 sm:-inset-6 rounded-full bg-accent/8 blur-2xl" />
-                    <div className="relative text-[56px] xs:text-[64px] sm:text-[96px] leading-none font-black text-accent drop-shadow-sm select-none">
-                      {k.symbol}
-                    </div>
-                  </motion.div>
+      <div className="space-y-4 p-4 sm:space-y-5 sm:p-5">
+        {/* Hero */}
+        <div className="relative overflow-hidden rounded-3xl border border-accent/10 bg-gradient-to-br from-accent/8 via-accent/4 to-transparent p-4 sm:p-5">
+          <div className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-accent/10 blur-2xl" />
+          <div className="absolute -bottom-10 -left-6 h-24 w-24 rounded-full bg-accent/8 blur-2xl" />
 
-                  <div className="flex flex-wrap items-center justify-center gap-2">
-                    <span className="rounded-full bg-accent/10 border border-accent/15 px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-bold text-accent">
-                      {typeLabel} &middot; {modeTitle[mode]}
-                    </span>
-
-                    {k.pointsToUnlock > 0 && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-surface-tertiary border border-border-subtle px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold text-content-secondary">
-                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                        </svg>
-                        {k.pointsToUnlock} pts
-                      </span>
-                    )}
-
-                    {hasStrokes && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-surface-tertiary border border-border-subtle px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold text-content-secondary">
-                        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
-                          />
-                        </svg>
-                        {k.strokes!.length} trazos
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl sm:rounded-[16px] border border-border-subtle bg-surface-secondary p-3 sm:p-4 space-y-2">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-content-muted">
-                  Posicion en el tablero
-                </p>
-
-                <div className="flex flex-wrap gap-2">
-                  <span className="rounded-xl bg-accent/8 border border-accent/15 px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-bold text-accent">
-                    {phonemic.row}
-                  </span>
-                  <span className="rounded-xl bg-surface-tertiary border border-border-subtle px-2.5 sm:px-3 py-1.5 text-[11px] sm:text-xs font-semibold text-content-secondary">
-                    {phonemic.col}
-                  </span>
-                </div>
-              </div>
-
-              <button
-                type="button"
-                className="w-full rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15"
-              >
-                Practicar este kana
-              </button>
+          <div className="relative flex items-center gap-3 sm:gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-accent/12 bg-surface-elevated text-[38px] font-black leading-none text-accent shadow-sm sm:h-20 sm:w-20 sm:text-[52px]">
+              {k.symbol}
             </div>
-          )}
+
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-content-muted sm:text-[11px]">
+                Valor del kana
+              </p>
+
+              <p className="mt-1 text-sm font-bold text-content-primary sm:text-base">
+                Este {typeLabel.toLowerCase()} representa el sonido{" "}
+                <span className="text-accent">{k.romaji}</span>
+              </p>
+
+              <p className="mt-1 text-[11px] leading-relaxed text-content-secondary sm:text-xs">
+                Memorízalo como una unidad de sonido. La idea es que al verlo,
+                identifiques su pronunciación de inmediato.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Tarjetas rápidas */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="rounded-2xl border border-accent/15 bg-accent/6 p-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent">
+              Sonido principal
+            </p>
+            <p className="mt-2 text-2xl font-black text-content-primary">
+              {k.romaji}
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-content-secondary">
+              Esta es la lectura base que debes reconocer al instante.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-border-subtle bg-gradient-to-br from-surface-elevated to-surface-tertiary/70 p-4 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-content-secondary">
+              Tipo de carácter
+            </p>
+            <p className="mt-2 text-[13px] font-bold text-content-primary">
+              {typeLabel}
+            </p>
+            <p className="mt-1 text-[11px] leading-relaxed text-content-secondary">
+              Úsalo para distinguir si estás leyendo el silabario hiragana o
+              katakana.
+            </p>
+          </div>
+        </div>
+
+        {/* Posición útil */}
+        <div className="rounded-3xl border border-border-subtle bg-surface-primary/70 p-3 shadow-sm sm:p-4">
+          <p className="mb-3 text-[10px] font-bold uppercase tracking-[0.22em] text-content-muted sm:text-[11px]">
+            Ubicación en la tabla fonética
+          </p>
+
+          <div className="flex flex-wrap gap-2">
+            <span className="rounded-2xl border border-accent/15 bg-accent/8 px-3 py-2 text-sm font-bold text-accent shadow-sm">
+              {phonemic.row}
+            </span>
+            <span className="rounded-2xl border border-border-subtle bg-surface-tertiary px-3 py-2 text-sm font-semibold text-content-secondary shadow-sm">
+              {phonemic.col}
+            </span>
+          </div>
+
+          <p className="mt-3 text-[11px] leading-relaxed text-content-secondary">
+            Piensa en este kana como parte de una familia de sonidos. Su fila y
+            columna te ayudan a ubicarlo mentalmente dentro del silabario.
+          </p>
+        </div>
+
+        {/* Idea de aprendizaje */}
+        <div className="rounded-2xl border border-accent/12 bg-accent/5 p-4 shadow-sm">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-content-muted">
+            Cómo aprenderlo rápido
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-3">
+            <div className="rounded-xl border border-border-subtle bg-surface-elevated px-3 py-2">
+              <p className="text-[10px] font-black text-accent">1</p>
+              <p className="mt-1 text-[11px] text-content-secondary">
+                Mira su <span className="font-semibold text-content-primary">forma</span>.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border-subtle bg-surface-elevated px-3 py-2">
+              <p className="text-[10px] font-black text-accent">2</p>
+              <p className="mt-1 text-[11px] text-content-secondary">
+                Repite su <span className="font-semibold text-content-primary">sonido</span>.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-border-subtle bg-surface-elevated px-3 py-2">
+              <p className="text-[10px] font-black text-accent">3</p>
+              <p className="mt-1 text-[11px] text-content-secondary">
+                Relaciónalo con su <span className="font-semibold text-content-primary">posición</span>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <button
+      type="button"
+      className="w-full rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15"
+    >
+      Practicar este kana
+    </button>
+  </div>
+)}
 
           {activeTab === "reading" && (
             <div className="space-y-3">

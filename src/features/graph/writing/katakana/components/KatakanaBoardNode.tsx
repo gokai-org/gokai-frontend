@@ -159,7 +159,7 @@ function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
           <span className="text-[11px] font-bold uppercase tracking-[0.28em] text-content-secondary">
             Katakana {String(progress.index + 1).padStart(2, "0")}
           </span>
-          <div className="max-w-[160px] rounded-full border border-black/12 bg-white/98 px-3.5 py-1 text-[12px] font-semibold dark:border-white/18 dark:bg-white/10">
+          <div className="board-node-label-pill">
             <span className={styles.label}>{progress.romaji}</span>
           </div>
         </div>
