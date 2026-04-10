@@ -4,6 +4,7 @@ import { memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getStraightPath, EdgeLabelRenderer, type EdgeProps } from "reactflow";
 import type { WritingBoardEdgeData, WritingScriptType } from "../types";
+import { useMasteryTheme } from "@/features/mastery/components/MasteryThemeProvider";
 
 const STROKE_VARS: Record<
   WritingScriptType,
@@ -34,6 +35,7 @@ function WritingBoardEdge({
   targetY,
   data,
 }: EdgeProps<WritingBoardEdgeData>) {
+  const { isGolden } = useMasteryTheme();
   const [path, labelX, labelY] = getStraightPath({
     sourceX,
     sourceY,
@@ -50,23 +52,25 @@ function WritingBoardEdge({
 
   const requiredPoints = data?.requiredPoints;
   const vars = STROKE_VARS[scriptType];
-  const labelStroke = status === "available" ? vars.available : vars.locked;
+  const labelStroke = isGolden
+    ? "var(--mastery-gold-edge-stroke)"
+    : status === "available" ? vars.available : vars.locked;
 
   const palette =
     status === "completed"
       ? {
-          stroke: vars.completed,
+          stroke: isGolden ? "var(--mastery-gold-edge-stroke)" : vars.completed,
           width: (highlight ? 2.8 : 2.3) * widthScale,
           opacity: (highlight ? 0.96 : 0.88) * opacityScale,
         }
       : status === "available"
         ? {
-            stroke: vars.available,
+            stroke: isGolden ? "var(--mastery-gold-edge-stroke)" : vars.available,
             width: (highlight ? 2.4 : 2.1) * widthScale,
             opacity: (highlight ? 0.88 : 0.8) * opacityScale,
           }
         : {
-            stroke: vars.locked,
+            stroke: isGolden ? "var(--mastery-gold-edge-stroke)" : vars.locked,
             width: 1.7 * widthScale,
             opacity: 0.42 * opacityScale,
           };

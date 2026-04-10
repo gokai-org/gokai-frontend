@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { LockKeyhole } from "lucide-react";
 import type { WritingBoardNodeData } from "../../shared/types";
+import { useMasteryTheme } from "@/features/mastery/components/MasteryThemeProvider";
 
 // ── Shogi geometry aligned to the visible node silhouette ─────────────────
 const _SX = 84;
@@ -46,12 +47,40 @@ function createGlow(
   }px rgba(${color},${outerOpacity})`;
 }
 
+const GOLD_RGB = "212,168,67";
+
 function getStyles(
   status: WritingBoardNodeData["progress"]["status"],
   selected: boolean,
   glowScale: number,
   shadowScale: number,
+  isGolden: boolean,
 ) {
+  if (isGolden) {
+    if (status === "available") {
+      return {
+        glow: selected
+          ? createGlow(7, Math.round(19 + shadowScale * 5), 0.14, 0.28, glowScale, GOLD_RGB)
+          : createGlow(4, Math.round(14 + shadowScale * 3), 0.10, 0.20, glowScale, GOLD_RGB),
+        shapeClass:
+          "bg-gradient-to-br from-[#D4A843] to-[#F0D27A] text-white kanji-node-sphere-available-enter",
+        dropShadow: "drop-shadow(0 4px 16px rgba(212,168,67,0.35))",
+        label: "text-content-primary",
+      };
+    }
+    if (status === "completed") {
+      return {
+        glow: selected
+          ? createGlow(8, Math.round(22 + shadowScale * 6), 0.16, 0.32, glowScale, GOLD_RGB)
+          : createGlow(3, Math.round(13 + shadowScale * 4), 0.10, 0.20, glowScale, GOLD_RGB),
+        shapeClass:
+          "bg-gradient-to-br from-[#F0D27A] to-[#B8922E] text-white kanji-node-sphere-completed-enter",
+        dropShadow: "drop-shadow(0 4px 20px rgba(212,168,67,0.42))",
+        label: "text-content-primary",
+      };
+    }
+  }
+
   // Purple palette: #7B3F8A → #A866B5
   if (status === "available") {
     return {
@@ -88,9 +117,14 @@ function getStyles(
 }
 
 function HiraganaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
+  const { isGolden } = useMasteryTheme();
   const { progress, selected } = data;
-  const styles = getStyles(progress.status, selected, data.glowScale, data.shadowScale);
+  const styles = getStyles(progress.status, selected, data.glowScale, data.shadowScale, isGolden);
   const showPulse = data.shouldUsePulse && selected;
+  const unlockRingColor = isGolden ? "rgba(212, 168, 67, 0.64)" : "rgba(123, 63, 138, 0.64)";
+  const pointsFloatClass = isGolden
+    ? "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#D4A843] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(212,168,67,0.52)]"
+    : "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#7B3F8A] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(123,63,138,0.52)]";
 
   return (
     <>
@@ -123,7 +157,7 @@ function HiraganaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
           {data.unlocking && data.qualityTier !== "low" && (
             <div
               className="kanji-node-unlock-ring pointer-events-none absolute inset-[18px]"
-              style={{ borderColor: "rgba(123, 63, 138, 0.64)" }}
+              style={{ borderColor: unlockRingColor }}
             />
           )}
           {data.unlocking && data.qualityTier === "high" && (
@@ -131,7 +165,7 @@ function HiraganaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
               className="kanji-node-unlock-ring pointer-events-none absolute inset-[10px]"
               style={{
                 animationDelay: "0.22s",
-                borderColor: "rgba(123, 63, 138, 0.64)",
+                borderColor: unlockRingColor,
               }}
             />
           )}
@@ -159,7 +193,7 @@ function HiraganaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
           {/* +5 points float */}
           {data.unlocking && (
             <div className="pointer-events-none absolute top-0 right-0 z-30">
-              <span className="kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#7B3F8A] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(123,63,138,0.52)]">
+              <span className={pointsFloatClass}>
                 +5
               </span>
             </div>

@@ -14,6 +14,7 @@ import {
   type KanjiBoardProgress,
   type KanjiBoardSummary,
 } from "../types";
+import { subscribeMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 
 function normalizeKanjis(payload: unknown): Kanji[] {
   if (Array.isArray(payload)) {
@@ -117,7 +118,7 @@ export function useKanjiBoard() {
     try {
       const [kanjiPayload, resultsPayload, user] = await Promise.all([
         listKanjis(),
-        getKanjiLessonResults({ limit: 500 }).catch(() => []),
+        getKanjiLessonResults({ limit: 100 }).catch(() => []),
         getCurrentUser().catch(() => null),
       ]);
 
@@ -142,6 +143,16 @@ export function useKanjiBoard() {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  useEffect(
+    () =>
+      subscribeMasteryProgressSync((detail) => {
+        if (typeof detail.points === "number") {
+          setUserPoints(detail.points);
+        }
+      }),
+    [],
+  );
 
   const resultsByKanji = useMemo(() => {
     const byKanji = new Map<

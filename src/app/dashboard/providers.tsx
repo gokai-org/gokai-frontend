@@ -7,6 +7,7 @@ import { GuideTourProvider } from "@/features/help/components/GuideTourProvider"
 import { GuideTourOverlay } from "@/features/help/components/GuideTourOverlay";
 import { SettingsBootstrap } from "@/features/configuration/components/SettingsBootstrap";
 import { TypographyProvider } from "@/shared/components/TypographyProvider";
+import { MasteredModulesProvider } from "@/features/mastery/components/MasteredModulesProvider";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -14,9 +15,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
       <TypographyProvider>
         <ToastProvider>
           <GuideTourProvider>
-            <SettingsBootstrap />
-            {children}
-            <GuideTourOverlay />
+            <MasteredModulesProvider>
+              <SettingsBootstrap />
+              {children}
+              <GuideTourOverlay />
+            </MasteredModulesProvider>
           </GuideTourProvider>
         </ToastProvider>
       </TypographyProvider>

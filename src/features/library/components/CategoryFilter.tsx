@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from "react";
 import { Reorder } from "framer-motion";
 import { LibraryCategory } from "@/features/library/types";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import type { MasteryModuleId } from "@/features/mastery/types";
 
 interface CategoryFilterProps {
   categories: LibraryCategory[];
@@ -73,7 +75,12 @@ export function CategoryFilter({
   const baseButtonClass =
     "inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-300";
 
+  const mastered = useMasteredModules();
+  const isGold = (id: string) => mastered.has(id as MasteryModuleId);
+
   function getActiveClass(id: string) {
+    if (isGold(id))
+      return "border-[#D4A843] bg-gradient-to-r from-[#D4A843] to-[#9B7B2F] text-content-inverted shadow-md shadow-[#D4A843]/15";
     if (id === "hiragana")
       return "border-[#7B3F8A] bg-gradient-to-r from-[#7B3F8A] to-[#5C2E69] text-content-inverted shadow-md shadow-[#7B3F8A]/15";
     if (id === "katakana")
@@ -82,6 +89,8 @@ export function CategoryFilter({
   }
 
   function getInactiveClass(id: string) {
+    if (isGold(id))
+      return "border-border-default bg-surface-primary text-content-secondary hover:border-[#D4A843]/20 hover:text-[#D4A843] hover:shadow-sm";
     if (id === "hiragana")
       return "border-border-default bg-surface-primary text-content-secondary hover:border-[#7B3F8A]/20 hover:text-[#7B3F8A] hover:shadow-sm";
     if (id === "katakana")
@@ -91,6 +100,7 @@ export function CategoryFilter({
 
   function getBadgeClass(categoryId: string, isActive: boolean) {
     if (isActive) return "bg-surface-primary/15 text-content-inverted";
+    if (isGold(categoryId)) return "bg-[#D4A843]/10 text-[#D4A843]";
     if (categoryId === "hiragana") return "bg-[#7B3F8A]/10 text-[#7B3F8A]";
     if (categoryId === "katakana") return "bg-[#1B5078]/10 text-[#1B5078]";
     return "bg-accent/8 text-accent";

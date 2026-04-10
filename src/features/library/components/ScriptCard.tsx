@@ -6,9 +6,12 @@ import { LockKeyhole } from "lucide-react";
 import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
 import {
   SCRIPT_CARD_CONFIG,
+  SCRIPT_CARD_GOLD_CONFIG,
   type ScriptVariant,
 } from "@/features/library/utils/scriptCardConfig";
 import { ScriptCardLayout } from "@/features/library/components/ScriptCardLayout";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import type { MasteryModuleId } from "@/features/mastery/types";
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -47,14 +50,21 @@ export function ScriptCard({
 }: ScriptCardProps) {
   const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
     useCardAnimation(index);
-  const config = SCRIPT_CARD_CONFIG[variant];
+  const masteredModules = useMasteredModules();
+  const isMastered = masteredModules.has(variant as MasteryModuleId);
+  const baseConfig = SCRIPT_CARD_CONFIG[variant];
+  const config = isMastered
+    ? { ...SCRIPT_CARD_GOLD_CONFIG, symbolShape: baseConfig.symbolShape }
+    : baseConfig;
 
-  // ── Variant-aware unlock overlay colors ───────────────────────────────────
-  const unlockColor = {
-    kanji:    { hex: "#BA4845", rgba: "186,72,69" },
-    hiragana: { hex: "#7B3F8A", rgba: "123,63,138" },
-    katakana: { hex: "#1B5078", rgba: "27,80,120" },
-  }[variant];
+  // ── Variant-aware unlock overlay colors ────────────────────────────────────
+  const unlockColor = isMastered
+    ? { hex: "#D4A843", rgba: "212,168,67" }
+    : ({
+        kanji:    { hex: "#BA4845", rgba: "186,72,69" },
+        hiragana: { hex: "#7B3F8A", rgba: "123,63,138" },
+        katakana: { hex: "#1B5078", rgba: "27,80,120" },
+      } as const)[variant];
   const unlockBadgeText = unlockPoints != null
     ? `+${unlockPoints}`
     : variant === "kanji" ? "+30" : "+5";

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentUser } from "@/features/auth";
 import { getKanaProgress } from "@/features/kana/api/kanaApi";
+import { subscribeMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import type {
   Kana,
   KanaType,
@@ -140,6 +141,16 @@ export function useKanaBoard({
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  useEffect(
+    () =>
+      subscribeMasteryProgressSync((detail) => {
+        if (typeof detail.kanaPoints === "number") {
+          setUserKanaPoints(detail.kanaPoints);
+        }
+      }),
+    [],
+  );
 
   const progressById = useMemo(() => {
     const map = new Map<string, UserKanaProgressDetailedResponse>();

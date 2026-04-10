@@ -5,6 +5,7 @@ import { ShogiSymbolBox } from "@/features/library/components/ScriptCardLayout";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useWritingBoardQuality } from "../hooks/useWritingBoardQuality";
 import { WritingBoardBackground } from "./WritingBoardBackground";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 
 interface WritingBoardLoadingProps {
   scriptType?: "hiragana" | "katakana" | "kanji";
@@ -47,6 +48,15 @@ const SCRIPT_THEME: Record<
   },
 };
 
+const GOLD_THEME = {
+  glow: "rgba(212,168,67,0.18)",
+  line: "rgba(212,168,67,0.55)",
+  solid: "rgba(212,168,67,0.95)",
+  soft: "rgba(212,168,67,0.12)",
+  gradient: "linear-gradient(to bottom right, #D4A843, #C49B3B)",
+  gradientFaded: "linear-gradient(to bottom right, rgba(212,168,67,0.65), rgba(196,155,59,0.55))",
+};
+
 const SCRIPT_LABEL: Record<
   NonNullable<WritingBoardLoadingProps["scriptType"]>,
   string
@@ -77,7 +87,12 @@ const SCRIPT_SIDE_SYMBOLS: Record<
 export default function WritingBoardLoading({
   scriptType = "kanji",
 }: WritingBoardLoadingProps) {
-  const theme = SCRIPT_THEME[scriptType];
+  const mastered = useMasteredModules();
+  const isMastered = mastered.has(scriptType);
+  const theme = isMastered ? GOLD_THEME : SCRIPT_THEME[scriptType];
+  const shogiGradient = isMastered
+    ? "from-[#D4A843] to-[#C49B3B]"
+    : "from-[#7B3F8A] to-[#A866B5]";
   const isHiragana = scriptType === "hiragana";
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useWritingBoardQuality(graphicsProfile);
@@ -196,7 +211,7 @@ export default function WritingBoardLoading({
                 <div className="scale-[1.15] opacity-75">
                   <ShogiSymbolBox
                     symbol={SCRIPT_SIDE_SYMBOLS[scriptType][0]}
-                    gradient="from-[#7B3F8A] to-[#A866B5]"
+                    gradient={shogiGradient}
                     hoverTransition=""
                   />
                 </div>
@@ -256,7 +271,7 @@ export default function WritingBoardLoading({
                 <div className="relative z-10 scale-[1.45]">
                   <ShogiSymbolBox
                     symbol={SCRIPT_SYMBOL[scriptType]}
-                    gradient="from-[#7B3F8A] to-[#A866B5]"
+                    gradient={shogiGradient}
                     hoverTransition=""
                   />
                 </div>
@@ -325,7 +340,7 @@ export default function WritingBoardLoading({
                 >
                   <ShogiSymbolBox
                     symbol={SCRIPT_SIDE_SYMBOLS[scriptType][1]}
-                    gradient="from-[#7B3F8A] to-[#A866B5]"
+                    gradient={shogiGradient}
                     hoverTransition=""
                   />
                 </motion.div>

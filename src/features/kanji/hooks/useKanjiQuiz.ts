@@ -13,6 +13,7 @@ import { QUIZ_TOTAL_ROUNDS } from "@/features/kanji/types/quiz";
 import { getKanjiQuiz, submitKanjiQuiz } from "@/features/kanji/api/kanjiQuizApi";
 import { getCurrentUser } from "@/features/auth/services/api";
 import { isValidWritingQuestion } from "@/features/kanji/utils/quizParser";
+import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 
 const INITIAL_STATE: KanjiQuizSessionState = {
   step: "loading",
@@ -49,6 +50,19 @@ export interface UseKanjiQuizReturn {
   setWritingPhase: (phase: "demo" | "practice" | "done") => void;
   completeWritingQuestion: (score: number) => void;
   reset: () => void;
+}
+
+function buildFailedRoundResult(
+  type: KanjiQuizType,
+  score: number,
+  startedAt: number,
+): KanjiQuizRoundResult {
+  return {
+    type,
+    score,
+    duration:
+      startedAt > 0 ? Math.round((Date.now() - startedAt) / 1000) : 0,
+  };
 }
 
 export function useKanjiQuiz(): UseKanjiQuizReturn {
@@ -272,9 +286,18 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
           ? Math.max(0, nextPoints - startingPointsRef.current)
           : 0;
 
+      const completedPerfectQuiz =
+        _results.length >= QUIZ_TOTAL_ROUNDS &&
+        _results.every((result) => result.score === 100);
+
       setPointsDelta(nextPointsDelta);
-      // Always celebrate — the quiz was completed regardless of individual round scores.
-      setState((s) => ({ ...s, step: "celebration" as KanjiQuizStep }));
+      dispatchMasteryProgressSync({ points: nextPoints });
+      setState((s) => ({
+        ...s,
+        step: completedPerfectQuiz
+          ? ("celebration" as KanjiQuizStep)
+          : ("summary" as KanjiQuizStep),
+      }));
     } catch (err) {
       const msg =
         err instanceof Error ? err.message : "Error al enviar resultado";
@@ -323,6 +346,30 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     [finalizeQuiz, loadNextRound],
   );
 
+  const failAttempt = useCallback(
+    (
+      quizType: KanjiQuizType,
+      score: number,
+      nextState: KanjiQuizSessionState,
+    ) => {
+      const failedRound = buildFailedRoundResult(
+        quizType,
+        score,
+        roundStartTimeRef.current,
+      );
+      const failedResults = [...roundResultsRef.current, failedRound];
+
+      roundResultsRef.current = failedResults;
+      setRoundResults(failedResults);
+      setError(null);
+      setState({
+        ...nextState,
+        step: "summary",
+      });
+    },
+    [],
+  );
+
   // ── Select option ──
   const selectOption = useCallback((optionIndex: number) => {
     setState((s) => {
@@ -360,6 +407,17 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       { questionIndex: s.currentQuestionIndex, correct: isCorrect },
     ];
 
+    if (!isCorrect) {
+      const correct = newResults.filter((result) => result.correct).length;
+      const failedScore = Math.round((correct / newResults.length) * 100);
+      failAttempt(qd.type, failedScore, {
+        ...s,
+        questionResults: newResults,
+        isAnswered: true,
+      });
+      return;
+    }
+
     const nextQ = s.currentQuestionIndex + 1;
     if (nextQ < qd.questions.length) {
       setState({
@@ -383,7 +441,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       step: "loading" as KanjiQuizStep,
     });
     void completeRound(qd.type, score);
-  }, [completeRound]);
+  }, [completeRound, failAttempt]);
 
   // ── Writing: set phase ──
   const setWritingPhase = useCallback((phase: "demo" | "practice" | "done") => {
@@ -398,6 +456,26 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       if (!qd || qd.type !== "writing") return;
 
       const newScores = [...s.writingScores, score];
+
+      if (score < 100) {
+        const failedScore =
+          newScores.length > 0
+            ? Math.round(
+                newScores.reduce(
+                  (sum, currentScore) => sum + currentScore,
+                  0,
+                ) / newScores.length,
+              )
+            : 0;
+
+        failAttempt(qd.type, failedScore, {
+          ...s,
+          writingScores: newScores,
+          writingPhase: "done",
+        });
+        return;
+      }
+
       const nextIdx = s.writingQuestionIndex + 1;
 
       if (nextIdx < qd.questions.length) {
@@ -412,9 +490,13 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
         return;
       }
 
-      // Writing completion always scores 100 — stroke-level accuracy is shown
-      // in real time but does not gate the points award.
-      const completionScore = 100;
+      const completionScore =
+        newScores.length > 0
+          ? Math.round(
+              newScores.reduce((sum, currentScore) => sum + currentScore, 0) /
+                newScores.length,
+            )
+          : 0;
 
       setState({
         ...s,
@@ -424,7 +506,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       });
       void completeRound(qd.type, completionScore);
     },
-    [completeRound],
+    [completeRound, failAttempt],
   );
 
   // ── Reset ──

@@ -35,6 +35,7 @@ import {
   themeToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 // import { getPrimaryMeaning } from "@/features/kanji";
 
 export default function LibraryPage() {
@@ -59,6 +60,7 @@ export default function LibraryPage() {
     useAnimationPreferences();
 
   const { setBlurred } = useSidebar();
+  const mastered = useMasteredModules();
   useEffect(() => {
     setBlurred(drawerEntity !== null);
     return () => setBlurred(false);
@@ -68,11 +70,21 @@ export default function LibraryPage() {
   useEffect(() => {
     const root = document.documentElement;
     if (selectedCategory === "hiragana") {
-      root.style.setProperty("--scrollbar-thumb", "rgba(123,63,138,0.4)");
-      root.style.setProperty("--scrollbar-thumb-hover", "rgba(168,102,181,0.65)");
+      if (mastered.has("hiragana")) {
+        root.style.setProperty("--scrollbar-thumb", "rgba(212,168,67,0.4)");
+        root.style.setProperty("--scrollbar-thumb-hover", "rgba(240,210,122,0.65)");
+      } else {
+        root.style.setProperty("--scrollbar-thumb", "rgba(123,63,138,0.4)");
+        root.style.setProperty("--scrollbar-thumb-hover", "rgba(168,102,181,0.65)");
+      }
     } else if (selectedCategory === "katakana") {
-      root.style.setProperty("--scrollbar-thumb", "rgba(27,80,120,0.4)");
-      root.style.setProperty("--scrollbar-thumb-hover", "rgba(46,130,181,0.65)");
+      if (mastered.has("katakana")) {
+        root.style.setProperty("--scrollbar-thumb", "rgba(212,168,67,0.4)");
+        root.style.setProperty("--scrollbar-thumb-hover", "rgba(240,210,122,0.65)");
+      } else {
+        root.style.setProperty("--scrollbar-thumb", "rgba(27,80,120,0.4)");
+        root.style.setProperty("--scrollbar-thumb-hover", "rgba(46,130,181,0.65)");
+      }
     } else {
       root.style.removeProperty("--scrollbar-thumb");
       root.style.removeProperty("--scrollbar-thumb-hover");
@@ -81,7 +93,7 @@ export default function LibraryPage() {
       root.style.removeProperty("--scrollbar-thumb");
       root.style.removeProperty("--scrollbar-thumb-hover");
     };
-  }, [selectedCategory]);
+  }, [selectedCategory, mastered]);
 
   const {
     kanjis,

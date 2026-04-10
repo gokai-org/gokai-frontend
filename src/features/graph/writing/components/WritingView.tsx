@@ -24,9 +24,9 @@ export default function WritingView() {
   }, []);
 
   useEffect(() => {
-    const toggle = () => setSubMenuVisible((v) => !v);
-    window.addEventListener("writing-submenu-toggle", toggle);
-    return () => window.removeEventListener("writing-submenu-toggle", toggle);
+    const show = () => setSubMenuVisible(true);
+    window.addEventListener("writing-submenu-show", show);
+    return () => window.removeEventListener("writing-submenu-show", show);
   }, []);
 
   // Click-outside: hide submenu when tapping anywhere except inside the menu

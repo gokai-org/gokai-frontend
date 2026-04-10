@@ -18,6 +18,9 @@ import type { KanjiBoardQualitySignals } from "../types";
 import { KanjiBoardBackground } from "./KanjiBoardBackground";
 import { KanjiBoardMap } from "./KanjiBoardMap";
 import WritingBoardLoading from "../../shared/components/WritingBoardLoading";
+import { MasteryBoardWrapper } from "@/features/mastery/components/MasteryBoardWrapper";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { dispatchMasteryCelebrationRequest } from "@/features/mastery/utils/masteryProgressSync";
 
 const GRAPH_USER_ID = "user123";
 
@@ -99,10 +102,11 @@ function formatBackgroundViewportState(
 }
 
 export default function KanjisView() {
-  const { items, summary, reload, loading } = useKanjiBoard();
+  const { items, summary, reload, loading, userPoints } = useKanjiBoard();
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useKanjiBoardQuality(graphicsProfile);
   const { setHidden } = useSidebar();
+  const mastered = useMasteredModules();
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
   const [quizKanji, setQuizKanji] = useState<{
@@ -125,6 +129,7 @@ export default function KanjisView() {
   const unlockFocusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const wasMasteredBeforeQuizRef = useRef(false);
   // Pause parallax rAF loop while the quiz modal is on top.
   const quizActiveRef = useRef(false);
   // Always-current item/reload refs so event callbacks stay stable.
@@ -158,6 +163,17 @@ export default function KanjisView() {
     y: 0,
     zoom: 1,
   });
+
+  // Mastery: capture setCenter from the inner ReactFlow.
+  type SetCenterFn = (x: number, y: number, options: { zoom: number; duration: number }) => void;
+  const setCenterRef = useRef<SetCenterFn | null>(null);
+  const handleSetCenterReady = useCallback((fn: SetCenterFn) => {
+    setCenterRef.current = fn;
+  }, []);
+  const stableSetCenter = useCallback<SetCenterFn>(
+    (x, y, opts) => setCenterRef.current?.(x, y, opts),
+    [],
+  );
 
   const selectedId = useMemo(() => {
     if (detailNodeId && items.some((item) => item.id === detailNodeId)) {
@@ -283,20 +299,27 @@ export default function KanjisView() {
       if (backgroundRef.current)
         backgroundRef.current.dataset.kanjiQuizActive = "true";
       if (rootRef.current) rootRef.current.dataset.kanjiQuizActive = "true";
+      wasMasteredBeforeQuizRef.current = mastered.has("kanji");
       setQuizKanji(kanji);
     },
-    [],
+    [mastered],
   );
 
   const handleQuizEnd = useCallback(() => {
+    const becameMastered =
+      !wasMasteredBeforeQuizRef.current && mastered.has("kanji");
+
     setQuizKanji(null);
     quizActiveRef.current = false;
     if (backgroundRef.current)
       backgroundRef.current.dataset.kanjiQuizActive = "false";
     if (rootRef.current) rootRef.current.dataset.kanjiQuizActive = "false";
+    if (becameMastered) {
+      dispatchMasteryCelebrationRequest({ moduleId: "kanji" });
+    }
     shouldResolveUnlocksRef.current = lockedIdsBeforeQuizRef.current !== null;
     void reloadRef.current();
-  }, []);
+  }, [mastered]);
 
   useEffect(() => {
     if (!shouldResolveUnlocksRef.current) return;
@@ -555,13 +578,22 @@ export default function KanjisView() {
   }
 
   return (
-    <div
-      ref={rootRef}
-      data-kanji-interacting="false"
-      data-kanji-quiz-active="false"
-      data-drawer-open={drawerOpen ? "true" : "false"}
-      className="absolute inset-0 overflow-hidden bg-surface-primary"
+    <MasteryBoardWrapper
+      moduleId="kanji"
+      currentPoints={userPoints}
+      totalItems={items.length}
+      completedItems={summary.completedCount}
+      nodes={graph.nodes}
+      setCenter={stableSetCenter}
+      tourZoom={qualityProfile.camera.focusZoom}
     >
+      <div
+        ref={rootRef}
+        data-kanji-interacting="false"
+        data-kanji-quiz-active="false"
+        data-drawer-open={drawerOpen ? "true" : "false"}
+        className="absolute inset-0 overflow-hidden bg-surface-primary"
+      >
       <div
         ref={backgroundRef}
         data-kanji-interacting="false"
@@ -596,6 +628,7 @@ export default function KanjisView() {
           onInteractionChange={handleInteractionChange}
           qualityProfile={qualityProfile}
           translateExtent={translateExtent}
+          onSetCenterReady={handleSetCenterReady}
         />
       </div>
 
@@ -624,5 +657,6 @@ export default function KanjisView() {
         />
       )}
     </div>
+    </MasteryBoardWrapper>
   );
 }

@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { LockKeyhole } from "lucide-react";
 import type { WritingBoardNodeData } from "../../shared/types";
+import { useMasteryTheme } from "@/features/mastery/components/MasteryThemeProvider";
 
 // ── Katakana tile geometry aligned to the visible node silhouette ─────────
 const _SX = 84;
@@ -42,12 +43,38 @@ function createGlow(
   }px rgba(${color},${outerOpacity})`;
 }
 
+const GOLD_RGB = "212,168,67";
+
 function getStyles(
   status: WritingBoardNodeData["progress"]["status"],
   selected: boolean,
   glowScale: number,
   shadowScale: number,
+  isGolden: boolean,
 ) {
+  if (isGolden) {
+    if (status === "available") {
+      return {
+        glow: selected
+          ? createGlow(7, Math.round(19 + shadowScale * 5), 0.14, 0.28, glowScale, GOLD_RGB)
+          : createGlow(4, Math.round(14 + shadowScale * 3), 0.10, 0.20, glowScale, GOLD_RGB),
+        shapeClass:
+          "bg-gradient-to-br from-[#D4A843] to-[#F0D27A] border-white/[0.14] shadow-[0_4px_16px_rgba(212,168,67,0.35)] text-white kanji-node-sphere-available-enter",
+        label: "text-content-primary",
+      };
+    }
+    if (status === "completed") {
+      return {
+        glow: selected
+          ? createGlow(8, Math.round(22 + shadowScale * 6), 0.16, 0.32, glowScale, GOLD_RGB)
+          : createGlow(3, Math.round(13 + shadowScale * 4), 0.10, 0.20, glowScale, GOLD_RGB),
+        shapeClass:
+          "bg-gradient-to-br from-[#F0D27A] to-[#B8922E] border-white/[0.18] shadow-[0_4px_20px_rgba(212,168,67,0.42)] text-white kanji-node-sphere-completed-enter",
+        label: "text-content-primary",
+      };
+    }
+  }
+
   // Blue palette: #1B5078 → #2E82B5
   if (status === "available") {
     return {
@@ -82,9 +109,14 @@ function getStyles(
 }
 
 function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
+  const { isGolden } = useMasteryTheme();
   const { progress, selected } = data;
-  const styles = getStyles(progress.status, selected, data.glowScale, data.shadowScale);
+  const styles = getStyles(progress.status, selected, data.glowScale, data.shadowScale, isGolden);
   const showPulse = data.shouldUsePulse && selected;
+  const unlockRingColor = isGolden ? "rgba(212, 168, 67, 0.64)" : "rgba(27, 80, 120, 0.64)";
+  const pointsFloatClass = isGolden
+    ? "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#D4A843] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(212,168,67,0.52)]"
+    : "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#1B5078] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(27,80,120,0.52)]";
 
   return (
     <>
@@ -117,7 +149,7 @@ function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
           {data.unlocking && data.qualityTier !== "low" && (
             <div
               className="kanji-node-unlock-ring pointer-events-none absolute inset-[18px]"
-              style={{ borderColor: "rgba(27, 80, 120, 0.64)" }}
+              style={{ borderColor: unlockRingColor }}
             />
           )}
           {data.unlocking && data.qualityTier === "high" && (
@@ -125,7 +157,7 @@ function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
               className="kanji-node-unlock-ring pointer-events-none absolute inset-[10px]"
               style={{
                 animationDelay: "0.22s",
-                borderColor: "rgba(27, 80, 120, 0.64)",
+                borderColor: unlockRingColor,
               }}
             />
           )}
@@ -147,7 +179,7 @@ function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
           {/* +5 points float */}
           {data.unlocking && (
             <div className="pointer-events-none absolute top-0 right-0 z-30">
-              <span className="kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#1B5078] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(27,80,120,0.52)]">
+              <span className={pointsFloatClass}>
                 +5
               </span>
             </div>

@@ -7,6 +7,7 @@ import type { Kanji } from "@/features/kanji/types";
 import { getLessonsForNode } from "../lib/lessonService";
 import LessonShell from "./LessonShell";
 import { SkeletonDrawerContent } from "@/shared/ui/Skeleton";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 
 const modeTitle: Record<LessonMode, string> = {
   writing: "Escritura",
@@ -70,10 +71,35 @@ export default function LessonDrawer({
     return () => window.removeEventListener("resize", updateScreen);
   }, []);
 
+  const mastered = useMasteredModules();
+
   const kanaAccentVars: React.CSSProperties = useMemo(() => {
     // Use loaded lesson data when available; fall back to the pre-known kanaType prop
     // so the correct accent is applied immediately during the loading phase.
     const kt = active?.kind === "kana" ? active.kana.kanaType : kanaType;
+
+    // Golden override for mastered kana or kanji modules
+    if (kt && mastered.has(kt)) {
+      return {
+        "--accent": "#D4A843",
+        "--accent-hover": "#F0D27A",
+        "--accent-subtle": "rgba(212,168,67,0.1)",
+        "--accent-muted": "rgba(212,168,67,0.06)",
+        "--scrollbar-thumb": "rgba(212,168,67,0.4)",
+        "--scrollbar-thumb-hover": "rgba(240,210,122,0.65)",
+      } as React.CSSProperties;
+    }
+    if (!kt && (entityKind === "kanji" || active?.kind === "kanji") && mastered.has("kanji")) {
+      return {
+        "--accent": "#D4A843",
+        "--accent-hover": "#F0D27A",
+        "--accent-subtle": "rgba(212,168,67,0.1)",
+        "--accent-muted": "rgba(212,168,67,0.06)",
+        "--scrollbar-thumb": "rgba(212,168,67,0.4)",
+        "--scrollbar-thumb-hover": "rgba(240,210,122,0.65)",
+      } as React.CSSProperties;
+    }
+
     if (!kt) return {};
 
     return kt === "katakana"
@@ -93,7 +119,7 @@ export default function LessonDrawer({
           "--scrollbar-thumb": "rgba(123,63,138,0.4)",
           "--scrollbar-thumb-hover": "rgba(168,102,181,0.65)",
         } as React.CSSProperties);
-  }, [active, kanaType]);
+  }, [active, kanaType, mastered, entityKind]);
 
   useEffect(() => {
     if (!open || !nodeId) return;

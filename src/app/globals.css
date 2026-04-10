@@ -1109,6 +1109,102 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
     );
 }
 
+/* ── Mastery golden board background overrides ── */
+[data-mastery-golden="true"] .kanji-bg-parallax-layer {
+  background-image:
+    radial-gradient(
+      ellipse 44% 34% at 18% 26%,
+      rgba(212, 168, 67, 0.08) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 38% 30% at 78% 62%,
+      rgba(196, 155, 59, 0.06) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 56% 40% at 52% 84%,
+      rgba(240, 210, 122, 0.05) 0%,
+      transparent 68%
+    );
+}
+
+[data-mastery-golden="true"] .kanji-bg-atmosphere {
+  background:
+    radial-gradient(
+      ellipse 58% 44% at 50% 42%,
+      rgba(212, 168, 67, 0.10) 0%,
+      rgba(196, 155, 59, 0.05) 54%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 34% 26% at 22% 22%,
+      rgba(240, 210, 122, 0.06) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 76% 74%,
+      rgba(212, 168, 67, 0.05) 0%,
+      transparent 56%
+    );
+  opacity: 0.95;
+}
+
+[data-mastery-golden="true"] .kanji-bg-vignette {
+  background: radial-gradient(
+    circle at center,
+    transparent 48%,
+    rgba(166, 128, 34, 0.12) 100%
+  );
+}
+
+.dark [data-mastery-golden="true"] .kanji-bg-parallax-layer {
+  background-image:
+    radial-gradient(
+      ellipse 44% 34% at 18% 26%,
+      rgba(212, 168, 67, 0.10) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 38% 30% at 78% 62%,
+      rgba(196, 155, 59, 0.07) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 56% 40% at 52% 84%,
+      rgba(240, 210, 122, 0.06) 0%,
+      transparent 68%
+    );
+}
+
+.dark [data-mastery-golden="true"] .kanji-bg-atmosphere {
+  background:
+    radial-gradient(
+      ellipse 58% 44% at 50% 42%,
+      rgba(212, 168, 67, 0.13) 0%,
+      rgba(155, 118, 28, 0.06) 54%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 34% 26% at 22% 22%,
+      rgba(240, 210, 122, 0.07) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 76% 74%,
+      rgba(212, 168, 67, 0.06) 0%,
+      transparent 56%
+    );
+}
+
+.dark [data-mastery-golden="true"] .kanji-bg-vignette {
+  background: radial-gradient(
+    circle at center,
+    transparent 42%,
+    rgba(20, 16, 8, 0.78) 100%
+  );
+}
+
 /* ── Writing board loading: theme-aware node glass colors ── */
 :root {
   --writing-loading-center-stop: rgba(218, 212, 226, 0.92);
@@ -1293,4 +1389,315 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 }
 .kanji-node-drawer-open {
   animation: kanji-node-drawer-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MASTERY CELEBRATION SYSTEM
+   Golden theme + cinematic overlay + celebration modal
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Mastery: golden CSS custom property defaults ── */
+:root {
+  --mastery-gold-primary: #D4A843;
+  --mastery-gold-highlight: #F0D27A;
+  --mastery-gold-shadow: #9B7B2F;
+  --mastery-gold-glow: rgba(212, 168, 67, 0.45);
+  --mastery-gold-glow-strong: rgba(212, 168, 67, 0.72);
+  --mastery-gold-backdrop: rgba(212, 168, 67, 0.06);
+  --mastery-gold-edge-stroke: #C89E3C;
+  --mastery-gold-gradient-from: #F0D27A;
+  --mastery-gold-gradient-to: #B8922E;
+  --mastery-mix-ratio: 0;
+}
+
+/* ── Mastery: cinematic overlay — golden particles ── */
+@keyframes mastery-particle-drift {
+  0%   { transform: translateY(0) scale(1);   opacity: 0; }
+  15%  { opacity: 0.7; }
+  50%  { opacity: 0.4; }
+  100% { transform: translateY(-120vh) scale(0.5); opacity: 0; }
+}
+
+.mastery-golden-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 80%, rgba(240, 210, 122, 0.65) 50%, transparent 50%),
+    radial-gradient(2px 2px at 28% 75%, rgba(212, 168, 67, 0.55) 50%, transparent 50%),
+    radial-gradient(1px 1px at 44% 88%, rgba(240, 210, 122, 0.5) 50%, transparent 50%),
+    radial-gradient(1.8px 1.8px at 62% 82%, rgba(212, 168, 67, 0.6) 50%, transparent 50%),
+    radial-gradient(1.2px 1.2px at 78% 77%, rgba(240, 210, 122, 0.45) 50%, transparent 50%),
+    radial-gradient(2.2px 2.2px at 90% 85%, rgba(212, 168, 67, 0.5) 50%, transparent 50%),
+    radial-gradient(1px 1px at 5% 70%, rgba(240, 210, 122, 0.4) 50%, transparent 50%),
+    radial-gradient(1.6px 1.6px at 52% 92%, rgba(184, 146, 46, 0.5) 50%, transparent 50%);
+  background-size: 100% 100%;
+  animation: mastery-particle-drift 4.5s ease-out infinite;
+}
+
+/* ── Mastery: cinematic vignette ── */
+.mastery-vignette {
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 50% 50%,
+      transparent 40%,
+      rgba(0, 0, 0, 0.30) 100%
+    );
+  pointer-events: none;
+}
+
+/* ── Mastery: celebration modal card ── */
+.mastery-celebration-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: min(420px, 90vw);
+  padding: 3rem 2rem 2rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(212, 168, 67, 0.25);
+  background:
+    linear-gradient(
+      168deg,
+      rgba(30, 28, 24, 0.97) 0%,
+      rgba(22, 20, 18, 0.98) 100%
+    );
+  box-shadow:
+    0 0 0 1px rgba(212, 168, 67, 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.50),
+    0 2px 16px rgba(212, 168, 67, 0.12),
+    inset 0 1px 0 rgba(240, 210, 122, 0.10);
+  overflow: hidden;
+}
+
+/* Light mode card variant */
+:root:not(.dark) .mastery-celebration-card {
+  background:
+    linear-gradient(
+      168deg,
+      rgba(255, 252, 245, 0.98) 0%,
+      rgba(250, 245, 232, 0.99) 100%
+    );
+  border-color: rgba(212, 168, 67, 0.30);
+  box-shadow:
+    0 0 0 1px rgba(212, 168, 67, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 16px rgba(212, 168, 67, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+
+/* ── Mastery: halo ring behind badge ── */
+@keyframes mastery-halo-pulse {
+  0%   { transform: scale(0.7); opacity: 0; }
+  40%  { opacity: 0.5; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.mastery-celebration-halo {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  width: 160px;
+  height: 160px;
+  margin-left: -80px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(212, 168, 67, 0.30) 0%,
+    rgba(212, 168, 67, 0.08) 50%,
+    transparent 72%
+  );
+  animation: mastery-halo-pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+
+/* ── Mastery: badge circle ── */
+.mastery-celebration-badge {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid rgba(212, 168, 67, 0.45);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(240, 210, 122, 0.18) 0%,
+      rgba(184, 146, 46, 0.12) 100%
+    );
+  box-shadow:
+    0 0 24px rgba(212, 168, 67, 0.30),
+    0 0 48px rgba(212, 168, 67, 0.12),
+    inset 0 1px 0 rgba(240, 210, 122, 0.20);
+}
+
+:root:not(.dark) .mastery-celebration-badge {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(240, 210, 122, 0.28) 0%,
+      rgba(212, 168, 67, 0.15) 100%
+    );
+  box-shadow:
+    0 0 24px rgba(212, 168, 67, 0.18),
+    0 0 48px rgba(212, 168, 67, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.50);
+}
+
+.mastery-celebration-badge-char {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(145deg, #F0D27A, #D4A843);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(212, 168, 67, 0.30));
+}
+
+/* ── Mastery: text styles ── */
+.mastery-celebration-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.mastery-celebration-achievement {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mastery-gold-primary);
+}
+
+.mastery-celebration-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #F0D27A 0%, #D4A843 50%, #B8922E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mastery-celebration-subtitle {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--content-secondary);
+  max-width: 300px;
+}
+
+/* ── Mastery: CTA button ── */
+.mastery-celebration-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1;
+  border: none;
+  border-radius: 999px;
+  color: #1a1612;
+  cursor: pointer;
+  background: linear-gradient(135deg, #F0D27A, #D4A843, #B8922E);
+  box-shadow:
+    0 4px 16px rgba(212, 168, 67, 0.32),
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.mastery-celebration-button:hover {
+  box-shadow:
+    0 6px 20px rgba(212, 168, 67, 0.42),
+    0 1px 4px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+.mastery-celebration-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Mastery: golden node glow (applied during celebration) ── */
+@keyframes mastery-node-golden-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(212, 168, 67, 0); }
+  50%  { box-shadow: 0 0 18px 6px rgba(212, 168, 67, 0.40); }
+  100% { box-shadow: 0 0 24px 10px rgba(212, 168, 67, 0.20); }
+}
+
+.mastery-node-golden {
+  animation: mastery-node-golden-glow 1.2s ease-out forwards;
+}
+
+/* ── Mastery: golden edge stroke transition ── */
+.mastery-edge-golden path {
+  stroke: var(--mastery-gold-edge-stroke) !important;
+  transition: stroke 0.6s ease-out;
+}
+
+/* ── Mastery: golden points pill override ── */
+[data-mastery-golden="true"] .board-node-points-pill--kanji,
+[data-mastery-golden="true"] .board-node-points-pill--hiragana,
+[data-mastery-golden="true"] .board-node-points-pill--katakana {
+  background: var(--mastery-gold-primary);
+  box-shadow: 0 2px 10px var(--mastery-gold-glow);
+}
+
+/* ── Mastery: pause board animations during celebration ── */
+[data-mastery-phase="cinematic_enter"] .kanji-bg-animate,
+[data-mastery-phase="cinematic_enter"] .kanji-bg-breathe,
+[data-mastery-phase="golden_propagation"] .kanji-bg-animate,
+[data-mastery-phase="golden_propagation"] .kanji-bg-breathe,
+[data-mastery-phase="camera_tour"] .kanji-bg-animate,
+[data-mastery-phase="camera_tour"] .kanji-bg-breathe {
+  animation-play-state: paused;
+}
+
+/* ── Mastery: responsive adjustments ── */
+@media (max-width: 640px) {
+  .mastery-celebration-card {
+    width: min(360px, 92vw);
+    padding: 2.5rem 1.5rem 1.75rem;
+    gap: 1rem;
+  }
+
+  .mastery-celebration-badge {
+    width: 66px;
+    height: 66px;
+  }
+
+  .mastery-celebration-badge-char {
+    font-size: 1.875rem;
+  }
+
+  .mastery-celebration-title {
+    font-size: 1.25rem;
+  }
+
+  .mastery-celebration-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .mastery-celebration-button {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .mastery-celebration-halo {
+    width: 120px;
+    height: 120px;
+    margin-left: -60px;
+    top: -20px;
+  }
 }

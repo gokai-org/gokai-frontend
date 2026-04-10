@@ -16,7 +16,7 @@ export async function getKanaQuiz(
   kanaId: string,
 ): Promise<KanaQuizResponse> {
   const raw = await apiFetch<KanaQuizResponseRaw>(
-    `/api/content/kana/quiz/${kanaId}`,
+    `/api/content/kana/${kanaId}?resource=quiz`,
     { cache: "no-store" },
   );
 
@@ -31,7 +31,7 @@ export async function submitKanaQuiz(
   kanaId: string,
   body: KanaQuizSubmitBody,
 ): Promise<Record<string, unknown>> {
-  return apiFetch<Record<string, unknown>>(`/api/content/kana/quiz/${kanaId}`, {
+  return apiFetch<Record<string, unknown>>(`/api/content/kana/${kanaId}?resource=quiz`, {
     method: "POST",
     body: JSON.stringify(body),
   });

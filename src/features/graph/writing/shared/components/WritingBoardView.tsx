@@ -33,6 +33,8 @@ import type {
 } from "../types";
 import { WritingBoardBackground } from "./WritingBoardBackground";
 import WritingBoardLoading from "./WritingBoardLoading";
+import type { MasteryModuleId } from "@/features/mastery/types";
+import { MasteryBoardWrapper } from "@/features/mastery/components/MasteryBoardWrapper";
 
 type BackgroundViewportState = {
   x: number;
@@ -123,6 +125,8 @@ function getLastUnlockedNodeId(items: WritingBoardProgress[]) {
   );
 }
 
+type SetCenterFn = (x: number, y: number, options: { zoom: number; duration: number }) => void;
+
 interface InnerMapProps {
   nodes: WritingBoardNode[];
   edges: WritingBoardEdge[];
@@ -136,6 +140,7 @@ interface InnerMapProps {
   translateExtent?: [[number, number], [number, number]];
   nodeTypes: NodeTypes;
   edgeTypes: EdgeTypes;
+  onSetCenterReady?: (fn: SetCenterFn) => void;
 }
 
 function WritingBoardMapInner({
@@ -151,8 +156,14 @@ function WritingBoardMapInner({
   translateExtent: translateExtentProp,
   nodeTypes,
   edgeTypes,
+  onSetCenterReady,
 }: InnerMapProps) {
   const { setCenter, getViewport, setViewport } = useReactFlow();
+
+  // Expose setCenter to parent for mastery camera tour.
+  useEffect(() => {
+    onSetCenterReady?.(setCenter as SetCenterFn);
+  }, [onSetCenterReady, setCenter]);
   const [stableNodeTypes] = useState(() => nodeTypes);
   const [stableEdgeTypes] = useState(() => edgeTypes);
   const hasInitializedViewport = useRef(false);
@@ -332,6 +343,10 @@ export interface WritingBoardViewProps {
   children?: React.ReactNode;
   initialNodeId?: string | null;
   focusedNodeId?: string | null;
+  /** Enable mastery celebration system for this board. */
+  masteryModuleId?: MasteryModuleId;
+  /** User's current points for mastery detection. */
+  masteryPoints?: number;
 }
 
 export function WritingBoardView({
@@ -348,10 +363,22 @@ export function WritingBoardView({
   children,
   initialNodeId: initialNodeIdProp = null,
   focusedNodeId: focusedNodeIdProp = null,
+  masteryModuleId,
+  masteryPoints = 0,
 }: WritingBoardViewProps) {
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useWritingBoardQuality(graphicsProfile);
   const { setHidden: _setHidden } = useSidebar();
+
+  // Mastery: capture setCenter from the inner ReactFlow.
+  const setCenterRef = useRef<SetCenterFn | null>(null);
+  const handleSetCenterReady = useCallback((fn: SetCenterFn) => {
+    setCenterRef.current = fn;
+  }, []);
+  const stableSetCenter = useCallback<SetCenterFn>(
+    (x, y, opts) => setCenterRef.current?.(x, y, opts),
+    [],
+  );
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [shakingNodeId, setShakingNodeId] = useState<string | null>(null);
@@ -779,7 +806,7 @@ export function WritingBoardView({
     );
   }
 
-  return (
+  const boardContent = (
     <div
       ref={rootRef}
       data-kanji-interacting="false"
@@ -824,6 +851,7 @@ export function WritingBoardView({
             translateExtent={translateExtent}
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}
+            onSetCenterReady={handleSetCenterReady}
           />
         </ReactFlowProvider>
       </div>
@@ -831,4 +859,22 @@ export function WritingBoardView({
       {children}
     </div>
   );
+
+  if (masteryModuleId) {
+    return (
+      <MasteryBoardWrapper
+        moduleId={masteryModuleId}
+        currentPoints={masteryPoints}
+        totalItems={items.length}
+        completedItems={summary.completedCount}
+        nodes={graph.nodes}
+        setCenter={stableSetCenter}
+        tourZoom={qualityProfile.camera.focusZoom}
+      >
+        {boardContent}
+      </MasteryBoardWrapper>
+    );
+  }
+
+  return boardContent;
 }

@@ -4,13 +4,21 @@ import { useEffect, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKanaQuiz } from "@/features/kana/hooks/useKanaQuiz";
 import { isValidCanvasQuestion } from "@/features/kana/utils/quizParser";
-import { KANA_QUIZ_TYPE_LABELS } from "@/features/kana/types/quiz";
+import {
+  KANA_QUIZ_TOTAL_ROUNDS,
+  KANA_QUIZ_TYPE_LABELS,
+} from "@/features/kana/types/quiz";
+import type {
+  KanaQuizRoundResult,
+  KanaQuizType,
+} from "@/features/kana/types/quiz";
 import {
   KanaFromKanaExercise,
   KanaFromRomajiExercise,
 } from "./KanaQuizExercises";
 import { KanaQuizCanvasExercise } from "./KanaQuizCanvasExercise";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 
 export interface KanaQuizModalProps {
   kanaId: string;
@@ -111,33 +119,56 @@ export function KanaQuizModal({
     finalScore,
     error,
     pointsDelta,
+    roundResults,
   } = quiz;
 
   const kanaTypeLabel = kanaType === "katakana" ? "Katakana" : "Hiragana";
-  const strokeAccentColor = kanaType === "katakana" ? "#1B5078" : "#7B3F8A";
+  const mastered = useMasteredModules();
+  const isMastered = kanaType ? mastered.has(kanaType) : false;
 
-  const kanaAccentVars =
-    kanaType === "katakana"
-      ? ({
-          "--accent": "#1B5078",
-          "--accent-hover": "#2E82B5",
-          "--accent-subtle": "rgba(27,80,120,0.1)",
-          "--accent-muted": "rgba(27,80,120,0.06)",
-          "--accent-glow": "rgba(27,80,120,0.52)",
-        } as React.CSSProperties)
-      : ({
-          "--accent": "#7B3F8A",
-          "--accent-hover": "#A866B5",
-          "--accent-subtle": "rgba(123,63,138,0.1)",
-          "--accent-muted": "rgba(123,63,138,0.06)",
-          "--accent-glow": "rgba(123,63,138,0.52)",
-        } as React.CSSProperties);
+  const strokeAccentColor = isMastered
+    ? "#D4A843"
+    : kanaType === "katakana"
+      ? "#1B5078"
+      : "#7B3F8A";
+
+  const kanaAccentVars: React.CSSProperties = useMemo(
+    () =>
+      isMastered
+        ? ({
+            "--accent": "#D4A843",
+            "--accent-hover": "#F0D27A",
+            "--accent-subtle": "rgba(212,168,67,0.1)",
+            "--accent-muted": "rgba(212,168,67,0.06)",
+            "--accent-glow": "rgba(212,168,67,0.52)",
+          } as React.CSSProperties)
+        : kanaType === "katakana"
+          ? ({
+              "--accent": "#1B5078",
+              "--accent-hover": "#2E82B5",
+              "--accent-subtle": "rgba(27,80,120,0.1)",
+              "--accent-muted": "rgba(27,80,120,0.06)",
+              "--accent-glow": "rgba(27,80,120,0.52)",
+            } as React.CSSProperties)
+          : ({
+              "--accent": "#7B3F8A",
+              "--accent-hover": "#A866B5",
+              "--accent-subtle": "rgba(123,63,138,0.1)",
+              "--accent-muted": "rgba(123,63,138,0.06)",
+              "--accent-glow": "rgba(123,63,138,0.52)",
+            } as React.CSSProperties),
+    [isMastered, kanaType],
+  );
   const currentQuestionType = currentQuestion?.type ?? quizData?.type;
   const quizTypeLabel = currentQuestionType
     ? KANA_QUIZ_TYPE_LABELS[currentQuestionType]
     : "Quiz";
   const completedQuestions = state.questionResults.length;
   const isCurrentCanvasQuestion = currentQuestion?.type === "canvas";
+  const isCurrentAnswerCorrect =
+    state.selectedOptionIndex !== null
+      ? (currentQuestion?.options?.[state.selectedOptionIndex]?.correct ?? false)
+      : false;
 
   return (
     <AnimatePresence>
@@ -202,15 +233,12 @@ export function KanaQuizModal({
               </button>
             </div>
 
-            {/* Progress bar */}
             {(state.step === "exercise" ||
               state.step === "exercise-feedback") &&
               quizData && (
                 <div className="bg-surface-primary border-b border-border-subtle px-5 py-2.5">
                   <QuizProgress
-                    current={
-                      completedQuestions
-                    }
+                    current={completedQuestions}
                     total={totalQuestions}
                     progress={overallProgress}
                   />
@@ -220,7 +248,6 @@ export function KanaQuizModal({
 
           {/* ── Body ── */}
           <div className="flex-1 min-h-0 overflow-y-auto kanji-detail-scroll p-5 sm:p-6">
-            {/* LOADING */}
             {state.step === "loading" && (
               <motion.div
                 key="loading"
@@ -239,7 +266,6 @@ export function KanaQuizModal({
               </motion.div>
             )}
 
-            {/* SUBMITTING */}
             {state.step === "submitting" && (
               <motion.div
                 key="submitting"
@@ -265,7 +291,7 @@ export function KanaQuizModal({
                 animate={{ opacity: 1 }}
                 className="flex flex-col items-center justify-center py-16 gap-4"
               >
-                <div className="w-14 h-14 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center">
+                <div className="w-14 h-14 rounded-2xl bg-red-500/12 ring-1 ring-red-500/20 flex items-center justify-center shadow-[0_10px_30px_rgba(185,28,28,0.16)]">
                   <svg
                     className="w-6 h-6 text-red-400"
                     fill="none"
@@ -281,11 +307,11 @@ export function KanaQuizModal({
                   </svg>
                 </div>
 
-                <div className="text-center space-y-1">
-                  <p className="text-sm font-semibold text-content-tertiary">
-                    Error
+                <div className="text-center space-y-1.5">
+                  <p className="text-sm font-semibold text-red-300">
+                    Ocurrió un error
                   </p>
-                  <p className="text-content-muted text-xs max-w-[280px]">
+                  <p className="text-content-muted text-xs max-w-[300px] leading-relaxed">
                     {error}
                   </p>
                 </div>
@@ -293,13 +319,13 @@ export function KanaQuizModal({
                 <div className="flex gap-2">
                   <button
                     onClick={handleRetry}
-                    className="px-5 py-2.5 bg-accent/10 text-accent hover:bg-accent/20 rounded-xl text-sm font-semibold transition"
+                    className="px-5 py-2.5 rounded-xl text-sm font-semibold transition bg-red-500/12 text-red-300 ring-1 ring-red-500/18 hover:bg-red-500/20"
                   >
                     Reintentar
                   </button>
                   <button
                     onClick={handleClose}
-                    className="px-5 py-2.5 bg-surface-tertiary rounded-xl text-sm font-semibold transition"
+                    className="px-5 py-2.5 bg-surface-secondary hover:bg-surface-tertiary rounded-xl text-sm font-semibold text-content-secondary transition"
                   >
                     Cerrar
                   </button>
@@ -307,7 +333,6 @@ export function KanaQuizModal({
               </motion.div>
             )}
 
-            {/* EXERCISES */}
             {(state.step === "exercise" ||
               state.step === "exercise-feedback") &&
               quizData &&
@@ -374,7 +399,6 @@ export function KanaQuizModal({
                 </AnimatePresence>
               )}
 
-            {/* Next button after feedback */}
             {state.step === "exercise-feedback" &&
               quizData &&
               !isCurrentCanvasQuestion && (
@@ -390,14 +414,15 @@ export function KanaQuizModal({
                     onClick={handleNextAfterFeedback}
                     className="w-full max-w-sm py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold shadow-lg shadow-accent/15 transition-all"
                   >
-                    {state.questionResults.length + 1 >= totalQuestions
-                      ? "Finalizar"
-                      : "Siguiente"}
+                    {isCurrentAnswerCorrect
+                      ? state.questionResults.length + 1 >= totalQuestions
+                        ? "Finalizar"
+                        : "Siguiente"
+                      : "Ver resumen"}
                   </motion.button>
                 </motion.div>
               )}
 
-            {/* CELEBRATION (score === 100) */}
             {state.step === "celebration" && (
               <motion.div
                 key="celebration"
@@ -486,12 +511,13 @@ export function KanaQuizModal({
               </motion.div>
             )}
 
-            {/* SUMMARY (score < 100) */}
             {state.step === "summary" && (
               <KanaQuizSummary
                 score={finalScore}
-                quizType={quizData?.type}
+                roundResults={roundResults}
+                pointsDelta={pointsDelta}
                 error={error}
+                kanaTypeLabel={kanaTypeLabel}
                 onRetry={handleRetry}
                 onClose={handleClose}
               />
@@ -503,7 +529,6 @@ export function KanaQuizModal({
   );
 }
 
-/* ── Progress Bar ── */
 function QuizProgress({
   current,
   total,
@@ -534,43 +559,51 @@ function QuizProgress({
   );
 }
 
-/* ── Summary ── */
 function KanaQuizSummary({
   score,
-  quizType,
+  roundResults,
+  pointsDelta,
   error,
+  kanaTypeLabel,
   onRetry,
   onClose,
 }: {
   score: number;
-  quizType?: string;
+  roundResults: KanaQuizRoundResult[];
+  pointsDelta: number;
   error: string | null;
+  kanaTypeLabel: string;
   onRetry: () => void;
   onClose: () => void;
 }) {
-  const grade = (() => {
+  const perfectRounds = roundResults.filter((result) => result.score === 100).length;
+
+  const tone = (() => {
     if (score >= 90)
       return {
-        label: "¡Excelente!",
-        color: "text-emerald-400",
-        glow: "rgba(52,211,153,0.35)",
+        label: "Casi lo tienes",
+        color: "text-orange-300",
+        glow: "rgba(245,158,11,0.28)",
+        ring: "#f59e0b",
+        surface: "from-orange-500 to-orange-600",
+        badge: "border-orange-500/20 bg-orange-500/10 text-orange-200",
       };
     if (score >= 70)
       return {
-        label: "¡Bien hecho!",
-        color: "text-blue-400",
-        glow: "rgba(96,165,250,0.35)",
-      };
-    if (score >= 50)
-      return {
-        label: "Aceptable",
-        color: "text-amber-400",
-        glow: "rgba(251,191,36,0.35)",
+        label: "Buen intento",
+        color: "text-orange-300",
+        glow: "rgba(249,115,22,0.28)",
+        ring: "#f97316",
+        surface: "from-orange-500 to-red-500",
+        badge: "border-orange-500/20 bg-orange-500/10 text-orange-200",
       };
     return {
-      label: "Sigue practicando",
-      color: "text-orange-400",
-      glow: "rgba(251,146,60,0.35)",
+      label: "Intentalo de nuevo",
+      color: "text-red-300",
+      glow: "rgba(226, 25, 25, 0.28)",
+      ring: "#f43f3f",
+      surface: "from-red-500 to-red-600",
+      badge: "border-red-500/20 bg-red-500/10 text-red-200",
     };
   })();
 
@@ -581,7 +614,6 @@ function KanaQuizSummary({
       transition={{ duration: 0.3 }}
       className="flex flex-col items-center gap-6 py-2 w-full"
     >
-      {/* Score ring */}
       <motion.div
         initial={{ scale: 0.6, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -596,7 +628,7 @@ function KanaQuizSummary({
         <div
           className="absolute inset-[-12px] rounded-full blur-2xl opacity-60"
           style={{
-            background: `radial-gradient(circle, ${grade.glow}, transparent 70%)`,
+            background: `radial-gradient(circle, ${tone.glow}, transparent 70%)`,
           }}
         />
         <div className="relative w-32 h-32 rounded-full flex flex-col items-center justify-center">
@@ -617,13 +649,7 @@ function KanaQuizSummary({
               cy="64"
               r="56"
               fill="none"
-              stroke={
-                score >= 70
-                  ? "#10b981"
-                  : score >= 50
-                    ? "#f59e0b"
-                    : "var(--accent)"
-              }
+              stroke={tone.ring}
               strokeWidth="7"
               strokeLinecap="round"
               strokeDasharray={`${2 * Math.PI * 56}`}
@@ -661,23 +687,88 @@ function KanaQuizSummary({
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="text-center"
+        className="text-center max-w-xl"
       >
-        <h3 className={`text-2xl font-extrabold mb-1 ${grade.color}`}>
-          {grade.label}
+        <h3 className={`text-2xl font-extrabold mb-1 ${tone.color}`}>
+          {tone.label}
         </h3>
-        {quizType && (
-          <p className="text-sm text-content-tertiary">
-            {KANA_QUIZ_TYPE_LABELS[quizType as keyof typeof KANA_QUIZ_TYPE_LABELS] ?? quizType}
-          </p>
+        <p className="text-sm text-content-tertiary">
+          Tu calificacion total del quiz fue de {score}/100.
+        </p>
+        <p className="mt-2 text-sm text-content-muted">
+          El intento se cerró en cuanto apareció el primer error. Para dominar
+          este ejercicio de {kanaTypeLabel.toLowerCase()} necesitas reiniciar
+          desde el inicio y completar las {KANA_QUIZ_TOTAL_ROUNDS} rondas con 100.
+        </p>
+        <p className="mt-1 text-sm text-content-muted">
+          Rondas perfectas en este intento: <span className="font-bold text-content-primary">{perfectRounds}</span>.
+        </p>
+      </motion.div>
+
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2.5"
+      >
+        {(["from_kana", "from_romaji", "canvas"] as KanaQuizType[]).map(
+          (type, index) => {
+            const result = roundResults.find((round) => round.type === type);
+            return (
+              <KanaRoundResultCard
+                key={type}
+                type={type}
+                score={result?.score ?? null}
+                delay={0.55 + index * 0.07}
+              />
+            );
+          },
         )}
       </motion.div>
+
+      {pointsDelta > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85, y: 6 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{
+            delay: 0.72,
+            type: "spring",
+            stiffness: 200,
+            damping: 14,
+          }}
+          className="flex items-center gap-2.5 rounded-2xl border border-orange-500/20 bg-orange-500/10 px-4 py-3"
+        >
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br ${tone.surface} text-white shadow-lg shadow-orange-500/20`}>
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2.4}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-12V4m0 16v-2"
+              />
+            </svg>
+          </div>
+          <div className="text-left">
+            <p className="text-sm font-bold text-orange-200">
+              +{pointsDelta} puntos en este intento
+            </p>
+            <p className="text-xs text-orange-100/75">
+              Vas sumando progreso. Otro intento y lo cierras mejor.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {error && (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="text-xs text-amber-500 text-center"
+          className="text-xs text-orange-400 text-center"
         >
           No se pudo guardar el resultado: {error}
         </motion.p>
@@ -686,7 +777,7 @@ function KanaQuizSummary({
       <motion.div
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        transition={{ delay: 0.82 }}
         className="flex flex-col w-full max-w-sm gap-2.5"
       >
         <motion.button
@@ -718,6 +809,59 @@ function KanaQuizSummary({
           Cerrar
         </button>
       </motion.div>
+    </motion.div>
+  );
+}
+
+function KanaRoundResultCard({
+  type,
+  score,
+  delay,
+}: {
+  type: KanaQuizType;
+  score: number | null;
+  delay: number;
+}) {
+  const isPerfect = score === 100;
+  const isDone = score !== null;
+  const scoreColor =
+    score === null
+      ? "text-content-muted"
+      : score >= 90
+        ? "text-orange-200"
+        : score >= 70
+          ? "text-orange-300"
+          : "text-red-300";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, type: "spring", stiffness: 220, damping: 18 }}
+      className={[
+        "flex flex-col items-center gap-1.5 rounded-2xl border px-3 py-3.5 transition-all",
+        isPerfect
+          ? "border-emerald-500/20 bg-emerald-500/8"
+          : isDone
+            ? "border-orange-500/18 bg-orange-500/8"
+            : "border-border-subtle bg-surface-tertiary opacity-50",
+      ].join(" ")}
+    >
+      <span
+        className={`text-[10px] font-bold uppercase tracking-wider ${isPerfect ? "text-emerald-400" : "text-content-muted"}`}
+      >
+        {KANA_QUIZ_TYPE_LABELS[type]}
+      </span>
+      {isDone ? (
+        <span className={`text-xl font-extrabold ${scoreColor}`}>
+          {score}%
+        </span>
+      ) : (
+        <span className="text-xl font-extrabold text-content-muted">—</span>
+      )}
+      <span className="text-[11px] text-content-muted">
+        {isPerfect ? "Perfecta" : isDone ? "Por mejorar" : "Pendiente"}
+      </span>
     </motion.div>
   );
 }

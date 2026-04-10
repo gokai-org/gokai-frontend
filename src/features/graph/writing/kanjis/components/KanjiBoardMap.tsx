@@ -30,6 +30,8 @@ const edgeTypes = {
 const PLANET_CENTER_X = 84;
 const PLANET_CENTER_Y = 78;
 
+type SetCenterFn = (x: number, y: number, options: { zoom: number; duration: number }) => void;
+
 interface KanjiBoardMapProps {
   nodes: KanjiNode[];
   edges: KanjiEdge[];
@@ -41,6 +43,7 @@ interface KanjiBoardMapProps {
   onInteractionChange: (isInteracting: boolean) => void;
   qualityProfile: KanjiBoardQualityProfile;
   translateExtent?: [[number, number], [number, number]];
+  onSetCenterReady?: (fn: SetCenterFn) => void;
 }
 
 function getPlanetFocusPoint(node: KanjiNode) {
@@ -66,8 +69,14 @@ function KanjiBoardMapInner({
   onInteractionChange,
   qualityProfile,
   translateExtent: translateExtentProp,
+  onSetCenterReady,
 }: KanjiBoardMapProps) {
   const { setCenter, getViewport, setViewport } = useReactFlow();
+
+  // Expose setCenter to parent for mastery camera tour.
+  useEffect(() => {
+    onSetCenterReady?.(setCenter as SetCenterFn);
+  }, [onSetCenterReady, setCenter]);
   const [stableNodeTypes] = useState(() => nodeTypes);
   const [stableEdgeTypes] = useState(() => edgeTypes);
   const hasInitializedViewport = useRef(false);

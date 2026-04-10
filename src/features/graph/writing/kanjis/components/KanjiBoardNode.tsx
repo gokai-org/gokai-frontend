@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { LockKeyhole } from "lucide-react";
 import type { KanjiBoardNodeData } from "../types";
+import { useMasteryTheme } from "@/features/mastery/components/MasteryThemeProvider";
 
 // ── Sphere geometry within the node bounding box (168 × 196) ──────────────
 const _SX = 84; // sphere center X
@@ -65,12 +66,42 @@ function createGlow(
   }px rgba(${color},${outerOpacity})`;
 }
 
+const GOLD_RGB = "212,168,67";
+
 function getPlanetStyles(
   status: KanjiBoardNodeData["progress"]["status"],
   selected: boolean,
   glowScale: number,
   shadowScale: number,
+  isGolden: boolean,
 ) {
+  if (isGolden) {
+    if (status === "completed") {
+      return {
+        glow: selected
+          ? createGlow(8, Math.round(22 + shadowScale * 6), 0.16, 0.32, glowScale, GOLD_RGB)
+          : createGlow(3, Math.round(13 + shadowScale * 4), 0.10, 0.20, glowScale, GOLD_RGB),
+        sphereClass:
+          "bg-gradient-to-br from-[#F0D27A] to-[#B8922E] border-white/[0.18] shadow-[0_4px_20px_rgba(212,168,67,0.42)] text-white kanji-node-sphere-completed-enter",
+        ring: "rgba(212, 168, 67, 0.22)",
+        orbit: "rgba(212, 168, 67, 0.36)",
+        label: "text-content-primary",
+      };
+    }
+    if (status === "available") {
+      return {
+        glow: selected
+          ? createGlow(7, Math.round(19 + shadowScale * 5), 0.14, 0.28, glowScale, GOLD_RGB)
+          : createGlow(4, Math.round(14 + shadowScale * 3), 0.10, 0.20, glowScale, GOLD_RGB),
+        sphereClass:
+          "bg-gradient-to-br from-[#D4A843] to-[#F0D27A] border-white/[0.14] shadow-[0_4px_16px_rgba(212,168,67,0.35)] text-white kanji-node-sphere-available-enter",
+        ring: "rgba(212, 168, 67, 0.16)",
+        orbit: "rgba(212, 168, 67, 0.27)",
+        label: "text-content-primary",
+      };
+    }
+  }
+
   if (status === "completed") {
     return {
       glow: selected
@@ -152,14 +183,20 @@ function getPlanetStyles(
 }
 
 function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
+  const { isGolden } = useMasteryTheme();
   const { progress, selected } = data;
   const styles = getPlanetStyles(
     progress.status,
     selected,
     data.glowScale,
     data.shadowScale,
+    isGolden,
   );
   const showPulse = data.shouldUsePulse && selected;
+  const unlockRingColor = isGolden ? "rgba(212, 168, 67, 0.64)" : "rgba(186, 72, 69, 0.64)";
+  const pointsFloatClass = isGolden
+    ? "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#D4A843] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(212,168,67,0.52)]"
+    : "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#BA4845] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(186,72,66,0.52)]";
 
   return (
     <>
@@ -246,7 +283,7 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
           {data.unlocking && data.qualityTier !== "low" && (
             <div
               className="kanji-node-unlock-ring pointer-events-none absolute inset-[18px]"
-              style={{ borderColor: "rgba(186, 72, 69, 0.64)" }}
+              style={{ borderColor: unlockRingColor }}
             />
           )}
           {data.unlocking && data.qualityTier === "high" && (
@@ -254,7 +291,7 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
               className="kanji-node-unlock-ring pointer-events-none absolute inset-[10px]"
               style={{
                 animationDelay: "0.22s",
-                borderColor: "rgba(186, 72, 69, 0.64)",
+                borderColor: unlockRingColor,
               }}
             />
           )}
@@ -277,7 +314,7 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
           {/* +30 points float — always shown when unlocking */}
           {data.unlocking && (
             <div className="pointer-events-none absolute top-0 right-0 z-30">
-              <span className="kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#BA4845] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(186,72,66,0.52)]">
+              <span className={pointsFloatClass}>
                 +30
               </span>
             </div>

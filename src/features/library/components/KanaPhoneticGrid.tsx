@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Fragment, useMemo } from "react";
 import { LockKeyhole } from "lucide-react";
@@ -14,6 +14,7 @@ import {
   DAKUTEN_ROW_KEYS,
   buildPhoneticTable,
 } from "@/features/library/utils/kanaPhoneticMap";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 
 // ─── Variant color tokens ─────────────────────────────────────────────────────
 
@@ -32,7 +33,19 @@ const VARIANT_COLORS = {
   },
 } as const;
 
-type VariantColors = (typeof VARIANT_COLORS)[keyof typeof VARIANT_COLORS];
+const GOLD_COLORS = {
+  accent:        "#D4A843",
+  accentLight:   "rgba(212,168,67,0.09)",
+  accentBorder:  "rgba(212,168,67,0.22)",
+  accentCellBg:  "rgba(212,168,67,0.025)",
+} as const;
+
+type VariantColors = {
+  accent: string;
+  accentLight: string;
+  accentBorder: string;
+  accentCellBg: string;
+};
 
 // Abbreviated row labels for mobile
 const ROW_SHORT: Record<string, string> = {
@@ -246,7 +259,8 @@ export function KanaPhoneticGrid({
 }: KanaPhoneticGridProps) {
   const table = useMemo(() => buildPhoneticTable(kanas), [kanas]);
   const toScriptCard = variant === "hiragana" ? hiraganaToScriptCard : katakanaToScriptCard;
-  const c = VARIANT_COLORS[variant];
+  const mastered = useMasteredModules();
+  const c = mastered.has(variant) ? GOLD_COLORS : VARIANT_COLORS[variant];
 
   const presentRows = useMemo(
     () => PHONETIC_ROWS.filter((row) => table.has(row.key)),

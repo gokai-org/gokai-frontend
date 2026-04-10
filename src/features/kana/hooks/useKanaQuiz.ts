@@ -17,6 +17,7 @@ import {
   applyEarlyKanaOptionPool,
   isValidCanvasQuestion,
 } from "@/features/kana/utils/quizParser";
+import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 
 function extractKanaQuizErrorMessage(message: string): string {
   const jsonStart = message.indexOf("{");
@@ -90,6 +91,19 @@ export interface UseKanaQuizReturn {
   setCanvasPhase: (phase: "demo" | "practice" | "done") => void;
   completeCanvasQuestion: (score: number) => void;
   reset: () => void;
+}
+
+function buildFailedRoundResult(
+  type: KanaQuizType,
+  score: number,
+  startedAt: number,
+): KanaQuizRoundResult {
+  return {
+    type,
+    score,
+    duration:
+      startedAt > 0 ? Math.round((Date.now() - startedAt) / 1000) : 0,
+  };
 }
 
 function getQuestionScoreAverage(results: KanaQuizQuestionResult[]): number {
@@ -353,9 +367,18 @@ export function useKanaQuiz(): UseKanaQuizReturn {
             ? Math.max(0, currentKanaPoints - startingKanaPointsRef.current)
             : 0;
 
+        const completedPerfectQuiz =
+          _results.length >= KANA_QUIZ_TOTAL_ROUNDS &&
+          _results.every((result) => result.score === 100);
+
         setPointsDelta(kanaPointsDelta);
-        // Always celebrate when all rounds are complete — the quiz was finished.
-        setState((s) => ({ ...s, step: "celebration" as KanaQuizStep }));
+        dispatchMasteryProgressSync({ kanaPoints: currentKanaPoints });
+        setState((s) => ({
+          ...s,
+          step: completedPerfectQuiz
+            ? ("celebration" as KanaQuizStep)
+            : ("summary" as KanaQuizStep),
+        }));
       } catch (err) {
         const msg =
           err instanceof Error ? err.message : "Error al obtener puntos";
@@ -407,6 +430,26 @@ export function useKanaQuiz(): UseKanaQuizReturn {
     [finalizeQuiz, loadNextRound],
   );
 
+  const failAttempt = useCallback(
+    (quizType: KanaQuizType, score: number, nextState: KanaQuizSessionState) => {
+      const failedRound = buildFailedRoundResult(
+        quizType,
+        score,
+        roundStartTimeRef.current,
+      );
+      const failedResults = [...roundResultsRef.current, failedRound];
+
+      roundResultsRef.current = failedResults;
+      setRoundResults(failedResults);
+      setError(null);
+      setState({
+        ...nextState,
+        step: "summary",
+      });
+    },
+    [],
+  );
+
   // ── Select option ──
   const selectOption = useCallback((optionIndex: number) => {
     setState((s) => {
@@ -447,6 +490,16 @@ export function useKanaQuiz(): UseKanaQuizReturn {
         score: isCorrect ? 100 : 0,
       },
     ];
+
+    if (!isCorrect) {
+      const failedScore = getQuestionScoreAverage(newResults);
+      failAttempt(qd.submitType, failedScore, {
+        ...s,
+        questionResults: newResults,
+        isAnswered: true,
+      });
+      return;
+    }
 
     const nextQ = s.currentQuestionIndex + 1;
     if (nextQ < qd.questions.length) {
@@ -501,10 +554,21 @@ export function useKanaQuiz(): UseKanaQuizReturn {
         ...s.questionResults,
         {
           questionIndex: s.currentQuestionIndex,
-          correct: score >= 70,
+          correct: score === 100,
           score,
         },
       ];
+
+      if (score < 100) {
+        failAttempt(qd.submitType, score, {
+          ...s,
+          questionResults: newResults,
+          canvasScores: newScores,
+          canvasPhase: "done",
+        });
+        return;
+      }
+
       const nextIdx = s.currentQuestionIndex + 1;
 
       if (nextIdx < qd.questions.length) {
@@ -528,9 +592,13 @@ export function useKanaQuiz(): UseKanaQuizReturn {
         return;
       }
 
-      // All canvas questions done — completion itself is the achievement.
-      // Always send 100 so the backend awards kana points (like kanji writing).
-      const completionScore = 100;
+      const completionScore =
+        newScores.length > 0
+          ? Math.round(
+              newScores.reduce((sum, currentScore) => sum + currentScore, 0) /
+                newScores.length,
+            )
+          : 0;
 
       setState({
         ...s,
@@ -541,7 +609,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       });
       void completeRound(qd.submitType, completionScore);
     },
-    [completeRound],
+    [completeRound, failAttempt],
   );
 
   // ── Reset ──

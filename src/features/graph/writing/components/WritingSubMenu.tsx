@@ -5,8 +5,18 @@ import {
   MahjongSymbolBox,
   ShogiSymbolBox,
 } from "@/features/library/components/ScriptCardLayout";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import type { MasteryModuleId } from "@/features/mastery/types";
 
 export type WritingTab = "hiragana" | "katakana" | "kanji";
+
+// ─── Golden override palette ────────────────────────────────────────────────
+
+const GOLD = {
+  color: "#D4A843",
+  glow: "rgba(212, 168, 67, 0.45)",
+  gradient: "from-[#D4A843] to-[#F0D27A]",
+} as const;
 
 const TABS: {
   id: WritingTab;
@@ -111,6 +121,8 @@ export default function WritingSubMenu({
   activeTab,
   onTabChange,
 }: WritingSubMenuProps) {
+  const mastered = useMasteredModules();
+
   return (
     <div className="fixed top-[66px] sm:top-[78px] left-1/2 -translate-x-1/2 z-40 pointer-events-none">
       <motion.div
@@ -122,6 +134,9 @@ export default function WritingSubMenu({
       >
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
+          const isMastered = mastered.has(tab.id as MasteryModuleId);
+          const color = isMastered ? GOLD.color : tab.color;
+          const gradient = isMastered ? GOLD.gradient : tab.gradient;
 
           return (
             <button
@@ -140,7 +155,7 @@ export default function WritingSubMenu({
                 <WritingTabIcon
                   shape={tab.shape}
                   symbol={tab.symbol}
-                  gradient={tab.gradient}
+                  gradient={gradient}
                   isActive={isActive}
                 />
               </motion.div>
@@ -150,6 +165,7 @@ export default function WritingSubMenu({
                 className={`text-[8px] sm:text-[9px] md:text-[10px] font-bold uppercase tracking-[0.12em] transition-colors duration-200 ${
                   isActive ? "text-content-primary" : "text-content-muted group-hover:text-content-secondary"
                 }`}
+                style={isMastered && isActive ? { color: GOLD.color } : undefined}
               >
                 {tab.label}
               </span>
@@ -159,7 +175,7 @@ export default function WritingSubMenu({
                 <motion.div
                   layoutId="writing-tab-indicator"
                   className="absolute -bottom-1 h-1 w-1 rounded-full"
-                  style={{ backgroundColor: tab.color }}
+                  style={{ backgroundColor: color }}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />
               )}
