@@ -18,7 +18,7 @@ export default function LessonCTA({
       ? {
           text: label ?? "Completar",
           className:
-            "bg-gradient-to-r from-[#6e2220] to-accent-hover shadow-accent/30",
+            "bg-gradient-to-r from-accent to-accent-hover shadow-accent/30",
           disabled: false,
         }
       : variant === "disabled"

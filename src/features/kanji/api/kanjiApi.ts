@@ -2,9 +2,7 @@ import { apiFetch } from "@/shared/lib/api/client";
 import type {
   Kanji,
   KanjiStrokeData,
-  KanjiExerciseAnswer,
   KanjiLessonResult,
-  KanjiLessonResultBody,
 } from "@/features/kanji/types";
 
 export function listKanjis() {
@@ -21,33 +19,7 @@ export function getKanjiStrokes(id: string) {
   });
 }
 
-export function submitKanjiExerciseAnswer(body: {
-  kanjiId: string;
-  exerciseType: "writing" | "meaning";
-  duration: number;
-  points: number;
-  isCorrect: boolean;
-}) {
-  return apiFetch<KanjiExerciseAnswer>("/api/user/kanji-exercises/answers", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-}
-
-/* ── Resultados de lección de kanji ── */
-
-export function submitKanjiLessonResult(body: KanjiLessonResultBody) {
-  console.log("[FRONT] submitKanjiLessonResult payload:", body);
-  console.log(
-    "[FRONT] submitKanjiLessonResult payload JSON:",
-    JSON.stringify(body, null, 2),
-  );
-
-  return apiFetch<KanjiLessonResult>("/api/user/kanji-lessons/results", {
-    method: "POST",
-    body: JSON.stringify(body),
-  });
-}
+/* ── Resultados de leccion de kanji (lectura desde GOKAIUSERS) ── */
 
 export function getKanjiLessonResults(params?: {
   kanjiId?: string;

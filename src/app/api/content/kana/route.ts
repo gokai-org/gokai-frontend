@@ -15,13 +15,35 @@ type RawKana = {
   points_to_unlock?: number;
   viewBox?: string;
   view_box?: string;
-  strokes?: string[];
+  strokes?: string | string[];
 };
 
 type RawKanaListResponse = {
   hiragana?: RawKana[];
   katakana?: RawKana[];
 };
+
+function parseStrokeList(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.filter(
+      (item): item is string => typeof item === "string" && item.length > 0,
+    );
+  }
+
+  if (typeof raw !== "string") {
+    return [];
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item): item is string => typeof item === "string" && item.length > 0,
+    );
+  } catch {
+    return raw.startsWith("M") || raw.startsWith("m") ? [raw] : [];
+  }
+}
 
 function normalizeKana(raw: RawKana) {
   return {
@@ -31,7 +53,7 @@ function normalizeKana(raw: RawKana) {
     romaji: raw.romaji ?? "",
     pointsToUnlock: raw.pointsToUnlock ?? raw.points_to_unlock ?? 0,
     viewBox: raw.viewBox ?? raw.view_box,
-    strokes: Array.isArray(raw.strokes) ? raw.strokes : [],
+    strokes: parseStrokeList(raw.strokes),
   };
 }
 
@@ -61,7 +83,7 @@ function normalizeKanaBody(body: unknown) {
         : typeof input.view_box === "string"
           ? input.view_box
           : "",
-    strokes: Array.isArray(input.strokes) ? input.strokes : [],
+    strokes: parseStrokeList(input.strokes),
   };
 }
 
@@ -99,17 +121,23 @@ export async function GET(req: NextRequest) {
 
   // Some environments may still return a flat array.
   const flat = Array.isArray(data) ? data : [...hiragana, ...katakana];
+  const normalizedFlat = flat.map(normalizeKana);
 
   if (kanaType === "hiragana" || kanaType === "katakana") {
-    const filtered = flat.filter(
-      (item) => (item.kanaType ?? item.kana_type) === kanaType,
+    const filtered = normalizedFlat.filter(
+      (item) => item.kanaType === kanaType,
     );
-    return NextResponse.json(filtered.map(normalizeKana), {
+    return NextResponse.json(filtered, {
       status: upstream.status,
     });
   }
 
-  return NextResponse.json(flat.map(normalizeKana), {
+  const grouped = {
+    hiragana: normalizedFlat.filter((item) => item.kanaType === "hiragana"),
+    katakana: normalizedFlat.filter((item) => item.kanaType === "katakana"),
+  };
+
+  return NextResponse.json(grouped, {
     status: upstream.status,
   });
 }

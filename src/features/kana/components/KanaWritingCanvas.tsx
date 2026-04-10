@@ -19,6 +19,10 @@ interface KanaWritingCanvasProps {
   size?: number;
   disabled?: boolean;
   flashError?: boolean;
+  /** Explicit accent colour (e.g. hiragana purple, katakana blue). Falls back to the `--accent` CSS variable. */
+  accentColor?: string;
+  /** When true, all guide strokes are shown uniformly — no active-stroke highlight (for quiz mode). */
+  hideActiveGuide?: boolean;
 }
 
 export function KanaWritingCanvas({
@@ -29,6 +33,8 @@ export function KanaWritingCanvas({
   size = 300,
   disabled = false,
   flashError = false,
+  accentColor: accentColorProp,
+  hideActiveGuide = false,
 }: KanaWritingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -51,7 +57,8 @@ export function KanaWritingCanvas({
       cs.getPropertyValue("--border-primary").trim() || "#e5e7eb";
     const strokeColor =
       cs.getPropertyValue("--text-primary").trim() || "#1a1a1a";
-    const accentColor = cs.getPropertyValue("--accent").trim() || "#993331";
+    const accentColor =
+      accentColorProp ?? (cs.getPropertyValue("--accent").trim() || "#993331");
 
     const w = canvas.width;
     const h = canvas.height;
@@ -82,7 +89,10 @@ export function KanaWritingCanvas({
     for (let i = 0; i < guideStrokes.length; i++) {
       try {
         const p2d = new Path2D(scaleSvgPath(guideStrokes[i], sx, sy));
-        if (i < activeStrokeIndex) {
+        if (hideActiveGuide) {
+          ctx.strokeStyle = strokeColor;
+          ctx.globalAlpha = 0.18;
+        } else if (i < activeStrokeIndex) {
           ctx.strokeStyle = strokeColor;
           ctx.globalAlpha = 0.15;
         } else if (i === activeStrokeIndex) {
@@ -133,7 +143,7 @@ export function KanaWritingCanvas({
       ctx.stroke();
       ctx.restore();
     }
-  }, [guideStrokes, activeStrokeIndex, vbWidth, vbHeight]);
+  }, [guideStrokes, activeStrokeIndex, vbWidth, vbHeight, accentColorProp, hideActiveGuide]);
 
   const scheduleRedraw = useCallback(() => {
     cancelAnimationFrame(rafId.current);

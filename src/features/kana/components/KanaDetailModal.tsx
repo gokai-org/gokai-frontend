@@ -48,9 +48,11 @@ const fadeUp = {
 interface KanaDetailModalProps {
   kana: Kana | null;
   onClose: () => void;
+  /** When provided, shows a "Hacer quiz" button. */
+  onQuizStart?: () => void;
 }
 
-export function KanaDetailModal({ kana, onClose }: KanaDetailModalProps) {
+export function KanaDetailModal({ kana, onClose, onQuizStart }: KanaDetailModalProps) {
   const [showWritingPractice, setShowWritingPractice] = useState(false);
   const [activeStroke, setActiveStroke] = useState(-1);
 
@@ -292,6 +294,35 @@ export function KanaDetailModal({ kana, onClose }: KanaDetailModalProps) {
                     />
                   </svg>
                   Practicar trazado
+                </motion.button>
+              )}
+
+              {/* CTA: Quiz button */}
+              {onQuizStart && (
+                <motion.button
+                  custom={hasStrokes ? 3 : 2}
+                  variants={fadeUp}
+                  initial="hidden"
+                  animate="visible"
+                  onClick={onQuizStart}
+                  whileHover={{ scale: 1.01 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full flex items-center justify-center gap-2.5 rounded-2xl bg-surface-tertiary ring-1 ring-border-subtle px-4 py-3.5 text-sm font-bold text-content-primary transition hover:ring-accent/40 hover:bg-surface-secondary focus:outline-none focus:ring-4 focus:ring-accent/20"
+                >
+                  <svg
+                    className="h-5 w-5"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  Hacer quiz
                 </motion.button>
               )}
             </div>

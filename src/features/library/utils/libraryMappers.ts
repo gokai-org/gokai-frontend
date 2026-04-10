@@ -139,6 +139,7 @@ export function kanjiToScriptCard(
     subtitle: reading ? `Lectura: ${reading}` : undefined,
     variant: "kanji",
     isFavorite,
+    unlockPoints: kanji.pointsToUnlock,
   };
 }
 
@@ -154,6 +155,7 @@ export function hiraganaToScriptCard(
     title: kana.romaji?.trim() || kana.symbol,
     variant: "hiragana",
     isFavorite,
+    unlockPoints: kana.pointsToUnlock,
   };
 }
 
@@ -169,6 +171,7 @@ export function katakanaToScriptCard(
     title: kana.romaji?.trim() || kana.symbol,
     variant: "katakana",
     isFavorite,
+    unlockPoints: kana.pointsToUnlock,
   };
 }
 

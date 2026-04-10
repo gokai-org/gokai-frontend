@@ -8,7 +8,6 @@ import { getMockKanjiStrokes } from "@/features/kanji/mock/mockStrokeData";
 import { KanjiStrokePlayer } from "./KanjiStrokePlayer";
 import { KanjiWritingCanvas, type DrawnStroke } from "./KanjiWritingCanvas";
 import { getPrimaryMeaning } from "@/features/kanji/utils/kanjiText";
-import { safeRandomId } from "@/shared/lib/utils/safeRandomId";
 import {
   validateStroke,
   getPointsForFeedback,
@@ -16,8 +15,7 @@ import {
   getFeedbackColor,
   type StrokeValidationResult,
 } from "@/features/kanji/lib/strokeValidation";
-import { useSubmitKanjiLesson } from "@/features/kanji/hooks/useSubmitKanjiLesson";
-import type { KanjiLessonAnswerBody } from "@/features/kanji/types";
+import { submitKanjiQuiz } from "@/features/kanji/api/kanjiQuizApi";
 
 type PracticeStep = "loading" | "demo" | "practice" | "result";
 
@@ -53,8 +51,6 @@ export function WritingPracticeModal({
   const [error, setError] = useState<string | null>(null);
   const [usingMock, setUsingMock] = useState(false);
 
-  // Submit hook
-  const { submit: submitLesson, loading: submitting } = useSubmitKanjiLesson();
   const hasSubmitted = useRef(false);
 
   // Responsive canvas sizes
@@ -271,30 +267,13 @@ export function WritingPracticeModal({
       startTime.current > 0
         ? Math.round((Date.now() - startTime.current) / 1000)
         : 0;
-    const correct = strokeResults.filter((r) => r.validation.isCorrect).length;
 
-    const answers: KanjiLessonAnswerBody[] = strokeResults.map((r) => ({
-      exerciseType: "writing" as const,
-      points: Math.max(0, r.pointsDelta),
-      duration: Math.round(durationSeconds / totalStrokes),
-      isCorrect: r.validation.isCorrect,
-    }));
-
-    console.log(
-      `[SUBMIT] Sending: totalExercises=${totalStrokes}, correctExercises=${correct}, answers.length=${answers.length}`,
-    );
-
-    submitLesson({
-      lessonId: safeRandomId(),
-      kanjiId: kanji.id,
-      mode: "writing",
+    submitKanjiQuiz(kanji.id, {
+      type: "writing",
       score: scorePercent,
       duration: durationSeconds,
-      totalExercises: totalStrokes,
-      correctExercises: correct,
-      answers,
     }).catch(() => {});
-  }, [step, strokeResults, kanji.id, totalStrokes, scorePercent, submitLesson]);
+  }, [step, strokeResults, kanji.id, totalStrokes, scorePercent]);
 
   /* ── Framer‑motion helpers ── */
   const overlayVariants = {
@@ -966,17 +945,6 @@ export function WritingPracticeModal({
                       </p>
                     </div>
                   </motion.div>
-
-                  {/* Submitting indicator */}
-                  {submitting && (
-                    <motion.p
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      className="text-xs text-content-muted font-medium"
-                    >
-                      Guardando resultado…
-                    </motion.p>
-                  )}
 
                   {/* Actions */}
                   <motion.div

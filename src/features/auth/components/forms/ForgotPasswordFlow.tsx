@@ -3,7 +3,6 @@
 import { AnimatePresence, motion } from "framer-motion";
 import type { ReactNode } from "react";
 import { usePasswordResetFlow } from "@/features/auth/hooks/usePasswordResetFlow";
-import { PasswordResetStepHeader } from "@/features/auth/components/PasswordResetStepHeader";
 import { VerificationCodeInputs } from "@/features/auth/components/VerificationCodeInputs";
 import { PasswordField } from "@/features/auth/components/PasswordField";
 import { LoadingButton } from "@/shared/ui/LoadingButton";

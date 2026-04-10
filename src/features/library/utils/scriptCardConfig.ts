@@ -19,6 +19,22 @@ export interface ScriptCardConfig {
 
 // ─── Config map ───────────────────────────────────────────────────────────────
 
+// ─── Golden mastery config (shared across all variants) ──────────────────────
+
+export const SCRIPT_CARD_GOLD_CONFIG: Omit<ScriptCardConfig, "symbolShape"> = {
+  bgTint: "",
+  hoverGradient: "from-[#7A5C1C] via-[#D4A843] to-[#F0D27A]",
+  thumbGradient: "from-[#D4A843] to-[#F0D27A]",
+  pointsBadge:
+    "bg-[#D4A843]/10 text-[#9B7B2F] border-[#D4A843]/15 group-hover:bg-white/15 group-hover:border-white/20 group-hover:text-white",
+  shadowCard: "shadow-[0_4px_20px_-6px_rgba(212,168,67,0.12)]",
+  shadowHover: "hover:shadow-[0_20px_40px_-8px_rgba(212,168,67,0.45)]",
+  ring: "focus-visible:ring-[#D4A843]/30",
+  decorOpacity: "text-[#D4A843]/[0.05] group-hover:text-white/[0.08]",
+  heartColor: "text-[#D4A843]",
+  heartBg: "border-[#D4A843]/20 bg-[#D4A843]/10",
+};
+
 export const SCRIPT_CARD_CONFIG: Record<ScriptVariant, ScriptCardConfig> = {
   kanji: {
     symbolShape: "circle",

@@ -193,6 +193,137 @@
   --chart-label: #6b7280;
 }
 
+/* ── High contrast (light): stronger contrast for accessibility ── */
+.high-contrast {
+  /* Surfaces — starker contrast between layers */
+  --surface-primary: #ffffff;
+  --surface-secondary: #f0f0f0;
+  --surface-tertiary: #e0e0e0;
+  --surface-elevated: #ffffff;
+  --surface-overlay: rgba(0, 0, 0, 0.55);
+  --surface-inset: #e8e8e8;
+
+  /* Text — maximum readability */
+  --text-primary: #000000;
+  --text-secondary: #1a1a1a;
+  --text-tertiary: #333333;
+  --text-muted: #555555;
+  --text-inverted: #ffffff;
+
+  /* Borders — clearly visible */
+  --border-primary: #888888;
+  --border-secondary: #aaaaaa;
+  --border-focus: rgba(153, 51, 49, 0.6);
+
+  /* Accent — bolder for visibility */
+  --accent: #7a1a18;
+  --accent-hover: #993331;
+  --accent-subtle: rgba(122, 26, 24, 0.18);
+  --accent-muted: rgba(122, 26, 24, 0.1);
+
+  /* Status — stronger colors */
+  --success: #0d7a30;
+  --success-subtle: rgba(13, 122, 48, 0.15);
+  --error: #b91c1c;
+  --error-subtle: rgba(185, 28, 28, 0.15);
+  --warning: #a8590a;
+  --warning-subtle: rgba(168, 89, 10, 0.15);
+  --info: #1d4ed8;
+  --info-subtle: rgba(29, 78, 216, 0.15);
+
+  /* Shadows — more pronounced */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.25);
+
+  /* Sidebar */
+  --sidebar-bg: rgba(255, 255, 255, 0.95);
+  --sidebar-ring: rgba(0, 0, 0, 0.2);
+  --sidebar-icon-stroke: rgba(0, 0, 0, 0.85);
+
+  /* Skeleton */
+  --skeleton-base: rgba(200, 200, 200, 0.8);
+  --skeleton-shine: rgba(255, 255, 255, 0.6);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(122, 26, 24, 0.35);
+  --scrollbar-thumb-hover: rgba(122, 26, 24, 0.55);
+
+  /* Chart */
+  --chart-grid: #cccccc;
+  --chart-label: #333333;
+}
+
+/* ── High contrast (dark): boosted readability on dark backgrounds ── */
+.dark.high-contrast {
+  /* Surfaces — wider separation between layers */
+  --surface-primary: #0a0a0a;
+  --surface-secondary: #111111;
+  --surface-tertiary: #1a1a1a;
+  --surface-elevated: #141414;
+  --surface-overlay: rgba(0, 0, 0, 0.75);
+  --surface-inset: #080808;
+
+  /* Text — brighter for maximum contrast */
+  --text-primary: #ffffff;
+  --text-secondary: #d4d4d4;
+  --text-tertiary: #a3a3a3;
+  --text-muted: #737373;
+  --text-inverted: #ffffff;
+
+  /* Borders — clearly visible on dark */
+  --border-primary: #555555;
+  --border-secondary: #404040;
+  --border-focus: rgba(239, 108, 106, 0.6);
+
+  /* Accent — brighter for visibility on dark */
+  --accent: #ef6c6a;
+  --accent-hover: #f59290;
+  --accent-subtle: rgba(239, 108, 106, 0.22);
+  --accent-muted: rgba(239, 108, 106, 0.12);
+
+  /* Status */
+  --success: #4ade80;
+  --success-subtle: rgba(74, 222, 128, 0.18);
+  --error: #f87171;
+  --error-subtle: rgba(248, 113, 113, 0.18);
+  --warning: #fbbf24;
+  --warning-subtle: rgba(251, 191, 36, 0.18);
+  --info: #60a5fa;
+  --info-subtle: rgba(96, 165, 250, 0.18);
+
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.55);
+  --shadow-lg: 0 20px 70px rgba(0, 0, 0, 0.7);
+  --shadow-xl: 0 25px 80px rgba(0, 0, 0, 0.75);
+
+  /* Sidebar */
+  --sidebar-bg: rgba(14, 14, 14, 0.95);
+  --sidebar-ring: rgba(255, 255, 255, 0.15);
+  --sidebar-icon-stroke: rgba(255, 255, 255, 0.85);
+
+  /* Skeleton */
+  --skeleton-base: rgba(50, 50, 50, 0.9);
+  --skeleton-shine: rgba(255, 255, 255, 0.08);
+
+  /* Scrollbar */
+  --scrollbar-thumb: rgba(239, 108, 106, 0.4);
+  --scrollbar-thumb-hover: rgba(239, 108, 106, 0.6);
+
+  /* Chart */
+  --chart-grid: #404040;
+  --chart-label: #a3a3a3;
+}
+
+/* ── High contrast: utility overrides ──────────────── */
+.high-contrast * {
+  /* Sharper text rendering */
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
+}
+
 /* ── Expose tokens to Tailwind v4 ──────────────────── */
 @theme inline {
   --color-surface-primary: var(--surface-primary);
@@ -390,11 +521,31 @@ html[data-jp-font="meiryo"] {
   --kanji-edge-locked-stroke: rgba(28, 22, 32, 1);
   --kanji-edge-available-stroke: rgba(172, 56, 52, 1);
   --kanji-edge-completed-stroke: rgba(172, 56, 52, 1);
+
+  /* Hiragana (purple) */
+  --hiragana-edge-locked-stroke: rgba(28, 22, 32, 0.8);
+  --hiragana-edge-available-stroke: rgba(123, 63, 138, 1);
+  --hiragana-edge-completed-stroke: rgba(168, 102, 181, 1);
+
+  /* Katakana (blue) */
+  --katakana-edge-locked-stroke: rgba(22, 28, 38, 0.8);
+  --katakana-edge-available-stroke: rgba(27, 80, 120, 1);
+  --katakana-edge-completed-stroke: rgba(46, 130, 181, 1);
 }
 .dark {
   --kanji-edge-locked-stroke: rgba(210, 200, 220, 1);
   --kanji-edge-available-stroke: rgba(210, 78, 72, 1);
   --kanji-edge-completed-stroke: rgba(218, 84, 78, 1);
+
+  /* Hiragana (purple) */
+  --hiragana-edge-locked-stroke: rgba(210, 200, 220, 0.6);
+  --hiragana-edge-available-stroke: rgba(155, 86, 168, 1);
+  --hiragana-edge-completed-stroke: rgba(188, 128, 204, 1);
+
+  /* Katakana (blue) */
+  --katakana-edge-locked-stroke: rgba(200, 210, 220, 0.6);
+  --katakana-edge-available-stroke: rgba(46, 130, 181, 1);
+  --katakana-edge-completed-stroke: rgba(79, 168, 216, 1);
 }
 
 /* ── Kanji node / edge animations ── */
@@ -584,16 +735,16 @@ html[data-jp-font="meiryo"] {
   animation: kanji-edge-unlock-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ── Locked sphere: pearl gray in light mode, deep in dark mode ── */
+/* ── Locked sphere: neutral gray matching library locked card design ── */
 .kanji-node-sphere-locked {
-  background: linear-gradient(135deg, #f6f4fa 0%, #efecf5 100%);
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.07);
-  color: rgba(60, 50, 88, 1);
+  background: var(--surface-tertiary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  color: rgba(156, 163, 175, 0.6);
 }
 .dark .kanji-node-sphere-locked {
-  background: linear-gradient(135deg, #383438 0%, #1c181e 100%);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.36);
-  color: rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: none;
+  color: rgba(255, 255, 255, 0.25);
 }
 
 /* ── Unlock ring: double-halo burst expanding from unlocked node ── */
@@ -871,8 +1022,682 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
    SVG presentation attributes have lowest CSS specificity, so class selectors win. */
 .dark .kanji-bg-board-lines svg line,
 .dark .kanji-bg-board-lines svg path {
-  stroke: rgba(200, 200, 210, 0.42);
+  stroke: rgba(214, 214, 226, 0.92);
 }
 .dark .kanji-bg-board-hoshi svg circle {
-  fill: rgba(200, 200, 210, 0.64);
+  fill: rgba(226, 226, 236, 0.96);
+}
+
+/* ── Per-script background tints (hiragana=purple, katakana=blue) ── */
+/* data-script is set on .kanji-bg-scene by WritingBoardBackground */
+
+.dark [data-script="hiragana"] .kanji-bg-parallax-layer {
+  background-image:
+    radial-gradient(
+      ellipse 44% 34% at 18% 26%,
+      rgba(100, 20, 140, 0.07) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 38% 30% at 78% 62%,
+      rgba(70, 10, 110, 0.05) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 56% 40% at 52% 84%,
+      rgba(90, 14, 130, 0.04) 0%,
+      transparent 68%
+    );
+}
+
+.dark [data-script="hiragana"] .kanji-bg-atmosphere {
+  background:
+    radial-gradient(
+      ellipse 58% 44% at 50% 42%,
+      rgba(130, 20, 180, 0.09) 0%,
+      rgba(70, 8, 110, 0.04) 54%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 34% 26% at 22% 22%,
+      rgba(100, 14, 150, 0.05) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 76% 74%,
+      rgba(90, 16, 140, 0.04) 0%,
+      transparent 56%
+    );
+}
+
+.dark [data-script="katakana"] .kanji-bg-parallax-layer {
+  background-image:
+    radial-gradient(
+      ellipse 44% 34% at 18% 26%,
+      rgba(10, 50, 130, 0.07) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 38% 30% at 78% 62%,
+      rgba(8, 35, 100, 0.05) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 56% 40% at 52% 84%,
+      rgba(10, 42, 120, 0.04) 0%,
+      transparent 68%
+    );
+}
+
+.dark [data-script="katakana"] .kanji-bg-atmosphere {
+  background:
+    radial-gradient(
+      ellipse 58% 44% at 50% 42%,
+      rgba(14, 60, 160, 0.09) 0%,
+      rgba(8, 35, 100, 0.04) 54%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 34% 26% at 22% 22%,
+      rgba(10, 50, 140, 0.05) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 76% 74%,
+      rgba(12, 45, 130, 0.04) 0%,
+      transparent 56%
+    );
+}
+
+/* ── Mastery golden board background overrides ── */
+[data-mastery-golden="true"] .kanji-bg-parallax-layer {
+  background-image:
+    radial-gradient(
+      ellipse 44% 34% at 18% 26%,
+      rgba(212, 168, 67, 0.08) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 38% 30% at 78% 62%,
+      rgba(196, 155, 59, 0.06) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 56% 40% at 52% 84%,
+      rgba(240, 210, 122, 0.05) 0%,
+      transparent 68%
+    );
+}
+
+[data-mastery-golden="true"] .kanji-bg-atmosphere {
+  background:
+    radial-gradient(
+      ellipse 58% 44% at 50% 42%,
+      rgba(212, 168, 67, 0.10) 0%,
+      rgba(196, 155, 59, 0.05) 54%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 34% 26% at 22% 22%,
+      rgba(240, 210, 122, 0.06) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 76% 74%,
+      rgba(212, 168, 67, 0.05) 0%,
+      transparent 56%
+    );
+  opacity: 0.95;
+}
+
+[data-mastery-golden="true"] .kanji-bg-vignette {
+  background: radial-gradient(
+    circle at center,
+    transparent 48%,
+    rgba(166, 128, 34, 0.12) 100%
+  );
+}
+
+.dark [data-mastery-golden="true"] .kanji-bg-parallax-layer {
+  background-image:
+    radial-gradient(
+      ellipse 44% 34% at 18% 26%,
+      rgba(212, 168, 67, 0.10) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      ellipse 38% 30% at 78% 62%,
+      rgba(196, 155, 59, 0.07) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 56% 40% at 52% 84%,
+      rgba(240, 210, 122, 0.06) 0%,
+      transparent 68%
+    );
+}
+
+.dark [data-mastery-golden="true"] .kanji-bg-atmosphere {
+  background:
+    radial-gradient(
+      ellipse 58% 44% at 50% 42%,
+      rgba(212, 168, 67, 0.13) 0%,
+      rgba(155, 118, 28, 0.06) 54%,
+      transparent 78%
+    ),
+    radial-gradient(
+      ellipse 34% 26% at 22% 22%,
+      rgba(240, 210, 122, 0.07) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse 30% 24% at 76% 74%,
+      rgba(212, 168, 67, 0.06) 0%,
+      transparent 56%
+    );
+}
+
+.dark [data-mastery-golden="true"] .kanji-bg-vignette {
+  background: radial-gradient(
+    circle at center,
+    transparent 42%,
+    rgba(20, 16, 8, 0.78) 100%
+  );
+}
+
+/* ── Writing board loading: theme-aware node glass colors ── */
+:root {
+  --writing-loading-center-stop: rgba(218, 212, 226, 0.92);
+  --writing-loading-node-border: rgba(0, 0, 0, 0.10);
+  --writing-loading-node-inner: rgba(0, 0, 0, 0.04);
+  --writing-loading-side-bg: linear-gradient(180deg, rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.04));
+}
+.dark {
+  --writing-loading-center-stop: rgba(24, 24, 28, 0.98);
+  --writing-loading-node-border: rgba(255, 255, 255, 0.08);
+  --writing-loading-node-inner: rgba(255, 255, 255, 0.05);
+  --writing-loading-side-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+}
+
+/* ── Shared board node label pill ───────────────────────────── */
+.board-node-label-pill {
+  max-width: 160px;
+  border-radius: 999px;
+  border: 1px solid var(--border-primary);
+  background: var(--surface-elevated);
+  padding: 0.25rem 0.875rem;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.1;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+/* Theme colors per script for points */
+.board-node-points-pill--kanji {
+  background: #ba4845;
+  box-shadow: 0 2px 10px rgba(186, 72, 66, 0.52);
+}
+
+.board-node-points-pill--hiragana {
+  background: #7b3f8a;
+  box-shadow: 0 2px 10px rgba(123, 63, 138, 0.52);
+}
+
+.board-node-points-pill--katakana {
+  background: #1b5078;
+  box-shadow: 0 2px 10px rgba(27, 80, 120, 0.52);
+}
+
+/* ── Shared edge score pill ─────────────────────────────────── */
+.edge-score-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 20;
+  isolation: isolate;
+  overflow: hidden;
+  min-width: 44px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.1;
+
+  border: 1px solid var(--border-primary);
+  background: var(--surface-elevated);
+  white-space: nowrap;
+  transform-origin: center;
+  opacity: 1;
+
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.dark .edge-score-label {
+  background: var(--surface-secondary);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.edge-score-value {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.1;
+  transform: translateY(-0.2px);
+}
+
+.edge-score-label-complete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  z-index: 20;
+  isolation: isolate;
+  overflow: hidden;
+  min-width: 44px;
+  height: 28px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  border-width: 1.5px;
+  border-style: solid;
+  border-color: #22c55e;
+  color: #22c55e;
+  background-color: var(--surface-elevated);
+  white-space: nowrap;
+  opacity: 1;
+  box-shadow:
+    0 4px 12px rgba(34, 197, 94, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.dark .edge-score-label-complete {
+  background-color: var(--surface-elevated);
+  box-shadow:
+    0 4px 12px rgba(34, 197, 94, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.board-node-label-pill {
+  max-width: 160px;
+  border-radius: 999px;
+  border: 1px solid var(--border-primary);
+  background: var(--surface-elevated);
+  padding: 0.25rem 0.875rem;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.1;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.dark .board-node-label-pill {
+  background: var(--surface-secondary);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ── Lesson drawer scrollbar (accent-aware: purple/blue per kana type) ── */
+.lesson-drawer-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+.lesson-drawer-body::-webkit-scrollbar {
+  width: 6px;
+}
+.lesson-drawer-body::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;
+}
+.lesson-drawer-body::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+.lesson-drawer-body::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ── Board background: pause CSS animations while lesson drawer is open ── */
+[data-drawer-open="true"] .kanji-bg-animate {
+  animation-play-state: paused;
+}
+[data-drawer-open="true"] .kanji-bg-breathe {
+  animation-play-state: paused;
+}
+
+/* ── Board node: zoom-pop when drawer opens for selected node ── */
+@keyframes kanji-node-drawer-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.14); }
+  70%  { transform: scale(1.06); }
+  100% { transform: scale(1.09); }
+}
+.kanji-node-drawer-open {
+  animation: kanji-node-drawer-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MASTERY CELEBRATION SYSTEM
+   Golden theme + cinematic overlay + celebration modal
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Mastery: golden CSS custom property defaults ── */
+:root {
+  --mastery-gold-primary: #D4A843;
+  --mastery-gold-highlight: #F0D27A;
+  --mastery-gold-shadow: #9B7B2F;
+  --mastery-gold-glow: rgba(212, 168, 67, 0.45);
+  --mastery-gold-glow-strong: rgba(212, 168, 67, 0.72);
+  --mastery-gold-backdrop: rgba(212, 168, 67, 0.06);
+  --mastery-gold-edge-stroke: #C89E3C;
+  --mastery-gold-gradient-from: #F0D27A;
+  --mastery-gold-gradient-to: #B8922E;
+  --mastery-mix-ratio: 0;
+}
+
+/* ── Mastery: cinematic overlay — golden particles ── */
+@keyframes mastery-particle-drift {
+  0%   { transform: translateY(0) scale(1);   opacity: 0; }
+  15%  { opacity: 0.7; }
+  50%  { opacity: 0.4; }
+  100% { transform: translateY(-120vh) scale(0.5); opacity: 0; }
+}
+
+.mastery-golden-particles {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 80%, rgba(240, 210, 122, 0.65) 50%, transparent 50%),
+    radial-gradient(2px 2px at 28% 75%, rgba(212, 168, 67, 0.55) 50%, transparent 50%),
+    radial-gradient(1px 1px at 44% 88%, rgba(240, 210, 122, 0.5) 50%, transparent 50%),
+    radial-gradient(1.8px 1.8px at 62% 82%, rgba(212, 168, 67, 0.6) 50%, transparent 50%),
+    radial-gradient(1.2px 1.2px at 78% 77%, rgba(240, 210, 122, 0.45) 50%, transparent 50%),
+    radial-gradient(2.2px 2.2px at 90% 85%, rgba(212, 168, 67, 0.5) 50%, transparent 50%),
+    radial-gradient(1px 1px at 5% 70%, rgba(240, 210, 122, 0.4) 50%, transparent 50%),
+    radial-gradient(1.6px 1.6px at 52% 92%, rgba(184, 146, 46, 0.5) 50%, transparent 50%);
+  background-size: 100% 100%;
+  animation: mastery-particle-drift 4.5s ease-out infinite;
+}
+
+/* ── Mastery: cinematic vignette ── */
+.mastery-vignette {
+  background:
+    radial-gradient(
+      ellipse 80% 60% at 50% 50%,
+      transparent 40%,
+      rgba(0, 0, 0, 0.30) 100%
+    );
+  pointer-events: none;
+}
+
+/* ── Mastery: celebration modal card ── */
+.mastery-celebration-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  width: min(420px, 90vw);
+  padding: 3rem 2rem 2rem;
+  border-radius: 1.5rem;
+  border: 1px solid rgba(212, 168, 67, 0.25);
+  background:
+    linear-gradient(
+      168deg,
+      rgba(30, 28, 24, 0.97) 0%,
+      rgba(22, 20, 18, 0.98) 100%
+    );
+  box-shadow:
+    0 0 0 1px rgba(212, 168, 67, 0.08),
+    0 8px 32px rgba(0, 0, 0, 0.50),
+    0 2px 16px rgba(212, 168, 67, 0.12),
+    inset 0 1px 0 rgba(240, 210, 122, 0.10);
+  overflow: hidden;
+}
+
+/* Light mode card variant */
+:root:not(.dark) .mastery-celebration-card {
+  background:
+    linear-gradient(
+      168deg,
+      rgba(255, 252, 245, 0.98) 0%,
+      rgba(250, 245, 232, 0.99) 100%
+    );
+  border-color: rgba(212, 168, 67, 0.30);
+  box-shadow:
+    0 0 0 1px rgba(212, 168, 67, 0.12),
+    0 8px 32px rgba(0, 0, 0, 0.12),
+    0 2px 16px rgba(212, 168, 67, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.80);
+}
+
+/* ── Mastery: halo ring behind badge ── */
+@keyframes mastery-halo-pulse {
+  0%   { transform: scale(0.7); opacity: 0; }
+  40%  { opacity: 0.5; }
+  100% { transform: scale(1.8); opacity: 0; }
+}
+
+.mastery-celebration-halo {
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  width: 160px;
+  height: 160px;
+  margin-left: -80px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(212, 168, 67, 0.30) 0%,
+    rgba(212, 168, 67, 0.08) 50%,
+    transparent 72%
+  );
+  animation: mastery-halo-pulse 2.4s ease-out infinite;
+  pointer-events: none;
+}
+
+/* ── Mastery: badge circle ── */
+.mastery-celebration-badge {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 2px solid rgba(212, 168, 67, 0.45);
+  background:
+    linear-gradient(
+      145deg,
+      rgba(240, 210, 122, 0.18) 0%,
+      rgba(184, 146, 46, 0.12) 100%
+    );
+  box-shadow:
+    0 0 24px rgba(212, 168, 67, 0.30),
+    0 0 48px rgba(212, 168, 67, 0.12),
+    inset 0 1px 0 rgba(240, 210, 122, 0.20);
+}
+
+:root:not(.dark) .mastery-celebration-badge {
+  background:
+    linear-gradient(
+      145deg,
+      rgba(240, 210, 122, 0.28) 0%,
+      rgba(212, 168, 67, 0.15) 100%
+    );
+  box-shadow:
+    0 0 24px rgba(212, 168, 67, 0.18),
+    0 0 48px rgba(212, 168, 67, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.50);
+}
+
+.mastery-celebration-badge-char {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1;
+  background: linear-gradient(145deg, #F0D27A, #D4A843);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  filter: drop-shadow(0 2px 4px rgba(212, 168, 67, 0.30));
+}
+
+/* ── Mastery: text styles ── */
+.mastery-celebration-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.mastery-celebration-achievement {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--mastery-gold-primary);
+}
+
+.mastery-celebration-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+  background: linear-gradient(135deg, #F0D27A 0%, #D4A843 50%, #B8922E 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.mastery-celebration-subtitle {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: var(--content-secondary);
+  max-width: 300px;
+}
+
+/* ── Mastery: CTA button ── */
+.mastery-celebration-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem 2rem;
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  line-height: 1;
+  border: none;
+  border-radius: 999px;
+  color: #1a1612;
+  cursor: pointer;
+  background: linear-gradient(135deg, #F0D27A, #D4A843, #B8922E);
+  box-shadow:
+    0 4px 16px rgba(212, 168, 67, 0.32),
+    0 1px 3px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transition: box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.mastery-celebration-button:hover {
+  box-shadow:
+    0 6px 20px rgba(212, 168, 67, 0.42),
+    0 1px 4px rgba(0, 0, 0, 0.15),
+    inset 0 1px 0 rgba(255, 255, 255, 0.30);
+}
+
+.mastery-celebration-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Mastery: golden node glow (applied during celebration) ── */
+@keyframes mastery-node-golden-glow {
+  0%   { box-shadow: 0 0 0 0 rgba(212, 168, 67, 0); }
+  50%  { box-shadow: 0 0 18px 6px rgba(212, 168, 67, 0.40); }
+  100% { box-shadow: 0 0 24px 10px rgba(212, 168, 67, 0.20); }
+}
+
+.mastery-node-golden {
+  animation: mastery-node-golden-glow 1.2s ease-out forwards;
+}
+
+/* ── Mastery: golden edge stroke transition ── */
+.mastery-edge-golden path {
+  stroke: var(--mastery-gold-edge-stroke) !important;
+  transition: stroke 0.6s ease-out;
+}
+
+/* ── Mastery: golden points pill override ── */
+[data-mastery-golden="true"] .board-node-points-pill--kanji,
+[data-mastery-golden="true"] .board-node-points-pill--hiragana,
+[data-mastery-golden="true"] .board-node-points-pill--katakana {
+  background: var(--mastery-gold-primary);
+  box-shadow: 0 2px 10px var(--mastery-gold-glow);
+}
+
+/* ── Mastery: pause board animations during celebration ── */
+[data-mastery-phase="cinematic_enter"] .kanji-bg-animate,
+[data-mastery-phase="cinematic_enter"] .kanji-bg-breathe,
+[data-mastery-phase="golden_propagation"] .kanji-bg-animate,
+[data-mastery-phase="golden_propagation"] .kanji-bg-breathe,
+[data-mastery-phase="camera_tour"] .kanji-bg-animate,
+[data-mastery-phase="camera_tour"] .kanji-bg-breathe {
+  animation-play-state: paused;
+}
+
+/* ── Mastery: responsive adjustments ── */
+@media (max-width: 640px) {
+  .mastery-celebration-card {
+    width: min(360px, 92vw);
+    padding: 2.5rem 1.5rem 1.75rem;
+    gap: 1rem;
+  }
+
+  .mastery-celebration-badge {
+    width: 66px;
+    height: 66px;
+  }
+
+  .mastery-celebration-badge-char {
+    font-size: 1.875rem;
+  }
+
+  .mastery-celebration-title {
+    font-size: 1.25rem;
+  }
+
+  .mastery-celebration-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .mastery-celebration-button {
+    padding: 0.625rem 1.5rem;
+    font-size: 0.875rem;
+  }
+
+  .mastery-celebration-halo {
+    width: 120px;
+    height: 120px;
+    margin-left: -60px;
+    top: -20px;
+  }
 }

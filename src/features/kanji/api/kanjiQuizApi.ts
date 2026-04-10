@@ -16,7 +16,7 @@ export async function getKanjiQuiz(
   kanjiId: string,
 ): Promise<KanjiQuizResponse> {
   const raw = await apiFetch<KanjiQuizResponseRaw>(
-    `/api/content/kanji/quiz/${kanjiId}`,
+    `/api/content/kanji/${kanjiId}?resource=quiz`,
     { cache: "no-store" },
   );
 
@@ -31,7 +31,7 @@ export async function submitKanjiQuiz(
   kanjiId: string,
   body: KanjiQuizSubmitBody,
 ): Promise<{ success: boolean }> {
-  return apiFetch<{ success: boolean }>(`/api/content/kanji/quiz/${kanjiId}`, {
+  return apiFetch<{ success: boolean }>(`/api/content/kanji/${kanjiId}?resource=quiz`, {
     method: "POST",
     body: JSON.stringify(body),
   });

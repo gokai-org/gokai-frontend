@@ -19,6 +19,8 @@ export { MetaInfo } from "./components/MetaInfo";
 export { ProgressBar } from "./components/ProgressBar";
 export { RecentCard } from "./components/RecentCard";
 export { Thumbnail } from "./components/Thumbnail";
+export { KanaPhoneticGrid } from "./components/KanaPhoneticGrid";
+export type { KanaPhoneticGridProps } from "./components/KanaPhoneticGrid";
 
 export { useRecentItems } from "./hooks/useRecentItems";
 export { useFavorites } from "./hooks/useFavorites";

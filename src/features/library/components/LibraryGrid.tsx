@@ -16,7 +16,10 @@ interface LibraryGridProps {
   favoriteHiraganas: Set<string>;
   favoriteKatakanas: Set<string>;
   lockedKanjiIds?: Set<string>;
+  lockedHiraganaIds?: Set<string>;
+  lockedKatakanaIds?: Set<string>;
   newlyUnlockedKanjiIds?: ReadonlySet<string>;
+  newlyUnlockedKanaIds?: ReadonlySet<string>;
   toggleFavoriteKanji: (id: string) => void;
   toggleFavoriteHiragana: (id: string) => void;
   toggleFavoriteKatakana: (id: string) => void;
@@ -31,7 +34,10 @@ export function LibraryGrid({
   favoriteHiraganas,
   favoriteKatakanas,
   lockedKanjiIds,
+  lockedHiraganaIds,
+  lockedKatakanaIds,
   newlyUnlockedKanjiIds,
+  newlyUnlockedKanaIds,
   toggleFavoriteKanji,
   toggleFavoriteHiragana,
   toggleFavoriteKatakana,
@@ -60,25 +66,38 @@ export function LibraryGrid({
           );
         }
 
+        if (item.type === "hiragana") {
+          const isLocked = lockedHiraganaIds?.has(item.data.id) ?? false;
+          return (
+            <ScriptCard
+              key={item.data.id}
+              {...hiraganaToScriptCard(
+                item.data,
+                favoriteHiraganas.has(item.data.id),
+              )}
+              index={i}
+              locked={isLocked}
+              unlocking={newlyUnlockedKanaIds?.has(item.data.id) ?? false}
+              onClick={isLocked ? undefined : () => onKanaClick(item.data)}
+              onFavoriteToggle={isLocked ? undefined : toggleFavoriteHiragana}
+            />
+          );
+        }
+
+        // katakana
+        const isLocked = lockedKatakanaIds?.has(item.data.id) ?? false;
         return (
           <ScriptCard
             key={item.data.id}
-            {...(item.type === "hiragana"
-              ? hiraganaToScriptCard(
-                  item.data,
-                  favoriteHiraganas.has(item.data.id),
-                )
-              : katakanaToScriptCard(
-                  item.data,
-                  favoriteKatakanas.has(item.data.id),
-                ))}
+            {...katakanaToScriptCard(
+              item.data,
+              favoriteKatakanas.has(item.data.id),
+            )}
             index={i}
-            onClick={() => onKanaClick(item.data)}
-            onFavoriteToggle={
-              item.type === "hiragana"
-                ? toggleFavoriteHiragana
-                : toggleFavoriteKatakana
-            }
+            locked={isLocked}
+            unlocking={newlyUnlockedKanaIds?.has(item.data.id) ?? false}
+            onClick={isLocked ? undefined : () => onKanaClick(item.data)}
+            onFavoriteToggle={isLocked ? undefined : toggleFavoriteKatakana}
           />
         );
       })}

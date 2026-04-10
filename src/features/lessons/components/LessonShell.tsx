@@ -3,6 +3,7 @@
 import type { LessonMode, LessonResolved } from "../types";
 import type { Kanji } from "@/features/kanji/types";
 import KanjiLesson from "./lesson-renderers/KanjiLesson";
+import KanaLesson from "./lesson-renderers/KanaLesson";
 import GrammarLesson from "./lesson-renderers/GrammarLesson";
 import SubthemeLesson from "./lesson-renderers/SubthemeLesson";
 
@@ -19,7 +20,7 @@ export default function LessonShell({
   kanjiCtaDisabled?: boolean;
   kanjiCtaDisabledReason?: string;
   onWritingStart?: (kanji: Kanji) => void;
-  onQuizStart?: (kanji: Kanji) => void;
+  onQuizStart?: (entity: { id: string; symbol: string }) => void;
 }) {
   switch (lesson.kind) {
     case "kanji":
@@ -30,6 +31,16 @@ export default function LessonShell({
           ctaDisabled={kanjiCtaDisabled}
           ctaDisabledReason={kanjiCtaDisabledReason}
           onWritingStart={onWritingStart}
+          onQuizStart={onQuizStart}
+        />
+      );
+    case "kana":
+      return (
+        <KanaLesson
+          data={lesson}
+          mode={mode}
+          ctaDisabled={kanjiCtaDisabled}
+          ctaDisabledReason={kanjiCtaDisabledReason}
           onQuizStart={onQuizStart}
         />
       );

@@ -12,6 +12,7 @@ export interface User {
   subscribed?: boolean;
   twoFactorEnabled?: boolean;
   points?: number;
+  kanaPoints?: number;
 }
 
 export interface UserInterest {

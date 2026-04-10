@@ -1,6 +1,7 @@
 import type { Kanji } from "@/features/kanji/types";
+import type { Kana } from "@/features/kana/types";
 
-export type LessonType = "kanji" | "subtheme" | "grammar";
+export type LessonType = "kanji" | "kana" | "subtheme" | "grammar";
 export type LessonMode = "writing" | "listening" | "reading" | "speaking";
 
 export type Lesson = {
@@ -39,5 +40,6 @@ export type SubthemeWithTheme = Subtheme & { theme: Theme };
 
 export type LessonResolved =
   | { lesson: Lesson; kind: "kanji"; kanji: Kanji }
+  | { lesson: Lesson; kind: "kana"; kana: Kana }
   | { lesson: Lesson; kind: "grammar"; grammar: GrammarLesson }
   | { lesson: Lesson; kind: "subtheme"; subtheme: SubthemeWithTheme };

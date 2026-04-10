@@ -1,1 +1,1 @@
-export { default as GrammarView } from "./components/GrammarView";
+export * from "./components";

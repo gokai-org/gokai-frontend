@@ -6,9 +6,12 @@ import { LockKeyhole } from "lucide-react";
 import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
 import {
   SCRIPT_CARD_CONFIG,
+  SCRIPT_CARD_GOLD_CONFIG,
   type ScriptVariant,
 } from "@/features/library/utils/scriptCardConfig";
 import { ScriptCardLayout } from "@/features/library/components/ScriptCardLayout";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import type { MasteryModuleId } from "@/features/mastery/types";
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -18,6 +21,7 @@ export interface ScriptCardProps {
   title: string;
   subtitle?: string;
   pointsBadge?: string;
+  unlockPoints?: number;
   variant: ScriptVariant;
   index?: number;
   isFavorite?: boolean;
@@ -35,6 +39,7 @@ export function ScriptCard({
   title,
   subtitle,
   pointsBadge,
+  unlockPoints,
   variant,
   index = 0,
   isFavorite = false,
@@ -45,7 +50,24 @@ export function ScriptCard({
 }: ScriptCardProps) {
   const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
     useCardAnimation(index);
-  const config = SCRIPT_CARD_CONFIG[variant];
+  const masteredModules = useMasteredModules();
+  const isMastered = masteredModules.has(variant as MasteryModuleId);
+  const baseConfig = SCRIPT_CARD_CONFIG[variant];
+  const config = isMastered
+    ? { ...SCRIPT_CARD_GOLD_CONFIG, symbolShape: baseConfig.symbolShape }
+    : baseConfig;
+
+  // ── Variant-aware unlock overlay colors ────────────────────────────────────
+  const unlockColor = isMastered
+    ? { hex: "#D4A843", rgba: "212,168,67" }
+    : ({
+        kanji:    { hex: "#BA4845", rgba: "186,72,69" },
+        hiragana: { hex: "#7B3F8A", rgba: "123,63,138" },
+        katakana: { hex: "#1B5078", rgba: "27,80,120" },
+      } as const)[variant];
+  const unlockBadgeText = unlockPoints != null
+    ? `+${unlockPoints}`
+    : variant === "kanji" ? "+30" : "+5";
 
   // ── Long-press to toggle favourite on mobile ──────────────────────────────
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,11 +102,12 @@ export function ScriptCard({
   // ─────────────────────────────────────────────────────────────────────────
 
   const cardClassName = [
-    "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] p-5 text-left",
+    "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] text-left",
     "min-h-[190px] select-none",
     locked
-      ? "bg-gradient-to-br from-[#FAFBFD] to-[#F5F3F9] border border-[#E5E1EE]/80 dark:from-[#383438] dark:to-[#1C181E] dark:border-white/[0.06] cursor-default"
+      ? "items-center justify-center bg-surface-tertiary dark:bg-[#1a181c] border border-border-default/70 dark:border-white/[0.05] cursor-default p-4"
       : [
+          "p-5",
           "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
           config.shadowCard,
           config.shadowHover,
@@ -137,17 +160,35 @@ export function ScriptCard({
     </AnimatePresence>
   );
 
-  const lockedOverlay = locked ? (
-    <div className="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2">
-      <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#C4BDD0]/65 bg-[#EDE9F2]/90 dark:border-white/10 dark:bg-black/40">
-        <LockKeyhole
-          className="h-4.5 w-4.5 text-[#C8C2D4] dark:text-white/60"
-          strokeWidth={2.2}
-        />
-      </div>
-      <span className="text-[11px] font-medium text-[#CEC8D8] dark:text-white/40">
-        Bloqueado
-      </span>
+  // ── Minimal locked layout (board-node style) ─────────────────────────────
+  const lockedContent = locked ? (
+    <div className="flex flex-col items-center gap-3">
+      {/* Dimmed symbol shape */}
+      {config.symbolShape === "circle" && (
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-tertiary/80 dark:bg-white/[0.06] text-[26px] font-black text-content-muted/60 dark:text-white/25 select-none">
+          {symbol}
+        </div>
+      )}
+      {config.symbolShape === "mahjong" && (
+        <div className="flex h-[56px] w-[44px] items-center justify-center rounded-xl bg-surface-tertiary/80 dark:bg-white/[0.06] text-[24px] font-black text-content-muted/60 dark:text-white/25 select-none">
+          {symbol}
+        </div>
+      )}
+      {config.symbolShape === "shogi" && (
+        <div
+          className="relative flex h-[56px] w-[44px] items-center justify-center bg-surface-tertiary/80 dark:bg-white/[0.06] text-[24px] font-black text-content-muted/60 dark:text-white/25 select-none"
+          style={{
+            clipPath: "path('M 18 3 Q 22 0 26 3 L 40 15 Q 44 18 44 23 L 44 50 Q 44 56 38 56 L 6 56 Q 0 56 0 50 L 0 23 Q 0 18 4 15 Z')",
+          }}
+        >
+          {symbol}
+        </div>
+      )}
+      {/* Lock icon */}
+      <LockKeyhole
+        className="h-4 w-4 text-content-muted/50 dark:text-white/30"
+        strokeWidth={2}
+      />
     </div>
   ) : null;
 
@@ -159,30 +200,33 @@ export function ScriptCard({
       animate={{ opacity: 0 }}
       transition={{ delay: animationsEnabled ? 2.1 : 0.9, duration: 0.4 }}
     >
-      {/* Radial glow in kanji crimson */}
+      {/* Radial glow — variant color */}
       <motion.div
         className="absolute inset-0 rounded-[22px]"
         initial={{ opacity: 0.78 }}
         animate={{ opacity: 0 }}
         transition={{ duration: animationsEnabled ? 1.9 : 0.8 }}
         style={{
-          background:
-            "radial-gradient(circle, rgba(186,72,69,0.48) 0%, transparent 70%)",
+          background: `radial-gradient(circle, rgba(${unlockColor.rgba},0.48) 0%, transparent 70%)`,
         }}
       />
       {/* Expanding ring — skipped on reduced animations */}
       {animationsEnabled && (
         <motion.div
-          className="absolute rounded-[24px] border-2 border-[#BA4845]/52"
+          className="absolute rounded-[24px] border-2"
           initial={{ opacity: 0.92, scale: 0.52 }}
           animate={{ opacity: 0, scale: 1.48 }}
           transition={{ duration: 0.88, ease: [0.22, 1, 0.36, 1] }}
-          style={{ inset: 0 }}
+          style={{ inset: 0, borderColor: `rgba(${unlockColor.rgba},0.52)` }}
         />
       )}
-      {/* +30 points badge floating up */}
+      {/* Points badge floating up — variant color */}
       <motion.div
-        className="relative z-10 flex items-center gap-1 rounded-full bg-[#BA4845] px-3 py-[5px] shadow-[0_3px_12px_rgba(186,72,66,0.52)]"
+        className="relative z-10 flex items-center gap-1 rounded-full px-3 py-[5px]"
+        style={{
+          background: unlockColor.hex,
+          boxShadow: `0 3px 12px rgba(${unlockColor.rgba},0.52)`,
+        }}
         initial={{ y: 10, opacity: 0, scale: 0.68 }}
         animate={
           animationsEnabled
@@ -200,13 +244,13 @@ export function ScriptCard({
         }}
       >
         <span className="text-[13px] font-black tracking-wide text-white">
-          +30
+          {unlockBadgeText}
         </span>
       </motion.div>
     </motion.div>
   ) : null;
 
-  const layout = (
+  const layout = !locked ? (
     <ScriptCardLayout
       symbol={symbol}
       title={title}
@@ -220,9 +264,9 @@ export function ScriptCard({
       onFavoriteToggle={
         onFavoriteToggle ? () => onFavoriteToggle(id) : undefined
       }
-      locked={locked}
+      locked={false}
     />
-  );
+  ) : null;
 
   const effectiveOnClick = locked ? undefined : onClick;
 
@@ -240,8 +284,8 @@ export function ScriptCard({
       className={cardClassName}
     >
       {favoriteOverlay}
-      {lockedOverlay}
       {unlockingOverlay}
+      {lockedContent}
       {layout}
     </div>
   ) : (
@@ -254,8 +298,8 @@ export function ScriptCard({
       className={cardClassName}
     >
       {favoriteOverlay}
-      {lockedOverlay}
       {unlockingOverlay}
+      {lockedContent}
       {layout}
     </div>
   );

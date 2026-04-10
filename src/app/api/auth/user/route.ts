@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
             },
+            cache: "no-store",
           },
         );
 
@@ -52,6 +53,46 @@ export async function GET(req: NextRequest) {
             errorText,
           );
 
+          // Retry once — the users API may have had a transient failure.
+          const retryResponse = await fetch(
+            `${apiConfig.usersApiBase}/users/${userId}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+              cache: "no-store",
+            },
+          ).catch(() => null);
+
+          if (retryResponse?.ok) {
+            const retryData = await retryResponse.json().catch(() => null);
+            if (retryData) {
+              const rfn = retryData.first_name || "";
+              const rln = retryData.last_name || "";
+              return NextResponse.json({
+                user: {
+                  id: retryData.id ?? userId,
+                  email: retryData.email ?? payload.email ?? "",
+                  firstName: rfn,
+                  lastName: rln,
+                  name: rfn && rln ? `${rfn} ${rln}` : rfn || retryData.email || "Usuario",
+                  profile: retryData.profile,
+                  plan: "free",
+                  createdAt: retryData.created_at,
+                  twoFactorEnabled: false,
+                  points: typeof retryData.points === "number" ? retryData.points : 0,
+                  kanaPoints:
+                    typeof retryData.kana_points === "number"
+                      ? retryData.kana_points
+                      : 0,
+                },
+              });
+            }
+          }
+
+          // Both attempts failed — return a minimal user WITHOUT fake points
+          // so callers can distinguish "unknown points" from "zero points".
           const user = {
             id: userId,
             email: payload.email || "",
@@ -61,7 +102,6 @@ export async function GET(req: NextRequest) {
               ? new Date(payload.iat * 1000).toISOString()
               : undefined,
             twoFactorEnabled: false,
-            points: 0,
           };
 
           return NextResponse.json({ user });
@@ -92,7 +132,10 @@ export async function GET(req: NextRequest) {
           let subData: Record<string, unknown> | null = null;
 
           for (const url of subscriptionUrls) {
-            const subRes = await fetch(url, { headers: subHeaders });
+            const subRes = await fetch(url, {
+              headers: subHeaders,
+              cache: "no-store",
+            });
             if (!subRes.ok) continue;
 
             subData = await subRes.json().catch(() => null);
@@ -129,6 +172,12 @@ export async function GET(req: NextRequest) {
           subscribed,
           twoFactorEnabled: false,
           points: typeof userData.points === "number" ? userData.points : 0,
+          kanaPoints:
+            typeof userData.kanaPoints === "number"
+              ? userData.kanaPoints
+              : typeof userData.kana_points === "number"
+                ? userData.kana_points
+                : 0,
         };
 
         return NextResponse.json({ user });
@@ -248,6 +297,16 @@ export async function PATCH(request: NextRequest) {
       plan: "free",
       createdAt: userData.createdAt || userData.created_at,
       twoFactorEnabled: false,
+      points:
+        typeof userData.points === "number"
+          ? userData.points
+          : 0,
+      kanaPoints:
+        typeof userData.kanaPoints === "number"
+          ? userData.kanaPoints
+          : typeof userData.kana_points === "number"
+            ? userData.kana_points
+            : 0,
     };
 
     console.log("Frontend will receive user:", user);

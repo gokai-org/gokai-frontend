@@ -7,6 +7,8 @@ type SidebarCtx = {
   setExpanded: (v: boolean) => void;
   hidden: boolean;
   setHidden: (v: boolean) => void;
+  blurred: boolean;
+  setBlurred: (v: boolean) => void;
 };
 
 const Ctx = createContext<SidebarCtx | null>(null);
@@ -14,10 +16,11 @@ const Ctx = createContext<SidebarCtx | null>(null);
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [expanded, setExpanded] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [blurred, setBlurred] = useState(false);
 
   const value = useMemo(
-    () => ({ expanded, setExpanded, hidden, setHidden }),
-    [expanded, hidden],
+    () => ({ expanded, setExpanded, hidden, setHidden, blurred, setBlurred }),
+    [expanded, hidden, blurred],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
