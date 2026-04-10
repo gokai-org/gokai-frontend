@@ -185,6 +185,7 @@ export default memo(HiraganaBoardNode, (prev, next) => {
     prev.xPos === next.xPos &&
     prev.yPos === next.yPos &&
     prev.data.selected === next.data.selected &&
+    prev.data.drawerOpen === next.data.drawerOpen &&
     prev.data.progress.status === next.data.progress.status &&
     prev.data.progress.bestScore === next.data.progress.bestScore &&
     prev.data.progress.romaji === next.data.progress.romaji &&

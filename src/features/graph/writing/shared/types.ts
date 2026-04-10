@@ -95,6 +95,7 @@ export interface WritingBoardNodeData {
   shouldUsePulse: boolean;
   unlocking?: boolean;
   shaking?: boolean;
+  drawerOpen?: boolean;
 }
 
 export interface WritingBoardEdgeData {

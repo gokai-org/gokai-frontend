@@ -33,7 +33,7 @@ export default function SidebarOnly() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const { setExpanded, hidden: sidebarHidden } = useSidebar();
+  const { setExpanded, hidden: sidebarHidden, blurred: sidebarBlurred } = useSidebar();
   const [hovered, setHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 16, y: 16 });
@@ -237,7 +237,11 @@ export default function SidebarOnly() {
       {/* Botón móvil*/}
       {!mobileOpen && !sidebarHidden && (
         <motion.div
-          className="md:hidden fixed z-[60] touch-none"
+          className={[
+            "md:hidden fixed z-[60] touch-none",
+            "transition-[filter,opacity] duration-300",
+            sidebarBlurred ? "pointer-events-none opacity-60 blur-[2px] brightness-75" : "",
+          ].join(" ")}
           style={{
             cursor: isDragging ? "grabbing" : "grab",
           }}
@@ -293,7 +297,13 @@ export default function SidebarOnly() {
 
       {/* Desktop sidebar */}
       {!sidebarHidden && (
-        <div className="hidden md:block fixed left-4 top-4 z-50 h-[calc(100dvh-32px)]">
+        <div
+          className={[
+            "hidden md:block fixed left-4 top-4 z-50 h-[calc(100dvh-32px)]",
+            "transition-[filter,opacity] duration-300",
+            sidebarBlurred ? "pointer-events-none opacity-60 blur-[2px] brightness-75" : "",
+          ].join(" ")}
+        >
           <motion.aside
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}

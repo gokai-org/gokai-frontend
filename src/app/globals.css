@@ -1254,3 +1254,43 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
     0 4px 12px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
+
+/* ── Lesson drawer scrollbar (accent-aware: purple/blue per kana type) ── */
+.lesson-drawer-body {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+.lesson-drawer-body::-webkit-scrollbar {
+  width: 6px;
+}
+.lesson-drawer-body::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;
+}
+.lesson-drawer-body::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 999px;
+  transition: background 0.2s;
+}
+.lesson-drawer-body::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* ── Board background: pause CSS animations while lesson drawer is open ── */
+[data-drawer-open="true"] .kanji-bg-animate {
+  animation-play-state: paused;
+}
+[data-drawer-open="true"] .kanji-bg-breathe {
+  animation-play-state: paused;
+}
+
+/* ── Board node: zoom-pop when drawer opens for selected node ── */
+@keyframes kanji-node-drawer-pop {
+  0%   { transform: scale(1); }
+  40%  { transform: scale(1.14); }
+  70%  { transform: scale(1.06); }
+  100% { transform: scale(1.09); }
+}
+.kanji-node-drawer-open {
+  animation: kanji-node-drawer-pop 0.38s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}

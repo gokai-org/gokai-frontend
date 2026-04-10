@@ -32,7 +32,7 @@ function getPhonemicGuide(romaji: string): { row: string; col: string; tip: stri
     s: "Fila S (SA-SU-SE-SO)",
     t: "Fila T (TA-TU-TE-TO)",
     n: "Fila N (NA-NI-NU-NE-NO)",
-    h: "Fila H (HA-HI-HU-HE-HO)",
+    h: "Fila H-F (HA-HI-FU-HE-HO)",
     m: "Fila M (MA-MI-MU-ME-MO)",
     y: "Fila Y (YA-YU-YO)",
     r: "Fila R (RA-RI-RU-RE-RO)",

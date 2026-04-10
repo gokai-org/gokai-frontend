@@ -260,7 +260,7 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
           )}
 
           <div
-            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}${data.unlocking ? " kanji-node-unlocking" : ""}${data.shaking ? " kanji-node-shaking" : ""}`}
+            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}${data.unlocking ? " kanji-node-unlocking" : ""}${data.shaking ? " kanji-node-shaking" : ""}${data.selected && data.drawerOpen ? " kanji-node-drawer-open" : ""}`}
           >
             {progress.status === "locked" ? (
               <div className="flex flex-col items-center justify-center gap-1.5">
@@ -302,6 +302,7 @@ export default memo(KanjiBoardNode, (previous, next) => {
     previous.xPos === next.xPos &&
     previous.yPos === next.yPos &&
     previous.data.selected === next.data.selected &&
+    previous.data.drawerOpen === next.data.drawerOpen &&
     previous.data.progress.status === next.data.progress.status &&
     previous.data.progress.bestScore === next.data.progress.bestScore &&
     previous.data.progress.primaryMeaning ===

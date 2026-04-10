@@ -328,6 +328,7 @@ export interface WritingBoardViewProps {
   error?: string | null;
   onNodeAction?: (item: WritingBoardProgress) => void;
   quizActive?: boolean;
+  drawerOpen?: boolean;
   children?: React.ReactNode;
   initialNodeId?: string | null;
   focusedNodeId?: string | null;
@@ -343,6 +344,7 @@ export function WritingBoardView({
   error = null,
   onNodeAction,
   quizActive = false,
+  drawerOpen = false,
   children,
   initialNodeId: initialNodeIdProp = null,
   focusedNodeId: focusedNodeIdProp = null,
@@ -368,6 +370,16 @@ export function WritingBoardView({
   );
   const hasInitializedUnlockSnapshotRef = useRef(false);
   const previousLockedIdsRef = useRef<Set<string> | null>(null);
+
+  const drawerOpenRef = useRef(drawerOpen);
+  useEffect(() => {
+    drawerOpenRef.current = drawerOpen;
+    // Cancel parallax animation while drawer is open
+    if (drawerOpen && viewportFrame.current !== null) {
+      window.cancelAnimationFrame(viewportFrame.current);
+      viewportFrame.current = null;
+    }
+  }, [drawerOpen]);
 
   const backgroundRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -470,8 +482,9 @@ export function WritingBoardView({
         effectiveSelectedId,
         newlyUnlockedIds,
         shakingNodeId,
+        drawerOpen,
       ),
-    [baseGraph, effectiveSelectedId, newlyUnlockedIds, shakingNodeId],
+    [baseGraph, effectiveSelectedId, newlyUnlockedIds, shakingNodeId, drawerOpen],
   );
 
   useEffect(() => {
@@ -611,6 +624,9 @@ export function WritingBoardView({
   useEffect(() => {
     animateBackgroundViewportRef.current = (timestamp: number) => {
       viewportFrame.current = null;
+
+      // Pause parallax while the lesson drawer is open
+      if (drawerOpenRef.current) return;
 
       const layer = backgroundRef.current;
       if (!layer) return;
@@ -768,6 +784,7 @@ export function WritingBoardView({
       ref={rootRef}
       data-kanji-interacting="false"
       data-kanji-quiz-active={quizActive ? "true" : "false"}
+      data-drawer-open={drawerOpen ? "true" : "false"}
       className="absolute inset-0 overflow-hidden bg-surface-primary"
     >
       <div

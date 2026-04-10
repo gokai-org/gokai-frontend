@@ -286,9 +286,6 @@ export default function KanjiLesson({
                                   Úsala como referencia en compuestos
                                 </span>
                               </div>
-                              <span className="rounded-full bg-white/70 px-2 py-0.5 text-[10px] font-semibold text-content-secondary border border-accent/10">
-                                {on.length}
-                              </span>
                             </div>
 
                             <div className="flex flex-wrap gap-2">

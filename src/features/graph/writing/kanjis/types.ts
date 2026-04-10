@@ -94,6 +94,7 @@ export interface KanjiBoardNodeData {
   shouldUsePulse: boolean;
   unlocking?: boolean;
   shaking?: boolean;
+  drawerOpen?: boolean;
 }
 
 export interface KanjiBoardEdgeData {

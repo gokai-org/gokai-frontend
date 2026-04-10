@@ -66,6 +66,7 @@ export default function HiraganaView() {
       error={error}
       onNodeAction={handleNodeAction}
       quizActive={quizItem !== null}
+      drawerOpen={detailNodeId !== null}
     >
       <LessonDrawer
         open={detailNodeId !== null}
@@ -73,6 +74,7 @@ export default function HiraganaView() {
         nodeId={detailNodeId}
         mode="writing"
         userId={GRAPH_USER_ID}
+        kanaType="hiragana"
         entityId={selectedProgress?.id ?? null}
         entityKind={selectedProgress ? "kana" : null}
         kanjiCtaDisabled={selectedProgress?.status === "locked"}

@@ -103,6 +103,7 @@ export default function KatakanaView() {
       error={error}
       onNodeAction={handleNodeAction}
       quizActive={quizItem !== null}
+      drawerOpen={detailNodeId !== null}
       initialNodeId={forcedInitialNodeId}
       focusedNodeId={forcedFocusedNodeId}
     >
@@ -112,6 +113,7 @@ export default function KatakanaView() {
         nodeId={detailNodeId}
         mode="writing"
         userId={GRAPH_USER_ID}
+        kanaType="katakana"
         entityId={selectedProgress?.id ?? null}
         entityKind={selectedProgress ? "kana" : null}
         kanjiCtaDisabled={selectedProgress?.status === "locked"}

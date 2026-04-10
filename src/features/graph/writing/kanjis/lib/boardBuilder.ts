@@ -377,21 +377,24 @@ export function applyBoardUIState(
   selectedId: string | null,
   newlyUnlockedIds: ReadonlySet<string>,
   shakingNodeId: string | null,
+  drawerOpen = false,
 ): { nodes: KanjiBoardNode[]; edges: KanjiBoardEdge[] } {
   const nodes = base.nodes.map((node) => {
     const selected = node.id === selectedId;
     const unlocking = newlyUnlockedIds.has(node.id);
     const shaking = node.id === shakingNodeId;
+    const nodeDrawerOpen = selected && drawerOpen;
 
     if (
       node.data.selected === selected &&
       node.data.unlocking === unlocking &&
-      node.data.shaking === shaking
+      node.data.shaking === shaking &&
+      node.data.drawerOpen === nodeDrawerOpen
     ) {
       return node; // stable ref — ReactFlow skips internal diff for this node
     }
 
-    return { ...node, data: { ...node.data, selected, unlocking, shaking } };
+    return { ...node, data: { ...node.data, selected, unlocking, shaking, drawerOpen: nodeDrawerOpen } };
   });
 
   const edges = base.edges.map((edge) => {

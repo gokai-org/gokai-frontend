@@ -132,7 +132,7 @@ function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
 
           {/* Mahjong rectangular shape */}
           <div
-            className={`relative z-10 flex h-[96px] w-[72px] items-center justify-center rounded-xl border font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.shapeClass}${data.unlocking ? " kanji-node-unlocking" : ""}${data.shaking ? " kanji-node-shaking" : ""}`}
+            className={`relative z-10 flex h-[96px] w-[72px] items-center justify-center rounded-xl border font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.shapeClass}${data.unlocking ? " kanji-node-unlocking" : ""}${data.shaking ? " kanji-node-shaking" : ""}${data.selected && data.drawerOpen ? " kanji-node-drawer-open" : ""}`}
           >
             {progress.status === "locked" ? (
               <div className="flex flex-col items-center justify-center gap-1.5">
@@ -173,6 +173,7 @@ export default memo(KatakanaBoardNode, (prev, next) => {
     prev.xPos === next.xPos &&
     prev.yPos === next.yPos &&
     prev.data.selected === next.data.selected &&
+    prev.data.drawerOpen === next.data.drawerOpen &&
     prev.data.progress.status === next.data.progress.status &&
     prev.data.progress.bestScore === next.data.progress.bestScore &&
     prev.data.progress.romaji === next.data.progress.romaji &&

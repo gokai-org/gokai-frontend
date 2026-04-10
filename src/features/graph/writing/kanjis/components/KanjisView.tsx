@@ -214,10 +214,11 @@ export default function KanjisView() {
 
   // Phase 2 — UI state patch: fast O(n) pass; only changed nodes/edges get new
   // object refs so ReactFlow’s internal memo comparator skips untouched nodes.
+  const drawerOpen = detailNodeId !== null;
   const graph = useMemo(
     () =>
-      applyBoardUIState(baseGraph, selectedId, newlyUnlockedIds, shakingNodeId),
-    [baseGraph, selectedId, newlyUnlockedIds, shakingNodeId],
+      applyBoardUIState(baseGraph, selectedId, newlyUnlockedIds, shakingNodeId, drawerOpen),
+    [baseGraph, selectedId, newlyUnlockedIds, shakingNodeId, drawerOpen],
   );
 
   const backgroundStyle = useMemo(() => {
@@ -390,13 +391,26 @@ export default function KanjisView() {
     [],
   );
 
+  // Pause parallax rAF while the lesson drawer is open
+  const drawerOpenRef = useRef(drawerOpen);
+  useEffect(() => {
+    drawerOpenRef.current = drawerOpen;
+    if (drawerOpen && viewportFrame.current !== null) {
+      window.cancelAnimationFrame(viewportFrame.current);
+      viewportFrame.current = null;
+    }
+  }, [drawerOpen]);
+
   useEffect(() => {
     animateBackgroundViewportRef.current = (timestamp: number) => {
       viewportFrame.current = null;
 
-      // While the quiz overlay is on top, don't touch CSS vars — the browser
-      // doesn't need to re-composite the parallax layer behind the modal.
+      // While the quiz overlay is on top, don’t touch CSS vars — the browser
+      // doesn’t need to re-composite the parallax layer behind the modal.
       if (quizActiveRef.current) return;
+
+      // Pause parallax while the lesson drawer is open
+      if (drawerOpenRef.current) return;
 
       const layer = backgroundRef.current;
       if (!layer) return;
@@ -545,6 +559,7 @@ export default function KanjisView() {
       ref={rootRef}
       data-kanji-interacting="false"
       data-kanji-quiz-active="false"
+      data-drawer-open={drawerOpen ? "true" : "false"}
       className="absolute inset-0 overflow-hidden bg-surface-primary"
     >
       <div

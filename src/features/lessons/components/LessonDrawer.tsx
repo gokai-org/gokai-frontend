@@ -23,6 +23,8 @@ type Props = {
   userId: string;
   entityId?: string | null;
   entityKind?: "kanji" | "kana" | "subtheme" | "grammar" | null;
+  /** Pre-known kana type — used to apply accent colors before lesson data loads */
+  kanaType?: "hiragana" | "katakana";
   kanjiCtaDisabled?: boolean;
   kanjiCtaDisabledReason?: string;
   writingActive?: boolean;
@@ -38,6 +40,7 @@ export default function LessonDrawer({
   userId,
   entityId = null,
   entityKind = null,
+  kanaType,
   kanjiCtaDisabled = false,
   kanjiCtaDisabledReason,
   writingActive = false,
@@ -68,23 +71,29 @@ export default function LessonDrawer({
   }, []);
 
   const kanaAccentVars: React.CSSProperties = useMemo(() => {
-    if (active?.kind !== "kana") return {};
+    // Use loaded lesson data when available; fall back to the pre-known kanaType prop
+    // so the correct accent is applied immediately during the loading phase.
+    const kt = active?.kind === "kana" ? active.kana.kanaType : kanaType;
+    if (!kt) return {};
 
-    const kt = active.kana.kanaType;
     return kt === "katakana"
       ? ({
           "--accent": "#1B5078",
           "--accent-hover": "#2E82B5",
           "--accent-subtle": "rgba(27,80,120,0.1)",
           "--accent-muted": "rgba(27,80,120,0.06)",
+          "--scrollbar-thumb": "rgba(27,80,120,0.4)",
+          "--scrollbar-thumb-hover": "rgba(46,130,181,0.65)",
         } as React.CSSProperties)
       : ({
           "--accent": "#7B3F8A",
           "--accent-hover": "#A866B5",
           "--accent-subtle": "rgba(123,63,138,0.1)",
           "--accent-muted": "rgba(123,63,138,0.06)",
+          "--scrollbar-thumb": "rgba(123,63,138,0.4)",
+          "--scrollbar-thumb-hover": "rgba(168,102,181,0.65)",
         } as React.CSSProperties);
-  }, [active]);
+  }, [active, kanaType]);
 
   useEffect(() => {
     if (!open || !nodeId) return;
@@ -311,7 +320,7 @@ export default function LessonDrawer({
                 )}
               </div>
 
-              <div className="flex-1 overflow-y-auto px-3 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4 lg:px-6 lg:pb-6 lg:pt-5">
+              <div className="lesson-drawer-body flex-1 overflow-y-auto px-3 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4 lg:px-6 lg:pb-6 lg:pt-5">
                 {loading && <SkeletonDrawerContent />}
 
                 {!loading && !active && (
