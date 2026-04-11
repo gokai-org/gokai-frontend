@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { MasteryModuleId, MasterySnapshot, MasteryState } from "../types";
 import {
   MASTERY_MODULE_CONFIGS,
@@ -68,62 +68,25 @@ export function useMasteryState(
     }
   });
 
-  // If the global mastered set loads after the initial state,
-  // silently mark as celebrated so no animation fires.
-  useEffect(() => {
-    if (alreadyKnownMastered && !wasCelebrated) {
-      setWasCelebrated(true);
-      setIsNewMastery(false);
-      try {
-        localStorage.setItem(getMasteryCelebratedKey(moduleId), "true");
-      } catch { /* silent */ }
-    }
-  }, [alreadyKnownMastered]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Track the previous points to detect crossing the threshold *this session*.
-  const previousPointsRef = useRef<number | null>(null);
-  const [isNewMastery, setIsNewMastery] = useState(false);
-
-  useEffect(() => {
-    const prev = previousPointsRef.current;
-    previousPointsRef.current = currentPoints;
-
-    if (prev === null) {
-      // First evaluation — the board mounts AFTER loading completes, so
-      // currentPoints may already be at or above threshold. Trigger immediately
-      // if the user hasn't been celebrated yet.
-      if (currentPoints >= threshold && !wasCelebrated) {
-        setIsNewMastery(true);
-      }
-      return;
-    }
-
-    // Detect crossing the threshold upward during an active session.
-    if (prev < threshold && currentPoints >= threshold && !wasCelebrated) {
-      setIsNewMastery(true);
-    }
-  }, [currentPoints, threshold, wasCelebrated]);
+  const effectiveWasCelebrated = wasCelebrated || alreadyKnownMastered;
+  const isNewMastery = currentPoints >= threshold && !effectiveWasCelebrated;
 
   /** Call after the celebration finishes to persist the flag. */
-  const markCelebrated = useMemo(
-    () => () => {
-      setWasCelebrated(true);
-      setIsNewMastery(false);
-      try {
-        localStorage.setItem(getMasteryCelebratedKey(moduleId), "true");
-      } catch {
-        // localStorage unavailable — silent.
-      }
-    },
-    [moduleId],
-  );
+  const markCelebrated = useCallback(() => {
+    setWasCelebrated(true);
+    try {
+      localStorage.setItem(getMasteryCelebratedKey(moduleId), "true");
+    } catch {
+      // localStorage unavailable — silent.
+    }
+  }, [moduleId]);
 
   const state = resolveMasteryState(
     currentPoints,
     threshold,
     totalItems,
     completedItems,
-    wasCelebrated,
+    effectiveWasCelebrated,
   );
 
   return useMemo(

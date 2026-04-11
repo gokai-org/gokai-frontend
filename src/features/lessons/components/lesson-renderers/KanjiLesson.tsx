@@ -22,19 +22,11 @@ const KANJI_TABS: { id: KanjiTab; label: string; icon: React.ReactNode }[] = [
   { id: "writing", label: "Escritura", icon: <PenLine size={12} /> },
 ];
 
-const modeTitle: Record<LessonMode, string> = {
-  writing: "Escritura",
-  listening: "Audio",
-  reading: "Lectura",
-  speaking: "Hablar",
-};
-
 export default function KanjiLesson({
   data,
-  mode,
   ctaDisabled = false,
   ctaDisabledReason,
-  onWritingStart,
+  onWritingStart: _onWritingStart,
   onQuizStart,
 }: {
   data: Extract<LessonResolved, { kind: "kanji" }>;
@@ -58,51 +50,15 @@ export default function KanjiLesson({
   const meanings = (m.es.length ? m.es : m.all.length ? m.all : []).slice(0, 8);
   const on = r.on.slice(0, 6);
   const kun = r.kun.slice(0, 5);
-  const fallbackReadings =
-    on.length === 0 && kun.length === 0 ? r.all.slice(0, 6) : [];
-
-  const hasOn = on.length > 0;
-  const hasKun = kun.length > 0;
-  const hasFallbackReadings = fallbackReadings.length > 0;
-  const totalReadings = on.length + kun.length + fallbackReadings.length;
 
   const hasStrokes = !!(k.strokes && k.strokes.length > 0 && k.viewBox);
-
-  const readingIntro =
-    hasOn && hasKun
-      ? "Este kanji tiene lecturas de origen chino y lecturas japonesas nativas."
-      : hasOn
-        ? "Este kanji muestra principalmente lecturas ON en los datos disponibles."
-        : hasKun
-          ? "Este kanji muestra principalmente lecturas KUN en los datos disponibles."
-          : hasFallbackReadings
-            ? "Este kanji tiene lecturas registradas, pero no están separadas en ON o KUN."
-            : "No hay lecturas disponibles para este kanji.";
-
-  const onDescription = hasKun
-    ? "En muchos casos, las lecturas ON aparecen en palabras compuestas junto con otros kanjis."
-    : "Este kanji tiene lecturas ON registradas. La forma exacta de uso depende de la palabra y del contexto.";
-
-  const kunDescription = hasOn
-    ? "En muchos casos, las lecturas KUN aparecen en usos japoneses nativos o junto con terminaciones."
-    : "Este kanji tiene lecturas KUN registradas. La forma exacta de uso depende de la palabra y del contexto.";
-
-  const readingSummary =
-    hasOn && hasKun
-      ? `Este kanji tiene ${on.length} lectura${on.length !== 1 ? "s" : ""} ON y ${kun.length} lectura${kun.length !== 1 ? "s" : ""} KUN.`
-      : hasOn
-        ? `Este kanji tiene ${on.length} lectura${on.length !== 1 ? "s" : ""} ON registrada${on.length !== 1 ? "s" : ""}.`
-        : hasKun
-          ? `Este kanji tiene ${kun.length} lectura${kun.length !== 1 ? "s" : ""} KUN registrada${kun.length !== 1 ? "s" : ""}.`
-          : hasFallbackReadings
-            ? `Este kanji tiene ${fallbackReadings.length} lectura${fallbackReadings.length !== 1 ? "s" : ""} registrada${fallbackReadings.length !== 1 ? "s" : ""} sin clasificación específica.`
-            : "No hay lecturas registradas para este kanji.";
+  const displayedAutoStroke =
+    activeTab === "writing" && hasStrokes ? autoStroke : -1;
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
 
     if (activeTab !== "writing" || !hasStrokes) {
-      setAutoStroke(-1);
       return;
     }
 
@@ -194,6 +150,7 @@ export default function KanjiLesson({
 
             <button
               type="button"
+              onClick={() => onQuizStart?.(k, "meaning")}
               className="w-full rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15"
             >
               Practicar: Reconocer kanji
@@ -396,6 +353,7 @@ export default function KanjiLesson({
 
               <button
                 type="button"
+                onClick={() => onQuizStart?.(k, "reading")}
                 className="w-full rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15"
               >
                 Practicar: Lecturas
@@ -478,6 +436,7 @@ export default function KanjiLesson({
 
               <button
                 type="button"
+                onClick={() => onQuizStart?.(k, "kanji")}
                 className="w-full rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15"
               >
                 Practicar: Significados
@@ -498,9 +457,9 @@ export default function KanjiLesson({
 
                     {hasStrokes && (
                       <span className="rounded-full bg-surface-tertiary px-2.5 py-0.5 text-[11px] font-medium text-content-muted">
-                        {autoStroke === -1
+                        {displayedAutoStroke === -1
                           ? `${k.strokes!.length} trazos`
-                          : `${autoStroke + 1} / ${k.strokes!.length}`}
+                          : `${displayedAutoStroke + 1} / ${k.strokes!.length}`}
                       </span>
                     )}
                   </div>
@@ -511,7 +470,7 @@ export default function KanjiLesson({
                         <KanjiStrokePlayer
                           viewBox={k.viewBox!}
                           strokes={k.strokes!}
-                          activeStrokeIndex={autoStroke}
+                          activeStrokeIndex={displayedAutoStroke}
                           showNumbers
                           numberMode="uptoActive"
                           size={
@@ -550,9 +509,7 @@ export default function KanjiLesson({
 
               <button
                 type="button"
-                onClick={() => {
-                  if (onWritingStart) onWritingStart(k);
-                }}
+                onClick={() => onQuizStart?.(k, "writing")}
                 className="w-full rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15"
               >
                 Practicar: Escritura

@@ -23,7 +23,9 @@ import { useKanjiLockedStatus } from "@/features/library/hooks/useKanjiLockedSta
 import { useKanaLockedStatus } from "@/features/library/hooks/useKanaLockedStatus";
 import { useLibraryContent } from "@/features/library/hooks/useLibraryContent";
 import type { Kanji } from "@/features/kanji/types";
+import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import type { Kana } from "@/features/kana/types";
+import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import { KanaQuizModal } from "@/features/kana/components/quiz";
 import {
@@ -49,11 +51,13 @@ export default function LibraryPage() {
   const [quizKanji, setQuizKanji] = useState<{
     id: string;
     symbol: string;
+    quizType?: KanjiQuizType;
   } | null>(null);
   const [quizKana, setQuizKana] = useState<{
     id: string;
     symbol: string;
     kanaType: "hiragana" | "katakana";
+    quizType?: KanaQuizType;
   } | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
@@ -170,18 +174,30 @@ export default function LibraryPage() {
   };
 
   const handleDrawerQuizStart = useCallback(
-    (entity: { id: string; symbol: string }) => {
+    (
+      entity: { id: string; symbol: string },
+      quizType?: KanaQuizType | KanjiQuizType,
+    ) => {
       if (!drawerEntity) return;
       const kind = drawerEntity.kind;
       const kanaType = drawerEntity.kanaType;
       setDrawerEntity(null);
       if (kind === "kanji") {
         lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
-        setQuizKanji({ id: entity.id, symbol: entity.symbol });
+        setQuizKanji({
+          id: entity.id,
+          symbol: entity.symbol,
+          quizType: quizType as KanjiQuizType | undefined,
+        });
       } else {
         lockedHiraganaIdsBeforeQuizRef.current = new Set(lockedHiraganaIds);
         lockedKatakanaIdsBeforeQuizRef.current = new Set(lockedKatakanaIds);
-        setQuizKana({ id: entity.id, symbol: entity.symbol, kanaType: kanaType ?? "hiragana" });
+        setQuizKana({
+          id: entity.id,
+          symbol: entity.symbol,
+          kanaType: kanaType ?? "hiragana",
+          quizType: quizType as KanaQuizType | undefined,
+        });
       }
     },
     [drawerEntity, lockedKanjiIds, lockedHiraganaIds, lockedKatakanaIds],
@@ -927,6 +943,7 @@ export default function LibraryPage() {
             <KanjiQuizModal
               kanjiId={quizKanji.id}
               label={quizKanji.symbol}
+              quizType={quizKanji.quizType}
               onClose={handleQuizClose}
             />
           )}
@@ -936,6 +953,7 @@ export default function LibraryPage() {
               kanaId={quizKana.id}
               label={quizKana.symbol}
               kanaType={quizKana.kanaType}
+              quizType={quizKana.quizType}
               onClose={handleKanaQuizClose}
             />
           )}

@@ -9,6 +9,7 @@ import HiraganaBoardNode from "./HiraganaBoardNode";
 import { useHiraganaBoard } from "../hooks/useHiraganaBoard";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import { KanaQuizModal } from "@/features/kana/components/quiz";
+import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { dispatchMasteryCelebrationRequest } from "@/features/mastery/utils/masteryProgressSync";
@@ -23,7 +24,11 @@ export default function HiraganaView() {
   const { setHidden } = useSidebar();
   const mastered = useMasteredModules();
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
-  const [quizItem, setQuizItem] = useState<{ id: string; label: string } | null>(null);
+  const [quizItem, setQuizItem] = useState<{
+    id: string;
+    label: string;
+    quizType?: KanaQuizType;
+  } | null>(null);
   const wasMasteredBeforeQuizRef = useRef(false);
 
   const selectedProgress = useMemo(
@@ -40,10 +45,10 @@ export default function HiraganaView() {
   }, []);
 
   const handleQuizStart = useCallback(
-    (entity: { id: string; symbol: string }) => {
+    (entity: { id: string; symbol: string }, quizType?: KanaQuizType) => {
       wasMasteredBeforeQuizRef.current = mastered.has("hiragana");
       setDetailNodeId(null);
-      setQuizItem({ id: entity.id, label: entity.symbol });
+      setQuizItem({ id: entity.id, label: entity.symbol, quizType });
     },
     [mastered],
   );
@@ -104,6 +109,7 @@ export default function HiraganaView() {
           kanaId={quizItem.id}
           label={quizItem.label}
           kanaType="hiragana"
+          quizType={quizItem.quizType}
           onClose={handleQuizEnd}
         />
       )}

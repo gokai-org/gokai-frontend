@@ -90,16 +90,8 @@ function getPhonemicGuide(romaji: string): { row: string; col: string; tip: stri
   };
 }
 
-const modeTitle: Record<LessonMode, string> = {
-  writing: "Escritura",
-  listening: "Audio",
-  reading: "Lectura",
-  speaking: "Hablar",
-};
-
 export default function KanaLesson({
   data,
-  mode,
   ctaDisabled = false,
   ctaDisabledReason,
   onQuizStart,
@@ -118,12 +110,13 @@ export default function KanaLesson({
   const typeLabel = k.kanaType === "hiragana" ? "Hiragana" : "Katakana";
   const hasStrokes = !!(k.strokes && k.strokes.length > 0 && k.viewBox);
   const phonemic = getPhonemicGuide(k.romaji ?? "");
+  const displayedAutoStroke =
+    activeTab === "writing" && hasStrokes ? autoStroke : -1;
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
 
     if (activeTab !== "writing" || !hasStrokes) {
-      setAutoStroke(-1);
       return;
     }
 
@@ -299,6 +292,7 @@ export default function KanaLesson({
 
     <button
       type="button"
+      onClick={() => onQuizStart?.(k, "from_kana")}
       className="w-full rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15"
     >
       Practicar este kana
@@ -350,6 +344,7 @@ export default function KanaLesson({
 
               <button
                 type="button"
+                onClick={() => onQuizStart?.(k, "from_romaji")}
                 className="w-full rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15"
               >
                 Practicar: Lectura
@@ -370,9 +365,9 @@ export default function KanaLesson({
 
                     {hasStrokes && (
                       <span className="rounded-full bg-surface-tertiary px-2.5 py-0.5 text-[11px] font-medium text-content-muted">
-                        {autoStroke === -1
+                        {displayedAutoStroke === -1
                           ? `${k.strokes!.length} trazos`
-                          : `${autoStroke + 1} / ${k.strokes!.length}`}
+                          : `${displayedAutoStroke + 1} / ${k.strokes!.length}`}
                       </span>
                     )}
                   </div>
@@ -383,8 +378,8 @@ export default function KanaLesson({
                         <KanaStrokePlayer
                           viewBox={k.viewBox!}
                           strokes={k.strokes!}
-                          activeStrokeIndex={autoStroke}
-                          showNumbers={autoStroke >= 0}
+                          activeStrokeIndex={displayedAutoStroke}
+                          showNumbers={displayedAutoStroke >= 0}
                           size={typeof window !== "undefined" && window.innerWidth < 640 ? 112 : 130}
                         />
                       </div>
@@ -411,6 +406,7 @@ export default function KanaLesson({
 
               <button
                 type="button"
+                onClick={() => onQuizStart?.(k, "canvas")}
                 className="w-full rounded-xl border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm font-bold text-accent transition-colors hover:bg-accent/15"
               >
                 Practicar: Trazado

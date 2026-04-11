@@ -6,12 +6,16 @@ import type { KanaType } from "@/features/kana/types";
 import type {
   KanaQuizResponse,
   KanaQuizSessionState,
+  KanaQuizSessionType,
   KanaQuizStep,
   KanaQuizQuestionResult,
   KanaQuizRoundResult,
   KanaQuizType,
 } from "@/features/kana/types/quiz";
-import { KANA_QUIZ_TOTAL_ROUNDS } from "@/features/kana/types/quiz";
+import {
+  KANA_QUIZ_ROUND_ORDER,
+  KANA_QUIZ_TOTAL_ROUNDS,
+} from "@/features/kana/types/quiz";
 import { getKanaQuiz, submitKanaQuiz } from "@/features/kana/api/kanaQuizApi";
 import {
   applyEarlyKanaOptionPool,
@@ -47,15 +51,6 @@ function extractKanaQuizErrorMessage(message: string): string {
   return message.replace(/^HTTP\s+\d+:\s*/i, "").trim() || message;
 }
 
-type KanaQuizSubmitResponse = Record<string, unknown>;
-
-type KanaRewardSnapshot = {
-  userPoints: number | null;
-  kanaPoints: number | null;
-  pointsDelta: number | null;
-  kanaPointsDelta: number | null;
-};
-
 const INITIAL_STATE: KanaQuizSessionState = {
   step: "loading",
   currentQuestionIndex: 0,
@@ -80,10 +75,12 @@ export interface UseKanaQuizReturn {
   pointsDelta: number;
   roundResults: KanaQuizRoundResult[];
   currentRound: number;
+  totalRounds: number;
+  sessionType: KanaQuizSessionType;
 
   startQuiz: (
     kanaId: string,
-    context?: { kanaType?: KanaType; label?: string },
+    context?: { kanaType?: KanaType; label?: string; quizType?: KanaQuizType },
   ) => Promise<void>;
   selectOption: (optionIndex: number) => void;
   confirmAnswer: () => void;
@@ -112,45 +109,6 @@ function getQuestionScoreAverage(results: KanaQuizQuestionResult[]): number {
   return Math.round(total / results.length);
 }
 
-function readNumber(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function extractKanaRewardSnapshot(
-  payload: KanaQuizSubmitResponse | null | undefined,
-): KanaRewardSnapshot {
-  if (!payload) {
-    return {
-      userPoints: null,
-      kanaPoints: null,
-      pointsDelta: null,
-      kanaPointsDelta: null,
-    };
-  }
-
-  const nestedUser =
-    payload.user && typeof payload.user === "object"
-      ? (payload.user as Record<string, unknown>)
-      : null;
-
-  return {
-    userPoints:
-      readNumber(payload.updatedPoints) ??
-      readNumber(payload.userPoints) ??
-      readNumber(payload.points) ??
-      readNumber(nestedUser?.points),
-    kanaPoints:
-      readNumber(payload.updatedKanaPoints) ??
-      readNumber(payload.kanaPoints) ??
-      readNumber(payload.userKanaPoints) ??
-      readNumber(nestedUser?.kanaPoints),
-    pointsDelta:
-      readNumber(payload.pointsDelta) ?? readNumber(payload.earnedPoints),
-    kanaPointsDelta:
-      readNumber(payload.kanaPointsDelta) ?? readNumber(payload.earnedKanaPoints),
-  };
-}
-
 function getInitialCanvasPhase(
   quizData: KanaQuizResponse | null,
 ): "demo" | "practice" | "done" {
@@ -161,6 +119,14 @@ function getInitialCanvasPhase(
   return "demo";
 }
 
+function getExpectedMixedRoundType(roundIndex: number): KanaQuizType {
+  return (
+    KANA_QUIZ_ROUND_ORDER[
+      Math.min(roundIndex, KANA_QUIZ_ROUND_ORDER.length - 1)
+    ] ?? KANA_QUIZ_ROUND_ORDER[0]
+  );
+}
+
 export function useKanaQuiz(): UseKanaQuizReturn {
   const [state, setState] = useState<KanaQuizSessionState>(INITIAL_STATE);
   const [quizData, setQuizData] = useState<KanaQuizResponse | null>(null);
@@ -169,14 +135,14 @@ export function useKanaQuiz(): UseKanaQuizReturn {
   const [submitting, setSubmitting] = useState(false);
   const [pointsDelta, setPointsDelta] = useState(0);
   const [roundResults, setRoundResults] = useState<KanaQuizRoundResult[]>([]);
+  const [sessionType, setSessionType] = useState<KanaQuizSessionType>("mixed");
+  const [totalRounds, setTotalRounds] = useState(KANA_QUIZ_TOTAL_ROUNDS);
 
   const roundResultsRef = useRef<KanaQuizRoundResult[]>([]);
   const roundStartTimeRef = useRef<number>(0);
   const kanaIdRef = useRef<string>("");
   const kanaTypeRef = useRef<KanaType | null>(null);
   const kanaLabelRef = useRef<string>("");
-  const latestSubmitRewardRef = useRef<KanaRewardSnapshot | null>(null);
-  const startingPointsRef = useRef<number | null>(null);
   const startingKanaPointsRef = useRef<number | null>(null);
   const submittingRef = useRef(false);
 
@@ -186,7 +152,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
   quizDataRef.current = quizData;
 
   const currentRound = Math.min(
-    KANA_QUIZ_TOTAL_ROUNDS,
+    totalRounds,
     roundResultsRef.current.length + 1,
   );
 
@@ -210,13 +176,13 @@ export function useKanaQuiz(): UseKanaQuizReturn {
   }, [totalQuestions, state.step, state.questionResults.length]);
 
   const finalScore = useMemo(() => {
-    if (roundResults.length >= KANA_QUIZ_TOTAL_ROUNDS) {
+    if (roundResults.length >= totalRounds) {
       return Math.round(
         roundResults.reduce((sum, r) => sum + r.score, 0) / roundResults.length,
       );
     }
     return getQuestionScoreAverage(state.questionResults);
-  }, [roundResults, state.questionResults]);
+  }, [roundResults, state.questionResults, totalRounds]);
 
   const duration = useMemo(() => {
     if (roundStartTimeRef.current === 0) return 0;
@@ -225,71 +191,98 @@ export function useKanaQuiz(): UseKanaQuizReturn {
   }, [state.step]);
 
   // ── Load next round from backend ──
-  const loadNextRound = useCallback(async () => {
-    setLoading(true);
-    setError(null);
+  const loadNextRound = useCallback(
+    async (
+      preferredQuizType?: KanaQuizType | null,
+      fallbackQuizType?: KanaQuizType,
+    ) => {
+      setLoading(true);
+      setError(null);
 
-    try {
-      const response = applyEarlyKanaOptionPool(
-        await getKanaQuiz(kanaIdRef.current),
-        {
-          kanaType: kanaTypeRef.current,
-          currentLabel: kanaLabelRef.current,
-        },
-      );
+      try {
+        const expectedQuizType = preferredQuizType ?? fallbackQuizType;
+        let response = await getKanaQuiz(
+          kanaIdRef.current,
+          preferredQuizType ?? undefined,
+          {
+            fallbackType: fallbackQuizType,
+          },
+        );
 
-      if (response.questions.length === 0) {
-        throw new Error("El backend devolvio un quiz de kana vacio");
+        if (
+          !preferredQuizType &&
+          expectedQuizType &&
+          response.submitType !== expectedQuizType
+        ) {
+          response = await getKanaQuiz(kanaIdRef.current, undefined, {
+            fallbackType: expectedQuizType,
+            forceFallback: true,
+          });
+        }
+
+        const normalizedResponse = applyEarlyKanaOptionPool(
+          response,
+          {
+            kanaType: kanaTypeRef.current,
+            currentLabel: kanaLabelRef.current,
+          },
+        );
+
+        if (normalizedResponse.questions.length === 0) {
+          throw new Error("El backend devolvio un quiz de kana vacio");
+        }
+
+        setQuizData(normalizedResponse);
+        setState({
+          ...INITIAL_STATE,
+          step: "exercise",
+          canvasPhase: getInitialCanvasPhase(normalizedResponse),
+        });
+        roundStartTimeRef.current = Date.now();
+      } catch (err) {
+        const msg =
+          err instanceof Error ? err.message : "Error al cargar el quiz";
+        const friendlyMsg = extractKanaQuizErrorMessage(msg);
+        setError(friendlyMsg);
+        setState((s) => ({ ...s, step: "error" as KanaQuizStep }));
+      } finally {
+        setLoading(false);
       }
-
-      setQuizData(response);
-      setState({
-        ...INITIAL_STATE,
-        step: "exercise",
-        canvasPhase: getInitialCanvasPhase(response),
-      });
-      roundStartTimeRef.current = Date.now();
-    } catch (err) {
-      const msg =
-        err instanceof Error ? err.message : "Error al cargar el quiz";
-      const friendlyMsg = extractKanaQuizErrorMessage(msg);
-      setError(friendlyMsg);
-      setState((s) => ({ ...s, step: "error" as KanaQuizStep }));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [],
+  );
 
   // ── Start quiz ──
   const startQuiz = useCallback(
     async (
       kanaId: string,
-      context?: { kanaType?: KanaType; label?: string },
+      context?: { kanaType?: KanaType; label?: string; quizType?: KanaQuizType },
     ) => {
       setState(INITIAL_STATE);
       setQuizData(null);
       setError(null);
       setPointsDelta(0);
+      setSessionType(context?.quizType ?? "mixed");
+      setTotalRounds(context?.quizType ? 1 : KANA_QUIZ_TOTAL_ROUNDS);
       roundResultsRef.current = [];
       setRoundResults([]);
       kanaIdRef.current = kanaId;
       kanaTypeRef.current = context?.kanaType ?? null;
       kanaLabelRef.current = context?.label?.trim() ?? "";
-      latestSubmitRewardRef.current = null;
       submittingRef.current = false;
 
       try {
         const user = await getCurrentUser().catch(() => null);
-        startingPointsRef.current =
-          user && typeof user.points === "number" ? user.points : null;
         startingKanaPointsRef.current =
           user && typeof user.kanaPoints === "number" ? user.kanaPoints : null;
       } catch {
-        startingPointsRef.current = null;
         startingKanaPointsRef.current = null;
       }
 
-      await loadNextRound();
+      await loadNextRound(
+        context?.quizType ?? null,
+        context?.quizType ?? getExpectedMixedRoundType(0),
+      );
     },
     [loadNextRound],
   );
@@ -302,94 +295,39 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       setSubmitting(true);
       setState((s) => ({ ...s, step: "submitting" as KanaQuizStep }));
 
-      try {
-        // Recover starting kana points if they weren't captured during startQuiz.
-        if (startingKanaPointsRef.current === null) {
-          try {
-            const user = await getCurrentUser();
-            if (user && typeof user.kanaPoints === "number") {
-              startingKanaPointsRef.current = user.kanaPoints;
-            }
-          } catch {
-            /* Non-critical */
+      const completedPerfectQuiz =
+        _results.length >= totalRounds &&
+        _results.every((result) => result.score === 100);
+
+      setPointsDelta(0);
+      setState((s) => ({
+        ...s,
+        step: completedPerfectQuiz
+          ? ("celebration" as KanaQuizStep)
+          : ("summary" as KanaQuizStep),
+      }));
+      setSubmitting(false);
+      submittingRef.current = false;
+
+      void getCurrentUser()
+        .then((user) => {
+          if (!user || typeof user.kanaPoints !== "number") {
+            return;
           }
-        }
 
-        // Kana quizzes award kana_points (not regular points).
-        // Fetch current user to get the latest kanaPoints.
-        let currentKanaPoints: number | null = null;
+          const nextDelta =
+            startingKanaPointsRef.current !== null
+              ? Math.max(0, user.kanaPoints - startingKanaPointsRef.current)
+              : 0;
 
-        try {
-          const user = await getCurrentUser();
-          if (user && typeof user.kanaPoints === "number") {
-            currentKanaPoints = user.kanaPoints;
-          }
-        } catch {
-          /* Non-critical */
-        }
-
-        // If kanaPoints haven't changed yet, retry once after a short delay.
-        if (
-          currentKanaPoints === null ||
-          (startingKanaPointsRef.current !== null &&
-            currentKanaPoints <= startingKanaPointsRef.current)
-        ) {
-          await new Promise<void>((resolve) => setTimeout(resolve, 1200));
-          try {
-            const user = await getCurrentUser();
-            if (user && typeof user.kanaPoints === "number") {
-              currentKanaPoints = user.kanaPoints;
-            }
-          } catch {
-            /* Non-critical */
-          }
-        }
-
-        // Third attempt with a longer delay if still no change detected.
-        if (
-          currentKanaPoints === null ||
-          (startingKanaPointsRef.current !== null &&
-            currentKanaPoints <= startingKanaPointsRef.current)
-        ) {
-          await new Promise<void>((resolve) => setTimeout(resolve, 1500));
-          try {
-            const user = await getCurrentUser();
-            if (user && typeof user.kanaPoints === "number") {
-              currentKanaPoints = user.kanaPoints;
-            }
-          } catch {
-            /* Non-critical */
-          }
-        }
-
-        const kanaPointsDelta =
-          currentKanaPoints !== null && startingKanaPointsRef.current !== null
-            ? Math.max(0, currentKanaPoints - startingKanaPointsRef.current)
-            : 0;
-
-        const completedPerfectQuiz =
-          _results.length >= KANA_QUIZ_TOTAL_ROUNDS &&
-          _results.every((result) => result.score === 100);
-
-        setPointsDelta(kanaPointsDelta);
-        dispatchMasteryProgressSync({ kanaPoints: currentKanaPoints });
-        setState((s) => ({
-          ...s,
-          step: completedPerfectQuiz
-            ? ("celebration" as KanaQuizStep)
-            : ("summary" as KanaQuizStep),
-        }));
-      } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : "Error al obtener puntos";
-        setError(extractKanaQuizErrorMessage(msg));
-        setState((s) => ({ ...s, step: "summary" as KanaQuizStep }));
-      } finally {
-        setSubmitting(false);
-        submittingRef.current = false;
-      }
+          setPointsDelta(nextDelta);
+          dispatchMasteryProgressSync({ kanaPoints: user.kanaPoints });
+        })
+        .catch(() => {
+          // Best-effort refresh only.
+        });
     },
-    [],
+    [totalRounds],
   );
 
   // ── Complete a single round (submit + advance) ──
@@ -408,26 +346,28 @@ export function useKanaQuiz(): UseKanaQuizReturn {
 
       // Submit this round to the backend
       try {
-        const submitResult = await submitKanaQuiz(kanaIdRef.current, {
+        await submitKanaQuiz(kanaIdRef.current, {
           type: quizType,
           score,
           duration: elapsed,
         });
-        latestSubmitRewardRef.current = extractKanaRewardSnapshot(submitResult);
       } catch (err) {
         console.error("[KANA QUIZ] Failed to submit round:", err);
       }
 
       // Check if all rounds are done
-      if (newRoundResults.length >= KANA_QUIZ_TOTAL_ROUNDS) {
+      if (newRoundResults.length >= totalRounds) {
         await finalizeQuiz(newRoundResults);
         return;
       }
 
       // Load next round from backend
-      await loadNextRound();
+      await loadNextRound(
+        null,
+        getExpectedMixedRoundType(newRoundResults.length),
+      );
     },
-    [finalizeQuiz, loadNextRound],
+    [finalizeQuiz, loadNextRound, totalRounds],
   );
 
   const failAttempt = useCallback(
@@ -530,7 +470,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       step: "loading" as KanaQuizStep,
     });
     void completeRound(qd.submitType, score);
-  }, [completeRound]);
+  }, [completeRound, failAttempt]);
 
   // ── Canvas: set phase ──
   const setCanvasPhase = useCallback(
@@ -620,13 +560,13 @@ export function useKanaQuiz(): UseKanaQuizReturn {
     setLoading(false);
     setSubmitting(false);
     setPointsDelta(0);
+    setSessionType("mixed");
+    setTotalRounds(KANA_QUIZ_TOTAL_ROUNDS);
     roundResultsRef.current = [];
     setRoundResults([]);
     kanaIdRef.current = "";
     kanaTypeRef.current = null;
     kanaLabelRef.current = "";
-    latestSubmitRewardRef.current = null;
-    startingPointsRef.current = null;
     startingKanaPointsRef.current = null;
     roundStartTimeRef.current = 0;
     submittingRef.current = false;
@@ -646,6 +586,8 @@ export function useKanaQuiz(): UseKanaQuizReturn {
     pointsDelta,
     roundResults,
     currentRound,
+    totalRounds,
+    sessionType,
     startQuiz,
     selectOption,
     confirmAnswer,

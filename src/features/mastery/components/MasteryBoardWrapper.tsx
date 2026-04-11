@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useCallback, useEffect, useMemo, useRef } from "react";
+import { type ReactNode, useEffect } from "react";
 import type { Node } from "reactflow";
 import type { MasteryModuleId } from "../types";
 import { useMasteryOrchestrator } from "../hooks/useMasteryOrchestrator";

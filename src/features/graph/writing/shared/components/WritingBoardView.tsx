@@ -398,16 +398,6 @@ export function WritingBoardView({
   const hasInitializedUnlockSnapshotRef = useRef(false);
   const previousLockedIdsRef = useRef<Set<string> | null>(null);
 
-  const drawerOpenRef = useRef(drawerOpen);
-  useEffect(() => {
-    drawerOpenRef.current = drawerOpen;
-    // Cancel parallax animation while drawer is open
-    if (drawerOpen && viewportFrame.current !== null) {
-      window.cancelAnimationFrame(viewportFrame.current);
-      viewportFrame.current = null;
-    }
-  }, [drawerOpen]);
-
   const backgroundRef = useRef<HTMLDivElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const viewportFrame = useRef<number | null>(null);
@@ -430,6 +420,22 @@ export function WritingBoardView({
     zoom: 1,
   });
   const itemsRef = useRef(items);
+  const ensureViewportAnimation = useCallback(() => {
+    if (viewportFrame.current !== null) return;
+    viewportFrame.current = window.requestAnimationFrame(
+      animateBackgroundViewportRef.current,
+    );
+  }, []);
+  const drawerOpenRef = useRef(drawerOpen);
+
+  useEffect(() => {
+    drawerOpenRef.current = drawerOpen;
+    // Cancel parallax animation while drawer is open
+    if (drawerOpen && viewportFrame.current !== null) {
+      window.cancelAnimationFrame(viewportFrame.current);
+      viewportFrame.current = null;
+    }
+  }, [drawerOpen]);
 
   useEffect(() => {
     itemsRef.current = items;
@@ -734,13 +740,6 @@ export function WritingBoardView({
       lastFrameTime.current = null;
     };
   }, [applyBgViewport]);
-
-  const ensureViewportAnimation = useCallback(() => {
-    if (viewportFrame.current !== null) return;
-    viewportFrame.current = window.requestAnimationFrame(
-      animateBackgroundViewportRef.current,
-    );
-  }, []);
 
   const syncViewportToScene = useCallback(
     (viewport: Viewport) => {

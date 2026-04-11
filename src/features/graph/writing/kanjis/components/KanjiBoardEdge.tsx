@@ -29,11 +29,6 @@ function KanjiBoardEdge({
   const unlocking = data?.unlocking ?? false;
 
   const requiredPoints = data?.requiredPoints;
-  const labelStroke = isGolden
-    ? "var(--mastery-gold-edge-stroke)"
-    : status === "available"
-      ? "var(--kanji-edge-available-stroke)"
-      : "var(--kanji-edge-locked-stroke)";
 
   const palette =
     status === "completed"

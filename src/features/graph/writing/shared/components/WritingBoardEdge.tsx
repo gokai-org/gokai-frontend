@@ -52,9 +52,6 @@ function WritingBoardEdge({
 
   const requiredPoints = data?.requiredPoints;
   const vars = STROKE_VARS[scriptType];
-  const labelStroke = isGolden
-    ? "var(--mastery-gold-edge-stroke)"
-    : status === "available" ? vars.available : vars.locked;
 
   const palette =
     status === "completed"

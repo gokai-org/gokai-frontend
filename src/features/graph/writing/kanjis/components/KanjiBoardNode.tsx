@@ -183,7 +183,7 @@ function getPlanetStyles(
 }
 
 function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
-  const { isGolden } = useMasteryTheme();
+  const { isGolden, phase } = useMasteryTheme();
   const { progress, selected } = data;
   const styles = getPlanetStyles(
     progress.status,
@@ -197,6 +197,7 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
   const pointsFloatClass = isGolden
     ? "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#D4A843] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(212,168,67,0.52)]"
     : "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#BA4845] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(186,72,66,0.52)]";
+  const shouldShowUnlockPoints = data.unlocking && phase === "idle" && !isGolden;
 
   return (
     <>
@@ -312,7 +313,7 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
           </div>
 
           {/* +30 points float — always shown when unlocking */}
-          {data.unlocking && (
+          {shouldShowUnlockPoints && (
             <div className="pointer-events-none absolute top-0 right-0 z-30">
               <span className={pointsFloatClass}>
                 +30

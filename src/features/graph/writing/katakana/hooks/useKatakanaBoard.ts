@@ -2,10 +2,7 @@
 
 import { KATAKANA_DATA } from "../mock/data";
 import { listKatakanas } from "@/features/kana/api/kanaApi";
-import {
-  useKanaBoard,
-  type KanaLookupMap,
-} from "../../shared/hooks/useKanaBoard";
+import { useKanaBoard } from "../../shared/hooks/useKanaBoard";
 
 export function useKatakanaBoard() {
   return useKanaBoard({

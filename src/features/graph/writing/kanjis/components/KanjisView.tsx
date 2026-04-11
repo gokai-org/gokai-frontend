@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
+import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import type { Viewport } from "reactflow";
 import {
@@ -112,6 +113,7 @@ export default function KanjisView() {
   const [quizKanji, setQuizKanji] = useState<{
     id: string;
     symbol: string;
+    quizType?: KanjiQuizType;
   } | null>(null);
   const [newlyUnlockedIds, setNewlyUnlockedIds] = useState<ReadonlySet<string>>(
     new Set(),
@@ -285,7 +287,7 @@ export default function KanjisView() {
   }, []);
 
   const handleQuizStart = useCallback(
-    (kanji: { id: string; symbol: string }) => {
+    (kanji: { id: string; symbol: string }, quizType?: KanjiQuizType) => {
       // Close detail drawer before opening quiz overlay.
       setDetailNodeId(null);
       // Freeze parallax & board animations while the quiz overlay is active.
@@ -300,7 +302,7 @@ export default function KanjisView() {
         backgroundRef.current.dataset.kanjiQuizActive = "true";
       if (rootRef.current) rootRef.current.dataset.kanjiQuizActive = "true";
       wasMasteredBeforeQuizRef.current = mastered.has("kanji");
-      setQuizKanji(kanji);
+      setQuizKanji({ ...kanji, quizType });
     },
     [mastered],
   );
@@ -653,6 +655,7 @@ export default function KanjisView() {
         <KanjiQuizModal
           kanjiId={quizKanji.id}
           label={quizKanji.symbol}
+          quizType={quizKanji.quizType}
           onClose={handleQuizEnd}
         />
       )}
