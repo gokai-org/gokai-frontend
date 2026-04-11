@@ -32,3 +32,11 @@ git clone https://github.com/ChristianEspinoza0105/gokai-frontend.git
 cd gokai-frontend
 npm install
 ```
+
+## Desarrollo local
+
+```bash
+npm run dev
+```
+
+El script de desarrollo usa Webpack por defecto para priorizar estabilidad en desarrollo local.
