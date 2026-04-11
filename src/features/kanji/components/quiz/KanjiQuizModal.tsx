@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKanjiQuiz } from "@/features/kanji/hooks/useKanjiQuiz";
 import {
@@ -10,7 +10,6 @@ import {
 import {
   QUIZ_TYPE_LABELS,
   QUIZ_ROUND_ORDER,
-  QUIZ_TOTAL_ROUNDS,
 } from "@/features/kanji/types/quiz";
 import type {
   KanjiQuizRoundResult,
@@ -22,17 +21,35 @@ import { KanjiReadingExercise } from "./KanjiReadingExercise";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { KanjiQuizWritingExercise } from "./KanjiQuizWritingExercise";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { KANJI_COMPLETION_SCORE } from "@/features/graph/writing/kanjis/types";
+import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
+
+const KANJI_COMPLETION_REWARD = 30;
+
+export type KanjiQuizCompletionResult = {
+  score: number;
+  newlyCompleted: boolean;
+  newlyCompletedPoints: number;
+  dominated: boolean;
+  triggeredModuleMastery: boolean;
+};
 
 export interface KanjiQuizModalProps {
   kanjiId: string;
   label?: string;
-  onClose: () => void;
-  onComplete?: (score: number, updatedPoints: number | null) => void;
+  quizType?: KanjiQuizType;
+  currentModulePoints: number;
+  wasCompletedBefore?: boolean;
+  onClose: (result?: KanjiQuizCompletionResult) => void;
+  onComplete?: (result: KanjiQuizCompletionResult) => void;
 }
 
 export function KanjiQuizModal({
   kanjiId,
   label,
+  quizType,
+  currentModulePoints,
+  wasCompletedBefore = false,
   onClose,
   onComplete,
 }: KanjiQuizModalProps) {
@@ -40,6 +57,7 @@ export function KanjiQuizModal({
   const platformMotion = usePlatformMotion();
   const mastered = useMasteredModules();
   const isKanjiMastered = mastered.has("kanji");
+  const autoClosedForMasteryRef = useRef(false);
 
   const goldenAccentVars = useMemo<React.CSSProperties | undefined>(
     () =>
@@ -103,25 +121,15 @@ export function KanjiQuizModal({
   );
 
   useEffect(() => {
-    quiz.startQuiz(kanjiId);
+    quiz.startQuiz(kanjiId, quizType);
     return () => quiz.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kanjiId]);
+  }, [kanjiId, quizType]);
 
   const handleRetry = useCallback(() => {
     quiz.reset();
-    quiz.startQuiz(kanjiId);
-  }, [quiz, kanjiId]);
-
-  const handleClose = useCallback(() => {
-    if (
-      (quiz.state.step === "summary" || quiz.state.step === "celebration") &&
-      onComplete
-    ) {
-      onComplete(quiz.finalScore, quiz.updatedPoints);
-    }
-    onClose();
-  }, [quiz, onClose, onComplete]);
+    quiz.startQuiz(kanjiId, quizType);
+  }, [quiz, kanjiId, quizType]);
 
   const handleNextAfterFeedback = useCallback(() => {
     quiz.nextStep();
@@ -133,13 +141,78 @@ export function KanjiQuizModal({
     currentQuestion,
     totalQuestions,
     overallProgress,
+    finalScore,
     error,
+    submitError,
     isPointsError,
     updatedPoints,
     pointsDelta,
+    reachedMasteryThisAttempt,
     roundResults,
     currentRound,
+    totalRounds,
+    sessionType,
   } = quiz;
+
+  const isPracticeSession = totalRounds === 1;
+  const isMixedCompletion = quiz.totalRounds > 1;
+  const isNewlyCompleted =
+    !wasCompletedBefore && isMixedCompletion && finalScore >= KANJI_COMPLETION_SCORE;
+  const isDominated =
+    wasCompletedBefore && isMixedCompletion && state.step === "celebration";
+  const triggeredModuleMastery =
+    isNewlyCompleted &&
+    currentModulePoints + KANJI_COMPLETION_REWARD >= MASTERY_THRESHOLDS.kanji;
+  const displayPointsDelta = isPracticeSession
+    ? 0
+    : isNewlyCompleted
+      ? Math.max(pointsDelta, KANJI_COMPLETION_REWARD)
+      : pointsDelta;
+  const shouldHidePointsDelta = isPracticeSession || reachedMasteryThisAttempt;
+  const displayedUpdatedPoints = isPracticeSession ? null : updatedPoints;
+
+  const handleClose = useCallback(() => {
+    const completionResult: KanjiQuizCompletionResult | undefined =
+      quiz.state.step === "summary" || quiz.state.step === "celebration"
+        ? {
+            score: quiz.finalScore,
+            newlyCompleted: isNewlyCompleted,
+            newlyCompletedPoints: isNewlyCompleted ? KANJI_COMPLETION_REWARD : 0,
+            dominated: isDominated,
+            triggeredModuleMastery,
+          }
+        : undefined;
+
+    if (
+      (quiz.state.step === "summary" || quiz.state.step === "celebration") &&
+      onComplete &&
+      completionResult
+    ) {
+      onComplete(completionResult);
+    }
+    onClose(completionResult);
+  }, [isDominated, isNewlyCompleted, onClose, onComplete, quiz, triggeredModuleMastery]);
+
+  const shouldAutoCloseForMastery =
+    triggeredModuleMastery &&
+    (state.step === "summary" || state.step === "celebration");
+
+  useEffect(() => {
+    if (!shouldAutoCloseForMastery) {
+      autoClosedForMasteryRef.current = false;
+      return;
+    }
+
+    if (autoClosedForMasteryRef.current) return;
+    autoClosedForMasteryRef.current = true;
+    handleClose();
+  }, [handleClose, shouldAutoCloseForMastery]);
+
+  const currentQuizType =
+    quizData?.type ?? (sessionType === "mixed" ? undefined : sessionType);
+  const quizSubtitle = currentQuizType
+    ? QUIZ_TYPE_LABELS[currentQuizType]
+    : "Quiz completo";
 
   const _isTransitioning =
     state.step === "submitting" ||
@@ -148,6 +221,10 @@ export function KanjiQuizModal({
     state.selectedOptionIndex !== null
       ? (currentQuestion?.options?.[state.selectedOptionIndex]?.correct ?? false)
       : false;
+
+  if (shouldAutoCloseForMastery) {
+    return null;
+  }
 
   return (
     <AnimatePresence>
@@ -185,15 +262,18 @@ export function KanjiQuizModal({
                   <h2 className="text-base font-bold text-content-inverted leading-tight">
                     Quiz de Kanji
                   </h2>
+                  <p className="text-xs text-white/70 font-medium">
+                    {quizSubtitle}
+                  </p>
                 </div>
               </div>
 
               <div className="flex items-center gap-3">
-                {state.step !== "summary" && state.step !== "error" && (
+                {totalRounds > 1 && state.step !== "summary" && state.step !== "error" && (
                   <RoundDots
                     roundResults={roundResults}
                     currentRound={currentRound}
-                    total={QUIZ_TOTAL_ROUNDS}
+                    total={totalRounds}
                   />
                 )}
 
@@ -251,9 +331,11 @@ export function KanjiQuizModal({
                   <div className="absolute inset-0 w-14 h-14 border-4 border-transparent border-t-accent rounded-full animate-spin" />
                 </div>
                 <p className="text-sm text-content-muted font-medium">
-                  {roundResults.length > 0
-                    ? `Ejercicio ${roundResults.length + 1} de ${QUIZ_TOTAL_ROUNDS}…`
-                    : "Preparando quiz…"}
+                  {roundResults.length >= totalRounds
+                    ? "Guardando resultado..."
+                    : roundResults.length > 0
+                      ? `Ejercicio ${Math.min(roundResults.length + 1, totalRounds)} de ${totalRounds}…`
+                      : "Preparando quiz…"}
                 </p>
               </motion.div>
             )}
@@ -271,7 +353,7 @@ export function KanjiQuizModal({
                   <div className="absolute inset-0 w-14 h-14 border-4 border-transparent border-t-accent rounded-full animate-spin" />
                 </div>
                 <p className="text-sm text-content-muted font-medium">
-                  {roundResults.length < QUIZ_TOTAL_ROUNDS - 1
+                  {roundResults.length < totalRounds - 1
                     ? "Guardando y preparando siguiente…"
                     : "Guardando resultado…"}
                 </p>
@@ -470,7 +552,22 @@ export function KanjiQuizModal({
                 </motion.div>
               )}
 
-            {state.step === "celebration" && (
+            {state.step === "celebration" &&
+              (totalRounds === 1 ? (
+                <KanjiPracticeResult
+                  success
+                  score={finalScore}
+                  quizTypeLabel={quizSubtitle}
+                  label={label}
+                  pointsDelta={displayPointsDelta}
+                  error={submitError}
+                  updatedPoints={displayedUpdatedPoints}
+                  hidePointsDelta={shouldHidePointsDelta}
+                  isDominated={isDominated}
+                  onRetry={handleRetry}
+                  onClose={handleClose}
+                />
+              ) : (
               <motion.div
                 key="celebration"
                 initial={{ opacity: 0 }}
@@ -493,7 +590,7 @@ export function KanjiQuizModal({
                   </motion.div>
                 </div>
 
-                {pointsDelta > 0 && (
+                {!shouldHidePointsDelta && displayPointsDelta > 0 && !isDominated && (
                   <motion.div
                     initial={{ opacity: 0, y: 12, scale: 0.8 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -505,7 +602,7 @@ export function KanjiQuizModal({
                     className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2 shadow-lg shadow-accent/30"
                   >
                     <span className="text-xl font-black text-white">
-                      +{pointsDelta}
+                      +{displayPointsDelta}
                     </span>
                     <span className="text-sm font-semibold text-white/80">
                       puntos ganados
@@ -520,12 +617,18 @@ export function KanjiQuizModal({
                   className="space-y-1.5"
                 >
                   <p className="text-2xl font-black text-content-primary">
-                    ¡Kanji completado!
+                    {isDominated ? "¡Dominaste este kanji!" : "¡Kanji completado!"}
                   </p>
                   <p className="text-sm text-content-muted">
-                    {pointsDelta > 0
-                      ? "Has superado los 4 ejercicios"
-                      : "Has completado los 4 ejercicios"}
+                    {isDominated
+                      ? "Lo resolviste con dominio total y una ejecución perfecta."
+                      : totalRounds === 1
+                      ? !shouldHidePointsDelta && displayPointsDelta > 0
+                        ? `Has superado la practica de ${quizSubtitle.toLowerCase()}`
+                        : `Has completado la practica de ${quizSubtitle.toLowerCase()}`
+                      : !shouldHidePointsDelta && displayPointsDelta > 0
+                        ? `Has superado los ${totalRounds} ejercicios`
+                        : `Has completado los ${totalRounds} ejercicios`}
                   </p>
                 </motion.div>
 
@@ -554,19 +657,37 @@ export function KanjiQuizModal({
                   </svg>
                 </motion.button>
               </motion.div>
-            )}
+              ))}
 
-            {state.step === "summary" && (
+            {state.step === "summary" &&
+              (totalRounds === 1 ? (
+                <KanjiPracticeResult
+                  success={finalScore === 100}
+                  score={finalScore}
+                  quizTypeLabel={quizSubtitle}
+                  label={label}
+                  pointsDelta={displayPointsDelta}
+                  error={submitError}
+                  updatedPoints={displayedUpdatedPoints}
+                  hidePointsDelta={shouldHidePointsDelta}
+                  isDominated={isDominated}
+                  onRetry={handleRetry}
+                  onClose={handleClose}
+                />
+              ) : (
               <QuizMultiRoundSummary
                 roundResults={roundResults}
                 label={label}
-                updatedPoints={updatedPoints}
-                pointsDelta={pointsDelta}
-                submitError={error}
+                sessionType={sessionType}
+                totalRounds={totalRounds}
+                updatedPoints={displayedUpdatedPoints}
+                pointsDelta={displayPointsDelta}
+                submitError={submitError}
+                hidePointsDelta={shouldHidePointsDelta}
                 onRetry={handleRetry}
                 onClose={handleClose}
               />
-            )}
+              ))}
           </div>
         </motion.div>
       </motion.div>
@@ -672,22 +793,30 @@ function QuizProgress({
 function QuizMultiRoundSummary({
   roundResults,
   label,
+  sessionType,
+  totalRounds,
   updatedPoints,
   pointsDelta,
   submitError,
+  hidePointsDelta = false,
   onRetry,
   onClose,
 }: {
   roundResults: KanjiQuizRoundResult[];
   label?: string;
+  sessionType: KanjiQuizType | "mixed";
+  totalRounds: number;
   updatedPoints: number | null;
   pointsDelta: number;
   submitError: string | null;
+  hidePointsDelta?: boolean;
   onRetry: () => void;
   onClose: () => void;
 }) {
-  const earnedPoints = pointsDelta > 0 && updatedPoints !== null;
+  const earnedPoints = !hidePointsDelta && pointsDelta > 0 && updatedPoints !== null;
   const perfectRounds = roundResults.filter((result) => result.score === 100).length;
+  const resultTypes = sessionType === "mixed" ? QUIZ_ROUND_ORDER : [sessionType];
+  const quizTypeLabel = sessionType === "mixed" ? "Quiz completo" : QUIZ_TYPE_LABELS[sessionType];
 
   const overallScore =
     roundResults.length > 0
@@ -696,242 +825,135 @@ function QuizMultiRoundSummary({
             roundResults.length,
         )
       : 0;
-
-  const tone = (() => {
-    if (overallScore >= 90)
-      return {
-        label: "Casi lo tienes",
-        color: "text-orange-300",
-        glow: "rgba(245,158,11,0.28)",
-        ring: "#f59e0b",
-        surface: "from-orange-500 to-orange-600",
-        badge: "border-orange-500/20 bg-orange-500/10 text-orange-200",
-      };
-    if (overallScore >= 70)
-      return {
-        label: "Buen intento",
-        color: "text-orange-300",
-        glow: "rgba(249,115,22,0.28)",
-        ring: "#f97316",
-        surface: "from-orange-500 to-red-500",
-        badge: "border-orange-500/20 bg-orange-500/10 text-orange-200",
-      };
-    return {
-      label: "Intentalo de nuevo",
-      color: "text-red-300",
-      glow: "rgba(226, 25, 25, 0.28)",
-      ring: "#f43f3f",
-      surface: "from-red-500 to-red-600",
-      badge: "border-red-500/20 bg-red-500/10 text-red-200",
-    };
-  })();
+  const accentStyle = {
+    backgroundColor: "var(--accent-subtle)",
+    borderColor: "var(--accent-muted)",
+    color: "var(--accent)",
+  };
+  const scoreStyle = overallScore >= 70 ? { color: "var(--accent)" } : undefined;
+  const statusClass = "text-content-primary";
+  const statusLabel = overallScore >= 70 ? "Buen intento" : "Intentalo de nuevo";
+  const subtitle =
+    totalRounds === 1
+      ? `Este intento evalua ${quizTypeLabel.toLowerCase()}. Necesitas 100 para cerrarlo perfecto.`
+      : `El intento se cerro en el primer error. Para completar${label ? ` ${label}` : " este kanji"} con todos los ejercicios debes repetir el quiz completo.`;
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
-      className="flex flex-col items-center gap-6 py-2 w-full"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4"
     >
+        <div className="mt-4 space-y-4">
+          <div className="space-y-1.5">
+            <p className="text-3xl font-black text-content-primary">
+              Resumen del intento
+            </p>
+            <p className="text-sm leading-6 text-content-secondary">
+              {subtitle}
+            </p>
+          </div>
 
-      <motion.div
-        initial={{ scale: 0.6, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{
-          delay: 0.15,
-          type: "spring",
-          stiffness: 200,
-          damping: 15,
-        }}
-        className="relative mt-2"
-      >
-        <div
-          className="absolute inset-[-12px] rounded-full blur-2xl opacity-60"
-          style={{
-            background: `radial-gradient(circle, ${tone.glow}, transparent 70%)`,
-          }}
-        />
-        <div className="relative w-32 h-32 rounded-full flex flex-col items-center justify-center">
-          <svg
-            className="absolute inset-0 w-32 h-32 -rotate-90"
-            viewBox="0 0 128 128"
-          >
-            <circle
-              cx="64"
-              cy="64"
-              r="56"
-              fill="none"
-              stroke="var(--border-primary)"
-              strokeWidth="7"
-            />
-            <motion.circle
-              cx="64"
-              cy="64"
-              r="56"
-              fill="none"
-              stroke={tone.ring}
-              strokeWidth="7"
-              strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 56}`}
-              initial={{ strokeDashoffset: 2 * Math.PI * 56 }}
-              animate={{
-                strokeDashoffset: 2 * Math.PI * 56 * (1 - overallScore / 100),
-              }}
-              transition={{
-                delay: 0.3,
-                duration: 1.1,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-            />
-          </svg>
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.6 }}
-            className="text-4xl font-extrabold text-content-primary"
-          >
-            {overallScore}
-          </motion.span>
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="text-[10px] text-content-muted font-semibold -mt-0.5"
-          >
-            / 100
-          </motion.span>
-        </div>
-      </motion.div>
+          <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border-subtle pt-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+                Resultado
+              </p>
+              <p
+                className="mt-1 text-4xl font-black text-content-primary"
+                style={scoreStyle}
+              >
+                {overallScore}
+                <span className="ml-1 text-base font-semibold text-content-muted">
+                  /100
+                </span>
+              </p>
+            </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="text-center max-w-xl"
-      >
-        <h3 className={`text-2xl font-extrabold mb-1 ${tone.color}`}>
-          {tone.label}
-        </h3>
-        <p className="text-sm text-content-tertiary">
-          Tu calificacion total del quiz fue de {overallScore}/100.
-        </p>
-        <p className="mt-2 text-sm text-content-muted">
-          El intento se cerró en cuanto apareció el primer error. Para dominar
-          {label ? ` el kanji ${label}` : " este kanji"} necesitas reiniciar
-          desde el inicio y completar las {QUIZ_TOTAL_ROUNDS} rondas con 100.
-        </p>
-        <p className="mt-1 text-sm text-content-muted">
-          Rondas perfectas en este intento: <span className="font-bold text-content-primary">{perfectRounds}</span>.
-        </p>
-      </motion.div>
+            <div className="text-left sm:text-right">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+                Estado
+              </p>
+              <p className={`mt-1 text-sm font-bold ${statusClass}`}>
+                {statusLabel}
+              </p>
+              <p className="mt-1 text-sm text-content-secondary">
+                {perfectRounds} de {resultTypes.length} rondas perfectas
+              </p>
+            </div>
+          </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="w-full grid grid-cols-2 sm:grid-cols-4 gap-2"
-      >
-        {QUIZ_ROUND_ORDER.map((type, i) => {
-          const result = roundResults.find((r) => r.type === type);
-          return (
-            <RoundResultCard
-              key={type}
-              type={type}
-              score={result?.score ?? null}
-              delay={0.55 + i * 0.07}
-            />
-          );
-        })}
-      </motion.div>
+          <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
+            {resultTypes.map((type, i) => {
+              const result = roundResults.find((r) => r.type === type);
+              return (
+                <RoundResultCard
+                  key={type}
+                  type={type}
+                  score={result?.score ?? null}
+                  delay={0.12 + i * 0.05}
+                />
+              );
+            })}
+          </div>
 
-      {earnedPoints && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.85, y: 6 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{
-            delay: 0.75,
-            type: "spring",
-            stiffness: 200,
-            damping: 14,
-          }}
-          className="flex items-center gap-2.5 px-5 py-3 bg-orange-500/10 border border-orange-500/25 rounded-2xl"
-        >
-          <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${tone.surface} flex items-center justify-center`}>
-            <svg
-              className="w-4 h-4 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2.5}
+          {earnedPoints && (
+            <div
+              className="flex items-center gap-2.5 rounded-2xl border px-4 py-3"
+              style={accentStyle}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2"
-              />
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 3v2m0 14v2"
-              />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-bold text-orange-200">
-              +{pointsDelta} puntos obtenidos
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent-hover text-white shadow-lg shadow-accent/15">
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2.5}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 3v2m0 14v2"
+                  />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+                  +{pointsDelta} puntos obtenidos
+                </p>
+                <p className="text-xs text-content-secondary">
+                  Total actual: {updatedPoints} pts
+                </p>
+              </div>
+            </div>
+          )}
+
+          {submitError && (
+            <p className="text-xs text-content-secondary">
+              No se pudo guardar algun resultado: {submitError}
             </p>
-            <p className="text-xs text-orange-100/75">
-              Total: {updatedPoints} pts
-            </p>
+          )}
+
+          <div className="flex flex-col gap-2.5 pt-1 sm:flex-row">
+            <button
+              onClick={onRetry}
+              className="flex-1 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3 text-sm font-black text-content-inverted shadow-lg shadow-accent/15 transition hover:shadow-xl hover:shadow-accent/20"
+            >
+              Repetir quiz
+            </button>
+            <button
+              onClick={onClose}
+              className="rounded-2xl border border-border-subtle bg-surface-secondary px-4 py-3 text-sm font-semibold text-content-secondary transition hover:bg-surface-tertiary sm:min-w-32"
+            >
+              Cerrar
+            </button>
           </div>
-        </motion.div>
-      )}
-
-      {submitError && (
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="text-xs text-orange-400 text-center"
-        >
-          No se pudo guardar algún resultado: {submitError}
-        </motion.p>
-      )}
-
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.85 }}
-        className="flex flex-col w-full max-w-sm gap-2.5"
-      >
-        <motion.button
-          whileHover={{ scale: 1.02, y: -1 }}
-          whileTap={{ scale: 0.98 }}
-          onClick={onRetry}
-          className="w-full py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold shadow-lg shadow-accent/15 hover:shadow-xl hover:shadow-accent/20 transition-all flex items-center justify-center gap-2"
-        >
-          <svg
-            className="w-4 h-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-          Repetir quiz
-        </motion.button>
-
-        <button
-          onClick={onClose}
-          className="w-full py-3 bg-surface-secondary hover:bg-surface-tertiary rounded-2xl text-sm font-semibold text-content-secondary transition-all"
-        >
-          Cerrar
-        </button>
-      </motion.div>
+        </div>
     </motion.div>
   );
 }
@@ -956,34 +978,155 @@ function RoundResultCard({
       className={[
         "flex flex-col items-center gap-1.5 py-3 px-2 rounded-2xl border transition-all",
         isPerfect
-          ? "bg-emerald-500/8 border-emerald-500/20"
+          ? "bg-surface-primary"
           : isDone
-            ? "bg-orange-500/8 border-orange-500/18"
+            ? "bg-surface-secondary border-border-subtle"
             : "bg-surface-tertiary border-border-subtle opacity-40",
       ].join(" ")}
+      style={
+        isPerfect
+          ? {
+              borderColor: "var(--accent-muted)",
+              background:
+                "linear-gradient(135deg, var(--accent-subtle), transparent 72%)",
+            }
+          : undefined
+      }
     >
       <span
-        className={`text-[10px] font-bold uppercase tracking-wider ${isPerfect ? "text-emerald-400" : "text-content-muted"}`}
+        className={`text-[10px] font-bold uppercase tracking-wider ${isPerfect ? "" : "text-content-muted"}`}
+        style={isPerfect ? { color: "var(--accent)" } : undefined}
       >
         {QUIZ_TYPE_LABELS[type]}
       </span>
       {isDone ? (
         <span
-          className={`text-xl font-extrabold ${isPerfect ? "text-emerald-400" : score! >= 90 ? "text-orange-200" : score! >= 70 ? "text-orange-300" : "text-red-300"}`}
+          className="text-xl font-extrabold text-content-primary"
+          style={isPerfect ? { color: "var(--accent)" } : undefined}
         >
           {score}%
         </span>
       ) : (
         <span className="text-xl font-extrabold text-content-muted">—</span>
       )}
-      {isPerfect && (
-        <svg
-          className="w-3.5 h-3.5 text-emerald-400"
-          fill="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-        </svg>
+      <span className="text-[11px] text-content-muted">
+        {isPerfect ? "Perfecta" : isDone ? "Por mejorar" : "Pendiente"}
+      </span>
+    </motion.div>
+  );
+}
+
+function KanjiPracticeResult({
+  success,
+  score,
+  quizTypeLabel,
+  label,
+  pointsDelta: _pointsDelta,
+  updatedPoints,
+  error,
+  hidePointsDelta = false,
+  isDominated = false,
+  onRetry,
+  onClose,
+}: {
+  success: boolean;
+  score: number;
+  quizTypeLabel: string;
+  label?: string;
+  pointsDelta: number;
+  updatedPoints: number | null;
+  error: string | null;
+  hidePointsDelta?: boolean;
+  isDominated?: boolean;
+  onRetry: () => void;
+  onClose: () => void;
+}) {
+  const scoreStyle = success ? { color: "var(--accent)" } : undefined;
+  const title = isDominated
+    ? "Kanji dominado"
+    : success
+      ? "Practica completada"
+      : "Practica incompleta";
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4"
+    >
+        <div className="mt-4 space-y-3">
+          <div className="space-y-1.5">
+            <p
+              className="text-3xl font-black text-content-primary"
+              style={scoreStyle}
+            >
+              {title}
+            </p>
+            <p className="text-sm leading-6 text-content-secondary">
+              {label
+                ? `Terminaste la practica de ${quizTypeLabel.toLowerCase()} para ${label}.`
+                : `Terminaste la practica de ${quizTypeLabel.toLowerCase()}.`}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border-subtle pt-4">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+                Resultado
+              </p>
+              <p
+                className="mt-1 text-4xl font-black text-content-primary"
+                style={scoreStyle}
+              >
+                {score}
+                <span className="ml-1 text-base font-semibold text-content-muted">
+                  /100
+                </span>
+              </p>
+            </div>
+
+            <div className="text-left sm:text-right">
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+                Estado
+              </p>
+              <p
+                className="mt-1 text-sm font-bold text-content-primary"
+                style={scoreStyle}
+              >
+                {isDominated
+                  ? "Dominado"
+                  : success
+                    ? "Aprobada"
+                    : "Requiere reintento"}
+              </p>
+              {!hidePointsDelta && updatedPoints !== null && (
+                <p className="mt-1 text-xs text-content-muted">
+                  Total actual: {updatedPoints} pts
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5 pt-1 sm:flex-row">
+            <button
+              onClick={onRetry}
+              className="flex-1 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3 text-sm font-black text-content-inverted shadow-lg shadow-accent/15 transition hover:shadow-xl hover:shadow-accent/20"
+            >
+              Practicar otra vez
+            </button>
+            <button
+              onClick={onClose}
+              className="rounded-2xl border border-border-subtle bg-surface-secondary px-4 py-3 text-sm font-semibold text-content-secondary transition hover:bg-surface-tertiary sm:min-w-32"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+
+      {error && (
+        <p className="text-center text-xs text-content-secondary">
+          No se pudo sincronizar todo el resultado: {error}
+        </p>
       )}
     </motion.div>
   );

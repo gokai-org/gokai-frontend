@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { handleClientAuthFailure, redirectToLogin } from "@/shared/lib/api/client";
 
 /**
  * Hook para proteger rutas autenticadas y manejar correctamente el historial del navegador
@@ -13,13 +14,17 @@ export function useAuthProtection() {
         const res = await fetch("/api/auth/user", {
           method: "GET",
           credentials: "include",
+          cache: "no-store",
         });
 
         if (!res.ok) {
-          window.location.replace("/auth/login");
+          const handled = handleClientAuthFailure(res);
+          if (!handled) {
+            redirectToLogin();
+          }
         }
       } catch {
-        window.location.replace("/auth/login");
+        redirectToLogin();
       }
     }
 

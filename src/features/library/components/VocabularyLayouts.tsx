@@ -1,6 +1,9 @@
+import Image, { type ImageLoaderProps } from "next/image";
 import { ChevronRight } from "lucide-react";
 import { VocabThumbnail } from "@/features/library/components/VocabThumbnail";
 import type { VariantConfig } from "@/features/library/utils/vocabularyCardConfig";
+
+const passthroughImageLoader = ({ src }: ImageLoaderProps) => src;
 
 // ─── Shared props ─────────────────────────────────────────────────────────────
 
@@ -177,19 +180,25 @@ export function WordCardLayout({
         className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-[24px]"
       >
         {iconIsUrl ? (
-          <img
-            src={thumbnail}
-            alt=""
-            className={[
-              "h-[58%] w-[58%] -translate-y-4 object-contain",
-              "opacity-[0.30] group-hover:opacity-[0.40] group-hover:scale-110",
-              hoverTransition,
-            ].join(" ")}
-            style={{
-              filter:
-                "invert(22%) sepia(58%) saturate(900%) hue-rotate(328deg) brightness(75%) contrast(95%)",
-            }}
-          />
+          <div className="relative h-[58%] w-[58%] -translate-y-4">
+            <Image
+              loader={passthroughImageLoader}
+              unoptimized
+              src={thumbnail}
+              alt=""
+              fill
+              sizes="(max-width: 640px) 140px, 220px"
+              className={[
+                "object-contain",
+                "opacity-[0.30] group-hover:opacity-[0.40] group-hover:scale-110",
+                hoverTransition,
+              ].join(" ")}
+              style={{
+                filter:
+                  "invert(22%) sepia(58%) saturate(900%) hue-rotate(328deg) brightness(75%) contrast(95%)",
+              }}
+            />
+          </div>
         ) : (
           <span
             className={[

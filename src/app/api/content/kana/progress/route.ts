@@ -7,6 +7,7 @@ export const dynamic = "force-dynamic";
 
 type RawProgressItem = {
   kanaId?: string;
+  kana_id?: string;
   symbol?: string;
   kanaType?: string;
   kana_type?: string;
@@ -22,7 +23,7 @@ type RawProgressItem = {
 
 function normalizeProgressItem(raw: RawProgressItem) {
   return {
-    kanaId: raw.kanaId ?? "",
+    kanaId: raw.kanaId ?? raw.kana_id ?? "",
     symbol: raw.symbol ?? "",
     kanaType:
       raw.kanaType === "katakana" || raw.kana_type === "katakana"
@@ -81,6 +82,11 @@ export async function GET(req: NextRequest) {
         ? (data as { progress: unknown[] }).progress
         : Array.isArray((data as { data?: unknown[] })?.data)
           ? (data as { data: unknown[] }).data
+          : data && typeof data === "object" && (
+                typeof (data as RawProgressItem).kanaId === "string" ||
+                typeof (data as RawProgressItem).kana_id === "string"
+              )
+            ? [data]
           : [];
 
     return NextResponse.json(

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type {
-  CelebrationPhase,
   CelebrationState,
   CameraTourWaypoint,
   MasteryModuleId,
@@ -24,6 +23,8 @@ import { subscribeMasteryCelebrationRequest } from "../utils/masteryProgressSync
 export interface UseMasteryCelebrationOptions {
   /** Whether the user just crossed the mastery threshold. */
   isNewMastery: boolean;
+  /** Whether threshold-crossing should auto-start the sequence. */
+  autoTriggerOnNewMastery?: boolean;
   /** Module being celebrated. */
   moduleId: MasteryModuleId;
   /** Ordered list of node positions for the camera tour. */
@@ -61,6 +62,7 @@ const IDLE_STATE: CelebrationState = {
 
 export function useMasteryCelebration({
   isNewMastery,
+  autoTriggerOnNewMastery = true,
   moduleId,
   waypoints,
   onFocusNode,
@@ -74,13 +76,9 @@ export function useMasteryCelebration({
 
   // Keep callbacks stable via refs.
   const onFocusNodeRef = useRef(onFocusNode);
-  onFocusNodeRef.current = onFocusNode;
   const onPropagationTickRef = useRef(onPropagationTick);
-  onPropagationTickRef.current = onPropagationTick;
   const onCompleteRef = useRef(onComplete);
-  onCompleteRef.current = onComplete;
   const waypointsRef = useRef(waypoints);
-  waypointsRef.current = waypoints;
 
   const clearTimers = useCallback(() => {
     for (const t of timersRef.current) clearTimeout(t);
@@ -90,6 +88,13 @@ export function useMasteryCelebration({
       rafRef.current = null;
     }
   }, []);
+
+  useEffect(() => {
+    onFocusNodeRef.current = onFocusNode;
+    onPropagationTickRef.current = onPropagationTick;
+    onCompleteRef.current = onComplete;
+    waypointsRef.current = waypoints;
+  }, [onComplete, onFocusNode, onPropagationTick, waypoints]);
 
   // ---------------------------------------------------
   // Sequence runner
@@ -196,11 +201,15 @@ export function useMasteryCelebration({
   // ---------------------------------------------------
 
   useEffect(() => {
-    if (isNewMastery && !hasTriggeredRef.current) {
+    if (autoTriggerOnNewMastery && isNewMastery && !hasTriggeredRef.current) {
       hasTriggeredRef.current = true;
-      runSequence();
+      const startTimer = window.setTimeout(() => {
+        runSequence();
+      }, 0);
+
+      return () => clearTimeout(startTimer);
     }
-  }, [isNewMastery, runSequence]);
+  }, [autoTriggerOnNewMastery, isNewMastery, runSequence]);
 
   useEffect(
     () =>

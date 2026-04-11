@@ -1,6 +1,8 @@
+import Image, { type ImageLoaderProps } from "next/image";
 import { RED_ICON_FILTER } from "@/features/library/utils/vocabularyCardConfig";
 
 const WHITE_ICON_FILTER = "brightness(0) invert(1)";
+const passthroughImageLoader = ({ src }: ImageLoaderProps) => src;
 
 export interface VocabThumbnailProps {
   thumbnail: string;
@@ -35,6 +37,7 @@ export function VocabThumbnail({
   // ── URL icon ──────────────────────────────────────────────────────────────
   if (isIconUrl) {
     const imgDim = size === "lg" ? "h-8 w-8" : "h-6 w-6";
+    const imgSize = size === "lg" ? 32 : 24;
     const bgClass =
       iconColor === "white"
         ? "bg-surface-primary/15"
@@ -44,12 +47,15 @@ export function VocabThumbnail({
 
     return (
       <div className={[base, bgClass].join(" ")}>
-        <img
+        <Image
+          loader={passthroughImageLoader}
+          unoptimized
           src={thumbnail}
           alt=""
+          width={imgSize}
+          height={imgSize}
           className={[imgDim, "object-contain"].join(" ")}
           style={{ filter: filterStyle }}
-          loading="lazy"
         />
       </div>
     );

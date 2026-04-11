@@ -3,6 +3,7 @@ import type {
   KanaQuizResponseRaw,
   KanaQuizResponse,
   KanaQuizSubmitBody,
+  KanaQuizType,
 } from "@/features/kana/types/quiz";
 import { normalizeKanaQuizResponse } from "@/features/kana/utils/quizParser";
 
@@ -14,9 +15,29 @@ import { normalizeKanaQuizResponse } from "@/features/kana/utils/quizParser";
  */
 export async function getKanaQuiz(
   kanaId: string,
+  quizType?: KanaQuizType,
+  options?: {
+    fallbackType?: KanaQuizType;
+    forceFallback?: boolean;
+  },
 ): Promise<KanaQuizResponse> {
+  const params = new URLSearchParams({ resource: "quiz" });
+
+  if (quizType) {
+    params.set("quizType", quizType);
+  }
+
+  if (options?.fallbackType) {
+    params.set("fallbackType", options.fallbackType);
+  }
+
+  if (options?.forceFallback) {
+    params.set("forceFallback", "1");
+  }
+
+  const path = `/api/content/kana/${kanaId}?${params.toString()}`;
   const raw = await apiFetch<KanaQuizResponseRaw>(
-    `/api/content/kana/${kanaId}?resource=quiz`,
+    path,
     { cache: "no-store" },
   );
 
@@ -31,6 +52,8 @@ export async function submitKanaQuiz(
   kanaId: string,
   body: KanaQuizSubmitBody,
 ): Promise<Record<string, unknown>> {
+  console.warn("[KANA QUIZ POST] submitKanaQuiz called", { kanaId, body });
+  console.trace("[KANA QUIZ POST] call stack");
   return apiFetch<Record<string, unknown>>(`/api/content/kana/${kanaId}?resource=quiz`, {
     method: "POST",
     body: JSON.stringify(body),

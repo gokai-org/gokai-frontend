@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
+import type { KanjiQuizType } from "@/features/kanji/types/quiz";
+import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import type { Viewport } from "reactflow";
 import {
@@ -20,9 +22,30 @@ import { KanjiBoardMap } from "./KanjiBoardMap";
 import WritingBoardLoading from "../../shared/components/WritingBoardLoading";
 import { MasteryBoardWrapper } from "@/features/mastery/components/MasteryBoardWrapper";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
-import { dispatchMasteryCelebrationRequest } from "@/features/mastery/utils/masteryProgressSync";
+import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
+import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+
+type KanjiQuizCompletionResult = {
+  newlyCompleted: boolean;
+  newlyCompletedPoints: number;
+  dominated: boolean;
+  score: number;
+  triggeredModuleMastery: boolean;
+};
 
 const GRAPH_USER_ID = "user123";
+
+function isKanjiQuizType(
+  quizType?: KanaQuizType | KanjiQuizType,
+): quizType is KanjiQuizType {
+  return (
+    quizType === undefined ||
+    quizType === "kanji" ||
+    quizType === "meaning" ||
+    quizType === "reading" ||
+    quizType === "writing"
+  );
+}
 
 type BackgroundViewportState = {
   x: number;
@@ -112,8 +135,14 @@ export default function KanjisView() {
   const [quizKanji, setQuizKanji] = useState<{
     id: string;
     symbol: string;
+    quizType?: KanjiQuizType;
+    wasCompletedBefore: boolean;
+    isPracticeOnly: boolean;
   } | null>(null);
   const [newlyUnlockedIds, setNewlyUnlockedIds] = useState<ReadonlySet<string>>(
+    new Set(),
+  );
+  const [suppressedUnlockPointIds, setSuppressedUnlockPointIds] = useState<ReadonlySet<string>>(
     new Set(),
   );
   const [unlockFocusNodeId, setUnlockFocusNodeId] = useState<string | null>(
@@ -130,6 +159,8 @@ export default function KanjisView() {
     null,
   );
   const wasMasteredBeforeQuizRef = useRef(false);
+  const pendingMasteryCelebrationRef = useRef(false);
+  const celebrationFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Pause parallax rAF loop while the quiz modal is on top.
   const quizActiveRef = useRef(false);
   // Always-current item/reload refs so event callbacks stay stable.
@@ -233,8 +264,22 @@ export default function KanjisView() {
   const drawerOpen = detailNodeId !== null;
   const graph = useMemo(
     () =>
-      applyBoardUIState(baseGraph, selectedId, newlyUnlockedIds, shakingNodeId, drawerOpen),
-    [baseGraph, selectedId, newlyUnlockedIds, shakingNodeId, drawerOpen],
+      applyBoardUIState(
+        baseGraph,
+        selectedId,
+        newlyUnlockedIds,
+        suppressedUnlockPointIds,
+        shakingNodeId,
+        drawerOpen,
+      ),
+    [
+      baseGraph,
+      selectedId,
+      newlyUnlockedIds,
+      suppressedUnlockPointIds,
+      shakingNodeId,
+      drawerOpen,
+    ],
   );
 
   const backgroundStyle = useMemo(() => {
@@ -285,7 +330,14 @@ export default function KanjisView() {
   }, []);
 
   const handleQuizStart = useCallback(
-    (kanji: { id: string; symbol: string }) => {
+    (
+      kanji: { id: string; symbol: string },
+      quizType?: KanaQuizType | KanjiQuizType,
+    ) => {
+      if (!isKanjiQuizType(quizType)) {
+        return;
+      }
+
       // Close detail drawer before opening quiz overlay.
       setDetailNodeId(null);
       // Freeze parallax & board animations while the quiz overlay is active.
@@ -300,26 +352,75 @@ export default function KanjisView() {
         backgroundRef.current.dataset.kanjiQuizActive = "true";
       if (rootRef.current) rootRef.current.dataset.kanjiQuizActive = "true";
       wasMasteredBeforeQuizRef.current = mastered.has("kanji");
-      setQuizKanji(kanji);
+      const wasCompletedBefore =
+        itemsRef.current.find((item) => item.id === kanji.id)?.status === "completed";
+      setQuizKanji({
+        ...kanji,
+        quizType,
+        wasCompletedBefore,
+        isPracticeOnly: quizType !== undefined,
+      });
     },
     [mastered],
   );
 
-  const handleQuizEnd = useCallback(() => {
+  const handleQuizEnd = useCallback((result?: KanjiQuizCompletionResult) => {
+    const isPracticeOnly = quizKanji?.isPracticeOnly === true;
+    const resultingPoints = userPoints + (result?.newlyCompletedPoints ?? 0);
     const becameMastered =
-      !wasMasteredBeforeQuizRef.current && mastered.has("kanji");
+      !wasMasteredBeforeQuizRef.current &&
+      resultingPoints >= MASTERY_THRESHOLDS.kanji;
 
     setQuizKanji(null);
     quizActiveRef.current = false;
     if (backgroundRef.current)
       backgroundRef.current.dataset.kanjiQuizActive = "false";
     if (rootRef.current) rootRef.current.dataset.kanjiQuizActive = "false";
+    if (isPracticeOnly) {
+      pendingMasteryCelebrationRef.current = false;
+      shouldResolveUnlocksRef.current = false;
+      lockedIdsBeforeQuizRef.current = null;
+      setSuppressedUnlockPointIds(new Set());
+      if (celebrationFallbackTimerRef.current !== null) {
+        clearTimeout(celebrationFallbackTimerRef.current);
+        celebrationFallbackTimerRef.current = null;
+      }
+      return;
+    }
+    if (result?.newlyCompleted && result.newlyCompletedPoints > 0) {
+      dispatchMasteryProgressSync({
+        points: userPoints + result.newlyCompletedPoints,
+      });
+    }
+    if (result?.triggeredModuleMastery) {
+      pendingMasteryCelebrationRef.current = false;
+      setSuppressedUnlockPointIds(new Set());
+      if (celebrationFallbackTimerRef.current !== null) {
+        clearTimeout(celebrationFallbackTimerRef.current);
+        celebrationFallbackTimerRef.current = null;
+      }
+      window.requestAnimationFrame(() => {
+        dispatchMasteryCelebrationRequest({ moduleId: "kanji" });
+      });
+      shouldResolveUnlocksRef.current = lockedIdsBeforeQuizRef.current !== null;
+      void reloadRef.current();
+      return;
+    }
     if (becameMastered) {
-      dispatchMasteryCelebrationRequest({ moduleId: "kanji" });
+      pendingMasteryCelebrationRef.current = true;
+      if (celebrationFallbackTimerRef.current !== null) {
+        clearTimeout(celebrationFallbackTimerRef.current);
+      }
+      celebrationFallbackTimerRef.current = setTimeout(() => {
+        if (!pendingMasteryCelebrationRef.current) return;
+        pendingMasteryCelebrationRef.current = false;
+        setSuppressedUnlockPointIds(new Set());
+        dispatchMasteryCelebrationRequest({ moduleId: "kanji" });
+      }, 2900);
     }
     shouldResolveUnlocksRef.current = lockedIdsBeforeQuizRef.current !== null;
     void reloadRef.current();
-  }, [mastered]);
+  }, [quizKanji, userPoints]);
 
   useEffect(() => {
     if (!shouldResolveUnlocksRef.current) return;
@@ -347,16 +448,29 @@ export default function KanjisView() {
 
     const firstUnlockedId = unlockedIds[0];
     const nextUnlockedIds = new Set(unlockedIds);
+    const nextSuppressedUnlockPointIds = pendingMasteryCelebrationRef.current
+      ? new Set(unlockedIds)
+      : new Set<string>();
 
     const raf = requestAnimationFrame(() => {
       setDetailNodeId(null);
       setManualSelectedId(firstUnlockedId);
       setUnlockFocusNodeId(firstUnlockedId);
       setNewlyUnlockedIds(nextUnlockedIds);
+      setSuppressedUnlockPointIds(nextSuppressedUnlockPointIds);
     });
 
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedIds(new Set());
+      setSuppressedUnlockPointIds(new Set());
+      if (pendingMasteryCelebrationRef.current) {
+        pendingMasteryCelebrationRef.current = false;
+        if (celebrationFallbackTimerRef.current !== null) {
+          clearTimeout(celebrationFallbackTimerRef.current);
+          celebrationFallbackTimerRef.current = null;
+        }
+        dispatchMasteryCelebrationRequest({ moduleId: "kanji" });
+      }
     }, 2500);
     unlockFocusTimerRef.current = setTimeout(() => {
       setUnlockFocusNodeId(null);
@@ -565,6 +679,9 @@ export default function KanjisView() {
       if (unlockFocusTimerRef.current !== null) {
         clearTimeout(unlockFocusTimerRef.current);
       }
+      if (celebrationFallbackTimerRef.current !== null) {
+        clearTimeout(celebrationFallbackTimerRef.current);
+      }
       lastFrameTime.current = null;
     };
   }, []);
@@ -581,6 +698,7 @@ export default function KanjisView() {
     <MasteryBoardWrapper
       moduleId="kanji"
       currentPoints={userPoints}
+      autoTriggerOnNewMastery={false}
       totalItems={items.length}
       completedItems={summary.completedCount}
       nodes={graph.nodes}
@@ -653,6 +771,9 @@ export default function KanjisView() {
         <KanjiQuizModal
           kanjiId={quizKanji.id}
           label={quizKanji.symbol}
+          quizType={quizKanji.quizType}
+          currentModulePoints={userPoints}
+          wasCompletedBefore={quizKanji.wasCompletedBefore}
           onClose={handleQuizEnd}
         />
       )}

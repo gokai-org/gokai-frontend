@@ -1,4 +1,5 @@
 import { apiFetch } from "@/shared/lib/api/client";
+import { handleClientAuthFailure } from "@/shared/lib/api/client";
 import type {
   User,
   UserInterest,
@@ -11,8 +12,14 @@ import type {
 
 export async function getCurrentUser(): Promise<User | null> {
   try {
-    const response = await fetch("/api/auth/user", { cache: "no-store" });
-    if (!response.ok) return null;
+    const response = await fetch("/api/auth/user", {
+      cache: "no-store",
+      credentials: "include",
+    });
+    if (!response.ok) {
+      handleClientAuthFailure(response);
+      return null;
+    }
     const data = await response.json();
     return data.user;
   } catch (error) {

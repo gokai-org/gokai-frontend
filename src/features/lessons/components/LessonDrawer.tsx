@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { LessonMode, LessonResolved } from "../types";
 import type { Kanji } from "@/features/kanji/types";
+import type { KanjiQuizType } from "@/features/kanji/types/quiz";
+import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { getLessonsForNode } from "../lib/lessonService";
 import LessonShell from "./LessonShell";
 import { SkeletonDrawerContent } from "@/shared/ui/Skeleton";
@@ -30,7 +32,10 @@ type Props = {
   kanjiCtaDisabledReason?: string;
   writingActive?: boolean;
   onWritingStart?: (kanji: Kanji) => void;
-  onQuizStart?: (entity: { id: string; symbol: string }) => void;
+  onQuizStart?: (
+    entity: { id: string; symbol: string },
+    quizType?: KanaQuizType | KanjiQuizType,
+  ) => void;
 };
 
 export default function LessonDrawer({

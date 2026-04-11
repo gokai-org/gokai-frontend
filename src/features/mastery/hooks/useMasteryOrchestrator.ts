@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Node } from "reactflow";
 import type {
   CelebrationModalContent,
@@ -25,6 +25,8 @@ export interface UseMasteryOrchestratorOptions {
   moduleId: MasteryModuleId;
   /** User's current points for the relevant field. */
   currentPoints: number;
+  /** Whether threshold-crossing should auto-start the celebration. */
+  autoTriggerOnNewMastery?: boolean;
   /** Total items in this module's board. */
   totalItems: number;
   /** Number of completed items. */
@@ -81,6 +83,7 @@ export interface UseMasteryOrchestratorReturn {
 export function useMasteryOrchestrator({
   moduleId,
   currentPoints,
+  autoTriggerOnNewMastery = true,
   totalItems,
   completedItems,
   nodes,
@@ -92,8 +95,7 @@ export function useMasteryOrchestrator({
   // dashboard root), suppress the first-mount celebration so it only fires
   // during the session that actually earned mastery — not on every new browser.
   const masteredSet = useMasteredModules();
-  const initiallyKnownMasteredRef = useRef(masteredSet.has(moduleId));
-  const alreadyKnownMastered = initiallyKnownMasteredRef.current;
+  const [alreadyKnownMastered] = useState(() => masteredSet.has(moduleId));
 
   const mastery = useMasteryState(
     moduleId,
@@ -122,6 +124,7 @@ export function useMasteryOrchestrator({
 
   const { celebration, dismissModal } = useMasteryCelebration({
     isNewMastery: mastery.isNewMastery,
+    autoTriggerOnNewMastery,
     moduleId,
     waypoints,
     onFocusNode: handleFocusNode,

@@ -23,7 +23,9 @@ import { useKanjiLockedStatus } from "@/features/library/hooks/useKanjiLockedSta
 import { useKanaLockedStatus } from "@/features/library/hooks/useKanaLockedStatus";
 import { useLibraryContent } from "@/features/library/hooks/useLibraryContent";
 import type { Kanji } from "@/features/kanji/types";
+import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import type { Kana } from "@/features/kana/types";
+import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import { KanaQuizModal } from "@/features/kana/components/quiz";
 import {
@@ -49,11 +51,17 @@ export default function LibraryPage() {
   const [quizKanji, setQuizKanji] = useState<{
     id: string;
     symbol: string;
+    quizType?: KanjiQuizType;
+    wasCompletedBefore: boolean;
+    isPracticeOnly: boolean;
   } | null>(null);
   const [quizKana, setQuizKana] = useState<{
     id: string;
     symbol: string;
     kanaType: "hiragana" | "katakana";
+    quizType?: KanaQuizType;
+    wasCompletedBefore: boolean;
+    isPracticeOnly: boolean;
   } | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
@@ -85,6 +93,14 @@ export default function LibraryPage() {
         root.style.setProperty("--scrollbar-thumb", "rgba(27,80,120,0.4)");
         root.style.setProperty("--scrollbar-thumb-hover", "rgba(46,130,181,0.65)");
       }
+    } else if (selectedCategory === "kanji") {
+      if (mastered.has("kanji")) {
+        root.style.setProperty("--scrollbar-thumb", "rgba(212,168,67,0.4)");
+        root.style.setProperty("--scrollbar-thumb-hover", "rgba(240,210,122,0.65)");
+      } else {
+        root.style.setProperty("--scrollbar-thumb", "rgba(153,51,49,0.4)");
+        root.style.setProperty("--scrollbar-thumb-hover", "rgba(186,81,73,0.65)");
+      }
     } else {
       root.style.removeProperty("--scrollbar-thumb");
       root.style.removeProperty("--scrollbar-thumb-hover");
@@ -108,11 +124,18 @@ export default function LibraryPage() {
     loadingHiraganas,
   } = useLibraryContent(searchQuery);
 
-  const { lockedKanjiIds, reload: reloadLockedStatus } =
+  const {
+    lockedKanjiIds,
+    completedKanjiIds,
+    userPoints,
+    reload: reloadLockedStatus,
+  } =
     useKanjiLockedStatus(kanjis);
   const {
+    userKanaPoints,
     lockedHiraganaIds,
     lockedKatakanaIds,
+    progressById,
     reload: reloadKanaLockedStatus,
   } = useKanaLockedStatus(hiraganas, katakanas);
   const [newlyUnlockedKanjiIds, setNewlyUnlockedKanjiIds] = useState<
@@ -170,28 +193,54 @@ export default function LibraryPage() {
   };
 
   const handleDrawerQuizStart = useCallback(
-    (entity: { id: string; symbol: string }) => {
+    (
+      entity: { id: string; symbol: string },
+      quizType?: KanaQuizType | KanjiQuizType,
+    ) => {
       if (!drawerEntity) return;
       const kind = drawerEntity.kind;
       const kanaType = drawerEntity.kanaType;
       setDrawerEntity(null);
       if (kind === "kanji") {
         lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
-        setQuizKanji({ id: entity.id, symbol: entity.symbol });
+        setQuizKanji({
+          id: entity.id,
+          symbol: entity.symbol,
+          quizType: quizType as KanjiQuizType | undefined,
+          wasCompletedBefore: completedKanjiIds.has(entity.id),
+          isPracticeOnly: quizType !== undefined,
+        });
       } else {
         lockedHiraganaIdsBeforeQuizRef.current = new Set(lockedHiraganaIds);
         lockedKatakanaIdsBeforeQuizRef.current = new Set(lockedKatakanaIds);
-        setQuizKana({ id: entity.id, symbol: entity.symbol, kanaType: kanaType ?? "hiragana" });
+        setQuizKana({
+          id: entity.id,
+          symbol: entity.symbol,
+          kanaType: kanaType ?? "hiragana",
+          quizType: quizType as KanaQuizType | undefined,
+          wasCompletedBefore: progressById.get(entity.id)?.completed === true,
+          isPracticeOnly: quizType !== undefined,
+        });
       }
     },
-    [drawerEntity, lockedKanjiIds, lockedHiraganaIds, lockedKatakanaIds],
+    [
+      completedKanjiIds,
+      drawerEntity,
+      lockedKanjiIds,
+      lockedHiraganaIds,
+      lockedKatakanaIds,
+      progressById,
+    ],
   );
 
   const handleQuizClose = useCallback(async () => {
+    const isPracticeOnly = quizKanji?.isPracticeOnly === true;
     setQuizKanji(null);
 
     const lockedIdsBeforeQuiz = lockedKanjiIdsBeforeQuizRef.current;
     lockedKanjiIdsBeforeQuizRef.current = null;
+
+    if (isPracticeOnly) return;
 
     const nextUserPoints = await reloadLockedStatus();
 
@@ -216,19 +265,22 @@ export default function LibraryPage() {
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedKanjiIds(new Set());
     }, 2500);
-  }, [kanjis, reloadLockedStatus]);
+  }, [kanjis, quizKanji, reloadLockedStatus]);
 
   const handleKanaClick = (kana: Kana) => {
     setDrawerEntity({ id: kana.id, kind: "kana", kanaType: kana.kanaType });
   };
 
   const handleKanaQuizClose = useCallback(async () => {
+    const isPracticeOnly = quizKana?.isPracticeOnly === true;
     setQuizKana(null);
 
     const lockedHiraganaIdsBeforeQuiz = lockedHiraganaIdsBeforeQuizRef.current;
     const lockedKatakanaIdsBeforeQuiz = lockedKatakanaIdsBeforeQuizRef.current;
     lockedHiraganaIdsBeforeQuizRef.current = null;
     lockedKatakanaIdsBeforeQuizRef.current = null;
+
+    if (isPracticeOnly) return;
 
     const nextKanaState = await reloadKanaLockedStatus();
 
@@ -262,7 +314,7 @@ export default function LibraryPage() {
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedKanaIds(new Set());
     }, 2500);
-  }, [hiraganas, katakanas, reloadKanaLockedStatus]);
+  }, [hiraganas, katakanas, quizKana, reloadKanaLockedStatus]);
 
   const handleCategoryChange = (cat: string | null) => {
     setSelectedCategory(cat);
@@ -927,6 +979,9 @@ export default function LibraryPage() {
             <KanjiQuizModal
               kanjiId={quizKanji.id}
               label={quizKanji.symbol}
+              quizType={quizKanji.quizType}
+              currentModulePoints={userPoints}
+              wasCompletedBefore={quizKanji.wasCompletedBefore}
               onClose={handleQuizClose}
             />
           )}
@@ -936,6 +991,9 @@ export default function LibraryPage() {
               kanaId={quizKana.id}
               label={quizKana.symbol}
               kanaType={quizKana.kanaType}
+              quizType={quizKana.quizType}
+              currentModulePoints={userKanaPoints}
+              wasCompletedBefore={quizKana.wasCompletedBefore}
               onClose={handleKanaQuizClose}
             />
           )}

@@ -109,7 +109,7 @@ function getStyles(
 }
 
 function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
-  const { isGolden } = useMasteryTheme();
+  const { isGolden, phase } = useMasteryTheme();
   const { progress, selected } = data;
   const styles = getStyles(progress.status, selected, data.glowScale, data.shadowScale, isGolden);
   const showPulse = data.shouldUsePulse && selected;
@@ -117,6 +117,11 @@ function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
   const pointsFloatClass = isGolden
     ? "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#D4A843] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(212,168,67,0.52)]"
     : "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#1B5078] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(27,80,120,0.52)]";
+  const shouldShowUnlockPoints =
+    data.unlocking &&
+    !data.suppressUnlockPoints &&
+    phase === "idle" &&
+    !isGolden;
 
   return (
     <>
@@ -177,7 +182,7 @@ function KatakanaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
           </div>
 
           {/* +5 points float */}
-          {data.unlocking && (
+          {shouldShowUnlockPoints && (
             <div className="pointer-events-none absolute top-0 right-0 z-30">
               <span className={pointsFloatClass}>
                 +5
@@ -211,6 +216,7 @@ export default memo(KatakanaBoardNode, (prev, next) => {
     prev.data.progress.romaji === next.data.progress.romaji &&
     prev.data.qualityTier === next.data.qualityTier &&
     prev.data.unlocking === next.data.unlocking &&
+    prev.data.suppressUnlockPoints === next.data.suppressUnlockPoints &&
     prev.data.shaking === next.data.shaking &&
     prev.dragging === next.dragging
   );

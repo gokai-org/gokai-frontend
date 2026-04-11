@@ -22,6 +22,7 @@ interface KanjiWritingCanvasProps {
   disabled?: boolean;
   flashError?: boolean;
   hideStrokeOrder?: boolean;
+  accentColor?: string;
 }
 
 export function KanjiWritingCanvas({
@@ -33,6 +34,7 @@ export function KanjiWritingCanvas({
   disabled = false,
   flashError = false,
   hideStrokeOrder = false,
+  accentColor: accentColorProp,
 }: KanjiWritingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -51,7 +53,7 @@ export function KanjiWritingCanvas({
       cssColorsRef.current = {
         grid: cs.getPropertyValue("--border-primary").trim() || "#e5e7eb",
         stroke: cs.getPropertyValue("--text-primary").trim() || "#1a1a1a",
-        accent: cs.getPropertyValue("--accent").trim() || "#993331",
+        accent: accentColorProp ?? (cs.getPropertyValue("--accent").trim() || "#993331"),
       };
     };
     readColors();
@@ -61,7 +63,7 @@ export function KanjiWritingCanvas({
       attributeFilter: ["class"],
     });
     return () => observer.disconnect();
-  }, []);
+  }, [accentColorProp]);
 
   const vbParts = viewBox.split(/\s+/).map(Number);
   const vbWidth = vbParts[2] || 109;
@@ -147,7 +149,7 @@ export function KanjiWritingCanvas({
 
     // Completed user strokes
     ctx.save();
-    ctx.strokeStyle = strokeColor;
+    ctx.strokeStyle = accentColor;
     ctx.lineWidth = lw;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";

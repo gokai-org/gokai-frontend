@@ -14,9 +14,28 @@ import { normalizeQuizResponse } from "@/features/kanji/utils/quizParser";
  */
 export async function getKanjiQuiz(
   kanjiId: string,
+  quizType?: KanjiQuizResponseRaw["type"],
+  options?: {
+    fallbackType?: KanjiQuizResponseRaw["type"];
+    forceFallback?: boolean;
+  },
 ): Promise<KanjiQuizResponse> {
+  const params = new URLSearchParams({ resource: "quiz" });
+
+  if (quizType) {
+    params.set("quizType", quizType);
+  }
+
+  if (options?.fallbackType) {
+    params.set("fallbackType", options.fallbackType);
+  }
+
+  if (options?.forceFallback) {
+    params.set("forceFallback", "1");
+  }
+
   const raw = await apiFetch<KanjiQuizResponseRaw>(
-    `/api/content/kanji/${kanjiId}?resource=quiz`,
+    `/api/content/kanji/${kanjiId}?${params.toString()}`,
     { cache: "no-store" },
   );
 
@@ -31,6 +50,8 @@ export async function submitKanjiQuiz(
   kanjiId: string,
   body: KanjiQuizSubmitBody,
 ): Promise<{ success: boolean }> {
+  console.warn("[KANJI QUIZ POST] submitKanjiQuiz called", { kanjiId, body });
+  console.trace("[KANJI QUIZ POST] call stack");
   return apiFetch<{ success: boolean }>(`/api/content/kanji/${kanjiId}?resource=quiz`, {
     method: "POST",
     body: JSON.stringify(body),

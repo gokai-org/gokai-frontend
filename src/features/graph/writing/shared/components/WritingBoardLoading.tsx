@@ -120,7 +120,10 @@ export default function WritingBoardLoading({
       : "text-[30px] sm:text-[34px]";
 
   return (
-    <div className="absolute inset-0 overflow-hidden bg-surface-primary">
+    <div
+      className="absolute inset-0 overflow-hidden bg-surface-primary"
+      data-mastery-golden={isMastered ? "true" : "false"}
+    >
       {/* Same board background used in the writing map */}
       <div
         className="absolute inset-0"

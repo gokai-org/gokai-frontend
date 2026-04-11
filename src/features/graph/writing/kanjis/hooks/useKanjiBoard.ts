@@ -124,7 +124,9 @@ export function useKanjiBoard() {
 
       setKanjis(normalizeKanjis(kanjiPayload));
       setResults(normalizeResults(resultsPayload));
-      setUserPoints(typeof user?.points === "number" ? user.points : 0);
+      setUserPoints((current) =>
+        Math.max(current, typeof user?.points === "number" ? user.points : 0),
+      );
     } catch (err) {
       const message =
         err instanceof Error
@@ -148,7 +150,8 @@ export function useKanjiBoard() {
     () =>
       subscribeMasteryProgressSync((detail) => {
         if (typeof detail.points === "number") {
-          setUserPoints(detail.points);
+          const nextPoints = detail.points;
+          setUserPoints((current) => Math.max(current, nextPoints));
         }
       }),
     [],

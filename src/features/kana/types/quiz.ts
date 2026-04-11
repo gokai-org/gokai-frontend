@@ -85,6 +85,12 @@ export type KanaQuizSessionState = {
 
 export const KANA_QUIZ_TOTAL_ROUNDS = 3;
 
+export const KANA_QUIZ_ROUND_ORDER: KanaQuizType[] = [
+  "from_kana",
+  "from_romaji",
+  "canvas",
+];
+
 export type KanaQuizRoundResult = {
   type: KanaQuizType;
   score: number;
