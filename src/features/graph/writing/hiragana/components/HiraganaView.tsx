@@ -10,14 +10,35 @@ import { useHiraganaBoard } from "../hooks/useHiraganaBoard";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import { KanaQuizModal } from "@/features/kana/components/quiz";
 import type { KanaQuizType } from "@/features/kana/types/quiz";
+import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
-import { dispatchMasteryCelebrationRequest } from "@/features/mastery/utils/masteryProgressSync";
+import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
+import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+
+type KanaQuizCompletionResult = {
+  newlyCompleted: boolean;
+  newlyCompletedPoints: number;
+  dominated: boolean;
+  score: number;
+  triggeredModuleMastery: boolean;
+};
 
 const NODE_TYPES: NodeTypes = { "writing-node": HiraganaBoardNode };
 const EDGE_TYPES: EdgeTypes = { "writing-edge": WritingBoardEdge };
 
 const GRAPH_USER_ID = "user123";
+
+function isKanaQuizType(
+  quizType?: KanaQuizType | KanjiQuizType,
+): quizType is KanaQuizType {
+  return (
+    quizType === undefined ||
+    quizType === "from_kana" ||
+    quizType === "from_romaji" ||
+    quizType === "canvas"
+  );
+}
 
 export default function HiraganaView() {
   const { items, summary, loading, error, reload, userPoints } = useHiraganaBoard();
@@ -28,8 +49,13 @@ export default function HiraganaView() {
     id: string;
     label: string;
     quizType?: KanaQuizType;
+    wasCompletedBefore: boolean;
+    isPracticeOnly: boolean;
   } | null>(null);
   const wasMasteredBeforeQuizRef = useRef(false);
+  const pendingMasteryCelebrationRef = useRef(false);
+  const celebrationFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [suppressUnlockPointsDuringUnlock, setSuppressUnlockPointsDuringUnlock] = useState(false);
 
   const selectedProgress = useMemo(
     () => items.find((item) => item.id === detailNodeId) ?? null,
@@ -45,12 +71,27 @@ export default function HiraganaView() {
   }, []);
 
   const handleQuizStart = useCallback(
-    (entity: { id: string; symbol: string }, quizType?: KanaQuizType) => {
+    (
+      entity: { id: string; symbol: string },
+      quizType?: KanaQuizType | KanjiQuizType,
+    ) => {
+      if (!isKanaQuizType(quizType)) {
+        return;
+      }
+
       wasMasteredBeforeQuizRef.current = mastered.has("hiragana");
+      const wasCompletedBefore =
+        items.find((item) => item.id === entity.id)?.status === "completed";
       setDetailNodeId(null);
-      setQuizItem({ id: entity.id, label: entity.symbol, quizType });
+      setQuizItem({
+        id: entity.id,
+        label: entity.symbol,
+        quizType,
+        wasCompletedBefore,
+        isPracticeOnly: quizType !== undefined,
+      });
     },
-    [mastered],
+    [items, mastered],
   );
 
   useEffect(() => {
@@ -60,16 +101,78 @@ export default function HiraganaView() {
     };
   }, [detailNodeId, setHidden]);
 
-  const handleQuizEnd = useCallback(() => {
+  useEffect(() => {
+    return () => {
+      if (celebrationFallbackTimerRef.current !== null) {
+        clearTimeout(celebrationFallbackTimerRef.current);
+      }
+    };
+  }, []);
+
+  const handleQuizEnd = useCallback((result?: KanaQuizCompletionResult) => {
+    const isPracticeOnly = quizItem?.isPracticeOnly === true;
+    console.warn("[HIRAGANA VIEW] handleQuizEnd", { isPracticeOnly, quizType: quizItem?.quizType, result });
+    const resultingKanaPoints =
+      userPoints + (result?.newlyCompletedPoints ?? 0);
     const becameMastered =
-      !wasMasteredBeforeQuizRef.current && mastered.has("hiragana");
+      !wasMasteredBeforeQuizRef.current &&
+      resultingKanaPoints >= MASTERY_THRESHOLDS.hiragana;
 
     setQuizItem(null);
+    if (isPracticeOnly) {
+      pendingMasteryCelebrationRef.current = false;
+      setSuppressUnlockPointsDuringUnlock(false);
+      if (celebrationFallbackTimerRef.current !== null) {
+        clearTimeout(celebrationFallbackTimerRef.current);
+        celebrationFallbackTimerRef.current = null;
+      }
+      return;
+    }
+    if (result?.newlyCompleted && result.newlyCompletedPoints > 0) {
+      dispatchMasteryProgressSync({
+        kanaPoints: userPoints + result.newlyCompletedPoints,
+      });
+    }
+    if (result?.triggeredModuleMastery) {
+      pendingMasteryCelebrationRef.current = false;
+      setSuppressUnlockPointsDuringUnlock(false);
+      if (celebrationFallbackTimerRef.current !== null) {
+        clearTimeout(celebrationFallbackTimerRef.current);
+        celebrationFallbackTimerRef.current = null;
+      }
+      window.requestAnimationFrame(() => {
+        dispatchMasteryCelebrationRequest({ moduleId: "hiragana" });
+      });
+      void reload();
+      return;
+    }
     if (becameMastered) {
-      dispatchMasteryCelebrationRequest({ moduleId: "hiragana" });
+      pendingMasteryCelebrationRef.current = true;
+      setSuppressUnlockPointsDuringUnlock(true);
+      if (celebrationFallbackTimerRef.current !== null) {
+        clearTimeout(celebrationFallbackTimerRef.current);
+      }
+      celebrationFallbackTimerRef.current = setTimeout(() => {
+        if (!pendingMasteryCelebrationRef.current) return;
+        pendingMasteryCelebrationRef.current = false;
+        setSuppressUnlockPointsDuringUnlock(false);
+        dispatchMasteryCelebrationRequest({ moduleId: "hiragana" });
+      }, 2600);
     }
     void reload();
-  }, [mastered, reload]);
+  }, [quizItem, reload, userPoints]);
+
+  const handleUnlockAnimationComplete = useCallback(() => {
+    setSuppressUnlockPointsDuringUnlock(false);
+    if (!pendingMasteryCelebrationRef.current) return;
+
+    pendingMasteryCelebrationRef.current = false;
+    if (celebrationFallbackTimerRef.current !== null) {
+      clearTimeout(celebrationFallbackTimerRef.current);
+      celebrationFallbackTimerRef.current = null;
+    }
+    dispatchMasteryCelebrationRequest({ moduleId: "hiragana" });
+  }, []);
 
   return (
     <WritingBoardView
@@ -85,6 +188,9 @@ export default function HiraganaView() {
       drawerOpen={detailNodeId !== null}
       masteryModuleId="hiragana"
       masteryPoints={userPoints}
+      autoTriggerOnNewMastery={false}
+      suppressUnlockPointsDuringUnlock={suppressUnlockPointsDuringUnlock}
+      onUnlockAnimationComplete={handleUnlockAnimationComplete}
     >
       <LessonDrawer
         open={detailNodeId !== null}
@@ -110,6 +216,8 @@ export default function HiraganaView() {
           label={quizItem.label}
           kanaType="hiragana"
           quizType={quizItem.quizType}
+          currentModulePoints={userPoints}
+          wasCompletedBefore={quizItem.wasCompletedBefore}
           onClose={handleQuizEnd}
         />
       )}

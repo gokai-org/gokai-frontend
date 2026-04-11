@@ -7,6 +7,7 @@ import { KanaStrokePlayer } from "@/features/kana/components/KanaStrokePlayer";
 import { motion, AnimatePresence } from "framer-motion";
 import { Layers, Volume2, PenLine } from "lucide-react";
 import type { KanaQuizType } from "@/features/kana/types/quiz";
+import WritingEvaluationGuide from "@/features/lessons/components/WritingEvaluationGuide";
 
 type KanaTab = "meaning" | "reading" | "writing";
 
@@ -15,6 +16,24 @@ const KANA_TABS: { id: KanaTab; label: string; icon: React.ReactNode }[] = [
   { id: "reading", label: "Lectura", icon: <Volume2 size={12} /> },
   { id: "writing", label: "Trazado", icon: <PenLine size={12} /> },
 ];
+
+const KANA_WRITING_CRITERIA = [
+  {
+    title: "Orden",
+    description: "",
+    cue: "Sigue la secuencia real del kana.",
+  },
+  {
+    title: "Dirección",
+    description: "",
+    cue: "Empieza y termina cada trazo en el sentido correcto.",
+  },
+  {
+    title: "Forma",
+    description: "",
+    cue: "La curva y el tamaño deben verse naturales dentro del cuadro.",
+  },
+] as const;
 
 function getPhonemicGuide(romaji: string): { row: string; col: string; tip: string } {
   const r = romaji.toLowerCase();
@@ -396,12 +415,14 @@ export default function KanaLesson({
               </div>
 
               {hasStrokes && (
-                <div className="rounded-2xl sm:rounded-[16px] bg-accent/5 border border-accent/10 p-3">
-                  <p className="text-[12px] leading-relaxed text-content-secondary">
-                    <span className="font-semibold text-content-primary">Observa el orden</span>{" "}
-                    y direccion de cada trazo - el trazo correcto mejora tu precision.
-                  </p>
-                </div>
+                <WritingEvaluationGuide
+                  eyebrow="Qué evalúa el sistema"
+                  title="El kana debe verse rápido, limpio y natural"
+                  intro="No basta con que se parezca. Debe seguir el recorrido correcto del silabario."
+                  emphasis="orden, dirección y forma"
+                  criteria={KANA_WRITING_CRITERIA}
+                  coachNote="Escribe con ritmo corto y seguro. Si dudas o corriges a mitad del gesto, el kana pierde naturalidad."
+                />
               )}
 
               <button

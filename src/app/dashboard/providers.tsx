@@ -8,21 +8,24 @@ import { GuideTourOverlay } from "@/features/help/components/GuideTourOverlay";
 import { SettingsBootstrap } from "@/features/configuration/components/SettingsBootstrap";
 import { TypographyProvider } from "@/shared/components/TypographyProvider";
 import { MasteredModulesProvider } from "@/features/mastery/components/MasteredModulesProvider";
+import { AuthenticatedUserGate } from "@/features/auth/components/AuthenticatedUserGate";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SidebarProvider>
-      <TypographyProvider>
-        <ToastProvider>
-          <GuideTourProvider>
-            <MasteredModulesProvider>
-              <SettingsBootstrap />
-              {children}
-              <GuideTourOverlay />
-            </MasteredModulesProvider>
-          </GuideTourProvider>
-        </ToastProvider>
-      </TypographyProvider>
-    </SidebarProvider>
+    <AuthenticatedUserGate>
+      <SidebarProvider>
+        <TypographyProvider>
+          <ToastProvider>
+            <GuideTourProvider>
+              <MasteredModulesProvider>
+                <SettingsBootstrap />
+                {children}
+                <GuideTourOverlay />
+              </MasteredModulesProvider>
+            </GuideTourProvider>
+          </ToastProvider>
+        </TypographyProvider>
+      </SidebarProvider>
+    </AuthenticatedUserGate>
   );
 }

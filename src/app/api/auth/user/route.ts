@@ -4,6 +4,36 @@ import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
+function buildInvalidUserResponse() {
+  const response = NextResponse.json(
+    { user: null, error: "USER_NOT_FOUND" },
+    {
+      status: 410,
+      headers: {
+        "x-auth-invalid-user": "true",
+        "x-auth-redirect": "landing",
+      },
+    },
+  );
+
+  response.cookies.set("gokai_token", "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+  response.cookies.set("gokai_profile", "", {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: 0,
+  });
+
+  return response;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const token = getTokenFromRequest(req);
@@ -53,6 +83,11 @@ export async function GET(req: NextRequest) {
             errorText,
           );
 
+          const invalidUserStatuses = new Set([401, 403, 404]);
+          if (invalidUserStatuses.has(response.status)) {
+            return buildInvalidUserResponse();
+          }
+
           // Retry once — the users API may have had a transient failure.
           const retryResponse = await fetch(
             `${apiConfig.usersApiBase}/users/${userId}`,
@@ -91,20 +126,14 @@ export async function GET(req: NextRequest) {
             }
           }
 
-          // Both attempts failed — return a minimal user WITHOUT fake points
-          // so callers can distinguish "unknown points" from "zero points".
-          const user = {
-            id: userId,
-            email: payload.email || "",
-            name: payload.email || "Usuario",
-            plan: "free",
-            createdAt: payload.iat
-              ? new Date(payload.iat * 1000).toISOString()
-              : undefined,
-            twoFactorEnabled: false,
-          };
+          if (retryResponse && invalidUserStatuses.has(retryResponse.status)) {
+            return buildInvalidUserResponse();
+          }
 
-          return NextResponse.json({ user });
+          return NextResponse.json(
+            { user: null, error: "USER_LOOKUP_FAILED" },
+            { status: 503 },
+          );
         }
 
         const userData = await response.json();

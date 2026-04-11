@@ -197,7 +197,11 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
   const pointsFloatClass = isGolden
     ? "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#D4A843] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(212,168,67,0.52)]"
     : "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#BA4845] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(186,72,66,0.52)]";
-  const shouldShowUnlockPoints = data.unlocking && phase === "idle" && !isGolden;
+  const shouldShowUnlockPoints =
+    data.unlocking &&
+    !data.suppressUnlockPoints &&
+    phase === "idle" &&
+    !isGolden;
 
   return (
     <>
@@ -347,6 +351,7 @@ export default memo(KanjiBoardNode, (previous, next) => {
       next.data.progress.primaryMeaning &&
     previous.data.qualityTier === next.data.qualityTier &&
     previous.data.unlocking === next.data.unlocking &&
+    previous.data.suppressUnlockPoints === next.data.suppressUnlockPoints &&
     previous.data.shaking === next.data.shaking &&
     previous.dragging === next.dragging
   );

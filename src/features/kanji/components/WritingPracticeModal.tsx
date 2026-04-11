@@ -15,7 +15,7 @@ import {
   getFeedbackColor,
   type StrokeValidationResult,
 } from "@/features/kanji/lib/strokeValidation";
-import { submitKanjiQuiz } from "@/features/kanji/api/kanjiQuizApi";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 
 type PracticeStep = "loading" | "demo" | "practice" | "result";
 
@@ -46,12 +46,12 @@ export function WritingPracticeModal({
   kanji,
   onClose,
 }: WritingPracticeModalProps) {
+  const mastered = useMasteredModules();
+  const isKanjiMastered = mastered.has("kanji");
   const [step, setStep] = useState<PracticeStep>("loading");
   const [strokeData, setStrokeData] = useState<KanjiStrokeData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usingMock, setUsingMock] = useState(false);
-
-  const hasSubmitted = useRef(false);
 
   // Responsive canvas sizes
   const demoSize = useCanvasSize(260, 80);
@@ -72,6 +72,19 @@ export function WritingPracticeModal({
   const startTime = useRef<number>(0);
   const [durationSec, setDurationSec] = useState("0");
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const goldenAccentVars = useMemo<React.CSSProperties | undefined>(
+    () =>
+      isKanjiMastered
+        ? ({
+            "--accent": "#D4A843",
+            "--accent-hover": "#F0D27A",
+            "--accent-subtle": "rgba(212,168,67,0.14)",
+            "--accent-muted": "rgba(212,168,67,0.08)",
+          } as React.CSSProperties)
+        : undefined,
+    [isKanjiMastered],
+  );
+  const kanjiAccentColor = isKanjiMastered ? "#D4A843" : undefined;
 
   // ── Load stroke data ──
   useEffect(() => {
@@ -205,7 +218,6 @@ export function WritingPracticeModal({
     setStrokeResults([]);
     setLastFeedback(null);
     setFlashError(false);
-    hasSubmitted.current = false;
     startTime.current = Date.now();
     setDurationSec("0");
     setStep("practice");
@@ -247,33 +259,6 @@ export function WritingPracticeModal({
       color: "text-orange-600 dark:text-orange-400",
     };
   }, [scorePercent]);
-
-  // Submit results to backend when entering result step
-  useEffect(() => {
-    if (step !== "result" || hasSubmitted.current || strokeResults.length === 0)
-      return;
-
-    // Guard: only submit when ALL exercises are actually completed
-    if (strokeResults.length !== totalStrokes) {
-      console.warn(
-        `[SUBMIT] Waiting: answers (${strokeResults.length}) !== totalExercises (${totalStrokes})`,
-      );
-      return;
-    }
-
-    hasSubmitted.current = true;
-
-    const durationSeconds =
-      startTime.current > 0
-        ? Math.round((Date.now() - startTime.current) / 1000)
-        : 0;
-
-    submitKanjiQuiz(kanji.id, {
-      type: "writing",
-      score: scorePercent,
-      duration: durationSeconds,
-    }).catch(() => {});
-  }, [step, strokeResults, kanji.id, totalStrokes, scorePercent]);
 
   /* ── Framer‑motion helpers ── */
   const overlayVariants = {
@@ -330,6 +315,7 @@ export function WritingPracticeModal({
           initial="hidden"
           animate="visible"
           exit="exit"
+          style={goldenAccentVars}
           className={[
             "bg-surface-primary w-full shadow-2xl ring-1 ring-border-subtle flex flex-col",
             step === "result" ? "max-w-3xl" : "max-w-lg",
@@ -698,6 +684,7 @@ export function WritingPracticeModal({
                       size={practiceSize}
                       flashError={flashError}
                       hideStrokeOrder
+                      accentColor={kanjiAccentColor}
                     />
                   </div>
 

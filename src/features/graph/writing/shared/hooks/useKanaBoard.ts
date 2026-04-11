@@ -102,6 +102,8 @@ export function useKanaBoard({
   errorMessageRef.current = errorMessage;
 
   const reload = useCallback(async () => {
+    console.warn(`[KANA BOARD] reload() called for ${kanaType}`);
+    console.trace("[KANA BOARD] reload call stack");
     if (!hasLoadedOnceRef.current) {
       setLoading(true);
     }
@@ -117,7 +119,7 @@ export function useKanaBoard({
       const nextKanaPoints =
         typeof user?.kanaPoints === "number" ? user.kanaPoints : 0;
 
-      setUserKanaPoints(nextKanaPoints);
+      setUserKanaPoints((current) => Math.max(current, nextKanaPoints));
 
       if (kanaList && kanaList.length > 0) {
         setKanas(kanaList);
@@ -146,7 +148,8 @@ export function useKanaBoard({
     () =>
       subscribeMasteryProgressSync((detail) => {
         if (typeof detail.kanaPoints === "number") {
-          setUserKanaPoints(detail.kanaPoints);
+          const nextKanaPoints = detail.kanaPoints;
+          setUserKanaPoints((current) => Math.max(current, nextKanaPoints));
         }
       }),
     [],

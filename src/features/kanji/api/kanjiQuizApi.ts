@@ -50,6 +50,8 @@ export async function submitKanjiQuiz(
   kanjiId: string,
   body: KanjiQuizSubmitBody,
 ): Promise<{ success: boolean }> {
+  console.warn("[KANJI QUIZ POST] submitKanjiQuiz called", { kanjiId, body });
+  console.trace("[KANJI QUIZ POST] call stack");
   return apiFetch<{ success: boolean }>(`/api/content/kanji/${kanjiId}?resource=quiz`, {
     method: "POST",
     body: JSON.stringify(body),

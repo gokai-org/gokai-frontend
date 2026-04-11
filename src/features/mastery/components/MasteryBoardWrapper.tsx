@@ -18,6 +18,8 @@ export interface MasteryBoardWrapperProps {
   moduleId: MasteryModuleId;
   /** User's current points for the module's point field. */
   currentPoints: number;
+  /** Whether threshold-crossing should auto-start the celebration. */
+  autoTriggerOnNewMastery?: boolean;
   /** Total items on this board. */
   totalItems: number;
   /** Number of completed items. */
@@ -61,6 +63,7 @@ export interface MasteryBoardWrapperProps {
 export function MasteryBoardWrapper({
   moduleId,
   currentPoints,
+  autoTriggerOnNewMastery = true,
   totalItems,
   completedItems,
   nodes,
@@ -77,6 +80,7 @@ export function MasteryBoardWrapper({
   } = useMasteryOrchestrator({
     moduleId,
     currentPoints,
+    autoTriggerOnNewMastery,
     totalItems,
     completedItems,
     nodes,

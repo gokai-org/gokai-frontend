@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKanjiQuiz } from "@/features/kanji/hooks/useKanjiQuiz";
 import {
@@ -21,19 +21,35 @@ import { KanjiReadingExercise } from "./KanjiReadingExercise";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { KanjiQuizWritingExercise } from "./KanjiQuizWritingExercise";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { KANJI_COMPLETION_SCORE } from "@/features/graph/writing/kanjis/types";
+import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
+
+const KANJI_COMPLETION_REWARD = 30;
+
+export type KanjiQuizCompletionResult = {
+  score: number;
+  newlyCompleted: boolean;
+  newlyCompletedPoints: number;
+  dominated: boolean;
+  triggeredModuleMastery: boolean;
+};
 
 export interface KanjiQuizModalProps {
   kanjiId: string;
   label?: string;
   quizType?: KanjiQuizType;
-  onClose: () => void;
-  onComplete?: (score: number, updatedPoints: number | null) => void;
+  currentModulePoints: number;
+  wasCompletedBefore?: boolean;
+  onClose: (result?: KanjiQuizCompletionResult) => void;
+  onComplete?: (result: KanjiQuizCompletionResult) => void;
 }
 
 export function KanjiQuizModal({
   kanjiId,
   label,
   quizType,
+  currentModulePoints,
+  wasCompletedBefore = false,
   onClose,
   onComplete,
 }: KanjiQuizModalProps) {
@@ -41,6 +57,7 @@ export function KanjiQuizModal({
   const platformMotion = usePlatformMotion();
   const mastered = useMasteredModules();
   const isKanjiMastered = mastered.has("kanji");
+  const autoClosedForMasteryRef = useRef(false);
 
   const goldenAccentVars = useMemo<React.CSSProperties | undefined>(
     () =>
@@ -114,16 +131,6 @@ export function KanjiQuizModal({
     quiz.startQuiz(kanjiId, quizType);
   }, [quiz, kanjiId, quizType]);
 
-  const handleClose = useCallback(() => {
-    if (
-      (quiz.state.step === "summary" || quiz.state.step === "celebration") &&
-      onComplete
-    ) {
-      onComplete(quiz.finalScore, quiz.updatedPoints);
-    }
-    onClose();
-  }, [quiz, onClose, onComplete]);
-
   const handleNextAfterFeedback = useCallback(() => {
     quiz.nextStep();
   }, [quiz]);
@@ -136,14 +143,70 @@ export function KanjiQuizModal({
     overallProgress,
     finalScore,
     error,
+    submitError,
     isPointsError,
     updatedPoints,
     pointsDelta,
+    reachedMasteryThisAttempt,
     roundResults,
     currentRound,
     totalRounds,
     sessionType,
   } = quiz;
+
+  const isPracticeSession = totalRounds === 1;
+  const isMixedCompletion = quiz.totalRounds > 1;
+  const isNewlyCompleted =
+    !wasCompletedBefore && isMixedCompletion && finalScore >= KANJI_COMPLETION_SCORE;
+  const isDominated =
+    wasCompletedBefore && isMixedCompletion && state.step === "celebration";
+  const triggeredModuleMastery =
+    isNewlyCompleted &&
+    currentModulePoints + KANJI_COMPLETION_REWARD >= MASTERY_THRESHOLDS.kanji;
+  const displayPointsDelta = isPracticeSession
+    ? 0
+    : isNewlyCompleted
+      ? Math.max(pointsDelta, KANJI_COMPLETION_REWARD)
+      : pointsDelta;
+  const shouldHidePointsDelta = isPracticeSession || reachedMasteryThisAttempt;
+  const displayedUpdatedPoints = isPracticeSession ? null : updatedPoints;
+
+  const handleClose = useCallback(() => {
+    const completionResult: KanjiQuizCompletionResult | undefined =
+      quiz.state.step === "summary" || quiz.state.step === "celebration"
+        ? {
+            score: quiz.finalScore,
+            newlyCompleted: isNewlyCompleted,
+            newlyCompletedPoints: isNewlyCompleted ? KANJI_COMPLETION_REWARD : 0,
+            dominated: isDominated,
+            triggeredModuleMastery,
+          }
+        : undefined;
+
+    if (
+      (quiz.state.step === "summary" || quiz.state.step === "celebration") &&
+      onComplete &&
+      completionResult
+    ) {
+      onComplete(completionResult);
+    }
+    onClose(completionResult);
+  }, [isDominated, isNewlyCompleted, onClose, onComplete, quiz, triggeredModuleMastery]);
+
+  const shouldAutoCloseForMastery =
+    triggeredModuleMastery &&
+    (state.step === "summary" || state.step === "celebration");
+
+  useEffect(() => {
+    if (!shouldAutoCloseForMastery) {
+      autoClosedForMasteryRef.current = false;
+      return;
+    }
+
+    if (autoClosedForMasteryRef.current) return;
+    autoClosedForMasteryRef.current = true;
+    handleClose();
+  }, [handleClose, shouldAutoCloseForMastery]);
 
   const currentQuizType =
     quizData?.type ?? (sessionType === "mixed" ? undefined : sessionType);
@@ -158,6 +221,10 @@ export function KanjiQuizModal({
     state.selectedOptionIndex !== null
       ? (currentQuestion?.options?.[state.selectedOptionIndex]?.correct ?? false)
       : false;
+
+  if (shouldAutoCloseForMastery) {
+    return null;
+  }
 
   return (
     <AnimatePresence>
@@ -492,9 +559,11 @@ export function KanjiQuizModal({
                   score={finalScore}
                   quizTypeLabel={quizSubtitle}
                   label={label}
-                  pointsDelta={pointsDelta}
-                  error={error}
-                  updatedPoints={updatedPoints}
+                  pointsDelta={displayPointsDelta}
+                  error={submitError}
+                  updatedPoints={displayedUpdatedPoints}
+                  hidePointsDelta={shouldHidePointsDelta}
+                  isDominated={isDominated}
                   onRetry={handleRetry}
                   onClose={handleClose}
                 />
@@ -521,7 +590,7 @@ export function KanjiQuizModal({
                   </motion.div>
                 </div>
 
-                {pointsDelta > 0 && (
+                {!shouldHidePointsDelta && displayPointsDelta > 0 && !isDominated && (
                   <motion.div
                     initial={{ opacity: 0, y: 12, scale: 0.8 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -533,7 +602,7 @@ export function KanjiQuizModal({
                     className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2 shadow-lg shadow-accent/30"
                   >
                     <span className="text-xl font-black text-white">
-                      +{pointsDelta}
+                      +{displayPointsDelta}
                     </span>
                     <span className="text-sm font-semibold text-white/80">
                       puntos ganados
@@ -548,14 +617,16 @@ export function KanjiQuizModal({
                   className="space-y-1.5"
                 >
                   <p className="text-2xl font-black text-content-primary">
-                    ¡Kanji completado!
+                    {isDominated ? "¡Dominaste este kanji!" : "¡Kanji completado!"}
                   </p>
                   <p className="text-sm text-content-muted">
-                    {totalRounds === 1
-                      ? pointsDelta > 0
+                    {isDominated
+                      ? "Lo resolviste con dominio total y una ejecución perfecta."
+                      : totalRounds === 1
+                      ? !shouldHidePointsDelta && displayPointsDelta > 0
                         ? `Has superado la practica de ${quizSubtitle.toLowerCase()}`
                         : `Has completado la practica de ${quizSubtitle.toLowerCase()}`
-                      : pointsDelta > 0
+                      : !shouldHidePointsDelta && displayPointsDelta > 0
                         ? `Has superado los ${totalRounds} ejercicios`
                         : `Has completado los ${totalRounds} ejercicios`}
                   </p>
@@ -595,9 +666,11 @@ export function KanjiQuizModal({
                   score={finalScore}
                   quizTypeLabel={quizSubtitle}
                   label={label}
-                  pointsDelta={pointsDelta}
-                  error={error}
-                  updatedPoints={updatedPoints}
+                  pointsDelta={displayPointsDelta}
+                  error={submitError}
+                  updatedPoints={displayedUpdatedPoints}
+                  hidePointsDelta={shouldHidePointsDelta}
+                  isDominated={isDominated}
                   onRetry={handleRetry}
                   onClose={handleClose}
                 />
@@ -607,9 +680,10 @@ export function KanjiQuizModal({
                 label={label}
                 sessionType={sessionType}
                 totalRounds={totalRounds}
-                updatedPoints={updatedPoints}
-                pointsDelta={pointsDelta}
-                submitError={error}
+                updatedPoints={displayedUpdatedPoints}
+                pointsDelta={displayPointsDelta}
+                submitError={submitError}
+                hidePointsDelta={shouldHidePointsDelta}
                 onRetry={handleRetry}
                 onClose={handleClose}
               />
@@ -724,6 +798,7 @@ function QuizMultiRoundSummary({
   updatedPoints,
   pointsDelta,
   submitError,
+  hidePointsDelta = false,
   onRetry,
   onClose,
 }: {
@@ -734,10 +809,11 @@ function QuizMultiRoundSummary({
   updatedPoints: number | null;
   pointsDelta: number;
   submitError: string | null;
+  hidePointsDelta?: boolean;
   onRetry: () => void;
   onClose: () => void;
 }) {
-  const earnedPoints = pointsDelta > 0 && updatedPoints !== null;
+  const earnedPoints = !hidePointsDelta && pointsDelta > 0 && updatedPoints !== null;
   const perfectRounds = roundResults.filter((result) => result.score === 100).length;
   const resultTypes = sessionType === "mixed" ? QUIZ_ROUND_ORDER : [sessionType];
   const quizTypeLabel = sessionType === "mixed" ? "Quiz completo" : QUIZ_TYPE_LABELS[sessionType];
@@ -945,9 +1021,11 @@ function KanjiPracticeResult({
   score,
   quizTypeLabel,
   label,
-  pointsDelta,
+  pointsDelta: _pointsDelta,
   updatedPoints,
   error,
+  hidePointsDelta = false,
+  isDominated = false,
   onRetry,
   onClose,
 }: {
@@ -958,11 +1036,17 @@ function KanjiPracticeResult({
   pointsDelta: number;
   updatedPoints: number | null;
   error: string | null;
+  hidePointsDelta?: boolean;
+  isDominated?: boolean;
   onRetry: () => void;
   onClose: () => void;
 }) {
   const scoreStyle = success ? { color: "var(--accent)" } : undefined;
-  const title = success ? "Practica completada" : "Practica incompleta";
+  const title = isDominated
+    ? "Kanji dominado"
+    : success
+      ? "Practica completada"
+      : "Practica incompleta";
 
   return (
     <motion.div
@@ -1009,12 +1093,13 @@ function KanjiPracticeResult({
                 className="mt-1 text-sm font-bold text-content-primary"
                 style={scoreStyle}
               >
-                {success ? "Aprobada" : "Requiere reintento"}
+                {isDominated
+                  ? "Dominado"
+                  : success
+                    ? "Aprobada"
+                    : "Requiere reintento"}
               </p>
-              <p className="mt-1 text-sm text-content-secondary">
-                {pointsDelta > 0 ? `+${pointsDelta} puntos` : "Sin bonus en este intento"}
-              </p>
-              {updatedPoints !== null && (
+              {!hidePointsDelta && updatedPoints !== null && (
                 <p className="mt-1 text-xs text-content-muted">
                   Total actual: {updatedPoints} pts
                 </p>

@@ -13,6 +13,7 @@ import { QUIZ_ROUND_ORDER, QUIZ_TOTAL_ROUNDS } from "@/features/kanji/types/quiz
 import { getKanjiQuiz, submitKanjiQuiz } from "@/features/kanji/api/kanjiQuizApi";
 import { getCurrentUser } from "@/features/auth/services/api";
 import { isValidWritingQuestion } from "@/features/kanji/utils/quizParser";
+import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 
 const INITIAL_STATE: KanjiQuizSessionState = {
@@ -36,10 +37,12 @@ export interface UseKanjiQuizReturn {
   duration: number;
   loading: boolean;
   error: string | null;
+  submitError: string | null;
   submitting: boolean;
   isPointsError: boolean;
   updatedPoints: number | null;
   pointsDelta: number;
+  reachedMasteryThisAttempt: boolean;
   roundResults: KanjiQuizRoundResult[];
   currentRound: number;
   totalRounds: number;
@@ -75,15 +78,25 @@ function getExpectedMixedRoundType(roundIndex: number): KanjiQuizType {
   );
 }
 
+function extractSubmitErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message.replace(/^HTTP\s+\d+:\s*/i, "").trim() || error.message;
+  }
+
+  return "No se pudo guardar el resultado";
+}
+
 export function useKanjiQuiz(): UseKanjiQuizReturn {
   const [state, setState] = useState<KanjiQuizSessionState>(INITIAL_STATE);
   const [quizData, setQuizData] = useState<KanjiQuizResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [isPointsError, setIsPointsError] = useState(false);
   const [updatedPoints, setUpdatedPoints] = useState<number | null>(null);
   const [pointsDelta, setPointsDelta] = useState(0);
+  const [reachedMasteryThisAttempt, setReachedMasteryThisAttempt] = useState(false);
   const [roundResults, setRoundResults] = useState<KanjiQuizRoundResult[]>([]);
   const [sessionType, setSessionType] = useState<KanjiQuizType | "mixed">("mixed");
   const [totalRounds, setTotalRounds] = useState(QUIZ_TOTAL_ROUNDS);
@@ -93,6 +106,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   const kanjiIdRef = useRef<string>("");
   const startingPointsRef = useRef<number | null>(null);
   const submittingRef = useRef(false);
+  const persistProgressRef = useRef(true);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -216,11 +230,17 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       setState(INITIAL_STATE);
       setQuizData(null);
       setError(null);
+      setSubmitError(null);
       setIsPointsError(false);
       setUpdatedPoints(null);
       setPointsDelta(0);
+      setReachedMasteryThisAttempt(false);
       setSessionType(quizType ?? "mixed");
       setTotalRounds(quizType ? 1 : QUIZ_TOTAL_ROUNDS);
+      persistProgressRef.current = !quizType;
+      if (quizType) {
+        console.warn(`[KANJI QUIZ] Practice mode detected (type=${quizType}) - will NOT submit to backend`);
+      }
       roundResultsRef.current = [];
       setRoundResults([]);
       kanjiIdRef.current = kanjiId;
@@ -243,6 +263,27 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   );
 
   // ── Finalize quiz (all rounds done) ──
+  const refreshPointsAfterSubmit = useCallback(async () => {
+    const user = await getCurrentUser().catch(() => null);
+    if (!user || typeof user.points !== "number") {
+      return;
+    }
+
+    const nextPointsDelta =
+      startingPointsRef.current !== null
+        ? Math.max(0, user.points - startingPointsRef.current)
+        : 0;
+
+    setUpdatedPoints(user.points);
+    setPointsDelta(nextPointsDelta);
+    setReachedMasteryThisAttempt(
+      startingPointsRef.current !== null &&
+        startingPointsRef.current < MASTERY_THRESHOLDS.kanji &&
+        user.points >= MASTERY_THRESHOLDS.kanji,
+    );
+    dispatchMasteryProgressSync({ points: user.points });
+  }, []);
+
   const finalizeQuiz = useCallback(async (_results: KanjiQuizRoundResult[]) => {
     if (submittingRef.current) return;
     submittingRef.current = true;
@@ -256,6 +297,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
 
     setPointsDelta(0);
     setUpdatedPoints(null);
+    setReachedMasteryThisAttempt(false);
     setState((s) => ({
       ...s,
       step: completedPerfectQuiz
@@ -264,25 +306,6 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     }));
     setSubmitting(false);
     submittingRef.current = false;
-
-    void getCurrentUser()
-      .then((user) => {
-        if (!user || typeof user.points !== "number") {
-          return;
-        }
-
-        const nextPointsDelta =
-          startingPointsRef.current !== null
-            ? Math.max(0, user.points - startingPointsRef.current)
-            : 0;
-
-        setUpdatedPoints(user.points);
-        setPointsDelta(nextPointsDelta);
-        dispatchMasteryProgressSync({ points: user.points });
-      })
-      .catch(() => {
-        // Best-effort refresh only.
-      });
   }, [totalRounds]);
 
   // ── Complete a single round (submit + advance) ──
@@ -299,19 +322,37 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       roundResultsRef.current = newRoundResults;
       setRoundResults(newRoundResults);
 
-      // Submit this round to the backend
-      try {
-        await submitKanjiQuiz(kanjiIdRef.current, {
-          type: quizType,
-          score,
-          duration: elapsed,
-        });
-      } catch (err) {
-        console.error("[KANJI QUIZ] Failed to submit round:", err);
+      // ── Practice mode: skip ALL backend submission ──
+      if (!persistProgressRef.current) {
+        console.warn("[KANJI QUIZ] Practice mode – skipping submit & points refresh");
+        setSubmitError(null);
+        if (newRoundResults.length >= totalRounds) {
+          await finalizeQuiz(newRoundResults);
+          return;
+        }
+        await loadNextRound(undefined, getExpectedMixedRoundType(newRoundResults.length));
+        return;
       }
+
+      // ── Full quiz: submit to backend ──
+      const submitPromise = submitKanjiQuiz(kanjiIdRef.current, {
+        type: quizType,
+        score,
+        duration: elapsed,
+      })
+        .then(() => {
+          setSubmitError(null);
+        })
+        .catch((err) => {
+          console.error("[KANJI QUIZ] Failed to submit round:", err);
+          setSubmitError(extractSubmitErrorMessage(err));
+        });
 
       // Check if all rounds are done
       if (newRoundResults.length >= totalRounds) {
+        void submitPromise.finally(() => {
+          void refreshPointsAfterSubmit();
+        });
         await finalizeQuiz(newRoundResults);
         return;
       }
@@ -319,7 +360,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       // Load next round from backend
       await loadNextRound(undefined, getExpectedMixedRoundType(newRoundResults.length));
     },
-    [finalizeQuiz, loadNextRound, totalRounds],
+    [finalizeQuiz, loadNextRound, refreshPointsAfterSubmit, totalRounds],
   );
 
   const failAttempt = useCallback(
@@ -490,11 +531,13 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     setState(INITIAL_STATE);
     setQuizData(null);
     setError(null);
+    setSubmitError(null);
     setLoading(false);
     setSubmitting(false);
     setIsPointsError(false);
     setUpdatedPoints(null);
     setPointsDelta(0);
+    setReachedMasteryThisAttempt(false);
     setSessionType("mixed");
     setTotalRounds(QUIZ_TOTAL_ROUNDS);
     roundResultsRef.current = [];
@@ -503,6 +546,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     startingPointsRef.current = null;
     roundStartTimeRef.current = 0;
     submittingRef.current = false;
+    persistProgressRef.current = true;
   }, []);
 
   return {
@@ -515,10 +559,12 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     duration,
     loading,
     error,
+    submitError,
     submitting,
     isPointsError,
     updatedPoints,
     pointsDelta,
+    reachedMasteryThisAttempt,
     roundResults,
     currentRound,
     totalRounds,

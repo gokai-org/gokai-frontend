@@ -25,6 +25,8 @@ export interface UseMasteryOrchestratorOptions {
   moduleId: MasteryModuleId;
   /** User's current points for the relevant field. */
   currentPoints: number;
+  /** Whether threshold-crossing should auto-start the celebration. */
+  autoTriggerOnNewMastery?: boolean;
   /** Total items in this module's board. */
   totalItems: number;
   /** Number of completed items. */
@@ -81,6 +83,7 @@ export interface UseMasteryOrchestratorReturn {
 export function useMasteryOrchestrator({
   moduleId,
   currentPoints,
+  autoTriggerOnNewMastery = true,
   totalItems,
   completedItems,
   nodes,
@@ -121,6 +124,7 @@ export function useMasteryOrchestrator({
 
   const { celebration, dismissModal } = useMasteryCelebration({
     isNewMastery: mastery.isNewMastery,
+    autoTriggerOnNewMastery,
     moduleId,
     waypoints,
     onFocusNode: handleFocusNode,

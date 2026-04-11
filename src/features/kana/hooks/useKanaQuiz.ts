@@ -21,6 +21,7 @@ import {
   applyEarlyKanaOptionPool,
   isValidCanvasQuestion,
 } from "@/features/kana/utils/quizParser";
+import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 
 function extractKanaQuizErrorMessage(message: string): string {
@@ -71,8 +72,10 @@ export interface UseKanaQuizReturn {
   duration: number;
   loading: boolean;
   error: string | null;
+  submitError: string | null;
   submitting: boolean;
   pointsDelta: number;
+  reachedMasteryThisAttempt: boolean;
   roundResults: KanaQuizRoundResult[];
   currentRound: number;
   totalRounds: number;
@@ -127,13 +130,23 @@ function getExpectedMixedRoundType(roundIndex: number): KanaQuizType {
   );
 }
 
+function extractSubmitErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    return error.message.replace(/^HTTP\s+\d+:\s*/i, "").trim() || error.message;
+  }
+
+  return "No se pudo guardar el resultado";
+}
+
 export function useKanaQuiz(): UseKanaQuizReturn {
   const [state, setState] = useState<KanaQuizSessionState>(INITIAL_STATE);
   const [quizData, setQuizData] = useState<KanaQuizResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [pointsDelta, setPointsDelta] = useState(0);
+  const [reachedMasteryThisAttempt, setReachedMasteryThisAttempt] = useState(false);
   const [roundResults, setRoundResults] = useState<KanaQuizRoundResult[]>([]);
   const [sessionType, setSessionType] = useState<KanaQuizSessionType>("mixed");
   const [totalRounds, setTotalRounds] = useState(KANA_QUIZ_TOTAL_ROUNDS);
@@ -145,6 +158,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
   const kanaLabelRef = useRef<string>("");
   const startingKanaPointsRef = useRef<number | null>(null);
   const submittingRef = useRef(false);
+  const persistProgressRef = useRef(true);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -261,9 +275,15 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       setState(INITIAL_STATE);
       setQuizData(null);
       setError(null);
+      setSubmitError(null);
       setPointsDelta(0);
+      setReachedMasteryThisAttempt(false);
       setSessionType(context?.quizType ?? "mixed");
       setTotalRounds(context?.quizType ? 1 : KANA_QUIZ_TOTAL_ROUNDS);
+      persistProgressRef.current = !context?.quizType;
+      if (context?.quizType) {
+        console.warn(`[KANA QUIZ] Practice mode detected (type=${context.quizType}) - will NOT submit to backend`);
+      }
       roundResultsRef.current = [];
       setRoundResults([]);
       kanaIdRef.current = kanaId;
@@ -288,6 +308,30 @@ export function useKanaQuiz(): UseKanaQuizReturn {
   );
 
   // ── Finalize quiz (all rounds done) ──
+  const refreshPointsAfterSubmit = useCallback(async () => {
+    const user = await getCurrentUser().catch(() => null);
+    if (!user || typeof user.kanaPoints !== "number") {
+      return;
+    }
+
+    const nextDelta =
+      startingKanaPointsRef.current !== null
+        ? Math.max(0, user.kanaPoints - startingKanaPointsRef.current)
+        : 0;
+    const threshold = kanaTypeRef.current
+      ? MASTERY_THRESHOLDS[kanaTypeRef.current]
+      : null;
+
+    setPointsDelta(nextDelta);
+    setReachedMasteryThisAttempt(
+      threshold !== null &&
+        startingKanaPointsRef.current !== null &&
+        startingKanaPointsRef.current < threshold &&
+        user.kanaPoints >= threshold,
+    );
+    dispatchMasteryProgressSync({ kanaPoints: user.kanaPoints });
+  }, []);
+
   const finalizeQuiz = useCallback(
     async (_results: KanaQuizRoundResult[]) => {
       if (submittingRef.current) return;
@@ -300,6 +344,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
         _results.every((result) => result.score === 100);
 
       setPointsDelta(0);
+      setReachedMasteryThisAttempt(false);
       setState((s) => ({
         ...s,
         step: completedPerfectQuiz
@@ -308,24 +353,6 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       }));
       setSubmitting(false);
       submittingRef.current = false;
-
-      void getCurrentUser()
-        .then((user) => {
-          if (!user || typeof user.kanaPoints !== "number") {
-            return;
-          }
-
-          const nextDelta =
-            startingKanaPointsRef.current !== null
-              ? Math.max(0, user.kanaPoints - startingKanaPointsRef.current)
-              : 0;
-
-          setPointsDelta(nextDelta);
-          dispatchMasteryProgressSync({ kanaPoints: user.kanaPoints });
-        })
-        .catch(() => {
-          // Best-effort refresh only.
-        });
     },
     [totalRounds],
   );
@@ -344,19 +371,40 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       roundResultsRef.current = newRoundResults;
       setRoundResults(newRoundResults);
 
-      // Submit this round to the backend
-      try {
-        await submitKanaQuiz(kanaIdRef.current, {
-          type: quizType,
-          score,
-          duration: elapsed,
-        });
-      } catch (err) {
-        console.error("[KANA QUIZ] Failed to submit round:", err);
+      // ── Practice mode: skip ALL backend submission ──
+      if (!persistProgressRef.current) {
+        console.warn("[KANA QUIZ] Practice mode – skipping submit & points refresh");
+        setSubmitError(null);
+        if (newRoundResults.length >= totalRounds) {
+          await finalizeQuiz(newRoundResults);
+          return;
+        }
+        await loadNextRound(
+          null,
+          getExpectedMixedRoundType(newRoundResults.length),
+        );
+        return;
       }
+
+      // ── Full quiz: submit to backend ──
+      const submitPromise = submitKanaQuiz(kanaIdRef.current, {
+        type: quizType,
+        score,
+        duration: elapsed,
+      })
+        .then(() => {
+          setSubmitError(null);
+        })
+        .catch((err) => {
+          console.error("[KANA QUIZ] Failed to submit round:", err);
+          setSubmitError(extractSubmitErrorMessage(err));
+        });
 
       // Check if all rounds are done
       if (newRoundResults.length >= totalRounds) {
+        void submitPromise.finally(() => {
+          void refreshPointsAfterSubmit();
+        });
         await finalizeQuiz(newRoundResults);
         return;
       }
@@ -367,7 +415,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
         getExpectedMixedRoundType(newRoundResults.length),
       );
     },
-    [finalizeQuiz, loadNextRound, totalRounds],
+    [finalizeQuiz, loadNextRound, refreshPointsAfterSubmit, totalRounds],
   );
 
   const failAttempt = useCallback(
@@ -557,9 +605,11 @@ export function useKanaQuiz(): UseKanaQuizReturn {
     setState(INITIAL_STATE);
     setQuizData(null);
     setError(null);
+    setSubmitError(null);
     setLoading(false);
     setSubmitting(false);
     setPointsDelta(0);
+    setReachedMasteryThisAttempt(false);
     setSessionType("mixed");
     setTotalRounds(KANA_QUIZ_TOTAL_ROUNDS);
     roundResultsRef.current = [];
@@ -570,6 +620,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
     startingKanaPointsRef.current = null;
     roundStartTimeRef.current = 0;
     submittingRef.current = false;
+    persistProgressRef.current = true;
   }, []);
 
   return {
@@ -582,8 +633,10 @@ export function useKanaQuiz(): UseKanaQuizReturn {
     duration,
     loading,
     error,
+    submitError,
     submitting,
     pointsDelta,
+    reachedMasteryThisAttempt,
     roundResults,
     currentRound,
     totalRounds,

@@ -12,6 +12,7 @@ import { KanjiStrokePlayer } from "@/features/kanji/components/KanjiStrokePlayer
 import { motion, AnimatePresence } from "framer-motion";
 import { Eye, Volume2, BookOpen, PenLine } from "lucide-react";
 import type { KanjiQuizType } from "@/features/kanji/types/quiz";
+import WritingEvaluationGuide from "@/features/lessons/components/WritingEvaluationGuide";
 
 type KanjiTab = "symbol" | "reading" | "meaning" | "writing";
 
@@ -21,6 +22,24 @@ const KANJI_TABS: { id: KanjiTab; label: string; icon: React.ReactNode }[] = [
   { id: "meaning", label: "Significados", icon: <BookOpen size={12} /> },
   { id: "writing", label: "Escritura", icon: <PenLine size={12} /> },
 ];
+
+const KANJI_WRITING_CRITERIA = [
+  {
+    title: "Orden",
+    description: "",
+    cue: "Cada kanji tiene una secuencia oficial que sostiene su estructura.",
+  },
+  {
+    title: "Dirección",
+    description: "",
+    cue: "El sentido del trazo importa: un barrido invertido baja la precisión.",
+  },
+  {
+    title: "Balance",
+    description: "",
+    cue: "Los radicales y espacios deben quedar proporcionados dentro del carácter.",
+  },
+] as const;
 
 export default function KanjiLesson({
   data,
@@ -496,15 +515,14 @@ export default function KanjiLesson({
               </div>
 
               {hasStrokes && (
-                <div className="rounded-2xl border border-accent/10 bg-accent/5 p-3 sm:rounded-[16px]">
-                  <p className="text-[12px] leading-relaxed text-content-secondary">
-                    <span className="font-semibold text-content-primary">
-                      Observa el orden
-                    </span>{" "}
-                    y la dirección de cada trazo: el orden correcto mejora tu
-                    escritura.
-                  </p>
-                </div>
+                <WritingEvaluationGuide
+                  eyebrow="Qué corrige la práctica"
+                  title="El kanji debe mantenerse estable y bien construido"
+                  intro="La nota sale del recorrido real y del equilibrio visual del carácter completo."
+                  emphasis="secuencia, dirección y balance"
+                  criteria={KANJI_WRITING_CRITERIA}
+                  coachNote="Primero asegura la estructura. Luego cuida la energía del trazo para que el kanji se vea firme y claro."
+                />
               )}
 
               <button

@@ -23,6 +23,8 @@ import { subscribeMasteryCelebrationRequest } from "../utils/masteryProgressSync
 export interface UseMasteryCelebrationOptions {
   /** Whether the user just crossed the mastery threshold. */
   isNewMastery: boolean;
+  /** Whether threshold-crossing should auto-start the sequence. */
+  autoTriggerOnNewMastery?: boolean;
   /** Module being celebrated. */
   moduleId: MasteryModuleId;
   /** Ordered list of node positions for the camera tour. */
@@ -60,6 +62,7 @@ const IDLE_STATE: CelebrationState = {
 
 export function useMasteryCelebration({
   isNewMastery,
+  autoTriggerOnNewMastery = true,
   moduleId,
   waypoints,
   onFocusNode,
@@ -198,7 +201,7 @@ export function useMasteryCelebration({
   // ---------------------------------------------------
 
   useEffect(() => {
-    if (isNewMastery && !hasTriggeredRef.current) {
+    if (autoTriggerOnNewMastery && isNewMastery && !hasTriggeredRef.current) {
       hasTriggeredRef.current = true;
       const startTimer = window.setTimeout(() => {
         runSequence();
@@ -206,7 +209,7 @@ export function useMasteryCelebration({
 
       return () => clearTimeout(startTimer);
     }
-  }, [isNewMastery, runSequence]);
+  }, [autoTriggerOnNewMastery, isNewMastery, runSequence]);
 
   useEffect(
     () =>

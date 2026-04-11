@@ -94,6 +94,7 @@ export interface WritingBoardNodeData {
   showOrbitRings: boolean;
   shouldUsePulse: boolean;
   unlocking?: boolean;
+  suppressUnlockPoints?: boolean;
   shaking?: boolean;
   drawerOpen?: boolean;
 }

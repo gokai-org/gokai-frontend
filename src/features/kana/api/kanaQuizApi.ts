@@ -52,6 +52,8 @@ export async function submitKanaQuiz(
   kanaId: string,
   body: KanaQuizSubmitBody,
 ): Promise<Record<string, unknown>> {
+  console.warn("[KANA QUIZ POST] submitKanaQuiz called", { kanaId, body });
+  console.trace("[KANA QUIZ POST] call stack");
   return apiFetch<Record<string, unknown>>(`/api/content/kana/${kanaId}?resource=quiz`, {
     method: "POST",
     body: JSON.stringify(body),

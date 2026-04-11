@@ -347,6 +347,12 @@ export interface WritingBoardViewProps {
   masteryModuleId?: MasteryModuleId;
   /** User's current points for mastery detection. */
   masteryPoints?: number;
+  /** When false, mastery only starts via explicit request. */
+  autoTriggerOnNewMastery?: boolean;
+  /** Suppress +points bubble for nodes unlocked during this animation. */
+  suppressUnlockPointsDuringUnlock?: boolean;
+  /** Fires after the unlock-points animation finishes. */
+  onUnlockAnimationComplete?: (unlockedIds: string[]) => void;
 }
 
 export function WritingBoardView({
@@ -365,6 +371,9 @@ export function WritingBoardView({
   focusedNodeId: focusedNodeIdProp = null,
   masteryModuleId,
   masteryPoints = 0,
+  autoTriggerOnNewMastery = true,
+  suppressUnlockPointsDuringUnlock = false,
+  onUnlockAnimationComplete,
 }: WritingBoardViewProps) {
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useWritingBoardQuality(graphicsProfile);
@@ -383,6 +392,8 @@ export function WritingBoardView({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [shakingNodeId, setShakingNodeId] = useState<string | null>(null);
   const [newlyUnlockedIds, setNewlyUnlockedIds] =
+    useState<ReadonlySet<string>>(new Set());
+  const [suppressedUnlockPointIds, setSuppressedUnlockPointIds] =
     useState<ReadonlySet<string>>(new Set());
   const [unlockFocusNodeId, setUnlockFocusNodeId] = useState<string | null>(
     null,
@@ -514,10 +525,18 @@ export function WritingBoardView({
         baseGraph,
         effectiveSelectedId,
         newlyUnlockedIds,
+        suppressedUnlockPointIds,
         shakingNodeId,
         drawerOpen,
       ),
-    [baseGraph, effectiveSelectedId, newlyUnlockedIds, shakingNodeId, drawerOpen],
+    [
+      baseGraph,
+      effectiveSelectedId,
+      newlyUnlockedIds,
+      suppressedUnlockPointIds,
+      shakingNodeId,
+      drawerOpen,
+    ],
   );
 
   useEffect(() => {
@@ -559,15 +578,21 @@ export function WritingBoardView({
 
     const firstUnlockedId = unlockedIds[0];
     const nextUnlockedIds = new Set(unlockedIds);
+    const nextSuppressedUnlockPointIds = suppressUnlockPointsDuringUnlock
+      ? new Set(unlockedIds)
+      : new Set<string>();
 
     const raf = window.requestAnimationFrame(() => {
       setSelectedId(firstUnlockedId);
       setUnlockFocusNodeId(firstUnlockedId);
       setNewlyUnlockedIds(nextUnlockedIds);
+      setSuppressedUnlockPointIds(nextSuppressedUnlockPointIds);
     });
 
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedIds(new Set());
+      setSuppressedUnlockPointIds(new Set());
+      onUnlockAnimationComplete?.(unlockedIds);
     }, 2200);
 
     unlockFocusTimerRef.current = setTimeout(() => {
@@ -575,7 +600,12 @@ export function WritingBoardView({
     }, 2200);
 
     return () => window.cancelAnimationFrame(raf);
-  }, [items, loading]);
+  }, [
+    items,
+    loading,
+    onUnlockAnimationComplete,
+    suppressUnlockPointsDuringUnlock,
+  ]);
 
   const backgroundStyle = useMemo(() => {
     const { width, height, pointerType } = graphicsProfile.signals;
@@ -864,6 +894,7 @@ export function WritingBoardView({
       <MasteryBoardWrapper
         moduleId={masteryModuleId}
         currentPoints={masteryPoints}
+        autoTriggerOnNewMastery={autoTriggerOnNewMastery}
         totalItems={items.length}
         completedItems={summary.completedCount}
         nodes={graph.nodes}

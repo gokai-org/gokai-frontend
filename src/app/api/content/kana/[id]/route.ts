@@ -272,15 +272,33 @@ async function fetchKanaProgressItem(token: string) {
       return payload.length > 0 ? normalizeProgressItem(payload[0]) : null;
     }
 
-    if (Array.isArray(payload.progress) && payload.progress.length > 0) {
+    if (
+      "progress" in payload &&
+      Array.isArray(payload.progress) &&
+      payload.progress.length > 0
+    ) {
       return normalizeProgressItem(payload.progress[0]);
     }
 
-    if (Array.isArray(payload.data) && payload.data.length > 0) {
+    if (
+      "data" in payload &&
+      Array.isArray(payload.data) &&
+      payload.data.length > 0
+    ) {
       return normalizeProgressItem(payload.data[0]);
     }
 
-    return normalizeProgressItem(payload);
+    if (
+      "kanaId" in payload ||
+      "kana_id" in payload ||
+      "exerciseType" in payload ||
+      "exercise_type" in payload ||
+      "completed" in payload
+    ) {
+      return normalizeProgressItem(payload);
+    }
+
+    return null;
   } catch {
     return null;
   }

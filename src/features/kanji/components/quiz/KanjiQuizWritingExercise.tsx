@@ -15,6 +15,7 @@ import {
   type StrokeValidationResult,
 } from "@/features/kanji/lib/strokeValidation";
 import type { KanjiQuizQuestion } from "@/features/kanji/types/quiz";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 
 const BASE_STROKE_POINTS = 10;
 
@@ -51,6 +52,8 @@ export function KanjiQuizWritingExercise({
   onPhaseChange,
   onComplete,
 }: KanjiQuizWritingExerciseProps) {
+  const mastered = useMasteredModules();
+  const kanjiAccentColor = mastered.has("kanji") ? "#D4A843" : undefined;
   const demoSize = useCanvasSize(240, 80);
   const practiceSize = useCanvasSize(260, 64);
 
@@ -433,6 +436,7 @@ export function KanjiQuizWritingExercise({
             size={practiceSize}
             onStrokeDrawn={handleStrokeDrawn}
             hideStrokeOrder
+            accentColor={kanjiAccentColor}
           />
 
           <AnimatePresence>
