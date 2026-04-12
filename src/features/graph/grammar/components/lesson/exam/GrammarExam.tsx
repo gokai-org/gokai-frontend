@@ -9,6 +9,33 @@ import GrammarCompleteExercise from "./GrammarCompleteExercise";
 import GrammarOrderExercise from "./GrammarOrderExercise";
 import { CheckCircle2 } from "lucide-react";
 
+function getExerciseMeta(item: ExamItem, answered: boolean) {
+  if (item.type === "question") {
+    return {
+      label: "Seleccion multiple",
+      hint: answered
+        ? "Revisa la opcion correcta y avanza cuando quieras."
+        : "Puedes elegir con click, con las teclas 1-4 o con flechas y Enter.",
+    };
+  }
+
+  if (item.type === "complete") {
+    return {
+      label: "Completar huecos",
+      hint: answered
+        ? "Comprueba cada hueco antes de pasar a la siguiente pregunta."
+        : "Toca una ficha o arrastrala hasta el hueco que quieras completar.",
+    };
+  }
+
+  return {
+    label: "Ordenar frase",
+    hint: answered
+      ? "Si el orden ya esta revisado, continua con la siguiente pregunta."
+      : "Toca las palabras para construir la frase y arrastra las fichas para reordenarlas.",
+  };
+}
+
 interface Props {
   grammarId: string;
   exam: ExamItem[];
@@ -28,11 +55,13 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
   const startRef = useRef(Date.now());
 
   const total   = exam.length;
+  const correctCount = results.filter(Boolean).length;
 
   useEffect(() => {
     onProgress?.(results.length, total);
   }, [results.length, total, onProgress]);
   const current = exam[currentIdx];
+  const exerciseMeta = current ? getExerciseMeta(current, answered) : null;
 
   const handleQuestionSelect = (idx: number) => {
     if (answered) return;
@@ -51,7 +80,7 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
     setResults((r) => [...r, correct]);
   }, []);
 
-  async function proceed() {
+  const proceed = useCallback(async () => {
     const nextIdx = currentIdx + 1;
 
     if (nextIdx >= total) {
@@ -75,13 +104,71 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
     setCurrentIdx(nextIdx);
     setAnswered(false);
     setSelectedIdx(null);
-  }
+  }, [currentIdx, grammarId, onFinish, results, total]);
+
+  useEffect(() => {
+    if (!current || current.type !== "question") {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Enter" && answered) {
+        event.preventDefault();
+        void proceed();
+        return;
+      }
+
+      if (answered) {
+        return;
+      }
+
+      if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+        event.preventDefault();
+        setSelectedIdx((prev) => {
+          if (prev === null) {
+            return 0;
+          }
+
+          return (prev + 1) % current.options.length;
+        });
+        return;
+      }
+
+      if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+        event.preventDefault();
+        setSelectedIdx((prev) => {
+          if (prev === null) {
+            return current.options.length - 1;
+          }
+
+          return (prev - 1 + current.options.length) % current.options.length;
+        });
+        return;
+      }
+
+      if (/^[1-9]$/.test(event.key)) {
+        const optionIndex = Number(event.key) - 1;
+        if (optionIndex < current.options.length) {
+          event.preventDefault();
+          setSelectedIdx(optionIndex);
+        }
+        return;
+      }
+
+      if (event.key === "Enter" && selectedIdx !== null) {
+        event.preventDefault();
+        handleQuestionConfirm();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [answered, current, handleQuestionConfirm, proceed, selectedIdx]);
 
   // ── Finished screen ─────────────────────────────────────
   if (finished) {
-    const score      = Math.round((results.filter(Boolean).length / total) * 100);
+    const score      = Math.round((correctCount / total) * 100);
     const success    = score >= 70;
-    const correctCnt = results.filter(Boolean).length;
 
     return (
       <motion.div
@@ -122,7 +209,7 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
             {success ? "\u00a1Examen aprobado!" : "Sigue practicando"}
           </p>
           <p className="text-sm text-content-secondary">
-            {correctCnt} de {total} respuestas correctas
+            {correctCount} de {total} respuestas correctas
           </p>
         </motion.div>
 
@@ -201,13 +288,23 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
 
   return (
     <div className="space-y-5">
-      {/* ── Progress ─────────────────────────────────────── */}
-      <div className="space-y-1.5">
-        <div className="flex items-center justify-between text-[11px] text-content-muted">
-          <span className="font-semibold">Pregunta {currentIdx + 1} <span className="text-content-tertiary">/ {total}</span></span>
-          <span>{results.filter(Boolean).length} correctas</span>
+      {/* ── Context card ─────────────────────────────────── */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+            {exerciseMeta?.label}
+          </span>
+          <span className="rounded-full bg-surface-secondary px-2.5 py-1 text-[11px] font-semibold text-content-secondary">
+            {correctCount} correctas
+          </span>
+          <span className="rounded-full bg-surface-secondary px-2.5 py-1 text-[11px] font-semibold text-content-muted">
+            {answered ? "Respuesta revisada" : "Modo interactivo"}
+          </span>
         </div>
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-surface-tertiary">
+        <p className="text-sm leading-6 text-content-secondary">
+          {exerciseMeta?.hint}
+        </p>
+        <div className="h-1 w-full overflow-hidden rounded-full bg-surface-tertiary/80">
           <motion.div
             className="h-full rounded-full bg-gradient-to-r from-accent to-accent-hover"
             initial={{ width: 0 }}

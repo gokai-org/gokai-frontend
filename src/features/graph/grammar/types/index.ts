@@ -96,7 +96,9 @@ export type CompleteOption = {
 export type OrderExam = {
   type: "order";
   question: string;
-  order: string[];
+  options?: string[];
+  answer?: string;
+  order?: string[];
 };
 
 // ──────────────────────────────────────────────────────

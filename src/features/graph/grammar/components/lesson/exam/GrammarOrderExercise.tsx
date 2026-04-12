@@ -1,9 +1,25 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useState, type DragEvent } from "react";
 import { motion, AnimatePresence, Reorder } from "framer-motion";
-import { RotateCcw, CheckCircle2, XCircle } from "lucide-react";
+import { RotateCcw, CheckCircle2 } from "lucide-react";
 import type { OrderExam } from "../../../types";
+
+function shuffleWords(words: string[]) {
+  return [...words].sort(() => Math.random() - 0.5);
+}
+
+function normalizeSentence(text: string) {
+  return text.trim().replace(/\s+/g, " ");
+}
+
+function getOrderOptions(question: OrderExam) {
+  return question.options ?? question.order ?? [];
+}
+
+function getOrderAnswer(question: OrderExam) {
+  return question.answer ?? question.order?.join(" ") ?? "";
+}
 
 interface Props {
   question: OrderExam;
@@ -12,16 +28,15 @@ interface Props {
 }
 
 export default function GrammarOrderExercise({ question, answered, onAnswer }: Props) {
-  const [pool, setPool]     = useState<string[]>([]);
+  const orderOptions = getOrderOptions(question);
+  const correctAnswer = getOrderAnswer(question);
+  const [pool, setPool]     = useState<string[]>(() => shuffleWords(orderOptions));
   const [placed, setPlaced] = useState<string[]>([]);
-
-  useEffect(() => {
-    setPool([...(question.options ?? [])].sort(() => Math.random() - 0.5));
-    setPlaced([]);
-  }, [question.question]);
+  const [draggedWord, setDraggedWord] = useState<string | null>(null);
 
   function take(word: string) {
     if (answered) return;
+
     setPool((p) => p.filter((w) => w !== word));
     setPlaced((p) => [...p, word]);
   }
@@ -34,17 +49,49 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
 
   function reset() {
     if (answered) return;
-    setPool([...question.options].sort(() => Math.random() - 0.5));
+
+    setPool(shuffleWords(orderOptions));
     setPlaced([]);
+    setDraggedWord(null);
   }
 
   function checkAnswer() {
     if (answered || placed.length === 0) return;
-    const correct = placed.join(" ") === question.answer;
+    const correct = normalizeSentence(placed.join(" ")) === normalizeSentence(correctAnswer);
     onAnswer(correct);
   }
 
-  const isCorrect = answered && placed.join(" ") === question.answer;
+  function handlePoolDragStart(event: DragEvent<HTMLButtonElement>, word: string) {
+    if (answered) return;
+
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", word);
+    setDraggedWord(word);
+  }
+
+  function handleDragEnd() {
+    setDraggedWord(null);
+  }
+
+  function handleAnswerZoneDragOver(event: DragEvent<HTMLDivElement>) {
+    if (answered) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+  }
+
+  function handleAnswerZoneDrop(event: DragEvent<HTMLDivElement>) {
+    if (answered) return;
+
+    event.preventDefault();
+    const word = event.dataTransfer.getData("text/plain") || draggedWord;
+    if (!word || !pool.includes(word)) return;
+
+    take(word);
+    setDraggedWord(null);
+  }
+
+  const isCorrect = answered && normalizeSentence(placed.join(" ")) === normalizeSentence(correctAnswer);
 
   return (
     <div className="space-y-5">
@@ -62,11 +109,15 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
           Tu respuesta
         </p>
         <div
+          onDragOver={handleAnswerZoneDragOver}
+          onDrop={handleAnswerZoneDrop}
           className={`min-h-[54px] rounded-2xl border-2 border-dashed px-3 py-3 transition-colors duration-200 ${
             answered
               ? isCorrect
                 ? "border-emerald-400/60 bg-emerald-50/40 dark:bg-emerald-950/15"
                 : "border-red-400/50 bg-red-50/40 dark:bg-red-950/15"
+              : draggedWord
+                ? "border-accent/50 bg-accent/8"
               : placed.length
                 ? "border-accent/35 bg-accent/4"
                 : "border-border-subtle bg-surface-secondary/50"
@@ -74,37 +125,42 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
         >
           {placed.length === 0 ? (
             <p className="text-center text-xs text-content-muted">
-              Toca las palabras de abajo para ordenar la frase
+              Arrastra o toca las palabras de abajo para construir la frase
             </p>
           ) : (
-            <div className="flex flex-wrap gap-2">
+            <Reorder.Group
+              axis="x"
+              values={placed}
+              onReorder={answered ? undefined : setPlaced}
+              className="flex gap-2 overflow-x-auto pb-1"
+            >
               <AnimatePresence mode="popLayout">
                 {placed.map((word, i) => (
-                  <motion.button
-                    key={word + i}
-                    layout
+                  <Reorder.Item
+                    key={`${word}-${i}`}
+                    value={word}
                     initial={{ opacity: 0, scale: 0.75, y: -6 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.75, y: 6 }}
                     transition={{ type: "spring", stiffness: 420, damping: 20 }}
                     whileHover={!answered ? { scale: 1.04, y: -1 } : {}}
                     whileTap={!answered ? { scale: 0.93 } : {}}
-                    type="button"
-                    disabled={answered}
+                    whileDrag={!answered ? { scale: 1.05, zIndex: 5 } : undefined}
+                    dragListener={!answered}
                     onClick={() => remove(word)}
                     className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition-all duration-150 ${
                       answered
                         ? isCorrect
                           ? "border-emerald-400/60 bg-emerald-100/60 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
                           : "border-red-400/50 bg-red-100/60 text-red-600 dark:bg-red-950/30 dark:text-red-400"
-                        : "cursor-pointer border-accent/50 bg-accent/10 text-accent hover:opacity-75"
+                        : "cursor-grab border-accent/50 bg-accent/10 text-accent hover:opacity-75 active:cursor-grabbing"
                     }`}
                   >
                     {word}
-                  </motion.button>
+                  </Reorder.Item>
                 ))}
               </AnimatePresence>
-            </div>
+            </Reorder.Group>
           )}
         </div>
       </div>
@@ -120,12 +176,18 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
             <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-content-muted">
               Palabras disponibles
             </p>
+            <p className="mb-3 text-xs text-content-muted">
+              Tocalas para anadirlas o arrastralas al recuadro superior. Luego puedes reordenarlas directamente arriba.
+            </p>
             <div className="flex min-h-[40px] flex-wrap gap-2">
               <AnimatePresence mode="popLayout">
                 {pool.map((word, i) => (
                   <motion.button
                     key={word + i}
                     layout
+                    draggable
+                    onDragStart={(event) => handlePoolDragStart(event, word)}
+                    onDragEnd={handleDragEnd}
                     initial={{ opacity: 0, scale: 0.8, y: 8 }}
                     animate={{ opacity: 1, scale: 1, y: 0, transition: { delay: i * 0.04, type: "spring", stiffness: 380, damping: 18 } }}
                     exit={{ opacity: 0, scale: 0.7, transition: { duration: 0.15 } }}
@@ -155,7 +217,7 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
             <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
             <div className="text-sm">
               <p className="font-semibold text-emerald-700 dark:text-emerald-300">Respuesta correcta:</p>
-              <p className="text-emerald-600 dark:text-emerald-400">{question.answer}</p>
+              <p className="text-emerald-600 dark:text-emerald-400">{correctAnswer}</p>
             </div>
           </motion.div>
         )}

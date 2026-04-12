@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useState, useEffect } from "react";
+import { useState, type DragEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import type { CompleteExam } from "../../../types";
 import { CheckCircle2, XCircle } from "lucide-react";
@@ -20,26 +20,64 @@ function parseTemplate(text: string): { type: "text" | "blank"; value: string }[
 
 export default function GrammarCompleteExercise({ question, answered, onAnswer }: Props) {
   const segments = parseTemplate(question.question);
+  const blankIds = [...new Set(segments.filter((s) => s.type === "blank").map((s) => s.value))];
   const [selections, setSelections] = useState<Record<string, string>>({});
   const [lastFilled, setLastFilled] = useState<string | null>(null);
+  const [activeBlank, setActiveBlank] = useState<string | null>(() => blankIds[0] ?? null);
+  const [draggedText, setDraggedText] = useState<string | null>(null);
 
-  useEffect(() => { setSelections({}); setLastFilled(null); }, [question.question]);
-
-  const blankIds = [...new Set(segments.filter((s) => s.type === "blank").map((s) => s.value))];
   const allOptions = [...new Map(question.options.map((o) => [`${o.value}-${o.text}`, o])).values()];
 
-  function selectOption(blankId: string, text: string) {
+  function selectOption(text: string, forcedBlankId?: string) {
     if (answered) return;
-    // Find first unfilled blank, or use the specified one
-    const target = selections[blankId] !== undefined ? blankId : (blankIds.find((id) => selections[id] === undefined) ?? blankId);
-    setSelections((prev) => ({ ...prev, [target]: text }));
+
+    const target = forcedBlankId ?? activeBlank ?? blankIds.find((id) => selections[id] === undefined);
+    if (!target) return;
+
+    const nextSelections = { ...selections, [target]: text };
+    setSelections(nextSelections);
     setLastFilled(target);
+    setActiveBlank(blankIds.find((id) => nextSelections[id] === undefined) ?? null);
   }
 
   function clearBlank(blankId: string) {
     if (answered) return;
-    setSelections((prev) => { const n = { ...prev }; delete n[blankId]; return n; });
+
+    const nextSelections = { ...selections };
+    delete nextSelections[blankId];
+    setSelections(nextSelections);
     setLastFilled(null);
+    setActiveBlank(blankId);
+  }
+
+  function handleOptionDragStart(event: DragEvent<HTMLButtonElement>, text: string) {
+    if (answered) return;
+
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", text);
+    setDraggedText(text);
+  }
+
+  function handleOptionDragEnd() {
+    setDraggedText(null);
+  }
+
+  function handleBlankDrop(event: DragEvent<HTMLButtonElement>, blankId: string) {
+    if (answered) return;
+
+    event.preventDefault();
+    const text = event.dataTransfer.getData("text/plain") || draggedText;
+    if (!text) return;
+
+    selectOption(text, blankId);
+    setDraggedText(null);
+  }
+
+  function handleBlankDragOver(event: DragEvent<HTMLButtonElement>) {
+    if (answered) return;
+
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
   }
 
   const allFilled = blankIds.every((id) => selections[id] !== undefined);
@@ -73,7 +111,16 @@ export default function GrammarCompleteExercise({ question, answered, onAnswer }
                 key={i}
                 type="button"
                 disabled={answered}
-                onClick={() => filled && !answered && clearBlank(seg.value)}
+                onClick={() => {
+                  if (filled) {
+                    clearBlank(seg.value);
+                    return;
+                  }
+
+                  setActiveBlank(seg.value);
+                }}
+                onDrop={(event) => handleBlankDrop(event, seg.value)}
+                onDragOver={handleBlankDragOver}
                 animate={isNew ? { scale: [1, 1.06, 1] } : { scale: 1 }}
                 transition={{ duration: 0.25 }}
                 className={[
@@ -86,7 +133,11 @@ export default function GrammarCompleteExercise({ question, answered, onAnswer }
                         : "border border-border-subtle text-content-muted"
                     : filled
                       ? "cursor-pointer border border-accent/50 bg-accent/10 text-accent hover:opacity-75"
-                      : "cursor-default border-b-2 border-accent/40 bg-transparent text-content-muted",
+                      : activeBlank === seg.value
+                        ? "cursor-pointer border border-accent/50 bg-accent/8 text-accent shadow-[0_0_0_2px_rgba(192,57,90,0.12)]"
+                        : draggedText
+                          ? "cursor-pointer border border-accent/35 bg-accent/5 text-content-secondary"
+                          : "cursor-pointer border-b-2 border-accent/40 bg-transparent text-content-muted",
                 ].join(" ")}
               >
                 {filled ? (
@@ -107,15 +158,22 @@ export default function GrammarCompleteExercise({ question, answered, onAnswer }
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }}
-            className="flex flex-wrap gap-2"
+            className="space-y-2"
           >
+            <p className="text-[11px] font-semibold uppercase tracking-wider text-content-muted">
+              Arrastra o toca una ficha para completar el hueco resaltado
+            </p>
+            <div className="flex flex-wrap gap-2">
             {allOptions.map((opt, i) => {
               const isUsed = Object.values(selections).includes(opt.text);
               return (
                 <motion.button
                   key={i}
                   type="button"
-                  onClick={() => !isUsed && selectOption(opt.value, opt.text)}
+                  draggable={!isUsed}
+                  onDragStart={(event) => handleOptionDragStart(event, opt.text)}
+                  onDragEnd={handleOptionDragEnd}
+                  onClick={() => !isUsed && selectOption(opt.text)}
                   whileHover={!isUsed ? { scale: 1.04, y: -1 } : {}}
                   whileTap={!isUsed ? { scale: 0.95 } : {}}
                   disabled={isUsed}
@@ -129,6 +187,7 @@ export default function GrammarCompleteExercise({ question, answered, onAnswer }
                 </motion.button>
               );
             })}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
