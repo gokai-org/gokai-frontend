@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
 
-type ItemKey = "support" | "coupons" | "lessons" | "statistics" | "logout";
+type ItemKey = "support" | "coupons" | "users" | "lessons" | "statistics" | "logout";
 
 type NavItem = {
   key: ItemKey;
@@ -57,6 +57,14 @@ export default function AdminSidebar() {
         iconInactive: "/icons/cupones.svg",
         iconActive: "/icons/cupones-active.svg",
         href: "/admin/dashboard/coupons",
+      },
+      {
+        key: "users",
+        label: "Usuarios",
+        section: "menu",
+        iconInactive: "/icons/usuarios.svg",
+        iconActive: "/icons/usuarios-active.svg",
+        href: "/admin/dashboard/users",
       },
       {
         key: "lessons",

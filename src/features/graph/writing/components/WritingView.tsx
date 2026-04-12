@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import WritingSubMenu, { type WritingTab } from "./WritingSubMenu";
+import type { WritingTab } from "./WritingSubMenu";
 import { HiraganaView } from "../hiragana";
 import { KatakanaView } from "../katakana";
 import KanjisView from "@/features/graph/writing/kanjis/components/KanjisView";
@@ -14,33 +15,13 @@ const TRANSITION_VARIANTS = {
 };
 
 export default function WritingView() {
-  const [activeTab, setActiveTab] = useState<WritingTab>("kanji");
-  const [subMenuVisible, setSubMenuVisible] = useState(true);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  const handleTabChange = useCallback((tab: WritingTab) => {
-    setActiveTab(tab);
-    setSubMenuVisible(true);
-  }, []);
-
-  useEffect(() => {
-    const show = () => setSubMenuVisible(true);
-    window.addEventListener("writing-submenu-show", show);
-    return () => window.removeEventListener("writing-submenu-show", show);
-  }, []);
-
-  // Click-outside: hide submenu when tapping anywhere except inside the menu
-  // or the NavBar Escritura button (which has its own toggle logic).
-  useEffect(() => {
-    if (!subMenuVisible) return;
-    const handlePointerDown = (e: PointerEvent) => {
-      if (menuRef.current?.contains(e.target as Node)) return;
-      if ((e.target as Element)?.closest("[data-writing-nav-escritura]")) return;
-      setSubMenuVisible(false);
-    };
-    window.addEventListener("pointerdown", handlePointerDown);
-    return () => window.removeEventListener("pointerdown", handlePointerDown);
-  }, [subMenuVisible]);
+  const searchParams = useSearchParams();
+  const activeTab = useMemo<WritingTab | null>(() => {
+    const tab = searchParams.get("tab");
+    return tab === "hiragana" || tab === "katakana" || tab === "kanji"
+      ? tab
+      : null;
+  }, [searchParams]);
 
   return (
     <div className="absolute inset-0 overflow-hidden">
@@ -85,15 +66,6 @@ export default function WritingView() {
           >
             <KatakanaView />
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Submenu floats above all boards — toggleable + click-outside */}
-      <AnimatePresence>
-        {subMenuVisible && (
-          <div ref={menuRef} className="contents">
-            <WritingSubMenu key="writing-submenu" activeTab={activeTab} onTabChange={handleTabChange} />
-          </div>
         )}
       </AnimatePresence>
     </div>

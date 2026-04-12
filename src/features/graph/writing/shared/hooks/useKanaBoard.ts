@@ -12,6 +12,55 @@ import type {
 import { WRITING_COMPLETION_SCORE } from "../types";
 import type { WritingBoardProgress, WritingBoardSummary } from "../types";
 
+const KANA_BOOTSTRAP_TTL_MS = 30_000;
+const KANA_USER_CACHE_KEY = "gokai.writing.kana.user-id";
+
+const kanaCatalogCache = new Map<
+  KanaType,
+  {
+    kanas: Kana[];
+    loadedAt: number;
+  }
+>();
+
+let sharedKanaBootstrapCache:
+  | {
+      userId: string;
+      progressItems: UserKanaProgressDetailedResponse[];
+      kanaPoints: number;
+      loadedAt: number;
+    }
+  | null = null;
+
+function readKnownKanaUserId() {
+  if (typeof window === "undefined") return null;
+
+  try {
+    return window.sessionStorage.getItem(KANA_USER_CACHE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function writeKnownKanaUserId(userId: string | null) {
+  if (typeof window === "undefined") return;
+
+  try {
+    if (userId) {
+      window.sessionStorage.setItem(KANA_USER_CACHE_KEY, userId);
+      return;
+    }
+
+    window.sessionStorage.removeItem(KANA_USER_CACHE_KEY);
+  } catch {
+    // Ignore storage access failures.
+  }
+}
+
+function isFresh(loadedAt: number) {
+  return Date.now() - loadedAt < KANA_BOOTSTRAP_TTL_MS;
+}
+
 function getKanaProgressPercent(progress?: UserKanaProgressDetailedResponse) {
   if (!progress) return 0;
   if (progress.completed) return 100;
@@ -86,25 +135,44 @@ export function useKanaBoard({
   fallbackData,
   errorMessage,
 }: UseKanaBoardParams) {
-  const [kanas, setKanas] = useState<Kana[]>([]);
-  const [userKanaPoints, setUserKanaPoints] = useState<number>(0);
+  const knownUserId = readKnownKanaUserId();
+  const cachedCatalog = kanaCatalogCache.get(kanaType);
+  const initialKanas =
+    cachedCatalog && isFresh(cachedCatalog.loadedAt) ? cachedCatalog.kanas : [];
+  const initialSharedBootstrap =
+    sharedKanaBootstrapCache &&
+    knownUserId &&
+    sharedKanaBootstrapCache.userId === knownUserId &&
+    isFresh(sharedKanaBootstrapCache.loadedAt)
+      ? sharedKanaBootstrapCache
+      : null;
+
+  const [kanas, setKanas] = useState<Kana[]>(() => initialKanas);
+  const [userKanaPoints, setUserKanaPoints] = useState<number>(
+    () => initialSharedBootstrap?.kanaPoints ?? 0,
+  );
   const [progressItems, setProgressItems] = useState<
     UserKanaProgressDetailedResponse[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+  >(() =>
+    initialSharedBootstrap?.progressItems.filter(
+      (item) => item.kanaType === kanaType,
+    ) ?? [],
+  );
+  const [loading, setLoading] = useState(() => initialSharedBootstrap === null);
   const [error, setError] = useState<string | null>(null);
   const hasLoadedOnceRef = useRef(false);
+  const activeUserIdRef = useRef<string | null>(initialSharedBootstrap?.userId ?? knownUserId);
 
   // Use refs to avoid re-creating reload when these change every render.
   const listKanasRef = useRef(listKanas);
   listKanasRef.current = listKanas;
   const errorMessageRef = useRef(errorMessage);
   errorMessageRef.current = errorMessage;
+  const hasFallbackDataRef = useRef(fallbackData.length > 0);
+  hasFallbackDataRef.current = fallbackData.length > 0;
 
   const reload = useCallback(async () => {
-    console.warn(`[KANA BOARD] reload() called for ${kanaType}`);
-    console.trace("[KANA BOARD] reload call stack");
-    if (!hasLoadedOnceRef.current) {
+    if (!hasLoadedOnceRef.current && !hasFallbackDataRef.current) {
       setLoading(true);
     }
     setError(null);
@@ -116,19 +184,44 @@ export function useKanaBoard({
         getCurrentUser().catch(() => null),
       ]);
 
-      const nextKanaPoints =
-        typeof user?.kanaPoints === "number" ? user.kanaPoints : 0;
+      const nextUserId = typeof user?.id === "string" ? user.id : null;
+      const previousUserId = activeUserIdRef.current;
+      const userChanged = previousUserId !== null && nextUserId !== previousUserId;
+      activeUserIdRef.current = nextUserId;
+      writeKnownKanaUserId(nextUserId);
 
-      setUserKanaPoints((current) => Math.max(current, nextKanaPoints));
+      const nextKanaPoints =
+        typeof user?.kanaPoints === "number"
+          ? user.kanaPoints
+          : 0;
+
+      if (nextUserId) {
+        sharedKanaBootstrapCache = {
+          userId: nextUserId,
+          progressItems: progressList ?? [],
+          kanaPoints: nextKanaPoints,
+          loadedAt: Date.now(),
+        };
+      } else {
+        sharedKanaBootstrapCache = null;
+      }
+
+      setUserKanaPoints(nextKanaPoints);
 
       if (kanaList && kanaList.length > 0) {
         setKanas(kanaList);
+        kanaCatalogCache.set(kanaType, {
+          kanas: kanaList,
+          loadedAt: Date.now(),
+        });
       }
 
       if (progressList) {
         setProgressItems(
           progressList.filter((item) => item.kanaType === kanaType),
         );
+      } else if (userChanged || nextUserId === null) {
+        setProgressItems([]);
       }
     } catch (err) {
       const message =
@@ -148,8 +241,7 @@ export function useKanaBoard({
     () =>
       subscribeMasteryProgressSync((detail) => {
         if (typeof detail.kanaPoints === "number") {
-          const nextKanaPoints = detail.kanaPoints;
-          setUserKanaPoints((current) => Math.max(current, nextKanaPoints));
+          setUserKanaPoints(detail.kanaPoints);
         }
       }),
     [],

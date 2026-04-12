@@ -113,7 +113,7 @@ function WritingTabIcon({
 }
 
 interface WritingSubMenuProps {
-  activeTab: WritingTab;
+  activeTab: WritingTab | null;
   onTabChange: (tab: WritingTab) => void;
 }
 

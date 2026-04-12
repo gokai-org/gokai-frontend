@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useSidebar } from "@/shared/components/SidebarContext";
+import WritingSubMenu, { type WritingTab } from "@/features/graph/writing/components/WritingSubMenu";
 
 const MotionLink = motion(Link);
 
@@ -20,10 +22,43 @@ function isTabActive(pathname: string, href: string) {
 
 export default function GraphNavBar() {
   const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { hidden } = useSidebar();
+  const navRef = useRef<HTMLDivElement | null>(null);
+  const [writingMenuOpen, setWritingMenuOpen] = useState(false);
+
+  const activeWritingTab = useMemo(() => {
+    const tab = searchParams.get("tab");
+    return tab === "hiragana" || tab === "katakana" || tab === "kanji"
+      ? tab
+      : null;
+  }, [searchParams]);
+
+  const showWritingMenu = writingMenuOpen;
+
+  const handleWritingSelection = useCallback(
+    (tab: WritingTab) => {
+      setWritingMenuOpen(false);
+      router.push(`/dashboard/graph/writing?tab=${tab}`);
+    },
+    [router],
+  );
+
+  useEffect(() => {
+    if (!writingMenuOpen) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (navRef.current?.contains(event.target as Node)) return;
+      setWritingMenuOpen(false);
+    };
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [writingMenuOpen]);
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+    <div ref={navRef} className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={hidden ? { y: -20, opacity: 0 } : { y: 0, opacity: 1 }}
@@ -41,10 +76,14 @@ export default function GraphNavBar() {
               href={tab.href}
               {...(isWriting ? { "data-writing-nav-escritura": "true" } : {})}
               onClick={(e) => {
-                if (isActive && isWriting) {
-                  e.preventDefault();
-                  window.dispatchEvent(new CustomEvent("writing-submenu-show"));
+                if (!isWriting) {
+                  setWritingMenuOpen(false);
+                  return;
                 }
+
+                e.preventDefault();
+
+                setWritingMenuOpen((current) => !current);
               }}
               className="relative px-3 py-2 sm:px-5 sm:py-2.5 md:px-8 rounded-lg text-xs sm:text-sm font-semibold transition-colors duration-200"
               whileHover={{ scale: 1.04 }}
@@ -71,6 +110,13 @@ export default function GraphNavBar() {
           );
         })}
       </motion.div>
+
+      {showWritingMenu && !hidden && (
+        <WritingSubMenu
+          activeTab={activeWritingTab}
+          onTabChange={handleWritingSelection}
+        />
+      )}
     </div>
   );
 }

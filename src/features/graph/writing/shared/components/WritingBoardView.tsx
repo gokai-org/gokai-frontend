@@ -35,6 +35,7 @@ import { WritingBoardBackground } from "./WritingBoardBackground";
 import WritingBoardLoading from "./WritingBoardLoading";
 import type { MasteryModuleId } from "@/features/mastery/types";
 import { MasteryBoardWrapper } from "@/features/mastery/components/MasteryBoardWrapper";
+import { handleReactFlowError } from "@/features/graph/lib/reactFlowErrorHandler";
 
 type BackgroundViewportState = {
   x: number;
@@ -47,6 +48,9 @@ type BackgroundViewportCssState = {
   y: string;
   zoom: string;
 };
+
+const WRITING_PRO_OPTIONS = { hideAttribution: true };
+const WRITING_DEFAULT_EDGE_OPTIONS = { type: "writing-edge" };
 
 function clamp(v: number, min: number, max: number) {
   return Math.min(max, Math.max(min, v));
@@ -288,6 +292,7 @@ function WritingBoardMapInner({
       onMove={handleMove}
       onMoveStart={handleMoveStart}
       onMoveEnd={handleMoveEnd}
+      onError={handleReactFlowError}
       nodeTypes={stableNodeTypes}
       edgeTypes={stableEdgeTypes}
       onlyRenderVisibleElements
@@ -306,8 +311,8 @@ function WritingBoardMapInner({
       zoomOnPinch
       zoomOnDoubleClick={false}
       preventScrolling
-      proOptions={{ hideAttribution: true }}
-      defaultEdgeOptions={{ type: "writing-edge" }}
+      proOptions={WRITING_PRO_OPTIONS}
+      defaultEdgeOptions={WRITING_DEFAULT_EDGE_OPTIONS}
       elevateEdgesOnSelect={false}
       className="!bg-transparent [&_.react-flow__pane]:cursor-grab [&_.react-flow__pane.dragging]:cursor-grabbing"
     >
@@ -378,6 +383,8 @@ export function WritingBoardView({
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useWritingBoardQuality(graphicsProfile);
   const { setHidden: _setHidden } = useSidebar();
+  const [stableNodeTypes] = useState(() => nodeTypes);
+  const [stableEdgeTypes] = useState(() => edgeTypes);
 
   // Mastery: capture setCenter from the inner ReactFlow.
   const setCenterRef = useRef<SetCenterFn | null>(null);
@@ -878,8 +885,8 @@ export function WritingBoardView({
             onInteractionChange={handleInteractionChange}
             qualityProfile={qualityProfile}
             translateExtent={translateExtent}
-            nodeTypes={nodeTypes}
-            edgeTypes={edgeTypes}
+            nodeTypes={stableNodeTypes}
+            edgeTypes={stableEdgeTypes}
             onSetCenterReady={handleSetCenterReady}
           />
         </ReactFlowProvider>

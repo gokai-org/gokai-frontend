@@ -18,6 +18,7 @@ import type {
   KanjiBoardNode as KanjiNode,
   KanjiBoardQualityProfile,
 } from "../types";
+import { handleReactFlowError } from "@/features/graph/lib/reactFlowErrorHandler";
 
 const nodeTypes = {
   "kanji-planet": KanjiBoardNode,
@@ -26,6 +27,9 @@ const nodeTypes = {
 const edgeTypes = {
   "kanji-constellation": KanjiBoardEdge,
 };
+
+const KANJI_PRO_OPTIONS = { hideAttribution: true };
+const KANJI_DEFAULT_EDGE_OPTIONS = { type: "kanji-constellation" };
 
 const PLANET_CENTER_X = 84;
 const PLANET_CENTER_Y = 78;
@@ -204,6 +208,7 @@ function KanjiBoardMapInner({
       onMove={handleMove}
       onMoveStart={handleMoveStart}
       onMoveEnd={handleMoveEnd}
+      onError={handleReactFlowError}
       nodeTypes={stableNodeTypes}
       edgeTypes={stableEdgeTypes}
       onlyRenderVisibleElements
@@ -222,8 +227,8 @@ function KanjiBoardMapInner({
       zoomOnPinch
       zoomOnDoubleClick={false}
       preventScrolling
-      proOptions={{ hideAttribution: true }}
-      defaultEdgeOptions={{ type: "kanji-constellation" }}
+      proOptions={KANJI_PRO_OPTIONS}
+      defaultEdgeOptions={KANJI_DEFAULT_EDGE_OPTIONS}
       elevateEdgesOnSelect={false}
       className="!bg-transparent [&_.react-flow__pane]:cursor-grab [&_.react-flow__pane.dragging]:cursor-grabbing"
     >

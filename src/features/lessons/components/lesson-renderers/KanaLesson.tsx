@@ -1,17 +1,24 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { LessonMode, LessonResolved } from "@/features/lessons/types";
 import LessonCTA from "@/features/lessons/components/LessonCTA";
 import { KanaStrokePlayer } from "@/features/kana/components/KanaStrokePlayer";
 import { motion, AnimatePresence } from "framer-motion";
 import { Layers, Volume2, PenLine } from "lucide-react";
+import {
+  AnimatedLessonTabs,
+  LESSON_SECTION_TRANSITION,
+  LESSON_SECTION_VARIANTS,
+  getAnimatedTabDirection,
+  type AnimatedLessonTab,
+} from "@/features/lessons/components/AnimatedLessonTabs";
 import type { KanaQuizType } from "@/features/kana/types/quiz";
 import WritingEvaluationGuide from "@/features/lessons/components/WritingEvaluationGuide";
 
 type KanaTab = "meaning" | "reading" | "writing";
 
-const KANA_TABS: { id: KanaTab; label: string; icon: React.ReactNode }[] = [
+const KANA_TABS: AnimatedLessonTab<KanaTab>[] = [
   { id: "meaning", label: "Significado", icon: <Layers size={12} /> },
   { id: "reading", label: "Lectura", icon: <Volume2 size={12} /> },
   { id: "writing", label: "Trazado", icon: <PenLine size={12} /> },
@@ -123,6 +130,7 @@ export default function KanaLesson({
 }) {
   const k = data.kana;
   const [activeTab, setActiveTab] = useState<KanaTab>("meaning");
+  const [dir, setDir] = useState(1);
   const [autoStroke, setAutoStroke] = useState(-1);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -162,39 +170,34 @@ export default function KanaLesson({
     };
   }, [activeTab, hasStrokes, k.strokes]);
 
+  const switchTab = useCallback((tab: KanaTab) => {
+    if (tab === activeTab) return;
+    setDir(getAnimatedTabDirection(KANA_TABS, activeTab, tab));
+    setActiveTab(tab);
+  }, [activeTab]);
+
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      <div className="grid grid-cols-3 gap-1 rounded-xl sm:rounded-2xl bg-surface-secondary border border-border-subtle p-1">
-        {KANA_TABS.map((tab) => {
-          const active = activeTab === tab.id;
+      <AnimatedLessonTabs
+        tabs={KANA_TABS}
+        activeTab={activeTab}
+        onChange={switchTab}
+        layoutId="kana-lesson-tab-bg"
+      />
 
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={[
-                "flex min-h-[52px] sm:min-h-[60px] flex-col items-center justify-center gap-1 rounded-lg sm:rounded-xl px-1 py-2 text-[10px] sm:text-[11px] font-bold transition-all duration-200 select-none",
-                active
-                  ? "bg-gradient-to-br from-accent to-accent-hover text-white shadow-sm"
-                  : "text-content-tertiary hover:bg-surface-tertiary hover:text-content-secondary",
-              ].join(" ")}
-            >
-              {tab.icon}
-              <span className="leading-tight text-center">{tab.label}</span>
-            </button>
-          );
-        })}
-      </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -5 }}
-          transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-        >
+      <div style={{ perspective: 1800 }}>
+        <AnimatePresence mode="wait" custom={dir}>
+          <motion.div
+            key={activeTab}
+            custom={dir}
+            variants={LESSON_SECTION_VARIANTS}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={LESSON_SECTION_TRANSITION}
+            className="origin-center will-change-transform"
+            style={{ transformStyle: "preserve-3d" }}
+          >
 {activeTab === "meaning" && (
   <div className="space-y-3">
     <div className="overflow-hidden rounded-3xl border border-border-subtle bg-gradient-to-b from-surface-elevated via-surface-elevated to-surface-secondary shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:rounded-[28px]">
@@ -434,8 +437,9 @@ export default function KanaLesson({
               </button>
             </div>
           )}
-        </motion.div>
-      </AnimatePresence>
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       <div>
         {onQuizStart && (
