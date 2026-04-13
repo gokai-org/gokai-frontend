@@ -111,7 +111,6 @@ export default function HiraganaView() {
 
   const handleQuizEnd = useCallback((result?: KanaQuizCompletionResult) => {
     const isPracticeOnly = quizItem?.isPracticeOnly === true;
-    console.warn("[HIRAGANA VIEW] handleQuizEnd", { isPracticeOnly, quizType: quizItem?.quizType, result });
     const resultingKanaPoints =
       userPoints + (result?.newlyCompletedPoints ?? 0);
     const becameMastered =

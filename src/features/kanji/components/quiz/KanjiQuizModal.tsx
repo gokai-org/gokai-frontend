@@ -21,7 +21,6 @@ import { KanjiReadingExercise } from "./KanjiReadingExercise";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { KanjiQuizWritingExercise } from "./KanjiQuizWritingExercise";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
-import { KANJI_COMPLETION_SCORE } from "@/features/graph/writing/kanjis/types";
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 
 const KANJI_COMPLETION_REWARD = 30;
@@ -30,6 +29,7 @@ export type KanjiQuizCompletionResult = {
   score: number;
   newlyCompleted: boolean;
   newlyCompletedPoints: number;
+  resultingModulePoints: number;
   dominated: boolean;
   triggeredModuleMastery: boolean;
 };
@@ -156,13 +156,11 @@ export function KanjiQuizModal({
 
   const isPracticeSession = totalRounds === 1;
   const isMixedCompletion = quiz.totalRounds > 1;
-  const isNewlyCompleted =
-    !wasCompletedBefore && isMixedCompletion && finalScore >= KANJI_COMPLETION_SCORE;
+  const earnedCompletionReward =
+    !isPracticeSession && pointsDelta >= KANJI_COMPLETION_REWARD;
+  const isNewlyCompleted = isMixedCompletion && earnedCompletionReward;
   const isDominated =
     wasCompletedBefore && isMixedCompletion && state.step === "celebration";
-  const triggeredModuleMastery =
-    isNewlyCompleted &&
-    currentModulePoints + KANJI_COMPLETION_REWARD >= MASTERY_THRESHOLDS.kanji;
   const displayPointsDelta = isPracticeSession
     ? 0
     : isNewlyCompleted
@@ -170,6 +168,12 @@ export function KanjiQuizModal({
       : pointsDelta;
   const shouldHidePointsDelta = isPracticeSession || reachedMasteryThisAttempt;
   const displayedUpdatedPoints = isPracticeSession ? null : updatedPoints;
+  const resultingModulePoints =
+    displayedUpdatedPoints ?? currentModulePoints + displayPointsDelta;
+  const triggeredModuleMastery =
+    isNewlyCompleted &&
+    currentModulePoints < MASTERY_THRESHOLDS.kanji &&
+    resultingModulePoints >= MASTERY_THRESHOLDS.kanji;
 
   const handleClose = useCallback(() => {
     const completionResult: KanjiQuizCompletionResult | undefined =
@@ -178,6 +182,7 @@ export function KanjiQuizModal({
             score: quiz.finalScore,
             newlyCompleted: isNewlyCompleted,
             newlyCompletedPoints: isNewlyCompleted ? KANJI_COMPLETION_REWARD : 0,
+            resultingModulePoints,
             dominated: isDominated,
             triggeredModuleMastery,
           }
@@ -191,7 +196,15 @@ export function KanjiQuizModal({
       onComplete(completionResult);
     }
     onClose(completionResult);
-  }, [isDominated, isNewlyCompleted, onClose, onComplete, quiz, triggeredModuleMastery]);
+  }, [
+    resultingModulePoints,
+    isDominated,
+    isNewlyCompleted,
+    onClose,
+    onComplete,
+    quiz,
+    triggeredModuleMastery,
+  ]);
 
   const shouldAutoCloseForMastery =
     triggeredModuleMastery &&

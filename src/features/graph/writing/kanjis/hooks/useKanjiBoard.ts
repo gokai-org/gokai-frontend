@@ -15,6 +15,38 @@ import {
   type KanjiBoardSummary,
 } from "../types";
 import { subscribeMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+import {
+  clearCache,
+  KANJI_USER_CACHE_KEY,
+  LIBRARY_CONTENT_CACHE_KEY,
+  LIBRARY_CONTENT_TTL_MS,
+  LIBRARY_KANJI_STATUS_CACHE_KEY,
+  LIBRARY_STATUS_TTL_MS,
+  mergeLibraryContentCache,
+  type LibraryContentCache,
+  type LibraryKanjiStatusCache,
+  readCache,
+  readFreshCache,
+  readKnownUserId,
+  writeCache,
+  writeKnownUserId,
+} from "@/shared/lib/progressBootstrapCache";
+
+const KANJI_BOOTSTRAP_TTL_MS = 30_000;
+
+let kanjiBootstrapCache:
+  | {
+      userId: string;
+      kanjis: Kanji[];
+      results: KanjiLessonResult[];
+      userPoints: number;
+      loadedAt: number;
+    }
+  | null = null;
+
+function isFresh(loadedAt: number) {
+  return Date.now() - loadedAt < KANJI_BOOTSTRAP_TTL_MS;
+}
 
 function normalizeKanjis(payload: unknown): Kanji[] {
   if (Array.isArray(payload)) {
@@ -102,15 +134,115 @@ function buildSummary(items: KanjiBoardProgress[]): KanjiBoardSummary {
 }
 
 export function useKanjiBoard() {
-  const [kanjis, setKanjis] = useState<Kanji[]>([]);
-  const [results, setResults] = useState<KanjiLessonResult[]>([]);
-  const [userPoints, setUserPoints] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
+  const knownUserId = readKnownUserId(KANJI_USER_CACHE_KEY);
+  const sharedContentCache = readFreshCache<LibraryContentCache>(
+    LIBRARY_CONTENT_CACHE_KEY,
+    LIBRARY_CONTENT_TTL_MS,
+  );
+  const sharedStatusCache = readFreshCache<LibraryKanjiStatusCache>(
+    LIBRARY_KANJI_STATUS_CACHE_KEY,
+    LIBRARY_STATUS_TTL_MS,
+  );
+  const initialBootstrapRef = useRef(
+    kanjiBootstrapCache &&
+    knownUserId &&
+    kanjiBootstrapCache.userId === knownUserId &&
+    isFresh(kanjiBootstrapCache.loadedAt)
+      ? kanjiBootstrapCache
+      : sharedStatusCache &&
+          sharedContentCache &&
+          knownUserId &&
+          sharedStatusCache.userId === knownUserId
+        ? {
+            userId: sharedStatusCache.userId,
+            kanjis: sharedContentCache.kanjis,
+            results: sharedStatusCache.results,
+            userPoints: sharedStatusCache.userPoints,
+            loadedAt: Math.max(
+              sharedStatusCache.loadedAt,
+              sharedContentCache.loadedAt,
+            ),
+          }
+      : null,
+  );
+  const initialBootstrap = initialBootstrapRef.current;
+
+  const [kanjis, setKanjis] = useState<Kanji[]>(() => initialBootstrap?.kanjis ?? []);
+  const [results, setResults] = useState<KanjiLessonResult[]>(() => initialBootstrap?.results ?? []);
+  const [userPoints, setUserPoints] = useState<number>(
+    () => initialBootstrap?.userPoints ?? 0,
+  );
+  const [loading, setLoading] = useState(() => initialBootstrap === null);
   const [error, setError] = useState<string | null>(null);
   const hasLoadedOnceRef = useRef(false);
+  const hadInitialBootstrapRef = useRef(initialBootstrap !== null);
+  const optimisticUserPointsRef = useRef(initialBootstrap?.userPoints ?? 0);
+  const resultsRef = useRef<KanjiLessonResult[]>(initialBootstrap?.results ?? []);
+  const activeUserIdRef = useRef<string | null>(initialBootstrap?.userId ?? knownUserId);
+
+  const persistSharedStatusCache = useCallback(
+    (
+      userId: string | null,
+      nextUserPoints: number,
+      nextResults: KanjiLessonResult[],
+    ) => {
+      if (!userId) {
+        clearCache(LIBRARY_KANJI_STATUS_CACHE_KEY);
+        return;
+      }
+
+      writeCache<LibraryKanjiStatusCache>(LIBRARY_KANJI_STATUS_CACHE_KEY, {
+        userId,
+        userPoints: nextUserPoints,
+        results: nextResults,
+        loadedAt: Date.now(),
+      });
+    },
+    [],
+  );
+
+  const persistSharedContentCache = useCallback((nextKanjis: Kanji[]) => {
+    const nextContent = mergeLibraryContentCache(
+      readCache<LibraryContentCache>(LIBRARY_CONTENT_CACHE_KEY),
+      { kanjis: nextKanjis },
+    );
+
+    writeCache(LIBRARY_CONTENT_CACHE_KEY, nextContent);
+  }, []);
+
+  const applyUserPoints = useCallback(
+    (nextUserPoints: number, userId = activeUserIdRef.current) => {
+      const mergedUserPoints = Math.max(
+        nextUserPoints,
+        optimisticUserPointsRef.current,
+      );
+
+      optimisticUserPointsRef.current = mergedUserPoints;
+      setUserPoints((previous) =>
+        previous === mergedUserPoints ? previous : mergedUserPoints,
+      );
+
+      if (
+        userId &&
+        kanjiBootstrapCache &&
+        kanjiBootstrapCache.userId === userId
+      ) {
+        kanjiBootstrapCache = {
+          ...kanjiBootstrapCache,
+          userPoints: mergedUserPoints,
+          loadedAt: Date.now(),
+        };
+      }
+
+      persistSharedStatusCache(userId, mergedUserPoints, resultsRef.current);
+
+      return mergedUserPoints;
+    },
+    [persistSharedStatusCache],
+  );
 
   const reload = useCallback(async () => {
-    if (!hasLoadedOnceRef.current) {
+    if (!hasLoadedOnceRef.current && !hadInitialBootstrapRef.current) {
       setLoading(true);
     }
     setError(null);
@@ -122,11 +254,47 @@ export function useKanjiBoard() {
         getCurrentUser().catch(() => null),
       ]);
 
-      setKanjis(normalizeKanjis(kanjiPayload));
-      setResults(normalizeResults(resultsPayload));
-      setUserPoints((current) =>
-        Math.max(current, typeof user?.points === "number" ? user.points : 0),
+      const nextKanjis = normalizeKanjis(kanjiPayload);
+      const nextResults = normalizeResults(resultsPayload);
+    resultsRef.current = nextResults;
+      const nextUserId = typeof user?.id === "string" ? user.id : null;
+      const previousUserId = activeUserIdRef.current;
+      const userChanged = previousUserId !== null && nextUserId !== previousUserId;
+      const userIdentityChanged = previousUserId !== nextUserId;
+
+      if (userIdentityChanged) {
+        optimisticUserPointsRef.current = 0;
+      }
+
+      activeUserIdRef.current = nextUserId;
+      writeKnownUserId(KANJI_USER_CACHE_KEY, nextUserId);
+      const nextUserPoints = applyUserPoints(
+        typeof user?.points === "number"
+          ? user.points
+          : 0,
+        nextUserId,
       );
+
+      if (nextUserId) {
+        kanjiBootstrapCache = {
+          userId: nextUserId,
+          kanjis: nextKanjis,
+          results: nextResults,
+          userPoints: nextUserPoints,
+          loadedAt: Date.now(),
+        };
+        persistSharedStatusCache(nextUserId, nextUserPoints, nextResults);
+      } else {
+        kanjiBootstrapCache = null;
+        clearCache(LIBRARY_KANJI_STATUS_CACHE_KEY);
+      }
+
+      setKanjis(nextKanjis);
+      setResults(nextResults);
+      persistSharedContentCache(nextKanjis);
+      if (userChanged && nextResults.length === 0) {
+        setResults([]);
+      }
     } catch (err) {
       const message =
         err instanceof Error
@@ -134,13 +302,15 @@ export function useKanjiBoard() {
           : "No fue posible cargar la constelación de kanjis.";
 
       setError(message);
-      setKanjis([]);
-      setResults([]);
+      if (!kanjiBootstrapCache) {
+        setKanjis([]);
+        setResults([]);
+      }
     } finally {
       hasLoadedOnceRef.current = true;
       setLoading(false);
     }
-  }, []);
+  }, [applyUserPoints, persistSharedContentCache, persistSharedStatusCache]);
 
   useEffect(() => {
     void reload();
@@ -150,12 +320,15 @@ export function useKanjiBoard() {
     () =>
       subscribeMasteryProgressSync((detail) => {
         if (typeof detail.points === "number") {
-          const nextPoints = detail.points;
-          setUserPoints((current) => Math.max(current, nextPoints));
+          applyUserPoints(detail.points);
         }
       }),
-    [],
+    [applyUserPoints],
   );
+
+  useEffect(() => {
+    resultsRef.current = results;
+  }, [results]);
 
   const resultsByKanji = useMemo(() => {
     const byKanji = new Map<

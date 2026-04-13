@@ -15,6 +15,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
 import type { FontSize, JapaneseFont } from "@/shared/hooks/useTypography";
@@ -55,6 +56,7 @@ export function SettingsBootstrap() {
         try {
           localStorage.setItem(ANIM_KEY, String(!noAnim));
           localStorage.setItem(HEAVY_ANIM_KEY, String(!noAnim));
+          window.dispatchEvent(new Event(ANIMATION_PREFERENCES_EVENT));
         } catch {}
 
         // ── Alto contraste ─────────────────────────────────────

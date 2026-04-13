@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig, animate, useMotionValue } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 
 type ItemKey =
   | "mapa"
@@ -28,10 +29,28 @@ type NavItem = {
 
 const ACCENT = "var(--text-primary)";
 const MUTED = "var(--text-muted)";
+const SIDEBAR_EASE = [0.22, 1, 0.36, 1] as const;
+const SIDEBAR_TWEEN = {
+  duration: 0.28,
+  ease: SIDEBAR_EASE,
+} as const;
+const SIDEBAR_FAST_TWEEN = {
+  duration: 0.2,
+  ease: SIDEBAR_EASE,
+} as const;
+const SIDEBAR_GENTLE_HOVER = {
+  duration: 0.18,
+  ease: "easeOut" as const,
+};
+const LOGO_ROTATION_TRANSITION = {
+  duration: 0.52,
+  ease: [0.16, 1, 0.3, 1] as const,
+};
 
 export default function SidebarOnly() {
   const router = useRouter();
   const pathname = usePathname();
+  const platformMotion = usePlatformMotion();
 
   const { setExpanded, hidden: sidebarHidden, blurred: sidebarBlurred } = useSidebar();
   const [hovered, setHovered] = useState(false);
@@ -149,6 +168,7 @@ export default function SidebarOnly() {
   };
 
   const expanded = hovered;
+  const sidebarReducedMotion = platformMotion.shouldAnimate ? "never" : "always";
 
   useEffect(() => {
     setExpanded(expanded);
@@ -233,7 +253,8 @@ export default function SidebarOnly() {
   }, [isDragging, handleDragMove, handleDragEnd]);
 
   return (
-    <>
+    <MotionConfig reducedMotion={sidebarReducedMotion}>
+      <>
       {/* Botón móvil*/}
       {!mobileOpen && !sidebarHidden && (
         <motion.div
@@ -250,10 +271,8 @@ export default function SidebarOnly() {
             top: menuPosition.y,
           }}
           transition={{
-            type: isDragging ? "tween" : "spring",
-            duration: isDragging ? 0 : 0.3,
-            stiffness: 300,
-            damping: 30,
+            duration: isDragging ? 0 : 0.24,
+            ease: SIDEBAR_EASE,
           }}
         >
           <motion.button
@@ -268,8 +287,9 @@ export default function SidebarOnly() {
             className="h-12 w-12 rounded-2xl bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] shadow-[var(--shadow-lg)] backdrop-blur grid place-items-center"
             aria-label="Abrir menú"
             aria-expanded="false"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.98 }}
+            transition={SIDEBAR_GENTLE_HOVER}
           >
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
               <path
@@ -313,13 +333,11 @@ export default function SidebarOnly() {
               "flex flex-col overflow-hidden",
               "w-[320px] md:w-[78px]",
             ].join(" ")}
-            animate={{ width: expanded ? 320 : 78 }}
-            transition={{
-              type: "spring",
-              stiffness: 350,
-              damping: 30,
-              mass: 0.7,
+            animate={{
+              width: expanded ? 320 : 78,
+              boxShadow: hovered ? "var(--shadow-xl)" : "var(--shadow-md)",
             }}
+            transition={SIDEBAR_TWEEN}
           >
             <motion.div animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
               <Header expanded={expanded} />
@@ -346,8 +364,8 @@ export default function SidebarOnly() {
                       }}
                       transition={{
                         delay: expanded ? index * 0.02 : 0,
-                        duration: 0.2,
-                        ease: [0.32, 0.72, 0, 1],
+                        duration: 0.24,
+                        ease: SIDEBAR_EASE,
                       }}
                     >
                       <SidebarItem
@@ -378,8 +396,8 @@ export default function SidebarOnly() {
                       }}
                       transition={{
                         delay: expanded ? 0.16 + index * 0.02 : 0,
-                        duration: 0.2,
-                        ease: [0.32, 0.72, 0, 1],
+                        duration: 0.24,
+                        ease: SIDEBAR_EASE,
                       }}
                     >
                       <SidebarItem
@@ -426,10 +444,8 @@ export default function SidebarOnly() {
               animate={{ x: 0, opacity: 1, scale: 1 }}
               exit={{ x: -420, opacity: 0, scale: 0.9 }}
               transition={{
-                type: "spring",
-                stiffness: 300,
-                damping: 30,
-                mass: 0.8,
+                duration: 0.26,
+                ease: SIDEBAR_EASE,
               }}
               style={{
                 paddingTop: "env(safe-area-inset-top)",
@@ -449,9 +465,9 @@ export default function SidebarOnly() {
                   onClick={() => setMobileOpen(false)}
                   className="h-11 w-11 rounded-2xl bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] grid place-items-center"
                   aria-label="Cerrar menú"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                  whileHover={{ scale: 1.04, rotate: 45 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={SIDEBAR_GENTLE_HOVER}
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                     <path
@@ -475,7 +491,7 @@ export default function SidebarOnly() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.3 }}
               >
-                <Header expanded={true} />
+                <Header expanded={true} mobile />
               </motion.div>
 
               <motion.nav
@@ -547,7 +563,8 @@ export default function SidebarOnly() {
           </>
         )}
       </AnimatePresence>
-    </>
+      </>
+    </MotionConfig>
   );
 }
 
@@ -570,7 +587,33 @@ function GlobalStyles() {
   );
 }
 
-function Header({ expanded }: { expanded: boolean }) {
+function Header({ expanded, mobile = false }: { expanded: boolean; mobile?: boolean }) {
+  const logoRotation = useMotionValue(0);
+  const previousExpanded = useRef<boolean | null>(null);
+
+  useEffect(() => {
+    let nextRotation: number | null = null;
+
+    if (previousExpanded.current === null) {
+      previousExpanded.current = expanded;
+      if (mobile) {
+        nextRotation = logoRotation.get() + 360;
+      }
+    } else if (previousExpanded.current !== expanded) {
+      previousExpanded.current = expanded;
+      nextRotation = logoRotation.get() + 360;
+    }
+
+    if (nextRotation === null) {
+      return;
+    }
+
+    const controls = animate(logoRotation, nextRotation, LOGO_ROTATION_TRANSITION);
+    return () => {
+      controls.stop();
+    };
+  }, [expanded, logoRotation, mobile]);
+
   return (
     <div className="pt-4 pb-0">
       <div className={[expanded ? "px-4" : "px-2"].join(" ")}>
@@ -593,8 +636,7 @@ function Header({ expanded }: { expanded: boolean }) {
               draggable={false}
               className="absolute inset-0 select-none h-10 w-10 block dark:hidden"
               initial={false}
-              animate={{ rotate: expanded ? 180 : -180 }}
-              transition={{ duration: 0.45, ease: "easeInOut" }}
+              style={{ rotate: logoRotation }}
             />
             <motion.img
               src="/logos/gokai-logo-dark.svg"
@@ -602,26 +644,32 @@ function Header({ expanded }: { expanded: boolean }) {
               draggable={false}
               className="absolute inset-0 select-none h-10 w-10 hidden dark:block"
               initial={false}
-              animate={{ rotate: expanded ? 180 : -180 }}
-              transition={{ duration: 0.45, ease: "easeInOut" }}
+              style={{ rotate: logoRotation }}
             />
           </div>
 
-          {expanded && (
-            <div className="hidden md:block">
-              <div className="flex items-center gap-4">
-                <div className="text-[28px] font-extrabold tracking-[0.09em] text-content-primary leading-none">
-                  GOKAI
-                </div>
-                <span
-                  className="jp-vertical text-[13px] font-black text-content-secondary dark:text-content-tertiary select-none"
-                  style={{ lineHeight: 1.15 }}
-                >
-                  語界
-                </span>
+          <motion.div
+            className="hidden overflow-hidden md:block"
+            initial={false}
+            animate={{
+              opacity: expanded ? 1 : 0,
+              x: expanded ? 0 : -6,
+              maxWidth: expanded ? 170 : 0,
+            }}
+            transition={SIDEBAR_FAST_TWEEN}
+          >
+            <div className="flex items-center gap-4 whitespace-nowrap">
+              <div className="text-[28px] font-extrabold tracking-[0.09em] text-content-primary leading-none">
+                GOKAI
               </div>
+              <span
+                className="jp-vertical text-[13px] font-black text-content-secondary dark:text-content-tertiary select-none"
+                style={{ lineHeight: 1.15 }}
+              >
+                語界
+              </span>
             </div>
-          )}
+          </motion.div>
 
           <div className="md:hidden">
             <div className="text-[28px] font-extrabold tracking-[0.06em] text-content-primary leading-none">
@@ -643,12 +691,20 @@ function SectionLabel({
   expanded: boolean;
 }) {
   return (
-    <div
-      className="px-3 pt-2 text-[11px] font-semibold tracking-[0.24em] text-content-muted"
-      style={{ opacity: expanded ? 1 : 0 }}
+    <motion.div
+      className="overflow-hidden"
+      initial={false}
+      animate={{
+        height: 26,
+        opacity: expanded ? 1 : 0,
+        y: expanded ? 0 : -4,
+      }}
+      transition={{ duration: 0.24, ease: SIDEBAR_EASE }}
     >
-      {label}
-    </div>
+      <div className="px-3 pt-2 text-[11px] font-semibold tracking-[0.24em] text-content-muted">
+        {label}
+      </div>
+    </motion.div>
   );
 }
 
@@ -675,93 +731,78 @@ function SidebarItem({
   const textColor = active ? (danger ? "rgb(220,38,38)" : ACCENT) : MUTED;
   const iconSrc = active ? iconActive : iconInactive;
 
-  if (!expanded) {
-    return (
-      <motion.button
-        type="button"
-        onClick={onClick}
-        className="group relative w-full flex items-center justify-center rounded-2xl h-14 px-0"
-        aria-label={label}
-        title={label}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ type: "spring", stiffness: 400, damping: 17 }}
-      >
-        {active && (
-          <div
-            className="absolute inset-0 rounded-2xl"
-            style={{ background: accentBg }}
-          />
-        )}
-        {active && (
-          <motion.div
-            className="absolute left-0 top-1/2 h-10 w-3 -translate-y-1/2 rounded-r-full"
-            style={{ background: "var(--accent)" }}
-            initial={{ scaleY: 0 }}
-            animate={{ scaleY: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          />
-        )}
-        <motion.img
-          src={iconSrc}
-          alt=""
-          draggable={false}
-          className="relative h-[24px] w-[24px] object-contain opacity-90 group-hover:opacity-100"
-          whileHover={{ rotate: [0, -10, 10, 0] }}
-          transition={{ duration: 0.3 }}
-        />
-        <div
-          className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
-          style={{ background: hoverBg, pointerEvents: "none" }}
-        />
-      </motion.button>
-    );
-  }
-
   return (
     <motion.button
       type="button"
       onClick={onClick}
-      className="group relative w-full flex items-center gap-4 rounded-2xl h-14 px-4 ring-1 ring-transparent hover:ring-[var(--sidebar-ring)] transition-colors"
+      className={[
+        "group relative flex h-14 w-full items-center rounded-2xl ring-1 ring-transparent hover:ring-[var(--sidebar-ring)] transition-colors",
+        expanded ? "gap-4 px-4 justify-start" : "justify-center px-0",
+      ].join(" ")}
       style={{ background: active ? accentBg : "transparent" }}
-      whileHover={{ scale: 1.02, x: 4 }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 400, damping: 17 }}
+      aria-label={label}
+      title={expanded ? undefined : label}
+      whileHover={expanded ? { scale: 1.01, x: 2 } : { scale: 1.02 }}
+      whileTap={{ scale: 0.99 }}
+      transition={SIDEBAR_GENTLE_HOVER}
     >
-      <div className="grid h-11 w-11 place-items-center">
+      {active && (
+        <div
+          className="absolute inset-0 rounded-2xl"
+          style={{ background: accentBg }}
+        />
+      )}
+      {active && (
+        <motion.div
+          className={[
+            "absolute top-1/2 h-10 w-3 -translate-y-1/2 rounded-r-full",
+            expanded ? "-left-3" : "left-0",
+          ].join(" ")}
+          style={{ background: "var(--accent)" }}
+          initial={{ scaleY: 0 }}
+          animate={{ scaleY: 1 }}
+          transition={SIDEBAR_FAST_TWEEN}
+        />
+      )}
+
+      <motion.div
+        className={[
+          "relative z-10 grid place-items-center",
+          expanded ? "h-11 w-11 shrink-0" : "h-full w-full",
+        ].join(" ")}
+      >
         <motion.img
           src={iconSrc}
           alt=""
           draggable={false}
           className="h-[24px] w-[24px] object-contain opacity-90 group-hover:opacity-100"
-          whileHover={{ scale: 1.1 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+          whileHover={expanded ? { scale: 1.04 } : { scale: 1.03 }}
+          transition={SIDEBAR_GENTLE_HOVER}
         />
-      </div>
+      </motion.div>
 
-      <motion.span
-        className="block whitespace-nowrap text-[18px] font-semibold tracking-normal"
-        style={{ color: textColor }}
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.2 }}
+      <motion.div
+        className="relative z-10 overflow-hidden"
+        initial={false}
+        animate={{
+          opacity: expanded ? 1 : 0,
+          x: expanded ? 0 : -6,
+          maxWidth: expanded ? 180 : 0,
+        }}
+        transition={SIDEBAR_FAST_TWEEN}
       >
-        {label}
-      </motion.span>
+        <span
+          className="block whitespace-nowrap text-[18px] font-semibold tracking-normal"
+          style={{ color: textColor }}
+        >
+          {label}
+        </span>
+      </motion.div>
 
       <div
         className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
         style={{ background: hoverBg, pointerEvents: "none" }}
       />
-      {active && (
-        <motion.div
-          className="absolute -left-3 top-1/2 h-10 w-3 -translate-y-1/2 rounded-r-full"
-          style={{ background: "var(--accent)" }}
-          initial={{ scaleY: 0 }}
-          animate={{ scaleY: 1 }}
-          transition={{ type: "spring", stiffness: 300, damping: 20 }}
-        />
-      )}
     </motion.button>
   );
 }

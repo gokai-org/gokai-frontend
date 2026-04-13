@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { motion } from "framer-motion";
 import { Fragment, useMemo } from "react";
 import { LockKeyhole } from "lucide-react";
 import type { Kana } from "@/features/kana/types";
@@ -15,6 +16,7 @@ import {
   buildPhoneticTable,
 } from "@/features/library/utils/kanaPhoneticMap";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 
 // ─── Variant color tokens ─────────────────────────────────────────────────────
 
@@ -24,12 +26,14 @@ const VARIANT_COLORS = {
     accentLight:   "rgba(123,63,138,0.09)",
     accentBorder:  "rgba(123,63,138,0.22)",
     accentCellBg:  "rgba(123,63,138,0.025)",
+    unlockRgba:    "123,63,138",
   },
   katakana: {
     accent:        "#1B5078",
     accentLight:   "rgba(27,80,120,0.09)",
     accentBorder:  "rgba(27,80,120,0.22)",
     accentCellBg:  "rgba(27,80,120,0.025)",
+    unlockRgba:    "27,80,120",
   },
 } as const;
 
@@ -38,6 +42,7 @@ const GOLD_COLORS = {
   accentLight:   "rgba(212,168,67,0.09)",
   accentBorder:  "rgba(212,168,67,0.22)",
   accentCellBg:  "rgba(212,168,67,0.025)",
+  unlockRgba:    "212,168,67",
 } as const;
 
 type VariantColors = {
@@ -45,6 +50,7 @@ type VariantColors = {
   accentLight: string;
   accentBorder: string;
   accentCellBg: string;
+  unlockRgba: string;
 };
 
 // Abbreviated row labels for mobile
@@ -179,13 +185,74 @@ function MiniCell({
   kana,
   c,
   isLocked,
+  animationsEnabled,
+  unlocking = false,
   onClick,
 }: {
   kana: Kana;
   c: VariantColors;
   isLocked: boolean;
+  animationsEnabled: boolean;
+  unlocking?: boolean;
   onClick?: () => void;
 }) {
+  const unlockingOverlay = unlocking ? (
+    <motion.div
+      key="unlock-burst"
+      className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center overflow-visible"
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 0 }}
+      transition={{ delay: animationsEnabled ? 2.1 : 0.9, duration: 0.4 }}
+    >
+      <div className="absolute inset-0 overflow-hidden rounded-2xl">
+        <motion.div
+          className="absolute inset-0 rounded-2xl"
+          initial={{ opacity: 0.78 }}
+          animate={{ opacity: 0 }}
+          transition={{ duration: animationsEnabled ? 1.9 : 0.8 }}
+          style={{
+            background: `radial-gradient(circle, rgba(${c.unlockRgba},0.48) 0%, transparent 70%)`,
+          }}
+        />
+        {animationsEnabled && (
+          <motion.div
+            className="absolute rounded-2xl border-2"
+            initial={{ opacity: 0.92, scale: 0.52 }}
+            animate={{ opacity: 0, scale: 1.48 }}
+            transition={{ duration: 0.88, ease: [0.22, 1, 0.36, 1] }}
+            style={{ inset: 0, borderColor: `rgba(${c.unlockRgba},0.52)` }}
+          />
+        )}
+      </div>
+      <motion.div
+        className="relative z-10 rounded-full px-2.5 py-[4px]"
+        style={{
+          background: c.accent,
+          boxShadow: `0 3px 12px rgba(${c.unlockRgba},0.52)`,
+        }}
+        initial={{ y: 10, opacity: 0, scale: 0.68 }}
+        animate={
+          animationsEnabled
+            ? {
+                y: [10, -2, -30, -38],
+                opacity: [0, 1, 1, 0],
+                scale: [0.68, 1.05, 1, 0.94],
+              }
+            : { y: -22, opacity: [0, 1, 0], scale: 1 }
+        }
+        transition={{
+          duration: animationsEnabled ? 1.9 : 0.9,
+          times: animationsEnabled ? [0, 0.14, 0.68, 1] : [0, 0.3, 1],
+          ease: [0.22, 1, 0.36, 1],
+        }}
+      >
+        <span className="text-[11px] font-black tracking-wide text-white">
+          +5
+        </span>
+      </motion.div>
+    </motion.div>
+  ) : null;
+
   return (
     <button
       type="button"
@@ -203,6 +270,7 @@ function MiniCell({
           : { minHeight: "58px" }
       }
     >
+      {unlockingOverlay}
       {isLocked ? (
         <LockKeyhole size={13} className="text-content-muted" />
       ) : (
@@ -260,6 +328,7 @@ export function KanaPhoneticGrid({
   const table = useMemo(() => buildPhoneticTable(kanas), [kanas]);
   const toScriptCard = variant === "hiragana" ? hiraganaToScriptCard : katakanaToScriptCard;
   const mastered = useMasteredModules();
+  const platformMotion = usePlatformMotion();
   const c = mastered.has(variant) ? GOLD_COLORS : VARIANT_COLORS[variant];
 
   const presentRows = useMemo(
@@ -362,6 +431,8 @@ export function KanaPhoneticGrid({
                       kana={kana}
                       c={c}
                       isLocked={isLocked}
+                      animationsEnabled={platformMotion.shouldAnimate}
+                      unlocking={newlyUnlockedIds.has(kana.id)}
                       onClick={isLocked ? undefined : () => onKanaClick(kana)}
                     />
                   );

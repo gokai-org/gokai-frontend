@@ -1,9 +1,21 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentUser } from "@/features/auth";
 import { getKanaProgress } from "@/features/kana/api/kanaApi";
+import { subscribeMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import type { Kana, UserKanaProgressDetailedResponse } from "@/features/kana/types";
+import {
+  clearCache,
+  KANA_USER_CACHE_KEY,
+  LIBRARY_KANA_STATUS_CACHE_KEY,
+  LIBRARY_STATUS_TTL_MS,
+  type LibraryKanaStatusCache,
+  readFreshCache,
+  readKnownUserId,
+  writeCache,
+  writeKnownUserId,
+} from "@/shared/lib/progressBootstrapCache";
 
 function createProgressMap(items: UserKanaProgressDetailedResponse[]) {
   const map = new Map<string, UserKanaProgressDetailedResponse>();
@@ -16,11 +28,69 @@ function createProgressMap(items: UserKanaProgressDetailedResponse[]) {
 }
 
 export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
-  const [userKanaPoints, setUserKanaPoints] = useState<number>(0);
+  const knownUserId = readKnownUserId(KANA_USER_CACHE_KEY);
+  const initialCache = useRef<LibraryKanaStatusCache | null>((() => {
+    const cached = readFreshCache<LibraryKanaStatusCache>(
+      LIBRARY_KANA_STATUS_CACHE_KEY,
+      LIBRARY_STATUS_TTL_MS,
+    );
+
+    if (!cached) return null;
+    if (knownUserId && cached.userId !== knownUserId) return null;
+    return cached;
+  })()).current;
+
+  const [userKanaPoints, setUserKanaPoints] = useState<number>(
+    () => initialCache?.userKanaPoints ?? 0,
+  );
   const [progressItems, setProgressItems] = useState<
     UserKanaProgressDetailedResponse[]
-  >([]);
-  const [loading, setLoading] = useState(true);
+  >(() => initialCache?.progressItems ?? []);
+  const [loading, setLoading] = useState(() => initialCache === null);
+  const optimisticKanaPointsRef = useRef(initialCache?.userKanaPoints ?? 0);
+  const activeUserIdRef = useRef<string | null>(initialCache?.userId ?? knownUserId);
+  const progressItemsRef = useRef<UserKanaProgressDetailedResponse[]>(
+    initialCache?.progressItems ?? [],
+  );
+
+  const persistStatusCache = useCallback(
+    (
+      userId: string | null,
+      nextUserKanaPoints: number,
+      nextProgressItems: UserKanaProgressDetailedResponse[],
+    ) => {
+      if (!userId) {
+        clearCache(LIBRARY_KANA_STATUS_CACHE_KEY);
+        return;
+      }
+
+      writeCache<LibraryKanaStatusCache>(LIBRARY_KANA_STATUS_CACHE_KEY, {
+        userId,
+        userKanaPoints: nextUserKanaPoints,
+        progressItems: nextProgressItems,
+        loadedAt: Date.now(),
+      });
+    },
+    [],
+  );
+
+  const applyUserKanaPoints = useCallback(
+    (nextUserKanaPoints: number, userId = activeUserIdRef.current) => {
+    optimisticKanaPointsRef.current = nextUserKanaPoints;
+    setUserKanaPoints((previous) =>
+      previous === nextUserKanaPoints ? previous : nextUserKanaPoints,
+    );
+
+    persistStatusCache(
+      userId,
+      nextUserKanaPoints,
+      progressItemsRef.current,
+    );
+
+    return nextUserKanaPoints;
+    },
+    [persistStatusCache],
+  );
 
   const fetchStatus = useCallback(async () => {
     let nextUserKanaPoints = 0;
@@ -35,25 +105,53 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
       nextUserKanaPoints =
         typeof user?.kanaPoints === "number" ? user.kanaPoints : 0;
 
+      const nextUserId = typeof user?.id === "string" ? user.id : null;
+      const previousUserId = activeUserIdRef.current;
+      const userIdentityChanged = previousUserId !== nextUserId;
+
+      if (userIdentityChanged) {
+        optimisticKanaPointsRef.current = 0;
+      }
+
+      activeUserIdRef.current = nextUserId;
+      writeKnownUserId(KANA_USER_CACHE_KEY, nextUserId);
+
       nextProgressItems = progress ?? [];
+
+      const mergedUserKanaPoints = applyUserKanaPoints(
+        nextUserKanaPoints,
+        nextUserId,
+      );
+      progressItemsRef.current = nextProgressItems;
+      setProgressItems(nextProgressItems);
+      persistStatusCache(nextUserId, mergedUserKanaPoints, nextProgressItems);
+
+      return {
+        userKanaPoints: mergedUserKanaPoints,
+        progressItems: nextProgressItems,
+      };
     } finally {
       setLoading(false);
     }
-
-    setUserKanaPoints((previous) =>
-      previous === nextUserKanaPoints ? previous : nextUserKanaPoints,
-    );
-    setProgressItems(nextProgressItems);
-
-    return {
-      userKanaPoints: nextUserKanaPoints,
-      progressItems: nextProgressItems,
-    };
-  }, []);
+  }, [applyUserKanaPoints, persistStatusCache]);
 
   useEffect(() => {
     void fetchStatus();
   }, [fetchStatus]);
+
+  useEffect(() => {
+    progressItemsRef.current = progressItems;
+  }, [progressItems]);
+
+  useEffect(
+    () =>
+      subscribeMasteryProgressSync((detail) => {
+        if (typeof detail.kanaPoints === "number") {
+          applyUserKanaPoints(detail.kanaPoints);
+        }
+      }),
+    [applyUserKanaPoints],
+  );
 
   const progressById = useMemo(
     () => createProgressMap(progressItems),

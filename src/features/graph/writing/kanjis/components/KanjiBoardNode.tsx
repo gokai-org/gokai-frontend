@@ -306,10 +306,10 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
           >
             {progress.status === "locked" ? (
               <div className="flex flex-col items-center justify-center gap-1.5">
-                <span className="text-[30px] leading-none opacity-40">
+                <span className="text-[30px] leading-none">
                   {progress.kanji.symbol}
                 </span>
-                <LockKeyhole className="h-3.5 w-3.5 opacity-45" strokeWidth={2} />
+                <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2} />
               </div>
             ) : (
               <span className="text-[42px]">{progress.kanji.symbol}</span>

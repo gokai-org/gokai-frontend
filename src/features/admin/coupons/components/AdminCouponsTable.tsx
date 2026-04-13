@@ -6,6 +6,7 @@ import {
   AdminFilterDropdown,
   type AdminFilterOption,
 } from "@/features/admin/shared/components/AdminFilterDropdown";
+import { AdminTableLoadingRows } from "@/features/admin/shared/components/AdminTableLoadingRows";
 import type { AdminCoupon } from "../types/coupons";
 import { AdminCouponRow } from "./AdminCouponRow";
 
@@ -38,19 +39,16 @@ function AdminCouponsTableBase({
   onViewCoupon,
 }: AdminCouponsTableProps) {
   const [page, setPage] = useState(1);
+  const [pageKey, setPageKey] = useState("50:0");
   const [pageSize, setPageSize] = useState<PageSizeValue>("50");
 
   const pageSizeNumber = Number(pageSize);
   const totalPages = Math.max(1, Math.ceil(coupons.length / pageSizeNumber));
-
-  // Adjust state during render (React recommended pattern)
-  const [prevResetKey, setPrevResetKey] = useState({ pageSize, couponsLen: coupons.length });
-  if (pageSize !== prevResetKey.pageSize || coupons.length !== prevResetKey.couponsLen) {
-    setPrevResetKey({ pageSize, couponsLen: coupons.length });
-    setPage(1);
-  }
-
-  const effectivePage = Math.max(1, Math.min(page, totalPages));
+  const currentPageKey = `${pageSize}:${coupons.length}`;
+  const effectivePage = Math.max(
+    1,
+    Math.min(pageKey === currentPageKey ? page : 1, totalPages),
+  );
 
   const pageStart = (effectivePage - 1) * pageSizeNumber;
 
@@ -100,32 +98,43 @@ function AdminCouponsTableBase({
         </div>
       </div>
 
-      <div className="overflow-x-auto xl:overflow-visible rounded-xl border border-border-subtle">
-        <table className="min-w-[780px] md:min-w-[880px] xl:min-w-0 w-full table-fixed bg-surface-primary">
+      <div className="overflow-x-auto rounded-xl border border-border-subtle">
+        <table className="w-full min-w-[1080px] table-auto bg-surface-primary xl:min-w-[1220px]">
+          <colgroup>
+            <col className="w-[11%]" />
+            <col className="w-[12%]" />
+            <col className="w-[23%]" />
+            <col className="w-[8%]" />
+            <col className="w-[10%]" />
+            <col className="w-[10%]" />
+            <col className="w-[9%]" />
+            <col className="w-[9%]" />
+            <col className="w-[8%]" />
+          </colgroup>
           <thead className="bg-[#F8F6F4] text-left">
             <tr>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 ID
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Codigo
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Descripcion
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Meses
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Limite de canjes
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Vigencia
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Estado
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Fecha de creacion
               </th>
               <th className="px-2.5 py-2.5 text-center text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
@@ -134,18 +143,22 @@ function AdminCouponsTableBase({
             </tr>
           </thead>
           <tbody>
-            {visibleCoupons.map((coupon) => (
-              <AdminCouponRow
-                key={coupon.id}
-                coupon={coupon}
-                onViewCoupon={onViewCoupon}
-              />
-            ))}
+            {loading
+              ? (
+                  <AdminTableLoadingRows columnCount={9} />
+                )
+              : visibleCoupons.map((coupon) => (
+                  <AdminCouponRow
+                    key={coupon.id}
+                    coupon={coupon}
+                    onViewCoupon={onViewCoupon}
+                  />
+                ))}
           </tbody>
         </table>
       </div>
 
-      {coupons.length > 0 && (
+      {!loading && coupons.length > 0 && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-content-tertiary">
             Mostrando {visibleCoupons.length} cupones (pagina {effectivePage} de{" "}
@@ -165,7 +178,10 @@ function AdminCouponsTableBase({
 
             <button
               type="button"
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => {
+                setPage((prev) => Math.max(1, prev - 1));
+                setPageKey(currentPageKey);
+              }}
               disabled={effectivePage <= 1}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -173,7 +189,10 @@ function AdminCouponsTableBase({
             </button>
             <button
               type="button"
-              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              onClick={() => {
+                setPage((prev) => Math.min(totalPages, prev + 1));
+                setPageKey(currentPageKey);
+              }}
               disabled={effectivePage >= totalPages}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -183,7 +202,7 @@ function AdminCouponsTableBase({
         </div>
       )}
 
-      {coupons.length === 0 && (
+      {!loading && coupons.length === 0 && (
         <div className="mt-4 rounded-xl border border-dashed border-border-default bg-surface-secondary p-6 text-center">
           <p className="text-sm font-medium text-content-secondary">
             No hay cupones con los filtros seleccionados.

@@ -72,8 +72,8 @@ function AdminSupportTicketRowBase({
       : "other";
 
   return (
-    <tr className="border-b border-border-subtle last:border-0 hover:bg-accent/[0.03] transition-colors">
-      <td className="px-2.5 py-2.5 text-xs font-semibold text-content-secondary sm:px-3 sm:text-sm lg:px-4">
+    <tr className="border-b border-border-subtle align-top last:border-0 hover:bg-accent/[0.03] transition-colors">
+      <td className="px-2.5 py-3 text-xs font-semibold text-content-secondary sm:px-3 sm:text-sm lg:px-4">
         <p
           className="max-w-[120px] truncate sm:max-w-[140px]"
           title={ticket.id}
@@ -82,13 +82,13 @@ function AdminSupportTicketRowBase({
         </p>
       </td>
 
-      <td className="px-2.5 py-2.5 sm:px-3 lg:px-4">
-        <div className="flex items-center gap-1.5 sm:gap-2">
+      <td className="px-2.5 py-3 sm:px-3 lg:px-4">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2">
           <span className="grid h-7 w-7 place-items-center rounded-full bg-accent/10 text-[11px] font-bold text-accent sm:h-8 sm:w-8 sm:text-xs">
             {avatarLabel(ticket.name)}
           </span>
           <span
-            className="max-w-[130px] truncate text-xs font-medium text-content-secondary sm:max-w-[180px] sm:text-sm"
+            className="line-clamp-2 min-w-0 break-words text-xs font-medium text-content-secondary sm:text-sm"
             title={ticket.name}
           >
             {ticket.name}
@@ -96,25 +96,25 @@ function AdminSupportTicketRowBase({
         </div>
       </td>
 
-      <td className="px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
+      <td className="px-2.5 py-3 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
         <p
-          className="max-w-[130px] truncate sm:max-w-[180px] lg:max-w-[220px]"
+          className="line-clamp-2 break-all sm:break-words"
           title={ticket.email}
         >
           {ticket.email}
         </p>
       </td>
 
-      <td className="px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
+      <td className="px-2.5 py-3 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
         <p
-          className="line-clamp-1 max-w-[150px] sm:max-w-[210px] lg:max-w-[260px]"
+          className="line-clamp-2 break-words"
           title={ticket.subject}
         >
           {ticket.subject}
         </p>
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 sm:px-3 lg:px-4">
+      <td className="px-2.5 py-3 sm:px-3 lg:px-4">
         <span
           className={[
             "inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold sm:px-2.5 sm:py-1 sm:text-xs",
@@ -125,7 +125,7 @@ function AdminSupportTicketRowBase({
         </span>
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 sm:px-3 lg:px-4">
+      <td className="px-2.5 py-3 sm:px-3 lg:px-4">
         <span
           className={[
             "inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold sm:px-2.5 sm:py-1 sm:text-xs",
@@ -136,11 +136,11 @@ function AdminSupportTicketRowBase({
         </span>
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
+      <td className="whitespace-nowrap px-2.5 py-3 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
         {ticket.createdAt}
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-center sm:px-3 lg:px-4">
+      <td className="whitespace-nowrap px-2.5 py-3 text-center sm:px-3 lg:px-4">
         <button
           type="button"
           onClick={() => onViewTicket(ticket)}

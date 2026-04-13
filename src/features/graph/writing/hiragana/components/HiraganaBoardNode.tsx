@@ -186,8 +186,8 @@ function HiraganaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
             >
               {progress.status === "locked" ? (
                 <div className="flex flex-col items-center justify-center gap-1.5">
-                  <span className="text-[28px] leading-none opacity-40">{progress.symbol}</span>
-                  <LockKeyhole className="h-3.5 w-3.5 opacity-45" strokeWidth={2} />
+                  <span className="text-[28px] leading-none">{progress.symbol}</span>
+                  <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2} />
                 </div>
               ) : (
                 <span className="text-[40px]">{progress.symbol}</span>

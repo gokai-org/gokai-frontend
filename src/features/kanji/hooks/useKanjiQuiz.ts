@@ -350,9 +350,8 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
 
       // Check if all rounds are done
       if (newRoundResults.length >= totalRounds) {
-        void submitPromise.finally(() => {
-          void refreshPointsAfterSubmit();
-        });
+        await submitPromise;
+        await refreshPointsAfterSubmit();
         await finalizeQuiz(newRoundResults);
         return;
       }

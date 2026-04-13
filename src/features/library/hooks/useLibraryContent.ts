@@ -9,6 +9,14 @@ import {
   getPrimaryMeaning,
   getPrimaryReading,
 } from "@/features/kanji/utils/kanjiText";
+import {
+  LIBRARY_CONTENT_CACHE_KEY,
+  LIBRARY_CONTENT_TTL_MS,
+  type LibraryContentCache,
+  mergeLibraryContentCache,
+  readFreshCache,
+  writeCache,
+} from "@/shared/lib/progressBootstrapCache";
 
 export type CombinedLibraryItem =
   | { type: "kanji"; data: Kanji }
@@ -16,48 +24,76 @@ export type CombinedLibraryItem =
   | { type: "hiragana"; data: Kana };
 
 export function useLibraryContent(searchQuery: string) {
-  const [kanjis, setKanjis] = useState<Kanji[]>([]);
-  const [katakanas, setKatakanas] = useState<Kana[]>([]);
-  const [hiraganas, setHiraganas] = useState<Kana[]>([]);
+  const [initialCache] = useState<LibraryContentCache | null>(() =>
+    readFreshCache<LibraryContentCache>(
+      LIBRARY_CONTENT_CACHE_KEY,
+      LIBRARY_CONTENT_TTL_MS,
+    ),
+  );
 
-  const [loadingKanjis, setLoadingKanjis] = useState(true);
-  const [loadingKatakanas, setLoadingKatakanas] = useState(true);
-  const [loadingHiraganas, setLoadingHiraganas] = useState(true);
+  const [kanjis, setKanjis] = useState<Kanji[]>(() => initialCache?.kanjis ?? []);
+  const [katakanas, setKatakanas] = useState<Kana[]>(
+    () => initialCache?.katakanas ?? [],
+  );
+  const [hiraganas, setHiraganas] = useState<Kana[]>(
+    () => initialCache?.hiraganas ?? [],
+  );
+
+  const [loadingKanjis, setLoadingKanjis] = useState(() => initialCache === null);
+  const [loadingKatakanas, setLoadingKatakanas] = useState(
+    () => initialCache === null,
+  );
+  const [loadingHiraganas, setLoadingHiraganas] = useState(
+    () => initialCache === null,
+  );
 
   useEffect(() => {
+    let cancelled = false;
+
     (async () => {
-      try {
-        const res = await listKanjis();
-        setKanjis(res);
-      } catch (e) {
-        console.error("Error loading kanjis:", e);
-      } finally {
-        setLoadingKanjis(false);
+      const [nextKanjis, nextKatakanas, nextHiraganas] = await Promise.all([
+        listKanjis().catch((error) => {
+          console.error("Error loading kanjis:", error);
+          return null;
+        }),
+        listKatakanas().catch((error) => {
+          console.error("Error loading katakanas:", error);
+          return null;
+        }),
+        listHiraganas().catch((error) => {
+          console.error("Error loading hiraganas:", error);
+          return null;
+        }),
+      ]);
+
+      if (cancelled) return;
+
+      const currentCache = mergeLibraryContentCache(initialCache, {
+        kanjis: nextKanjis ?? undefined,
+        katakanas: nextKatakanas ?? undefined,
+        hiraganas: nextHiraganas ?? undefined,
+      });
+
+      setKanjis(currentCache.kanjis);
+      setKatakanas(currentCache.katakanas);
+      setHiraganas(currentCache.hiraganas);
+      setLoadingKanjis(false);
+      setLoadingKatakanas(false);
+      setLoadingHiraganas(false);
+
+      if (
+        nextKanjis !== null ||
+        nextKatakanas !== null ||
+        nextHiraganas !== null
+      ) {
+        writeCache(LIBRARY_CONTENT_CACHE_KEY, currentCache);
       }
     })();
 
-    (async () => {
-      try {
-        const res = await listKatakanas();
-        setKatakanas(res);
-      } catch (e) {
-        console.error("Error loading katakanas:", e);
-      } finally {
-        setLoadingKatakanas(false);
-      }
-    })();
-
-    (async () => {
-      try {
-        const res = await listHiraganas();
-        setHiraganas(res);
-      } catch (e) {
-        console.error("Error loading hiraganas:", e);
-      } finally {
-        setLoadingHiraganas(false);
-      }
-    })();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [initialCache]);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 
