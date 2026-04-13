@@ -7,6 +7,7 @@ export { listGrammarLessons, getGrammarLesson, submitGrammarQuiz } from "./api/g
 // Hooks
 export { useGrammarLessons } from "./hooks/useGrammarLessons";
 export { useGrammarLesson } from "./hooks/useGrammarLesson";
+export { useGrammarTableLayout } from "./hooks/useGrammarTableLayout";
 
 // Types
 export type {

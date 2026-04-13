@@ -6,6 +6,7 @@ import {
   AdminFilterDropdown,
   type AdminFilterOption,
 } from "@/features/admin/shared/components/AdminFilterDropdown";
+import { AdminTableLoadingRows } from "@/features/admin/shared/components/AdminTableLoadingRows";
 import type { AdminUser } from "../types/users";
 import { AdminUserRow } from "./AdminUserRow";
 
@@ -38,24 +39,16 @@ function AdminUsersTableBase({
   onViewUser,
 }: AdminUsersTableProps) {
   const [page, setPage] = useState(1);
+  const [pageKey, setPageKey] = useState("50:0");
   const [pageSize, setPageSize] = useState<PageSizeValue>("50");
 
   const pageSizeNumber = Number(pageSize);
   const totalPages = Math.max(1, Math.ceil(users.length / pageSizeNumber));
-
-  const [prevResetKey, setPrevResetKey] = useState({
-    pageSize,
-    usersLen: users.length,
-  });
-  if (
-    pageSize !== prevResetKey.pageSize ||
-    users.length !== prevResetKey.usersLen
-  ) {
-    setPrevResetKey({ pageSize, usersLen: users.length });
-    setPage(1);
-  }
-
-  const effectivePage = Math.max(1, Math.min(page, totalPages));
+  const currentPageKey = `${pageSize}:${users.length}`;
+  const effectivePage = Math.max(
+    1,
+    Math.min(pageKey === currentPageKey ? page : 1, totalPages),
+  );
   const pageStart = (effectivePage - 1) * pageSizeNumber;
 
   const visibleUsers = useMemo(
@@ -104,29 +97,35 @@ function AdminUsersTableBase({
         </div>
       </div>
 
-      <div className="overflow-x-auto xl:overflow-visible rounded-xl border border-border-subtle">
-        <table className="min-w-[780px] md:min-w-[880px] xl:min-w-0 w-full table-fixed bg-surface-primary">
+      <div className="overflow-x-auto rounded-xl border border-border-subtle">
+        <table className="w-full min-w-[920px] table-auto bg-surface-primary xl:min-w-[1060px]">
+          <colgroup>
+            <col className="w-[12%]" />
+            <col className="w-[21%]" />
+            <col className="w-[25%]" />
+            <col className="w-[11%]" />
+            <col className="w-[13%]" />
+            <col className="w-[11%]" />
+            <col className="w-[7%]" />
+          </colgroup>
           <thead className="bg-[#F8F6F4] text-left">
             <tr>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 ID
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Nombre
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Correo
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Perfil
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
-                Puntos
-              </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Suscripcion
               </th>
-              <th className="px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Fecha de registro
               </th>
               <th className="px-2.5 py-2.5 text-center text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
@@ -135,18 +134,22 @@ function AdminUsersTableBase({
             </tr>
           </thead>
           <tbody>
-            {visibleUsers.map((user) => (
-              <AdminUserRow
-                key={user.id}
-                user={user}
-                onViewUser={onViewUser}
-              />
-            ))}
+            {loading
+              ? (
+                  <AdminTableLoadingRows columnCount={7} />
+                )
+              : visibleUsers.map((user) => (
+                  <AdminUserRow
+                    key={user.id}
+                    user={user}
+                    onViewUser={onViewUser}
+                  />
+                ))}
           </tbody>
         </table>
       </div>
 
-      {users.length > 0 && (
+      {!loading && users.length > 0 && (
         <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-content-tertiary">
             Mostrando {visibleUsers.length} usuarios (pagina {effectivePage} de{" "}
@@ -166,7 +169,10 @@ function AdminUsersTableBase({
 
             <button
               type="button"
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => {
+                setPage((prev) => Math.max(1, prev - 1));
+                setPageKey(currentPageKey);
+              }}
               disabled={effectivePage <= 1}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -174,7 +180,10 @@ function AdminUsersTableBase({
             </button>
             <button
               type="button"
-              onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+              onClick={() => {
+                setPage((prev) => Math.min(totalPages, prev + 1));
+                setPageKey(currentPageKey);
+              }}
               disabled={effectivePage >= totalPages}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -184,7 +193,7 @@ function AdminUsersTableBase({
         </div>
       )}
 
-      {users.length === 0 && (
+      {!loading && users.length === 0 && (
         <div className="mt-4 rounded-xl border border-dashed border-border-default bg-surface-secondary p-6 text-center">
           <p className="text-sm font-medium text-content-secondary">
             No hay usuarios con los filtros seleccionados.

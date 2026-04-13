@@ -38,7 +38,13 @@ import {
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 // import { getPrimaryMeaning } from "@/features/kanji";
+
+type QuizCompletionResult = {
+  newlyCompleted?: boolean;
+  newlyCompletedPoints?: number;
+};
 
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -233,7 +239,7 @@ export default function LibraryPage() {
     ],
   );
 
-  const handleQuizClose = useCallback(async () => {
+  const handleQuizClose = useCallback(async (result?: QuizCompletionResult) => {
     const isPracticeOnly = quizKanji?.isPracticeOnly === true;
     setQuizKanji(null);
 
@@ -241,6 +247,12 @@ export default function LibraryPage() {
     lockedKanjiIdsBeforeQuizRef.current = null;
 
     if (isPracticeOnly) return;
+
+    if (result?.newlyCompleted && (result.newlyCompletedPoints ?? 0) > 0) {
+      dispatchMasteryProgressSync({
+        points: userPoints + result.newlyCompletedPoints,
+      });
+    }
 
     const nextUserPoints = await reloadLockedStatus();
 
@@ -265,13 +277,13 @@ export default function LibraryPage() {
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedKanjiIds(new Set());
     }, 2500);
-  }, [kanjis, quizKanji, reloadLockedStatus]);
+  }, [kanjis, quizKanji, reloadLockedStatus, userPoints]);
 
   const handleKanaClick = (kana: Kana) => {
     setDrawerEntity({ id: kana.id, kind: "kana", kanaType: kana.kanaType });
   };
 
-  const handleKanaQuizClose = useCallback(async () => {
+  const handleKanaQuizClose = useCallback(async (result?: QuizCompletionResult) => {
     const isPracticeOnly = quizKana?.isPracticeOnly === true;
     setQuizKana(null);
 
@@ -281,6 +293,12 @@ export default function LibraryPage() {
     lockedKatakanaIdsBeforeQuizRef.current = null;
 
     if (isPracticeOnly) return;
+
+    if (result?.newlyCompleted && (result.newlyCompletedPoints ?? 0) > 0) {
+      dispatchMasteryProgressSync({
+        kanaPoints: userKanaPoints + result.newlyCompletedPoints,
+      });
+    }
 
     const nextKanaState = await reloadKanaLockedStatus();
 
@@ -314,7 +332,7 @@ export default function LibraryPage() {
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedKanaIds(new Set());
     }, 2500);
-  }, [hiraganas, katakanas, quizKana, reloadKanaLockedStatus]);
+  }, [hiraganas, katakanas, quizKana, reloadKanaLockedStatus, userKanaPoints]);
 
   const handleCategoryChange = (cat: string | null) => {
     setSelectedCategory(cat);

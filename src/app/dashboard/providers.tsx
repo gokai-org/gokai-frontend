@@ -9,6 +9,7 @@ import { SettingsBootstrap } from "@/features/configuration/components/SettingsB
 import { TypographyProvider } from "@/shared/components/TypographyProvider";
 import { MasteredModulesProvider } from "@/features/mastery/components/MasteredModulesProvider";
 import { AuthenticatedUserGate } from "@/features/auth/components/AuthenticatedUserGate";
+import { ProgressBootstrap } from "@/features/dashboard/components/ProgressBootstrap";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -19,6 +20,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             <GuideTourProvider>
               <MasteredModulesProvider>
                 <SettingsBootstrap />
+                <ProgressBootstrap />
                 {children}
                 <GuideTourOverlay />
               </MasteredModulesProvider>

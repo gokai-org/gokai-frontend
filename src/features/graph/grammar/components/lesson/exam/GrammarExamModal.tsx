@@ -1,20 +1,20 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import GrammarExam from "./GrammarExam";
 import { useGrammarLesson } from "../../../hooks/useGrammarLesson";
 
 // ── Pink accent vars (same as GrammarLessonModal) ─────────
-const GRAMMAR_ACCENT_VARS: React.CSSProperties = {
+const GRAMMAR_ACCENT_VARS: CSSProperties = {
   "--accent":               "#c0395a",
   "--accent-hover":         "#e06578",
   "--accent-subtle":        "rgba(192,57,90,0.10)",
   "--accent-muted":         "rgba(192,57,90,0.06)",
   "--scrollbar-thumb":      "rgba(192,57,90,0.35)",
   "--scrollbar-thumb-hover":"rgba(224,101,120,0.55)",
-} as React.CSSProperties;
+} as CSSProperties;
 
 // ── Overlay / panel variants (same as KanjiQuizModal) ─────
 const overlayVariants = {
@@ -25,8 +25,8 @@ const overlayVariants = {
 
 const panelVariants = {
   hidden:  { opacity: 0, scale: 0.94, y: 18 },
-  visible: { opacity: 1, scale: 1,    y: 0,  transition: { type: "spring", stiffness: 340, damping: 30, mass: 0.85 } },
-  exit:    { opacity: 0, scale: 0.95, y: 10, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } },
+  visible: { opacity: 1, scale: 1,    y: 0,  transition: { type: "spring" as const, stiffness: 340, damping: 30, mass: 0.85 } },
+  exit:    { opacity: 0, scale: 0.95, y: 10, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] as [number, number, number, number] } },
 };
 
 // ─────────────────────────────────────────────────────────
@@ -78,8 +78,8 @@ export default function GrammarExamModal({ lessonId, onClose, onComplete }: Prop
           className={[
             "relative flex w-full flex-col overflow-hidden",
             "rounded-3xl bg-surface-primary shadow-2xl ring-1 ring-border-subtle",
-            "max-w-lg max-h-[95dvh]",
-            "max-sm:max-w-none max-sm:w-[calc(100vw-2rem)] max-sm:max-h-[92dvh] max-sm:rounded-3xl",
+            "max-w-xl h-[min(70dvh,660px)]",
+            "max-sm:max-w-none max-sm:w-[calc(100vw-2rem)] max-sm:h-[min(80dvh,660px)] max-sm:rounded-3xl",
           ].join(" ")}
           style={GRAMMAR_ACCENT_VARS}
           onClick={(e) => e.stopPropagation()}
@@ -133,9 +133,9 @@ export default function GrammarExamModal({ lessonId, onClose, onComplete }: Prop
             </div>
           )}
           {/* ── Body ───────────────────────────────── */}
-          <div className="flex-1 min-h-0 overflow-y-auto kanji-detail-scroll p-5 sm:p-6">
+          <div className="flex-1 min-h-0 overflow-hidden p-5 sm:p-6">
             {status === "loading" && (
-              <div className="flex flex-col items-center justify-center gap-3 py-16 animate-pulse">
+              <div className="flex h-full flex-col items-center justify-center gap-3 py-16 animate-pulse">
                 <div className="h-14 w-14 rounded-full bg-surface-tertiary" />
                 <div className="h-3 w-40 rounded-full bg-surface-tertiary" />
                 <div className="h-3 w-28 rounded-full bg-surface-tertiary" />
@@ -143,7 +143,7 @@ export default function GrammarExamModal({ lessonId, onClose, onComplete }: Prop
             )}
 
             {status === "error" && (
-              <div className="flex items-center justify-center py-16">
+              <div className="flex h-full items-center justify-center py-16">
                 <p className="text-sm text-content-secondary">
                   No se pudo cargar el examen.
                 </p>
@@ -151,7 +151,7 @@ export default function GrammarExamModal({ lessonId, onClose, onComplete }: Prop
             )}
 
             {status === "success" && exam.length === 0 && (
-              <div className="flex items-center justify-center py-16">
+              <div className="flex h-full items-center justify-center py-16">
                 <p className="text-sm text-content-secondary">
                   Esta lección no tiene examen todavía.
                 </p>

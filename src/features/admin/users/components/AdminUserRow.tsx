@@ -14,47 +14,46 @@ function AdminUserRowBase({ user, onViewUser }: AdminUserRowProps) {
     (user.lastName?.[0] ?? "").toUpperCase();
 
   return (
-    <tr className="border-b border-border-subtle last:border-0 hover:bg-accent/[0.03] transition-colors">
-      <td className="px-2.5 py-2.5 text-xs font-semibold text-content-secondary sm:px-3 sm:text-sm lg:px-4">
+    <tr className="border-b border-border-subtle align-top last:border-0 hover:bg-accent/[0.03] transition-colors">
+      <td className="px-2.5 py-3 text-xs font-semibold text-content-secondary sm:px-3 sm:text-sm lg:px-4">
         <p
-          className="max-w-[120px] truncate sm:max-w-[140px]"
+          className="max-w-[110px] truncate sm:max-w-[120px]"
           title={user.id}
         >
           {user.id.slice(0, 8)}...
         </p>
       </td>
 
-      <td className="px-2.5 py-2.5 sm:px-3 lg:px-4">
-        <div className="flex items-center gap-2.5">
+      <td className="px-2.5 py-3 sm:px-3 lg:px-4">
+        <div className="flex min-w-0 items-center gap-2.5">
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[11px] font-bold text-accent">
             {initials || "?"}
           </span>
-          <span className="text-xs font-semibold text-content-primary sm:text-sm">
+          <span
+            className="line-clamp-2 min-w-0 break-words text-xs font-semibold text-content-primary sm:text-sm"
+            title={`${user.firstName} ${user.lastName}`.trim()}
+          >
             {user.firstName} {user.lastName}
           </span>
         </div>
       </td>
 
-      <td className="px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
+      <td className="px-2.5 py-3 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
         <p
-          className="line-clamp-1 max-w-[200px] sm:max-w-[260px]"
+          className="line-clamp-2 break-all sm:break-words"
           title={user.email}
         >
           {user.email}
         </p>
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 sm:px-3 lg:px-4">
+      <td className="px-2.5 py-3 sm:px-3 lg:px-4">
         <span className="inline-flex rounded-full bg-surface-tertiary px-2 py-0.5 text-[11px] font-semibold text-content-secondary sm:px-2.5 sm:py-1 sm:text-xs">
           {user.profile}
         </span>
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
-        {user.points}
-      </td>
-
-      <td className="whitespace-nowrap px-2.5 py-2.5 sm:px-3 lg:px-4">
+      <td className="px-2.5 py-3 sm:px-3 lg:px-4">
         <span
           className={[
             "inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold sm:px-2.5 sm:py-1 sm:text-xs",
@@ -67,11 +66,11 @@ function AdminUserRowBase({ user, onViewUser }: AdminUserRowProps) {
         </span>
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
+      <td className="whitespace-nowrap px-2.5 py-3 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
         {user.createdAt}
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-center sm:px-3 lg:px-4">
+      <td className="whitespace-nowrap px-2.5 py-3 text-center sm:px-3 lg:px-4">
         <button
           type="button"
           onClick={() => onViewUser(user)}

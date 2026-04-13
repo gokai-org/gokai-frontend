@@ -14,6 +14,7 @@ import type { User } from "@/features/auth/types";
 import { useSettings } from "@/features/configuration/hooks/useSettings";
 import type { UserSettings } from "@/features/configuration/types";
 import { AccountSettings } from "@/features/configuration/components/AccountSettings";
+import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
 import type { FontSize, JapaneseFont } from "@/shared/hooks/useTypography";
@@ -424,6 +425,7 @@ function AccessibilitySettings({
             try {
               localStorage.setItem("gokai-animations-enabled", String(!v));
               localStorage.setItem("gokai-heavy-animations-enabled", String(!v));
+              window.dispatchEvent(new Event(ANIMATION_PREFERENCES_EVENT));
             } catch {}
           }}
         />

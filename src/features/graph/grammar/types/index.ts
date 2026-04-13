@@ -20,11 +20,12 @@ export type GrammarLesson = {
   content: LessonContent | null;
 };
 
-export type LessonContent = {
-  meaning: ImageStepperComponent;
-  howToUse: TableComponent;
-  examples: TextStepperComponent;
-  exam: ExamItem[];
+export type TableComponent = {
+  type: "table";
+  content: {
+    headers: string[];
+    rows: TableRow[];
+  };
 };
 
 export type ImageStepperComponent = {
@@ -32,17 +33,18 @@ export type ImageStepperComponent = {
   content: ImageStep[];
 };
 
+export type MeaningComponent = ImageStepperComponent | TableComponent;
+
+export type LessonContent = {
+  meaning: MeaningComponent | null;
+  howToUse: TableComponent | null;
+  examples: TextStepperComponent | null;
+  exam: ExamItem[];
+};
+
 export type ImageStep = {
   img: string;
   description: string;
-};
-
-export type TableComponent = {
-  type: "table";
-  content: {
-    headers: string[];
-    rows: TableRow[];
-  };
 };
 
 export type TableRow = { cells: TableCell[] };

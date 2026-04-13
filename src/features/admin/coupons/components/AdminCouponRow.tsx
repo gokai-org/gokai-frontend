@@ -25,44 +25,44 @@ interface AdminCouponRowProps {
 
 function AdminCouponRowBase({ coupon, onViewCoupon }: AdminCouponRowProps) {
   return (
-    <tr className="border-b border-border-subtle last:border-0 hover:bg-accent/[0.03] transition-colors">
-      <td className="px-2.5 py-2.5 text-xs font-semibold text-content-secondary sm:px-3 sm:text-sm lg:px-4">
+    <tr className="border-b border-border-subtle align-top last:border-0 hover:bg-accent/[0.03] transition-colors">
+      <td className="px-2.5 py-3 text-xs font-semibold text-content-secondary sm:px-3 sm:text-sm lg:px-4">
         <p
-          className="max-w-[120px] truncate sm:max-w-[140px]"
+          className="max-w-[110px] truncate sm:max-w-[120px]"
           title={coupon.id}
         >
           {coupon.id.slice(0, 8)}...
         </p>
       </td>
 
-      <td className="px-2.5 py-2.5 sm:px-3 lg:px-4">
+      <td className="px-2.5 py-3 sm:px-3 lg:px-4">
         <span className="inline-flex rounded-lg bg-surface-tertiary px-2.5 py-1 text-xs font-bold tracking-wider text-content-primary uppercase">
           {coupon.code}
         </span>
       </td>
 
-      <td className="px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
+      <td className="px-2.5 py-3 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
         <p
-          className="line-clamp-1 max-w-[180px] sm:max-w-[240px]"
+          className="line-clamp-2 break-words"
           title={coupon.description ?? ""}
         >
           {coupon.description || "—"}
         </p>
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
+      <td className="whitespace-nowrap px-2.5 py-3 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
         {coupon.months} {coupon.months === 1 ? "mes" : "meses"}
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
+      <td className="whitespace-nowrap px-2.5 py-3 text-xs text-content-secondary sm:px-3 sm:text-sm lg:px-4">
         {coupon.claimLimit}
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
+      <td className="whitespace-nowrap px-2.5 py-3 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
         {formatVigencyDate(coupon.vigency)}
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 sm:px-3 lg:px-4">
+      <td className="px-2.5 py-3 sm:px-3 lg:px-4">
         <span
           className={[
             "inline-flex rounded-full px-2 py-0.5 text-[11px] font-semibold sm:px-2.5 sm:py-1 sm:text-xs",
@@ -73,11 +73,11 @@ function AdminCouponRowBase({ coupon, onViewCoupon }: AdminCouponRowProps) {
         </span>
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
+      <td className="whitespace-nowrap px-2.5 py-3 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
         {coupon.createdAt}
       </td>
 
-      <td className="whitespace-nowrap px-2.5 py-2.5 text-center sm:px-3 lg:px-4">
+      <td className="whitespace-nowrap px-2.5 py-3 text-center sm:px-3 lg:px-4">
         <button
           type="button"
           onClick={() => onViewCoupon(coupon)}

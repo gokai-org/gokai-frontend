@@ -18,10 +18,32 @@ function normalize(text: string) {
   return text.trim().toLowerCase();
 }
 
+function dedupeUsersById(
+  rawUsers: ReturnType<typeof mapBackendUserToAdmin>[],
+): AdminUser[] {
+  const indexById = new Map<string, number>();
+  const deduped: AdminUser[] = [];
+
+  rawUsers.forEach((user) => {
+    const existingIndex = indexById.get(user.id);
+
+    if (existingIndex == null) {
+      indexById.set(user.id, deduped.length);
+      deduped.push(user);
+      return;
+    }
+
+    deduped[existingIndex] = user;
+  });
+
+  return deduped;
+}
+
 export function useAdminUsers() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<UserStatusFilter>("all");
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [hasGoogleData, setHasGoogleData] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<number | null>(null);
@@ -42,11 +64,24 @@ export function useAdminUsers() {
 
     try {
       const raw = await getAdminUsers();
-      const mapped = raw.map(mapBackendUserToAdmin);
 
       if (!mountedRef.current) return;
 
-      setUsers(mapped);
+      setHasGoogleData(
+        raw.some(
+          (user) =>
+            typeof user.is_google_user === "boolean" ||
+            typeof user.isGoogleUser === "boolean",
+        ),
+      );
+      setUsers((prev) => {
+        const previousById = new Map(prev.map((user) => [user.id, user]));
+        const mappedUsers = raw.map((user) =>
+          mapBackendUserToAdmin(user, previousById.get(user.id)),
+        );
+
+        return dedupeUsersById(mappedUsers);
+      });
       setLastUpdatedAt(Date.now());
     } catch (err) {
       if (!mountedRef.current) return;
@@ -123,7 +158,7 @@ export function useAdminUsers() {
       total: source.length,
       subscribed: source.filter((x) => x.subscribed).length,
       free: source.filter((x) => !x.subscribed).length,
-      google: source.filter((x) => x.isGoogleUser).length,
+      google: source.filter((x) => x.isGoogleUser === true).length,
     };
   }, [users]);
 
@@ -183,6 +218,7 @@ export function useAdminUsers() {
     isRefreshing,
     lastUpdatedAt,
     error,
+    hasGoogleData,
     statusFilter,
     setStatusFilter,
     summary,

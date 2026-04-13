@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, BookOpen, Grid3x3, MessageSquareText, FlaskConical } from "lucide-react";
 import { useSidebar } from "@/shared/components/SidebarContext";
@@ -12,6 +12,8 @@ import {
   type AnimatedLessonTab,
 } from "@/features/lessons/components/AnimatedLessonTabs";
 import { useGrammarLesson } from "../../hooks/useGrammarLesson";
+import GrammarAdaptiveTable from "./sections/GrammarAdaptiveTable";
+import { resolveTableRows } from "../../lib/grammarTableLayout";
 
 import type { GrammarLesson, ImageStep, ExampleStep, TableComponent } from "../../types";
 
@@ -25,15 +27,32 @@ const CONCEPT_CALLOUTS = [
 // ── SLIDE TYPES ───────────────────────────────────────────
 type Slide =
   | { kind: "meaning"; step: ImageStep; index: number; total: number }
-  | { kind: "howToUse" }
+  | { kind: "meaningTable"; table: TableComponent; rowIndex: number; total: number }
+  | { kind: "howToUse"; table: TableComponent }
   | { kind: "example"; step: ExampleStep; index: number; total: number };
 
 function buildSlides(lesson: GrammarLesson): Slide[] {
   const out: Slide[] = [];
-  const ms = lesson.content?.meaning?.content ?? [];
-  ms.forEach((step, i) => out.push({ kind: "meaning", step, index: i, total: ms.length }));
-  if (lesson.content?.howToUse) out.push({ kind: "howToUse" });
-  const es = lesson.content?.examples?.content ?? [];
+  const meaning = lesson.content?.meaning;
+  if (meaning?.type === "image_stepper") {
+    meaning.content.forEach((step, i) => {
+      out.push({ kind: "meaning", step, index: i, total: meaning.content.length });
+    });
+  } else if (meaning?.type === "table") {
+    const meaningRows = resolveTableRows(meaning);
+    const total = Math.max(meaningRows.length, 1);
+    for (let rowIndex = 0; rowIndex < total; rowIndex += 1) {
+      out.push({ kind: "meaningTable", table: meaning, rowIndex, total });
+    }
+  }
+
+  if (lesson.content?.howToUse) {
+    out.push({ kind: "howToUse", table: lesson.content.howToUse });
+  }
+
+  const es = Array.isArray(lesson.content?.examples?.content)
+    ? lesson.content.examples.content
+    : [];
   es.forEach((step, i) => out.push({ kind: "example", step, index: i, total: es.length }));
   return out;
 }
@@ -47,56 +66,20 @@ const TAB_CONFIG: AnimatedLessonTab<TabId>[] = [
 ];
 
 function slideToTab(s: Slide): TabId {
-  if (s.kind === "meaning") return "conceptos";
+  if (s.kind === "meaning" || s.kind === "meaningTable") return "conceptos";
   if (s.kind === "howToUse") return "estructura";
   return "ejemplos";
 }
 
 // ── CSS VARS – pink accent scope ──────────────────────────
-const GRAMMAR_ACCENT_VARS: React.CSSProperties = {
+const GRAMMAR_ACCENT_VARS: CSSProperties = {
   "--accent":               "#c0395a",
   "--accent-hover":         "#e06578",
   "--accent-subtle":        "rgba(192,57,90,0.10)",
   "--accent-muted":         "rgba(192,57,90,0.06)",
   "--scrollbar-thumb":      "rgba(192,57,90,0.35)",
   "--scrollbar-thumb-hover":"rgba(224,101,120,0.55)",
-} as React.CSSProperties;
-
-// ── PATTERN-FORMULA HELPERS ───────────────────────────────
-
-function HighlightFormula({ text }: { text: string }) {
-  const tagged = text.split(/(\bS[12]\b|は|が|を|に|で|と|も|の|へ|から|まで|より|です(?:か)?|ます(?:か)?|じゃありません|じゃないです|じゃない|ではありません)/).filter(Boolean);
-  return (
-    <span className="inline-flex flex-wrap items-baseline gap-x-0.5 gap-y-3">
-      {tagged.map((part, i) => {
-        if (/^\bS[12]\b$/.test(part)) {
-          const num = part === "S1" ? "1" : "2";
-          return (
-            <span key={i} className="inline-flex flex-col items-center gap-0.5 mx-1 align-bottom">
-              <span className="text-[8px] font-bold uppercase tracking-widest text-content-muted">sujeto {num}</span>
-              <span className="rounded-lg border border-border-default bg-surface-secondary px-2.5 py-1 font-mono text-[0.88em] font-extrabold italic text-content-secondary leading-none">{part}</span>
-            </span>
-          );
-        }
-        if (/^(は|が|を|に|で|と|も|の|へ|から|まで|より)$/.test(part))
-          return (
-            <span key={i} className="inline-flex flex-col items-center gap-0.5 align-bottom">
-              <span className="text-[8px] font-bold uppercase tracking-widest text-accent/60">partícula</span>
-              <span className="font-extrabold text-accent leading-none">{part}</span>
-            </span>
-          );
-        if (/^(です(?:か)?|ます(?:か)?|じゃありません|じゃないです|じゃない|ではありません)$/.test(part))
-          return (
-            <span key={i} className="inline-flex flex-col items-center gap-0.5 align-bottom">
-              <span className="text-[8px] font-bold uppercase tracking-widest text-accent-hover/60">forma verbal</span>
-              <span className="font-extrabold text-accent-hover leading-none">{part}</span>
-            </span>
-          );
-        return <span key={i} className="align-bottom leading-none">{part}</span>;
-      })}
-    </span>
-  );
-}
+} as CSSProperties;
 
 function HighlightSentence({ text }: { text: string }) {
   const parts = text.split(/(は|が|を|に|で|と|も|の|へ|から|まで|より|です(?:か)?|ます(?:か)?|じゃありません|じゃないです|じゃない|ではありません)/).filter(Boolean);
@@ -126,88 +109,38 @@ function extractConceptTitle(text: string) {
   return firstSentence;
 }
 
-// ── PATTERN DECK (replaces plain table) ───────────────────
-const ROW_STATES = ["Afirmativo","Negativo","Pregunta","Formal"] as const;
-type RowState = typeof ROW_STATES[number];
-
-const STATE_COLOR: Record<RowState, { border: string; bg: string; pill: string }> = {
-  Afirmativo: { border: "border-emerald-200/70 dark:border-emerald-800/30", bg: "bg-emerald-50/40 dark:bg-emerald-950/10",  pill: "bg-emerald-100 border-emerald-300/60 text-emerald-700 dark:bg-emerald-950/40 dark:border-emerald-700/40 dark:text-emerald-300" },
-  Negativo:   { border: "border-rose-200/70   dark:border-rose-800/30",   bg: "bg-rose-50/40   dark:bg-rose-950/10",    pill: "bg-rose-100   border-rose-300/60   text-rose-700   dark:bg-rose-950/40   dark:border-rose-700/40   dark:text-rose-300" },
-  Pregunta:   { border: "border-sky-200/70    dark:border-sky-800/30",    bg: "bg-sky-50/40    dark:bg-sky-950/10",     pill: "bg-sky-100    border-sky-300/60    text-sky-700    dark:bg-sky-950/40    dark:border-sky-700/40    dark:text-sky-300" },
-  Formal:     { border: "border-violet-200/70 dark:border-violet-800/30", bg: "bg-violet-50/40 dark:bg-violet-950/10", pill: "bg-violet-100 border-violet-300/60 text-violet-700 dark:bg-violet-950/40 dark:border-violet-700/40 dark:text-violet-300" },
-};
-const DEFAULT_ROW = { border: "border-border-subtle", bg: "bg-surface-secondary/50", pill: "bg-surface-tertiary border-border-subtle text-content-muted" };
-
-function getRowColor(val: string) {
-  for (const k of ROW_STATES) {
-    if (val.includes(k)) return STATE_COLOR[k];
-  }
-  return DEFAULT_ROW;
-}
-
-function PatternDeck({ table }: { table: TableComponent }) {
-  const { headers, rows } = table.content;
-  type FlatRow = { state?: string; style?: string; formula?: string };
-  const flatRows: FlatRow[] = [];
-  const pending: { col: number; value: string; rem: number }[] = [];
-
-  for (const row of rows) {
-    const resolved: string[] = [];
-    let src = 0;
-    for (let col = 0; col < headers.length; col++) {
-      const ps = pending.find((p) => p.col === col);
-      if (ps) {
-        resolved.push(ps.value);
-        ps.rem--;
-        if (ps.rem === 0) pending.splice(pending.indexOf(ps), 1);
-      } else {
-        const cell = row.cells[src++];
-        resolved.push(cell?.value ?? "");
-        if (cell && cell.rowspan > 1) pending.push({ col, value: cell.value, rem: cell.rowspan - 1 });
-      }
-    }
-    const flat: FlatRow = {};
-    headers.forEach((h, i) => {
-      const v = resolved[i] ?? "";
-      const hl = h.toLowerCase();
-      if (hl.includes("estado") || hl.includes("tipo")) flat.state = v;
-      else if (hl.includes("estilo") || hl.includes("nivel")) flat.style = v;
-      else flat.formula = v;
-    });
-    if (!flat.formula && headers.length <= 2) { flat.formula = flat.style; flat.style = undefined; }
-    flatRows.push(flat);
-  }
-
+function SectionShell({
+  eyebrow,
+  title,
+  titleClassName,
+  chips,
+  children,
+}: {
+  eyebrow: string;
+  title?: string;
+  titleClassName?: string;
+  chips?: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div className="flex flex-col gap-2.5">
-      {flatRows.map((row, i) => {
-        const colors = getRowColor(row.state ?? "");
-        return (
-          <div key={i} className={`overflow-hidden rounded-2xl border ${colors.border}`}>
-            {/* Header with full-name badge */}
-            <div className={`flex flex-wrap items-center gap-2 px-4 py-2.5 ${colors.bg}`}>
-              {row.state && (
-                <span className={`rounded-full border px-3 py-0.5 text-[11px] font-bold ${colors.pill}`}>
-                  {row.state}
-                </span>
-              )}
-              {row.style && (
-                <span className="rounded-full border border-border-subtle bg-surface-primary/80 px-2.5 py-0.5 text-[10px] font-semibold text-content-muted">
-                  {row.style}
-                </span>
-              )}
-            </div>
-            {/* Formula area */}
-            {row.formula && (
-              <div className="bg-surface-primary/70 px-4 py-4">
-                <div className="text-[15px] font-bold tracking-wide text-content-primary">
-                  <HighlightFormula text={row.formula} />
-                </div>
-              </div>
-            )}
+    <div className="space-y-3">
+      <div className="overflow-hidden rounded-3xl border border-border-subtle bg-gradient-to-b from-surface-elevated via-surface-elevated to-surface-secondary shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:rounded-[28px]">
+        <div className="h-1.5 bg-gradient-to-r from-accent via-accent-hover to-accent" />
+        <div className="space-y-4 p-4 sm:space-y-5 sm:p-5">
+          <div className="space-y-3">
+            <p className="text-[10px] font-black uppercase tracking-[0.22em] text-accent/80 sm:text-[11px]">
+              {eyebrow}
+            </p>
+            {title ? (
+              <h3 className={titleClassName ?? "text-balance text-[clamp(1.35rem,1.08rem+0.95vw,2rem)] font-black leading-[1.05] text-content-primary"}>
+                {title}
+              </h3>
+            ) : null}
+            {chips}
           </div>
-        );
-      })}
+          {children}
+        </div>
+      </div>
     </div>
   );
 }
@@ -441,7 +374,6 @@ export default function GrammarLessonModal({ lessonId, onClose, onExamOpen }: Pr
                 >
                   <SlideContent
                     slide={current}
-                    lesson={lesson!}
                   />
                 </motion.div>
                 </AnimatePresence>
@@ -522,19 +454,14 @@ export default function GrammarLessonModal({ lessonId, onClose, onExamOpen }: Pr
 }
 
 // ── SLIDE CONTENT RENDERER ────────────────────────────────
-function SlideContent({
-  slide,
-  lesson,
-}: {
-  slide: Slide;
-  lesson: GrammarLesson;
-}) {
+function SlideContent({ slide }: { slide: Slide }) {
   switch (slide.kind) {
     // ── MEANING (concept image card) ──────────────────
     case "meaning": {
       const { step, index, total } = slide;
       const conceptTitle = extractConceptTitle(step.description);
       const conceptTag = CONCEPT_CALLOUTS[index % CONCEPT_CALLOUTS.length];
+      const hasImage = step.img.trim().length > 0;
       return (
         <div className="space-y-3">
           <div className="overflow-hidden rounded-3xl border border-border-subtle bg-gradient-to-b from-surface-elevated via-surface-elevated to-surface-secondary shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:rounded-[28px]">
@@ -581,22 +508,27 @@ function SlideContent({
                 </div>
               </div>
 
-              {/* Image in accent-tinted container */}
-              <div className="relative overflow-hidden rounded-[28px] border border-accent/10 bg-[radial-gradient(circle_at_top_right,rgba(192,57,90,0.14),transparent_38%),linear-gradient(135deg,rgba(192,57,90,0.08),rgba(224,101,120,0.04)_45%,rgba(255,255,255,0)_100%)] p-3 sm:p-4">
-                <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-accent/35 to-transparent" />
-                <div className="relative overflow-hidden rounded-[22px] border border-white/50 bg-white/70 shadow-[0_14px_40px_rgba(192,57,90,0.10)] dark:border-white/10 dark:bg-black/10">
-                  <div className="absolute left-4 top-4 z-10 rounded-full bg-black/55 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm">
-                    Referencia visual
+              {hasImage ? (
+                <div className="relative overflow-hidden rounded-[28px] border border-accent/10 bg-[radial-gradient(circle_at_top_right,rgba(192,57,90,0.14),transparent_38%),linear-gradient(135deg,rgba(192,57,90,0.08),rgba(224,101,120,0.04)_45%,rgba(255,255,255,0)_100%)] p-3 sm:p-4">
+                  <div className="absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-accent/35 to-transparent" />
+                  <div className="relative flex min-h-[220px] items-center justify-center overflow-hidden rounded-[22px] border border-white/50 bg-white/80 px-4 py-5 shadow-[0_14px_40px_rgba(192,57,90,0.10)] dark:border-white/10 dark:bg-black/10 sm:min-h-[280px] sm:px-5 sm:py-6">
+                    <div className="absolute left-4 top-4 z-10 rounded-full bg-black/55 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-white backdrop-blur-sm">
+                      Referencia visual
+                    </div>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={step.img}
+                      alt={`Ilustración ${index + 1}`}
+                      className="relative block max-h-[260px] w-full object-contain object-center sm:max-h-[340px]"
+                      onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
+                    />
                   </div>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={step.img}
-                    alt={`Ilustración ${index + 1}`}
-                    className="relative block h-[240px] w-full object-cover object-center sm:h-[300px]"
-                    onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = "none"; }}
-                  />
                 </div>
-              </div>
+              ) : (
+                <div className="rounded-[28px] border border-dashed border-accent/20 bg-accent/5 px-4 py-5 text-sm text-content-secondary">
+                  Esta explicación no trae imagen todavía, pero la estructura de la lección ya está lista para mostrarla cuando la API la entregue.
+                </div>
+              )}
 
             </div>
           </div>
@@ -604,27 +536,41 @@ function SlideContent({
       );
     }
 
-    // ── HOW TO USE (pattern deck) ──────────────────────
+    case "meaningTable": {
+      const { table, rowIndex, total } = slide;
+      return (
+        <SectionShell
+          eyebrow="Lectura rapida"
+          title="Resumen visual del concepto"
+        >
+          <GrammarAdaptiveTable table={table} section="meaning" visibleRowIndex={rowIndex} />
+          {total > 1 ? (
+            <div className="px-1">
+              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent/80">
+                Concepto {rowIndex + 1} de {total}
+              </p>
+            </div>
+          ) : null}
+        </SectionShell>
+      );
+    }
+
+    // ── HOW TO USE ─────────────────────────────────────
     case "howToUse":
       return (
-        <div className="space-y-3">
-          <div className="overflow-hidden rounded-3xl border border-border-subtle bg-gradient-to-b from-surface-elevated via-surface-elevated to-surface-secondary shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:rounded-[28px]">
-            <div className="h-1.5 bg-gradient-to-r from-accent via-accent-hover to-accent" />
-
-            <div className="space-y-4 p-4 sm:space-y-5 sm:p-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-content-muted sm:text-[11px]">
-                Patrones de la estructura
-              </p>
-
-              <PatternDeck table={lesson.content!.howToUse} />
-            </div>
-          </div>
-        </div>
+        <SectionShell
+          eyebrow="Estructura esencial"
+          title="Gramática"
+        >
+          <GrammarAdaptiveTable table={slide.table} section="howToUse" />
+        </SectionShell>
       );
 
     // ── EXAMPLE (flash card) ───────────────────────────
     case "example": {
       const { step, index, total } = slide;
+      const hasKana = step.kana.trim().length > 0;
+      const hasMeaning = step.meaning.trim().length > 0;
       return (
         <div className="space-y-3">
           <div className="overflow-hidden rounded-3xl border border-border-subtle bg-gradient-to-b from-surface-elevated via-surface-elevated to-surface-secondary shadow-[0_10px_30px_rgba(0,0,0,0.06)] sm:rounded-[28px]">
@@ -649,18 +595,28 @@ function SlideContent({
                 <p className="relative text-2xl font-bold leading-snug text-content-primary sm:text-[28px]">
                   <HighlightSentence text={step.kanji} />
                 </p>
-                <p className="relative mt-1.5 text-sm font-semibold text-accent sm:text-base">
-                  <HighlightSentence text={step.kana} />
-                </p>
+                {hasKana ? (
+                  <p className="relative mt-1.5 text-sm font-semibold text-accent sm:text-base">
+                    <HighlightSentence text={step.kana} />
+                  </p>
+                ) : null}
 
                 {/* Divider */}
-                <div className="relative my-3.5 flex items-center gap-3">
-                  <div className="h-px flex-1 bg-accent/20" />
-                  <span className="text-[9px] font-extrabold tracking-widest text-content-muted">ESPAÑOL</span>
-                  <div className="h-px flex-1 bg-accent/20" />
-                </div>
+                {hasMeaning ? (
+                  <div className="relative my-3.5 flex items-center gap-3">
+                    <div className="h-px flex-1 bg-accent/20" />
+                    <span className="text-[9px] font-extrabold tracking-widest text-content-muted">ESPAÑOL</span>
+                    <div className="h-px flex-1 bg-accent/20" />
+                  </div>
+                ) : null}
 
-                <p className="relative text-sm text-content-secondary">{step.meaning}</p>
+                {hasMeaning ? (
+                  <p className="relative text-sm text-content-secondary">{step.meaning}</p>
+                ) : (
+                  <p className="relative text-sm text-content-secondary">
+                    Este ejemplo todavía no trae traducción desde la API.
+                  </p>
+                )}
               </div>
             </div>
           </div>

@@ -20,9 +20,19 @@ function resolvePlatformMotionMode(
   }
 
   if (
+    graphicsProfile.signals.saveData ||
+    graphicsProfile.performanceScore <= -2 ||
+    (graphicsProfile.signals.fpsEstimate !== null &&
+      graphicsProfile.signals.fpsEstimate < 40)
+  ) {
+    return "none";
+  }
+
+  if (
     graphicsProfile.tier === "high" &&
     graphicsProfile.signals.pointerType === "fine" &&
-    heavyAnimationsEnabled
+    heavyAnimationsEnabled &&
+    graphicsProfile.shouldUseHeavyEffects
   ) {
     return "full";
   }
@@ -40,7 +50,7 @@ export function PlatformMotionProvider({
   const graphicsProfile = useGraphicsProfile({
     animationsEnabled,
     heavyAnimationsEnabled,
-    enableFpsProbe: process.env.NODE_ENV !== "production",
+    enableFpsProbe: true,
   });
 
   const value = useMemo<PlatformMotionContextValue>(() => {
@@ -55,14 +65,20 @@ export function PlatformMotionProvider({
       animationsEnabled,
       heavyAnimationsEnabled,
       motionMode,
-      reducedMotion: motionMode === "full" ? "never" : "always",
+      reducedMotion: motionMode === "none" ? "always" : "never",
       shouldAnimate: motionMode !== "none",
       shouldUseLightAnimations: motionMode !== "full",
       shouldUseHoverAnimations:
-        motionMode === "full" && graphicsProfile.signals.pointerType === "fine",
+        motionMode !== "none" && graphicsProfile.signals.pointerType === "fine",
       entranceMode: motionMode === "full" ? "default" : "light",
       durationScale:
-        motionMode === "none" ? 0 : motionMode === "light" ? 0.72 : 1,
+        motionMode === "none"
+          ? 0
+          : motionMode === "light"
+            ? graphicsProfile.tier === "low"
+              ? 0.78
+              : 0.9
+            : 1,
     };
   }, [animationsEnabled, graphicsProfile, heavyAnimationsEnabled]);
 
@@ -71,14 +87,17 @@ export function PlatformMotionProvider({
     root.dataset.motionMode = value.motionMode;
     root.dataset.motionTier = value.graphicsProfile.tier;
     root.dataset.motionPointer = value.graphicsProfile.signals.pointerType;
+    root.dataset.motionSource = value.graphicsProfile.profileSource;
 
     return () => {
       delete root.dataset.motionMode;
       delete root.dataset.motionTier;
       delete root.dataset.motionPointer;
+      delete root.dataset.motionSource;
     };
   }, [
     value.graphicsProfile.signals.pointerType,
+    value.graphicsProfile.profileSource,
     value.graphicsProfile.tier,
     value.motionMode,
   ]);

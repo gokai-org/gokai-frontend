@@ -26,7 +26,13 @@ export function useGrammarLesson(id: string | null) {
   }, [id]);
 
   useEffect(() => {
-    fetch();
+    const timeoutId = window.setTimeout(() => {
+      void fetch();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
   }, [fetch]);
 
   return { lesson, status, error, refetch: fetch };

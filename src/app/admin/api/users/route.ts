@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
   if (auth.error)
     return NextResponse.json({ error: auth.error }, { status: auth.status });
 
-  const url = `${apiConfig.usersApiBase}/admin/users`;
+  const url = `${apiConfig.usersApiBase}/users`;
 
   try {
     const upstream = await fetch(url, {

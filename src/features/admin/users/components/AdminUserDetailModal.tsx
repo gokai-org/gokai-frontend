@@ -22,6 +22,7 @@ const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 interface AdminUserDetailModalProps {
   open: boolean;
   user: AdminUser | null;
+  detailLoading: boolean;
   saving: boolean;
   deleting: boolean;
   error: string | null;
@@ -33,6 +34,7 @@ interface AdminUserDetailModalProps {
 export function AdminUserDetailModal({
   open,
   user,
+  detailLoading,
   saving,
   deleting,
   error,
@@ -40,17 +42,17 @@ export function AdminUserDetailModal({
   onSave,
   onDelete,
 }: AdminUserDetailModalProps) {
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [draft, setDraft] = useState({
+    userId: null as string | null,
+    firstName: "",
+    lastName: "",
+  });
 
-  const [prevUser, setPrevUser] = useState(user);
-  if (user !== prevUser) {
-    setPrevUser(user);
-    if (user) {
-      setFirstName(user.firstName);
-      setLastName(user.lastName);
-    }
-  }
+  const activeUserId = user?.id ?? null;
+  const firstName =
+    draft.userId === activeUserId ? draft.firstName : user?.firstName ?? "";
+  const lastName =
+    draft.userId === activeUserId ? draft.lastName : user?.lastName ?? "";
 
   const hasChanges =
     user != null &&
@@ -132,7 +134,14 @@ export function AdminUserDetailModal({
                         <input
                           type="text"
                           value={firstName}
-                          onChange={(e) => setFirstName(e.target.value)}
+                          onChange={(e) =>
+                            setDraft({
+                              userId: activeUserId,
+                              firstName: e.target.value,
+                              lastName,
+                            })
+                          }
+                          disabled={detailLoading || saving || deleting}
                           className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm font-semibold text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                         />
                       </div>
@@ -144,7 +153,14 @@ export function AdminUserDetailModal({
                         <input
                           type="text"
                           value={lastName}
-                          onChange={(e) => setLastName(e.target.value)}
+                          onChange={(e) =>
+                            setDraft({
+                              userId: activeUserId,
+                              firstName,
+                              lastName: e.target.value,
+                            })
+                          }
+                          disabled={detailLoading || saving || deleting}
                           className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm font-semibold text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
                         />
                       </div>
@@ -173,7 +189,7 @@ export function AdminUserDetailModal({
                             Fecha de nacimiento
                           </label>
                           <div className="w-full rounded-xl border border-border-default bg-surface-tertiary px-4 py-2.5 text-sm text-content-secondary">
-                            {user.birthdate || "No registrada"}
+                            {user.birthdate || "No disponible"}
                           </div>
                         </div>
                       </div>
@@ -193,7 +209,7 @@ export function AdminUserDetailModal({
                             Puntos kana
                           </label>
                           <div className="w-full rounded-xl border border-border-default bg-surface-tertiary px-4 py-2.5 text-sm text-content-secondary">
-                            {user.kanaPoints}
+                            {user.kanaPoints ?? "No disponible"}
                           </div>
                         </div>
                       </div>
@@ -209,6 +225,13 @@ export function AdminUserDetailModal({
                     </h3>
 
                     <div className="space-y-4">
+                      {detailLoading && (
+                        <p className="flex items-center gap-1.5 text-xs font-medium text-content-tertiary">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Sincronizando detalle completo del usuario...
+                        </p>
+                      )}
+
                       {error && (
                         <p className="flex items-center gap-1.5 text-xs font-medium text-red-600">
                           <AlertCircle className="h-3.5 w-3.5" /> {error}
@@ -225,7 +248,11 @@ export function AdminUserDetailModal({
                             })
                           }
                           disabled={
-                            saving || deleting || !hasChanges || !isValid
+                            detailLoading ||
+                            saving ||
+                            deleting ||
+                            !hasChanges ||
+                            !isValid
                           }
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-content-inverted transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
                         >
@@ -251,7 +278,7 @@ export function AdminUserDetailModal({
                         <button
                           type="button"
                           onClick={onDelete}
-                          disabled={saving || deleting}
+                          disabled={detailLoading || saving || deleting}
                           className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/30 px-4 py-2.5 text-xs font-semibold text-red-700 dark:text-red-400 transition-colors hover:bg-red-100 dark:hover:bg-red-950/50 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {deleting ? (
@@ -288,7 +315,11 @@ export function AdminUserDetailModal({
                       </li>
                       <li className="flex items-center gap-2">
                         <Users className="h-4 w-4 text-accent" />{" "}
-                        {user.isGoogleUser ? "Google" : "Registro directo"}
+                        {user.isGoogleUser === null
+                          ? "Origen no disponible"
+                          : user.isGoogleUser
+                            ? "Google"
+                            : "Registro directo"}
                       </li>
                       <li className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-accent" /> Registro:{" "}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Crown, Star, Users, UserX } from "lucide-react";
 import { AdminDashboardShell } from "@/features/admin/shared/components/AdminDashboardShell";
 import { AdminMetricCard } from "@/features/admin/shared/components/AdminMetricCard";
@@ -12,7 +12,7 @@ import { AdminUsersFilters } from "./AdminUsersFilters";
 import { AdminUsersTable } from "./AdminUsersTable";
 import { AdminUserDetailModal } from "./AdminUserDetailModal";
 import { useAdminUsers } from "../hooks/useAdminUsers";
-import { updateAdminUser, deleteAdminUser } from "../services/api";
+import { deleteAdminUser, getAdminUser, updateAdminUser } from "../services/api";
 import { mapBackendUserToAdmin } from "../utils/userMappers";
 import type { AdminUser, UpdateUserRequest } from "../types/users";
 
@@ -22,9 +22,11 @@ export function AdminUsersPanel() {
   const toast = useToast();
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [modalError, setModalError] = useState<string | null>(null);
+  const detailRequestRef = useRef(0);
 
   const {
     query,
@@ -33,6 +35,7 @@ export function AdminUsersPanel() {
     isRefreshing,
     lastUpdatedAt,
     error,
+    hasGoogleData,
     statusFilter,
     setStatusFilter,
     summary,
@@ -55,15 +58,47 @@ export function AdminUsersPanel() {
     };
   }, [summary.subscribed, summary.free, summary.google, summary.total]);
 
-  const handleOpenUser = useCallback((user: AdminUser) => {
-    setModalError(null);
-    setSelectedUser(user);
-    setIsDetailOpen(true);
-  }, []);
+  const handleOpenUser = useCallback(
+    (user: AdminUser) => {
+      const requestId = detailRequestRef.current + 1;
+      detailRequestRef.current = requestId;
+
+      setModalError(null);
+      setSelectedUser(user);
+      setIsDetailOpen(true);
+      setIsDetailLoading(true);
+
+      void getAdminUser(user.id)
+        .then((raw) => {
+          if (detailRequestRef.current !== requestId) return;
+
+          const mapped = mapBackendUserToAdmin(raw, user);
+          replaceUser(mapped);
+          setSelectedUser(mapped);
+        })
+        .catch((err) => {
+          if (detailRequestRef.current !== requestId) return;
+
+          setModalError(
+            err instanceof Error
+              ? err.message
+              : "No se pudo cargar el detalle del usuario",
+          );
+        })
+        .finally(() => {
+          if (detailRequestRef.current === requestId) {
+            setIsDetailLoading(false);
+          }
+        });
+    },
+    [replaceUser],
+  );
 
   const handleCloseDetail = useCallback(() => {
     if (isSaving || isDeleting) return;
+    detailRequestRef.current += 1;
     setIsDetailOpen(false);
+    setIsDetailLoading(false);
     setModalError(null);
   }, [isSaving, isDeleting]);
 
@@ -76,7 +111,7 @@ export function AdminUsersPanel() {
 
       try {
         const raw = await updateAdminUser(selectedUser.id, payload);
-        const mapped = mapBackendUserToAdmin(raw);
+        const mapped = mapBackendUserToAdmin(raw, selectedUser);
         replaceUser(mapped);
         setSelectedUser(mapped);
 
@@ -162,8 +197,12 @@ export function AdminUsersPanel() {
             />
             <AdminMetricCard
               title="Google"
-              value={String(summary.google)}
-              hint={`${cardPercentages.google}% del total`}
+              value={hasGoogleData ? String(summary.google) : "—"}
+              hint={
+                hasGoogleData
+                  ? `${cardPercentages.google}% del total`
+                  : "No disponible en el listado actual"
+              }
               icon={<Star className="h-5 w-5" />}
               animationsEnabled={animationsEnabled}
               index={3}
@@ -187,6 +226,7 @@ export function AdminUsersPanel() {
             onQueryChange={setQuery}
             statusFilter={statusFilter}
             onStatusFilterChange={setStatusFilter}
+            showGoogleFilter={hasGoogleData}
           />
         </AnimatedEntrance>
 
@@ -208,8 +248,10 @@ export function AdminUsersPanel() {
       </div>
 
       <AdminUserDetailModal
+        key={`${selectedUser?.id ?? "empty"}-${isDetailOpen ? "open" : "closed"}`}
         open={isDetailOpen}
         user={selectedUser}
+        detailLoading={isDetailLoading}
         saving={isSaving}
         deleting={isDeleting}
         error={modalError}

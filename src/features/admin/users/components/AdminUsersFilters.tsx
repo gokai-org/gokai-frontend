@@ -20,6 +20,7 @@ interface AdminUsersFiltersProps {
   onQueryChange: (value: string) => void;
   statusFilter: UserStatusFilter;
   onStatusFilterChange: (value: UserStatusFilter) => void;
+  showGoogleFilter: boolean;
 }
 
 export function AdminUsersFilters({
@@ -27,7 +28,12 @@ export function AdminUsersFilters({
   onQueryChange,
   statusFilter,
   onStatusFilterChange,
+  showGoogleFilter,
 }: AdminUsersFiltersProps) {
+  const visibleStatusOptions = showGoogleFilter
+    ? statusOptions
+    : statusOptions.filter((option) => option.value !== "google");
+
   return (
     <section className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
@@ -45,7 +51,7 @@ export function AdminUsersFilters({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {statusOptions.map((option) => {
+        {visibleStatusOptions.map((option) => {
           const active = statusFilter === option.value;
           return (
             <button

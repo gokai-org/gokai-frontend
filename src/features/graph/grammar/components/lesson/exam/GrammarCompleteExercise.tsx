@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useState, type DragEvent } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import type { CompleteExam } from "../../../types";
 import { CheckCircle2, XCircle } from "lucide-react";
 
@@ -27,6 +27,25 @@ export default function GrammarCompleteExercise({ question, answered, onAnswer }
   const [draggedText, setDraggedText] = useState<string | null>(null);
 
   const allOptions = [...new Map(question.options.map((o) => [`${o.value}-${o.text}`, o])).values()];
+  const availableCountByText = allOptions.reduce<Record<string, number>>((acc, option) => {
+    acc[option.text] = (acc[option.text] ?? 0) + 1;
+    return acc;
+  }, {});
+  const selectedCountByText = Object.values(selections).reduce<Record<string, number>>((acc, text) => {
+    acc[text] = (acc[text] ?? 0) + 1;
+    return acc;
+  }, {});
+
+  function getCorrectTexts(blankId: string) {
+    return question.options
+      .filter((option) => option.value === blankId && option.correct)
+      .map((option) => option.text);
+  }
+
+  function isCorrectSelection(blankId: string, selectedText?: string) {
+    if (!selectedText) return false;
+    return getCorrectTexts(blankId).includes(selectedText);
+  }
 
   function selectOption(text: string, forcedBlankId?: string) {
     if (answered) return;
@@ -84,125 +103,107 @@ export default function GrammarCompleteExercise({ question, answered, onAnswer }
 
   function checkAnswer() {
     if (!allFilled || answered) return;
-    const correct = blankIds.every((id) => {
-      const correctOpt = question.options.find((o) => o.value === id && o.correct);
-      return correctOpt?.text === selections[id];
-    });
+    const correct = blankIds.every((id) => isCorrectSelection(id, selections[id]));
     onAnswer(correct);
   }
 
   return (
-    <div className="space-y-5">
-      {/* ── Sentence with interactive blanks ─────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-4 py-4">
-        <div className="absolute -left-6 -top-6 h-16 w-16 rounded-full bg-accent/8 blur-2xl" />
-        <p className="relative text-sm leading-[2.4] text-content-primary sm:text-[15px]">
-          {segments.map((seg, i) => {
-            if (seg.type === "text") return <span key={i}>{seg.value}</span>;
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="kanji-detail-scroll flex-1 min-h-0 space-y-5 overflow-y-auto pr-1">
+        {/* ── Sentence with interactive blanks ─────────────── */}
+        <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-4 py-4">
+          <div className="absolute -left-6 -top-6 h-16 w-16 rounded-full bg-accent/8 blur-2xl" />
+          <p className="relative text-sm leading-[2.4] text-content-primary sm:text-[15px]">
+            {segments.map((seg, i) => {
+              if (seg.type === "text") return <span key={i}>{seg.value}</span>;
 
-            const filled     = selections[seg.value];
-            const isNew      = lastFilled === seg.value;
-            const correctOpt = answered ? question.options.find((o) => o.value === seg.value && o.correct) : null;
-            const isOk       = answered && correctOpt?.text === filled;
-            const isBad      = answered && filled && !isOk;
+              const filled     = selections[seg.value];
+              const isNew      = lastFilled === seg.value;
+              const isOk       = answered && isCorrectSelection(seg.value, filled);
+              const isBad      = answered && filled && !isOk;
 
-            return (
-              <motion.button
-                key={i}
-                type="button"
-                disabled={answered}
-                onClick={() => {
-                  if (filled) {
-                    clearBlank(seg.value);
-                    return;
-                  }
-
-                  setActiveBlank(seg.value);
-                }}
-                onDrop={(event) => handleBlankDrop(event, seg.value)}
-                onDragOver={handleBlankDragOver}
-                animate={isNew ? { scale: [1, 1.06, 1] } : { scale: 1 }}
-                transition={{ duration: 0.25 }}
-                className={[
-                  "mx-1.5 inline-flex min-w-[64px] items-center justify-center rounded-lg px-2.5 py-0.5 text-sm font-bold transition-all duration-200",
-                  answered
-                    ? isOk
-                      ? "border border-emerald-400/60 bg-emerald-50/60 text-emerald-700 dark:bg-emerald-950/25 dark:text-emerald-300"
-                      : isBad
-                        ? "border border-red-400/60 bg-red-50/60 text-red-600 dark:bg-red-950/25 dark:text-red-400"
-                        : "border border-border-subtle text-content-muted"
-                    : filled
-                      ? "cursor-pointer border border-accent/50 bg-accent/10 text-accent hover:opacity-75"
-                      : activeBlank === seg.value
-                        ? "cursor-pointer border border-accent/50 bg-accent/8 text-accent shadow-[0_0_0_2px_rgba(192,57,90,0.12)]"
-                        : draggedText
-                          ? "cursor-pointer border border-accent/35 bg-accent/5 text-content-secondary"
-                          : "cursor-pointer border-b-2 border-accent/40 bg-transparent text-content-muted",
-                ].join(" ")}
-              >
-                {filled ? (
-                  <span>{filled}</span>
-                ) : (
-                  <span className="text-[11px] tracking-widest opacity-50">___</span>
-                )}
-              </motion.button>
-            );
-          })}
-        </p>
-      </div>
-
-      {/* ── Option chips ─────────────────────────────────── */}
-      <AnimatePresence>
-        {!answered && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            className="space-y-2"
-          >
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-content-muted">
-              Arrastra o toca una ficha para completar el hueco resaltado
-            </p>
-            <div className="flex flex-wrap gap-2">
-            {allOptions.map((opt, i) => {
-              const isUsed = Object.values(selections).includes(opt.text);
               return (
                 <motion.button
                   key={i}
                   type="button"
-                  draggable={!isUsed}
-                  onDragStart={(event) => handleOptionDragStart(event, opt.text)}
-                  onDragEnd={handleOptionDragEnd}
-                  onClick={() => !isUsed && selectOption(opt.text)}
-                  whileHover={!isUsed ? { scale: 1.04, y: -1 } : {}}
-                  whileTap={!isUsed ? { scale: 0.95 } : {}}
-                  disabled={isUsed}
-                  className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition-all duration-150 ${
-                    isUsed
-                      ? "cursor-default border-border-subtle bg-surface-tertiary text-content-tertiary opacity-50"
-                      : "cursor-pointer border-border-default bg-surface-elevated text-content-primary shadow-sm hover:border-accent/50 hover:bg-accent/8 hover:text-accent"
-                  }`}
+                  disabled={answered}
+                  onClick={() => {
+                    if (filled) {
+                      clearBlank(seg.value);
+                      return;
+                    }
+
+                    setActiveBlank(seg.value);
+                  }}
+                  onDrop={(event) => handleBlankDrop(event, seg.value)}
+                  onDragOver={handleBlankDragOver}
+                  animate={isNew ? { scale: [1, 1.06, 1] } : { scale: 1 }}
+                  transition={{ duration: 0.25 }}
+                  className={[
+                    "mx-1.5 inline-flex min-w-[64px] items-center justify-center rounded-lg px-2.5 py-0.5 text-sm font-bold transition-all duration-200",
+                    answered
+                      ? isOk
+                        ? "border border-emerald-400/60 bg-emerald-50/60 text-emerald-700 dark:bg-emerald-950/25 dark:text-emerald-300"
+                        : isBad
+                          ? "border border-red-400/60 bg-red-50/60 text-red-600 dark:bg-red-950/25 dark:text-red-400"
+                          : "border border-border-subtle text-content-muted"
+                      : filled
+                        ? "cursor-pointer border border-accent/50 bg-accent/10 text-accent hover:opacity-75"
+                        : activeBlank === seg.value
+                          ? "cursor-pointer border border-accent/50 bg-accent/8 text-accent shadow-[0_0_0_2px_rgba(192,57,90,0.12)]"
+                          : draggedText
+                            ? "cursor-pointer border border-accent/35 bg-accent/5 text-content-secondary"
+                            : "cursor-pointer border-b-2 border-accent/40 bg-transparent text-content-muted",
+                  ].join(" ")}
                 >
-                  {opt.text}
+                  {filled ? (
+                    <span>{filled}</span>
+                  ) : (
+                    <span className="text-[11px] tracking-widest opacity-50">___</span>
+                  )}
                 </motion.button>
               );
             })}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </p>
+        </div>
 
-      {/* ── Feedback ─────────────────────────────────────── */}
-      <AnimatePresence>
+        {/* ── Option chips ─────────────────────────────────── */}
+        {!answered && (
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-2">
+              {allOptions.map((opt, i) => {
+                const isUsed = (selectedCountByText[opt.text] ?? 0) >= (availableCountByText[opt.text] ?? 0);
+                return (
+                  <motion.button
+                    key={i}
+                    type="button"
+                    draggable={!isUsed}
+                    onDragStartCapture={(event) => handleOptionDragStart(event, opt.text)}
+                    onDragEnd={handleOptionDragEnd}
+                    onClick={() => !isUsed && selectOption(opt.text)}
+                    whileHover={!isUsed ? { scale: 1.04, y: -1 } : {}}
+                    whileTap={!isUsed ? { scale: 0.95 } : {}}
+                    disabled={isUsed}
+                    className={`rounded-xl border px-3.5 py-2 text-sm font-semibold transition-all duration-150 ${
+                      isUsed
+                        ? "cursor-default border-border-subtle bg-surface-tertiary text-content-tertiary opacity-50"
+                        : "cursor-pointer border-border-default bg-surface-elevated text-content-primary shadow-sm hover:border-accent/50 hover:bg-accent/8 hover:text-accent"
+                    }`}
+                  >
+                    {opt.text}
+                  </motion.button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* ── Feedback ─────────────────────────────────────── */}
         {answered && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-2"
-          >
+          <div className="space-y-2 pb-1">
             {blankIds.map((id, i) => {
-              const correctOpt = question.options.find((o) => o.value === id && o.correct);
-              const isOk       = correctOpt?.text === selections[id];
+              const correctTexts = getCorrectTexts(id);
+              const isOk       = isCorrectSelection(id, selections[id]);
               return (
                 <motion.div
                   key={id}
@@ -219,28 +220,30 @@ export default function GrammarCompleteExercise({ question, answered, onAnswer }
                     ? <CheckCircle2 className="h-4 w-4 shrink-0" />
                     : <XCircle className="h-4 w-4 shrink-0" />}
                   <span>
-                    {isOk ? "Correcto:" : "La respuesta era:"}{" "}
-                    <strong>{correctOpt?.text ?? "—"}</strong>
+                    {isOk ? "Correcto:" : correctTexts.length > 1 ? "Las respuestas validas eran:" : "La respuesta era:"}{" "}
+                    <strong>{correctTexts.length > 0 ? correctTexts.join(" / ") : "—"}</strong>
                   </span>
                 </motion.div>
               );
             })}
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
+      </div>
 
       {/* ── Confirm ──────────────────────────────────────── */}
       {!answered && (
-        <motion.button
-          type="button"
-          disabled={!allFilled}
-          onClick={checkAnswer}
-          whileHover={allFilled ? { scale: 1.01 } : {}}
-          whileTap={allFilled ? { scale: 0.98 } : {}}
-          className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-35 disabled:cursor-not-allowed"
-        >
-          Confirmar
-        </motion.button>
+        <div className="shrink-0 border-t border-border-subtle bg-surface-primary pt-4">
+          <motion.button
+            type="button"
+            disabled={!allFilled}
+            onClick={checkAnswer}
+            whileHover={allFilled ? { scale: 1.01 } : {}}
+            whileTap={allFilled ? { scale: 0.98 } : {}}
+            className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-35 disabled:cursor-not-allowed"
+          >
+            Confirmar
+          </motion.button>
+        </div>
       )}
     </div>
   );

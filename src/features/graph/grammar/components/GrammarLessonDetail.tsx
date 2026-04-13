@@ -63,30 +63,69 @@ export default function GrammarLessonDetail({
           {/* Meaning - Image Stepper */}
           {lesson.content?.meaning && (
             <ContentSection title="Significado">
-              <div className="space-y-4">
-                {lesson.content.meaning.content.map((step, i) => (
-                  <div
-                    key={i}
-                    className="flex gap-4 items-start rounded-xl border border-border-primary/60 bg-surface-secondary p-4"
-                  >
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/40 text-xs font-bold text-pink-600 dark:text-pink-400">
-                      {i + 1}
-                    </span>
-                    <div className="min-w-0">
-                      {step.img && (
-                        <img
-                          src={step.img}
-                          alt={`Paso ${i + 1}`}
-                          className="rounded-lg mb-2 max-h-40 object-contain"
-                        />
-                      )}
-                      <p className="text-sm text-content-secondary leading-relaxed">
-                        {step.description}
-                      </p>
+              {lesson.content.meaning.type === "image_stepper" ? (
+                <div className="space-y-4">
+                  {lesson.content.meaning.content.map((step, i) => (
+                    <div
+                      key={i}
+                      className="flex gap-4 items-start rounded-xl border border-border-primary/60 bg-surface-secondary p-4"
+                    >
+                      <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-pink-100 dark:bg-pink-950/40 text-xs font-bold text-pink-600 dark:text-pink-400">
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0">
+                        {step.img && (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={step.img}
+                            alt={`Paso ${i + 1}`}
+                            className="rounded-lg mb-2 max-h-40 object-contain"
+                          />
+                        )}
+                        <p className="text-sm text-content-secondary leading-relaxed">
+                          {step.description}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-border-primary/60">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-pink-50 dark:bg-pink-950/20">
+                        {lesson.content.meaning.content.headers.map((header, i) => (
+                          <th
+                            key={i}
+                            className="px-4 py-2.5 text-left text-xs font-semibold text-pink-700 dark:text-pink-300 uppercase tracking-wide"
+                          >
+                            {header}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lesson.content.meaning.content.rows.map((row, ri) => (
+                        <tr
+                          key={ri}
+                          className="border-t border-border-primary/40"
+                        >
+                          {row.cells.map((cell, ci) => (
+                            <td
+                              key={ci}
+                              rowSpan={cell.rowspan}
+                              colSpan={cell.colspan}
+                              className="px-4 py-2.5 text-content-primary"
+                            >
+                              {cell.value}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </ContentSection>
           )}
 
