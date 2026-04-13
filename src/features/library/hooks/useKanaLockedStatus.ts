@@ -76,23 +76,18 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
 
   const applyUserKanaPoints = useCallback(
     (nextUserKanaPoints: number, userId = activeUserIdRef.current) => {
-    const mergedUserKanaPoints = Math.max(
-      nextUserKanaPoints,
-      optimisticKanaPointsRef.current,
-    );
-
-    optimisticKanaPointsRef.current = mergedUserKanaPoints;
+    optimisticKanaPointsRef.current = nextUserKanaPoints;
     setUserKanaPoints((previous) =>
-      previous === mergedUserKanaPoints ? previous : mergedUserKanaPoints,
+      previous === nextUserKanaPoints ? previous : nextUserKanaPoints,
     );
 
     persistStatusCache(
       userId,
-      mergedUserKanaPoints,
+      nextUserKanaPoints,
       progressItemsRef.current,
     );
 
-    return mergedUserKanaPoints;
+    return nextUserKanaPoints;
     },
     [persistStatusCache],
   );

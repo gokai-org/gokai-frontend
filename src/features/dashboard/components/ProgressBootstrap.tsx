@@ -35,7 +35,7 @@ function applyProgressSyncToCaches(detail: MasteryProgressSyncDetail) {
     if (kanaStatus?.userId) {
       writeCache<LibraryKanaStatusCache>(LIBRARY_KANA_STATUS_CACHE_KEY, {
         ...kanaStatus,
-        userKanaPoints: Math.max(kanaStatus.userKanaPoints, detail.kanaPoints),
+        userKanaPoints: detail.kanaPoints,
         loadedAt: Date.now(),
       });
     }
@@ -49,7 +49,7 @@ function applyProgressSyncToCaches(detail: MasteryProgressSyncDetail) {
     if (kanjiStatus?.userId) {
       writeCache<LibraryKanjiStatusCache>(LIBRARY_KANJI_STATUS_CACHE_KEY, {
         ...kanjiStatus,
-        userPoints: Math.max(kanjiStatus.userPoints, detail.points),
+        userPoints: detail.points,
         loadedAt: Date.now(),
       });
     }

@@ -67,19 +67,14 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
 
   const applyUserPoints = useCallback(
     (nextUserPoints: number, userId = activeUserIdRef.current) => {
-    const mergedUserPoints = Math.max(
-      nextUserPoints,
-      optimisticUserPointsRef.current,
-    );
-
-    optimisticUserPointsRef.current = mergedUserPoints;
+    optimisticUserPointsRef.current = nextUserPoints;
     setUserPoints((previous) =>
-      previous === mergedUserPoints ? previous : mergedUserPoints,
+      previous === nextUserPoints ? previous : nextUserPoints,
     );
 
-    persistStatusCache(userId, mergedUserPoints, resultsRef.current);
+    persistStatusCache(userId, nextUserPoints, resultsRef.current);
 
-    return mergedUserPoints;
+    return nextUserPoints;
     },
     [persistStatusCache],
   );

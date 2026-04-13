@@ -1,23 +1,46 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSyncExternalStore } from "react";
 
 const STORAGE_KEY = "gokai-animations-enabled";
 const HEAVY_STORAGE_KEY = "gokai-heavy-animations-enabled";
 export const ANIMATION_PREFERENCES_EVENT = "gokai-animation-preferences-changed";
 
+const DEFAULT_ANIMATION_PREFERENCE = true;
+
 function readAnimationPreferences() {
+  if (typeof window === "undefined") {
+    return {
+      animationsEnabled: DEFAULT_ANIMATION_PREFERENCE,
+      heavyAnimationsEnabled: DEFAULT_ANIMATION_PREFERENCE,
+    };
+  }
+
   try {
     return {
-      animationsEnabled: localStorage.getItem(STORAGE_KEY) !== "false",
-      heavyAnimationsEnabled: localStorage.getItem(HEAVY_STORAGE_KEY) !== "false",
+      animationsEnabled: window.localStorage.getItem(STORAGE_KEY) !== "false",
+      heavyAnimationsEnabled: window.localStorage.getItem(HEAVY_STORAGE_KEY) !== "false",
     };
   } catch {
     return {
-      animationsEnabled: true,
-      heavyAnimationsEnabled: true,
+      animationsEnabled: DEFAULT_ANIMATION_PREFERENCE,
+      heavyAnimationsEnabled: DEFAULT_ANIMATION_PREFERENCE,
     };
   }
+}
+
+function subscribeToAnimationPreferences(onStoreChange: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(ANIMATION_PREFERENCES_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(ANIMATION_PREFERENCES_EVENT, onStoreChange);
+  };
 }
 
 function notifyAnimationPreferencesChanged() {
@@ -26,45 +49,28 @@ function notifyAnimationPreferencesChanged() {
 }
 
 export function useAnimationPreferences() {
-  const [animationsEnabled, setAnimationsEnabled] = useState(
+  const animationsEnabled = useSyncExternalStore(
+    subscribeToAnimationPreferences,
     () => readAnimationPreferences().animationsEnabled,
+    () => DEFAULT_ANIMATION_PREFERENCE,
   );
-  const [heavyAnimationsEnabled, setHeavyAnimationsEnabled] = useState(
+  const heavyAnimationsEnabled = useSyncExternalStore(
+    subscribeToAnimationPreferences,
     () => readAnimationPreferences().heavyAnimationsEnabled,
+    () => DEFAULT_ANIMATION_PREFERENCE,
   );
-  const [isReady, setIsReady] = useState(false);
-
-  useEffect(() => {
-    const syncPreferences = () => {
-      const next = readAnimationPreferences();
-      setAnimationsEnabled(next.animationsEnabled);
-      setHeavyAnimationsEnabled(next.heavyAnimationsEnabled);
-    };
-
-    syncPreferences();
-    setIsReady(true);
-
-    window.addEventListener("storage", syncPreferences);
-    window.addEventListener(ANIMATION_PREFERENCES_EVENT, syncPreferences);
-
-    return () => {
-      window.removeEventListener("storage", syncPreferences);
-      window.removeEventListener(ANIMATION_PREFERENCES_EVENT, syncPreferences);
-    };
-  }, []);
+  const isReady = true;
 
   const updateAnimationsEnabled = (value: boolean) => {
-    setAnimationsEnabled(value);
     try {
-      localStorage.setItem(STORAGE_KEY, String(value));
+      window.localStorage.setItem(STORAGE_KEY, String(value));
     } catch {}
     notifyAnimationPreferencesChanged();
   };
 
   const updateHeavyAnimationsEnabled = (value: boolean) => {
-    setHeavyAnimationsEnabled(value);
     try {
-      localStorage.setItem(HEAVY_STORAGE_KEY, String(value));
+      window.localStorage.setItem(HEAVY_STORAGE_KEY, String(value));
     } catch {}
     notifyAnimationPreferencesChanged();
   };

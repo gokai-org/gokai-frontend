@@ -1,8 +1,11 @@
 "use client";
 
+import Image, { type ImageLoaderProps } from "next/image";
 import { useState } from "react";
 import type { ImageStepperComponent } from "../../../types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+
+const passthroughImageLoader = ({ src }: ImageLoaderProps) => src;
 
 export default function GrammarMeaningSection({ meaning }: { meaning: ImageStepperComponent }) {
   const [idx, setIdx] = useState(0);
@@ -14,12 +17,20 @@ export default function GrammarMeaningSection({ meaning }: { meaning: ImageStepp
     <div className="space-y-4">
       {current.img && (
         <div className="overflow-hidden rounded-2xl border border-pink-100 dark:border-pink-900/30 bg-surface-secondary">
-          <img
-            src={current.img}
-            alt={`Ilustración ${idx + 1}`}
-            className="mx-auto max-h-52 w-full object-contain p-3"
-            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-          />
+          <div className="relative h-52 w-full">
+            <Image
+              loader={passthroughImageLoader}
+              unoptimized
+              src={current.img}
+              alt={`Ilustración ${idx + 1}`}
+              fill
+              sizes="(max-width: 768px) 100vw, 768px"
+              className="mx-auto object-contain p-3"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
         </div>
       )}
 

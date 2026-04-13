@@ -26,6 +26,7 @@ export type KanaQuizCompletionResult = {
   score: number;
   newlyCompleted: boolean;
   newlyCompletedPoints: number;
+  resultingModulePoints: number;
   dominated: boolean;
   triggeredModuleMastery: boolean;
 };
@@ -156,6 +157,7 @@ export function KanaQuizModal({
             score: quiz.finalScore,
             newlyCompleted: isNewlyCompleted,
             newlyCompletedPoints: isNewlyCompleted ? KANA_COMPLETION_REWARD : 0,
+            resultingModulePoints: currentModulePoints + displayPointsDelta,
             dominated: isDominated,
             triggeredModuleMastery,
           }
@@ -169,7 +171,16 @@ export function KanaQuizModal({
       onComplete(completionResult);
     }
     onClose(completionResult);
-  }, [isDominated, isNewlyCompleted, onClose, onComplete, quiz, triggeredModuleMastery]);
+  }, [
+    currentModulePoints,
+    displayPointsDelta,
+    isDominated,
+    isNewlyCompleted,
+    onClose,
+    onComplete,
+    quiz,
+    triggeredModuleMastery,
+  ]);
 
   const shouldAutoCloseForMastery =
     triggeredModuleMastery &&

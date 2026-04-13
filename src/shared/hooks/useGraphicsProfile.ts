@@ -540,6 +540,34 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
   const [signals, setSignals] = useState<GraphicsQualitySignals>(() =>
     getInitialSignals(),
   );
+  const fpsProbeSignals = useMemo<GraphicsQualitySignals>(
+    () => ({
+      width: signals.width,
+      height: signals.height,
+      devicePixelRatio: signals.devicePixelRatio,
+      hardwareConcurrency: signals.hardwareConcurrency,
+      deviceMemory: signals.deviceMemory,
+      maxTouchPoints: signals.maxTouchPoints,
+      effectiveConnectionType: signals.effectiveConnectionType,
+      saveData: signals.saveData,
+      pointerType: signals.pointerType,
+      prefersReducedMotion: signals.prefersReducedMotion,
+      fpsEstimate: null,
+      fpsEstimateSource: "bootstrap",
+    }),
+    [
+      signals.deviceMemory,
+      signals.devicePixelRatio,
+      signals.effectiveConnectionType,
+      signals.hardwareConcurrency,
+      signals.height,
+      signals.maxTouchPoints,
+      signals.pointerType,
+      signals.prefersReducedMotion,
+      signals.saveData,
+      signals.width,
+    ],
+  );
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -590,8 +618,8 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
       typeof window === "undefined" ||
       !animationsEnabled ||
       !enableFpsProbe ||
-      signals.prefersReducedMotion ||
-      signals.saveData
+      fpsProbeSignals.prefersReducedMotion ||
+      fpsProbeSignals.saveData
     ) {
       return;
     }
@@ -613,7 +641,7 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
 
       if (frameCount >= 12 || elapsed >= 320) {
         const fps = Math.round((frameCount / Math.max(elapsed, 1)) * 1000);
-        writeCachedFpsEstimate(signals, fps);
+        writeCachedFpsEstimate(fpsProbeSignals, fps);
         setSignals((previous) => {
           if (
             previous.fpsEstimate === fps &&
@@ -645,10 +673,7 @@ export function useGraphicsProfile(options: UseGraphicsProfileOptions = {}) {
   }, [
     animationsEnabled,
     enableFpsProbe,
-    signals.height,
-    signals.prefersReducedMotion,
-    signals.saveData,
-    signals.width,
+    fpsProbeSignals,
   ]);
 
   return useMemo(() => {

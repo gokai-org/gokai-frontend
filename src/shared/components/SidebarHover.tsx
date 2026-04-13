@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
-import { motion, AnimatePresence, MotionConfig } from "framer-motion";
+import { motion, AnimatePresence, MotionConfig, animate, useMotionValue } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
@@ -41,6 +41,10 @@ const SIDEBAR_FAST_TWEEN = {
 const SIDEBAR_GENTLE_HOVER = {
   duration: 0.18,
   ease: "easeOut" as const,
+};
+const LOGO_ROTATION_TRANSITION = {
+  duration: 0.52,
+  ease: [0.16, 1, 0.3, 1] as const,
 };
 
 export default function SidebarOnly() {
@@ -584,23 +588,31 @@ function GlobalStyles() {
 }
 
 function Header({ expanded, mobile = false }: { expanded: boolean; mobile?: boolean }) {
-  const [logoRotation, setLogoRotation] = useState(0);
+  const logoRotation = useMotionValue(0);
   const previousExpanded = useRef<boolean | null>(null);
 
   useEffect(() => {
+    let nextRotation: number | null = null;
+
     if (previousExpanded.current === null) {
       previousExpanded.current = expanded;
       if (mobile) {
-        setLogoRotation(360);
+        nextRotation = logoRotation.get() + 360;
       }
+    } else if (previousExpanded.current !== expanded) {
+      previousExpanded.current = expanded;
+      nextRotation = logoRotation.get() + 360;
+    }
+
+    if (nextRotation === null) {
       return;
     }
 
-    if (previousExpanded.current !== expanded) {
-      setLogoRotation((current) => current + 360);
-      previousExpanded.current = expanded;
-    }
-  }, [expanded, mobile]);
+    const controls = animate(logoRotation, nextRotation, LOGO_ROTATION_TRANSITION);
+    return () => {
+      controls.stop();
+    };
+  }, [expanded, logoRotation, mobile]);
 
   return (
     <div className="pt-4 pb-0">
@@ -624,8 +636,7 @@ function Header({ expanded, mobile = false }: { expanded: boolean; mobile?: bool
               draggable={false}
               className="absolute inset-0 select-none h-10 w-10 block dark:hidden"
               initial={false}
-              animate={{ rotate: logoRotation }}
-              transition={{ duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
+              style={{ rotate: logoRotation }}
             />
             <motion.img
               src="/logos/gokai-logo-dark.svg"
@@ -633,8 +644,7 @@ function Header({ expanded, mobile = false }: { expanded: boolean; mobile?: bool
               draggable={false}
               className="absolute inset-0 select-none h-10 w-10 hidden dark:block"
               initial={false}
-              animate={{ rotate: logoRotation }}
-              transition={{ duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
+              style={{ rotate: logoRotation }}
             />
           </div>
 

@@ -39,7 +39,6 @@ export function ScriptCard({
   title,
   subtitle,
   pointsBadge,
-  unlockPoints,
   variant,
   index = 0,
   isFavorite = false,
@@ -65,9 +64,7 @@ export function ScriptCard({
         hiragana: { hex: "#7B3F8A", rgba: "123,63,138" },
         katakana: { hex: "#1B5078", rgba: "27,80,120" },
       } as const)[variant];
-  const unlockBadgeText = unlockPoints != null
-    ? `+${unlockPoints}`
-    : variant === "kanji" ? "+30" : "+5";
+  const unlockBadgeText = variant === "kanji" ? "+30" : "+5";
 
   // ── Long-press to toggle favourite on mobile ──────────────────────────────
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
