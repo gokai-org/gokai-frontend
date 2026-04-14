@@ -60,6 +60,14 @@ function toNumberOrNull(value: unknown) {
   return null;
 }
 
+function toBooleanOrNull(value: unknown) {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  return null;
+}
+
 function normalizeImageStep(value: unknown): ImageStep | null {
   if (typeof value === "string") {
     const description = toStringValue(value);
@@ -421,6 +429,23 @@ export function normalizeGrammarLessonSummary(value: unknown): GrammarLessonSumm
     id,
     title,
     pointsToUnlock: toNumberOrNull(record.pointsToUnlock),
+    status:
+      toStringValue(record.status) ||
+      toStringValue(record.lessonStatus) ||
+      null,
+    completed:
+      toBooleanOrNull(record.completed) ??
+      toBooleanOrNull(record.isCompleted),
+    available:
+      toBooleanOrNull(record.available) ??
+      toBooleanOrNull(record.isAvailable),
+    unlocked:
+      toBooleanOrNull(record.unlocked) ??
+      toBooleanOrNull(record.isUnlocked),
+    current:
+      toBooleanOrNull(record.current) ??
+      toBooleanOrNull(record.isCurrent),
+    symbol: toStringValue(record.symbol) || null,
   };
 }
 

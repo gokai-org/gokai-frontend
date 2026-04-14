@@ -1,8 +1,9 @@
+import { GRAMMAR_BOARD_TOTAL } from "../constants/grammarBoard";
 import type { GrammarLessonSummary } from "../types";
 
 /**
- * 25 mock grammar lessons used to fill the board tree
- * when fewer than 25 real lessons exist in the backend.
+ * 21 mock grammar lessons used to fill the board tree
+ * when fewer than 21 real lessons exist in the backend.
  * These nodes are marked as locked/coming-soon.
  */
 export const MOCK_GRAMMAR_LESSONS: GrammarLessonSummary[] = [
@@ -27,10 +28,6 @@ export const MOCK_GRAMMAR_LESSONS: GrammarLessonSummary[] = [
   { id: "mock-19", title: "Verbos de existencia: います y あります", pointsToUnlock: 540 },
   { id: "mock-20", title: "Forma de deseo: たい (tai form) — querer hacer algo", pointsToUnlock: 570 },
   { id: "mock-21", title: "Dar y recibir: あげる, もらう, くれる", pointsToUnlock: 600 },
-  { id: "mock-22", title: "Oraciones condicionales: と, たら, ば, なら", pointsToUnlock: 630 },
-  { id: "mock-23", title: "Causa y razón: から (kara) y ので (node)", pointsToUnlock: 660 },
-  { id: "mock-24", title: "Permiso y prohibición: てもいい, てはいけない", pointsToUnlock: 690 },
-  { id: "mock-25", title: "Secuencia de acciones con la forma て (te-form)", pointsToUnlock: 720 },
 ];
 
-export const GRAMMAR_BOARD_TOTAL = 25;
+export { GRAMMAR_BOARD_TOTAL };

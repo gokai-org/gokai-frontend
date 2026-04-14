@@ -251,7 +251,7 @@ export default function GrammarLessonModal({ lessonId, onClose, onExamOpen }: Pr
         key="backdrop"
         aria-label="Cerrar"
         onClick={onClose}
-        className="fixed inset-0 z-[59] bg-black/25 backdrop-blur-[1px]"
+        className="fixed inset-0 z-[59] bg-black/28"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1, transition: { duration: 0.2 } }}
         exit={{ opacity: 0, transition: { duration: 0.15 } }}
@@ -259,7 +259,7 @@ export default function GrammarLessonModal({ lessonId, onClose, onExamOpen }: Pr
 
       <div key="wrapper" className={wrapperCls}>
         <motion.aside
-          className={asideCls}
+          className={`${asideCls} will-change-transform`}
           initial={initial}
           animate={animate}
           exit={exit}

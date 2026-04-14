@@ -9,14 +9,20 @@ import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import type { Viewport } from "reactflow";
 import {
+  formatBackgroundViewportState,
+  normalizeViewportForBackground,
+  type BackgroundViewportCssState,
+  type BackgroundViewportState,
+} from "../../shared/lib/backgroundViewport";
+import {
   buildKanjiBoardLayout,
   buildTranslateExtent,
   createBaseKanjiBoardGraph,
   applyBoardUIState,
 } from "../lib/boardBuilder";
+import type { KanjiBoardQualitySignals } from "../types";
 import { useKanjiBoard } from "../hooks/useKanjiBoard";
 import { useKanjiBoardQuality } from "../hooks/useKanjiBoardQuality";
-import type { KanjiBoardQualitySignals } from "../types";
 import { KanjiBoardBackground } from "./KanjiBoardBackground";
 import { KanjiBoardMap } from "./KanjiBoardMap";
 import WritingBoardLoading from "../../shared/components/WritingBoardLoading";
@@ -45,83 +51,6 @@ function isKanjiQuizType(
     quizType === "reading" ||
     quizType === "writing"
   );
-}
-
-type BackgroundViewportState = {
-  x: number;
-  y: number;
-  zoom: number;
-};
-
-type BackgroundViewportCssState = {
-  x: string;
-  y: string;
-  zoom: string;
-};
-
-function clamp(value: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function snap(value: number, step: number) {
-  if (step <= 0) return value;
-  return Math.round(value / step) * step;
-}
-
-function getBackgroundViewportConfig(signals: KanjiBoardQualitySignals) {
-  const compactViewport =
-    signals.width <= 1180 || signals.pointerType === "coarse";
-  const positionStep =
-    compactViewport || signals.devicePixelRatio >= 2 ? 0.5 : 1;
-
-  return {
-    compactViewport,
-    positionStep,
-    zoomStep: compactViewport ? 0.0015 : 0.001,
-    xLimit: Math.max(
-      signals.width * (compactViewport ? 2.8 : 2.25),
-      compactViewport ? 1400 : 980,
-    ),
-    yLimit: Math.max(
-      signals.height * (compactViewport ? 1.95 : 1.6),
-      compactViewport ? 960 : 720,
-    ),
-  };
-}
-
-function normalizeViewportForBackground(
-  viewport: Viewport,
-  signals: KanjiBoardQualitySignals,
-) {
-  const config = getBackgroundViewportConfig(signals);
-
-  return {
-    x: snap(
-      clamp(viewport.x, -config.xLimit, config.xLimit),
-      config.positionStep,
-    ),
-    y: snap(
-      clamp(viewport.y, -config.yLimit, config.yLimit),
-      config.positionStep,
-    ),
-    zoom: snap(viewport.zoom, config.zoomStep),
-  };
-}
-
-function formatBackgroundViewportState(
-  state: BackgroundViewportState,
-  signals: KanjiBoardQualitySignals,
-): BackgroundViewportCssState {
-  const config = getBackgroundViewportConfig(signals);
-  const x = snap(state.x, config.positionStep);
-  const y = snap(state.y, config.positionStep);
-  const zoom = snap(state.zoom, config.zoomStep);
-
-  return {
-    x: `${x.toFixed(config.positionStep < 1 ? 1 : 0)}px`,
-    y: `${y.toFixed(config.positionStep < 1 ? 1 : 0)}px`,
-    zoom: zoom.toFixed(4),
-  };
 }
 
 export default function KanjisView() {
