@@ -1,13 +1,17 @@
 "use client";
 
-import { useCallback, useMemo } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { useCallback, useMemo, useRef } from "react";
 import {
   GrammarBoardCell,
   GrammarBoardCellPointsBadge,
 } from "@/features/graph/grammar/components/board/cells/GrammarBoardCell";
-import { useGrammarBoardViewport } from "../../hooks/useGrammarBoardViewport";
-import type { GrammarBoardViewModel } from "../../types";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { GrammarBoardBackdrop } from "./overlays/GrammarBoardBackdrop";
+import GrammarBoardLoading from "./GrammarBoardLoading";
+import type { GrammarBoardViewModel } from "../../types";
+
+const BOARD_EASE = [0.22, 1, 0.36, 1] as const;
 
 type GrammarBoardLoadStatus = "idle" | "loading" | "error" | "success";
 
@@ -24,42 +28,51 @@ function getCellCenter(cell: GrammarBoardViewModel["cells"][number]) {
   };
 }
 
+function getCellBounds(cell: GrammarBoardViewModel["cells"][number]) {
+  return {
+    left: cell.layout.x,
+    right: cell.layout.x + cell.layout.width,
+    top: cell.layout.y,
+    bottom: cell.layout.y + cell.layout.height,
+  };
+}
+
 function getBadgePosition(
   sourceCell: GrammarBoardViewModel["cells"][number],
   targetCell: GrammarBoardViewModel["cells"][number],
 ) {
   const sourceCenter = getCellCenter(sourceCell);
   const targetCenter = getCellCenter(targetCell);
+  const sourceBounds = getCellBounds(sourceCell);
+  const targetBounds = getCellBounds(targetCell);
   const dx = targetCenter.x - sourceCenter.x;
   const dy = targetCenter.y - sourceCenter.y;
 
   if (Math.abs(dx) >= Math.abs(dy)) {
-    const sourceEdgeX =
-      dx >= 0
-        ? sourceCell.layout.x + sourceCell.layout.width
-        : sourceCell.layout.x;
-    const targetEdgeX =
-      dx >= 0
-        ? targetCell.layout.x
-        : targetCell.layout.x + targetCell.layout.width;
+    const sourceEdgeX = dx >= 0 ? sourceBounds.right : sourceBounds.left;
+    const targetEdgeX = dx >= 0 ? targetBounds.left : targetBounds.right;
+    const overlapTop = Math.max(sourceBounds.top, targetBounds.top);
+    const overlapBottom = Math.min(sourceBounds.bottom, targetBounds.bottom);
 
     return {
       left: (sourceEdgeX + targetEdgeX) / 2,
-      top: (sourceCenter.y + targetCenter.y) / 2,
+      top:
+        overlapBottom > overlapTop
+          ? (overlapTop + overlapBottom) / 2
+          : (sourceCenter.y + targetCenter.y) / 2,
     };
   }
 
-  const sourceEdgeY =
-    dy >= 0
-      ? sourceCell.layout.y + sourceCell.layout.height
-      : sourceCell.layout.y;
-  const targetEdgeY =
-    dy >= 0
-      ? targetCell.layout.y
-      : targetCell.layout.y + targetCell.layout.height;
+  const sourceEdgeY = dy >= 0 ? sourceBounds.bottom : sourceBounds.top;
+  const targetEdgeY = dy >= 0 ? targetBounds.top : targetBounds.bottom;
+  const overlapLeft = Math.max(sourceBounds.left, targetBounds.left);
+  const overlapRight = Math.min(sourceBounds.right, targetBounds.right);
 
   return {
-    left: (sourceCenter.x + targetCenter.x) / 2,
+    left:
+      overlapRight > overlapLeft
+        ? (overlapLeft + overlapRight) / 2
+        : (sourceCenter.x + targetCenter.x) / 2,
     top: (sourceEdgeY + targetEdgeY) / 2,
   };
 }
@@ -69,24 +82,15 @@ export function GrammarBoard({
   status,
   onSelectLesson,
 }: GrammarBoardProps) {
-  const {
-    viewportRef,
-    scale,
-    isDragging,
-    worldStyle,
-    shouldSuppressClick,
-    viewportProps,
-  } = useGrammarBoardViewport();
+  const showLoading = status === "idle" || status === "loading";
+  const platformMotion = usePlatformMotion();
+  const previousShowLoadingRef = useRef(showLoading);
 
   const handleSelect = useCallback(
     (lessonId: string) => {
-      if (shouldSuppressClick()) {
-        return;
-      }
-
       onSelectLesson(lessonId);
     },
-    [onSelectLesson, shouldSuppressClick],
+    [onSelectLesson],
   );
 
   const cellsById = useMemo(
@@ -94,23 +98,70 @@ export function GrammarBoard({
     [board.cells],
   );
 
+  const entranceMode = platformMotion.entranceMode;
+  const shouldAnimateBoardEntrance = platformMotion.shouldAnimate;
+  const isLightEntrance = entranceMode === "light";
+  const boardDuration = (isLightEntrance ? 0.34 : 0.46) * platformMotion.durationScale;
+  const boardEntryOffset = isLightEntrance ? 10 : 20;
+  const boardEntryScale = isLightEntrance ? 1 : 0.985;
+  const boardExitScale = isLightEntrance ? 1 : 0.992;
+  const shouldAnimateBoardReveal =
+    shouldAnimateBoardEntrance && !showLoading && previousShowLoadingRef.current;
+
+  previousShowLoadingRef.current = showLoading;
+
   return (
-    <div
-      ref={viewportRef}
-      className={`absolute inset-0 overflow-hidden bg-surface-primary touch-none select-none ${
-        isDragging ? "cursor-grabbing" : scale > 1 ? "cursor-grab" : "cursor-zoom-in"
-      }`}
-      {...viewportProps}
-    >
-      <div className="relative h-full w-full">
-        <div style={worldStyle}>
-          <div className="h-full w-full bg-[linear-gradient(180deg,var(--surface-primary),var(--surface-secondary))] dark:bg-[linear-gradient(180deg,rgba(14,14,16,1),rgba(9,10,12,1))] p-4 sm:p-5 lg:p-6">
-            <div className="relative h-full w-full overflow-hidden rounded-[30px] border border-black/8 bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(247,245,246,0.96))] shadow-[0_18px_50px_-28px_rgba(17,24,39,0.22),0_34px_90px_-52px_rgba(17,24,39,0.16)] dark:border-white/[0.06] dark:bg-[linear-gradient(180deg,rgba(23,24,27,0.98),rgba(12,13,15,0.98))] dark:shadow-[0_30px_70px_-34px_rgba(0,0,0,0.76)]">
-              <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.24),rgba(255,255,255,0)_18%)] dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0)_16%)]" />
+    <AnimatePresence initial={false} mode="wait">
+      {showLoading ? (
+        <motion.div
+          key="grammar-board-loading"
+          className="absolute inset-0"
+          exit={
+            shouldAnimateBoardEntrance
+              ? {
+                  opacity: 0,
+                  scale: boardExitScale,
+                  filter: "blur(8px)",
+                  transition: {
+                    duration: Math.max(0.2, boardDuration * 0.78),
+                    ease: BOARD_EASE,
+                  },
+                }
+              : undefined
+          }
+        >
+          <GrammarBoardLoading />
+        </motion.div>
+      ) : (
+        <motion.div
+          key="grammar-board-content"
+          className="absolute inset-0 overflow-hidden select-none"
+          initial={
+            shouldAnimateBoardReveal
+              ? {
+                  opacity: 0,
+                  y: boardEntryOffset,
+                  scale: boardEntryScale,
+                  filter: "blur(12px)",
+                }
+              : false
+          }
+          animate={{
+            opacity: 1,
+            y: 0,
+            scale: 1,
+            filter: "blur(0px)",
+            transition: {
+              duration: boardDuration,
+              ease: BOARD_EASE,
+            },
+          }}
+        >
+          <div className="relative h-full w-full">
+            <GrammarBoardBackdrop />
 
-              <div className="absolute inset-[14px] overflow-hidden rounded-[24px] border border-black/6 bg-[linear-gradient(180deg,rgba(255,255,255,0.96),rgba(243,241,242,0.95))] shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] dark:border-white/[0.05] dark:bg-[linear-gradient(180deg,rgba(19,20,22,0.98),rgba(13,14,16,0.98))] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.03)]">
-                <GrammarBoardBackdrop />
-
+            <div className="h-full w-full p-6 sm:p-8 lg:p-10">
+              <div className="relative h-full w-full rounded-[24px]">
                 <div className="relative z-10 h-full w-full">
                   {board.cells.map((cell) => (
                     <GrammarBoardCell
@@ -125,7 +176,7 @@ export function GrammarBoard({
                       const sourceCell = cellsById.get(segment.fromId);
                       const targetCell = cellsById.get(segment.toId);
 
-                      if (!sourceCell || !targetCell) {
+                      if (!sourceCell || !targetCell || targetCell.progress.isMock) {
                         return null;
                       }
 
@@ -142,15 +193,12 @@ export function GrammarBoard({
                     })}
                   </div>
 
-                  {status === "loading" && (
-                    <div className="pointer-events-none absolute inset-0 animate-pulse bg-[linear-gradient(120deg,rgba(15,23,42,0),rgba(15,23,42,0.07),rgba(15,23,42,0))] dark:bg-[linear-gradient(120deg,rgba(255,255,255,0),rgba(255,255,255,0.05),rgba(255,255,255,0))]" />
-                  )}
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

@@ -28,6 +28,7 @@ import {
   type BackgroundViewportCssState,
   type BackgroundViewportState,
 } from "../lib/backgroundViewport";
+import { getDrawerAwareFocusViewport } from "../lib/focusViewport";
 import type {
   WritingBoardNode,
   WritingBoardEdge,
@@ -79,6 +80,7 @@ interface InnerMapProps {
   focusedNodeId: string | null;
   onInteractionChange: (isInteracting: boolean) => void;
   qualityProfile: WritingBoardQualityProfile;
+  drawerOpen: boolean;
   translateExtent?: [[number, number], [number, number]];
   nodeTypes: NodeTypes;
   edgeTypes: EdgeTypes;
@@ -95,6 +97,7 @@ function WritingBoardMapInner({
   focusedNodeId,
   onInteractionChange,
   qualityProfile,
+  drawerOpen,
   translateExtent: translateExtentProp,
   nodeTypes,
   edgeTypes,
@@ -160,10 +163,26 @@ function WritingBoardMapInner({
 
       const focusPoint = getPlanetFocusPoint(focusedNode);
 
-      void setCenter(focusPoint.x, focusPoint.y, {
-        zoom: qualityProfile.camera.focusZoom,
-        duration: qualityProfile.camera.focusDuration,
-      });
+      if (drawerOpen) {
+        void setViewport(
+          getDrawerAwareFocusViewport({
+            focusX: focusPoint.x,
+            focusY: focusPoint.y,
+            zoom: qualityProfile.camera.drawerFocusZoom,
+            viewportWidth: qualityProfile.signals.width,
+            viewportHeight: qualityProfile.signals.height,
+            drawerOpen,
+          }),
+          {
+            duration: qualityProfile.camera.focusDuration,
+          },
+        );
+      } else {
+        void setCenter(focusPoint.x, focusPoint.y, {
+          zoom: qualityProfile.camera.focusZoom,
+          duration: qualityProfile.camera.focusDuration,
+        });
+      }
 
       const frame = window.requestAnimationFrame(() => {
         onViewportChange(getViewport());
@@ -192,9 +211,13 @@ function WritingBoardMapInner({
     getViewport,
     nodes,
     onViewportChange,
+    qualityProfile.camera.drawerFocusZoom,
     qualityProfile.camera.focusZoom,
     qualityProfile.camera.focusDuration,
     qualityProfile.camera.restoreDuration,
+    qualityProfile.signals.height,
+    qualityProfile.signals.width,
+    drawerOpen,
     setCenter,
     setViewport,
   ]);
@@ -235,7 +258,7 @@ function WritingBoardMapInner({
       edgeTypes={stableEdgeTypes}
       onlyRenderVisibleElements
       minZoom={qualityProfile.camera.overviewZoom}
-      maxZoom={qualityProfile.camera.focusZoom}
+      maxZoom={qualityProfile.camera.drawerFocusZoom}
       translateExtent={translateExtentProp ?? layout.translateExtent}
       nodesDraggable={false}
       nodesConnectable={false}
@@ -765,11 +788,7 @@ export function WritingBoardView({
   }, []);
 
   if (loading) {
-    return (
-      <div className="absolute inset-0 bg-surface-primary">
-        <WritingBoardLoading scriptType={scriptType} />
-      </div>
-    );
+    return <WritingBoardLoading scriptType={scriptType} />;
   }
 
   if (error) {
@@ -822,6 +841,7 @@ export function WritingBoardView({
             focusedNodeId={focusedNodeIdProp ?? unlockFocusNodeId}
             onInteractionChange={handleInteractionChange}
             qualityProfile={qualityProfile}
+            drawerOpen={drawerOpen}
             translateExtent={translateExtent}
             nodeTypes={stableNodeTypes}
             edgeTypes={stableEdgeTypes}

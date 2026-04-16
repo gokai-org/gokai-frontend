@@ -61,11 +61,6 @@ export default function KatakanaView() {
   const celebrationFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [suppressUnlockPointsDuringUnlock, setSuppressUnlockPointsDuringUnlock] = useState(false);
 
-  const hasUnlockedNodes = useMemo(
-    () => items.some((item) => item.status !== "locked"),
-    [items],
-  );
-
   const selectedId = useMemo(() => {
     if (detailNodeId && items.some((item) => item.id === detailNodeId)) {
       return detailNodeId;
@@ -84,14 +79,6 @@ export default function KatakanaView() {
       null
     );
   }, [detailNodeId, items, manualSelectedId]);
-
-  const forcedInitialNodeId = !hasUnlockedNodes
-    ? (items[0]?.id ?? null)
-    : selectedId;
-
-  const forcedFocusedNodeId = detailNodeId ?? (!hasUnlockedNodes
-    ? (items[0]?.id ?? null)
-    : null);
 
   const selectedProgress = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
@@ -222,8 +209,8 @@ export default function KatakanaView() {
       onNodeAction={handleNodeAction}
       quizActive={quizItem !== null}
       drawerOpen={detailNodeId !== null}
-      initialNodeId={forcedInitialNodeId}
-      focusedNodeId={forcedFocusedNodeId}
+      initialNodeId={selectedId}
+      focusedNodeId={detailNodeId}
       masteryModuleId="katakana"
       masteryPoints={userPoints}
       autoTriggerOnNewMastery={false}

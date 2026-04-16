@@ -104,7 +104,7 @@ function WritingBoardEdge({
               zIndex: 10,
             }}
           >
-            <AnimatePresence mode="wait">
+            <AnimatePresence initial={false} mode="wait">
               {unlocking ? (
                 <motion.div
                   key="writing-score-complete"
@@ -127,7 +127,7 @@ function WritingBoardEdge({
               ) : (
                 <motion.div
                   key="writing-score"
-                  initial={{ opacity: 0, scale: 0.7 }}
+                  initial={false}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{
                     opacity: 0,

@@ -18,7 +18,7 @@ type Props = {
 function FieldEyebrow({ children, accent = false }: { children: ReactNode; accent?: boolean }) {
   return (
     <p className={[
-      "text-[11px] font-black uppercase tracking-[0.16em]",
+      "text-[2.5px] font-black uppercase tracking-[0.16em]",
       accent ? "text-[var(--accent)]" : "text-content-muted",
     ].join(" ")}>
       {children}
@@ -32,13 +32,13 @@ function HighlightFormula({ value }: { value: string }) {
     .filter(Boolean);
 
   return (
-    <span className="inline-flex flex-wrap items-center gap-x-1.5 gap-y-2">
+    <span className="inline-flex flex-wrap items-center gap-x-[1px] gap-y-[1px]">
       {parts.map((part, index) => {
         if (/^S\d$/.test(part)) {
           return (
             <span
               key={`${part}-${index}`}
-              className="rounded-full border border-border-subtle bg-surface-secondary px-2.5 py-1 text-[11px] font-black uppercase tracking-[0.18em] text-content-secondary"
+              className="rounded-full border border-border-subtle bg-surface-secondary px-[2px] py-0 text-[3.5px] font-black uppercase tracking-[0.18em] text-content-secondary"
             >
               {part}
             </span>
@@ -88,10 +88,10 @@ function ValueBlock({
 
   return (
     <div
-      className="rounded-2xl border border-border-subtle bg-surface-elevated/90 p-3.5 shadow-[0_4px_14px_rgba(0,0,0,0.03)]"
+      className="rounded-[3px] border border-border-subtle bg-surface-elevated/90 p-[3px] shadow-[0_4px_14px_rgba(0,0,0,0.03)]"
     >
       <FieldEyebrow accent>{header}</FieldEyebrow>
-      <div className="mt-2.5 text-[15px] font-semibold leading-relaxed text-content-primary">
+      <div className="mt-[1px] text-[3.5px] font-semibold leading-[1.3] text-content-primary">
         {shouldHighlight ? <HighlightFormula value={value} /> : value}
       </div>
     </div>
@@ -110,9 +110,9 @@ function PrimaryCardHeader({
   label?: string;
 }) {
   return (
-    <div className="rounded-[24px] border border-[var(--accent)]/12 bg-[var(--accent-subtle)] px-4 py-4 sm:px-5">
+      <div className="rounded-[4px] border border-[var(--accent)]/12 bg-[var(--accent-subtle)] px-[3px] py-[2px]">
       {label ? <FieldEyebrow accent>{label}</FieldEyebrow> : null}
-      <h4 className="mt-1 text-[clamp(1.3rem,1.08rem+0.55vw,1.75rem)] font-black leading-[1.05] text-content-primary">
+      <h4 className="text-[3.5px] font-black leading-[1.05] text-content-primary">
         {title}
       </h4>
     </div>
@@ -149,13 +149,13 @@ function SecondaryGrid({
 
 function PatternDeck({ layout }: { layout: ResolvedGrammarTableLayout }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-[2px]">
       {layout.rows.map((row, index) => {
         const primaryValue = getPrimaryValue(layout, row, index);
 
         return (
-          <article key={`${primaryValue}-${index}`} className="overflow-hidden rounded-[26px] border border-border-subtle bg-surface-primary/70">
-            <div className="space-y-4 p-4 sm:p-5">
+          <article key={`${primaryValue}-${index}`} className="overflow-hidden rounded-[4px] border border-border-subtle bg-surface-primary/70">
+            <div className="space-y-1 p-[3px]">
               <PrimaryCardHeader
                 title={primaryValue}
                 label={layout.headers[layout.primaryColumn]}
@@ -171,7 +171,7 @@ function PatternDeck({ layout }: { layout: ResolvedGrammarTableLayout }) {
 
 function ContrastCards({ layout }: { layout: ResolvedGrammarTableLayout }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="grid gap-[2px] sm:grid-cols-2">
       {layout.rows.map((row, index) => {
         const primaryValue = getPrimaryValue(layout, row, index);
         const secondaryEntries = layout.headers
@@ -183,17 +183,17 @@ function ContrastCards({ layout }: { layout: ResolvedGrammarTableLayout }) {
           .filter((entry) => entry.value && entry.cellIndex !== layout.primaryColumn);
 
         return (
-          <article key={`${primaryValue}-${index}`} className="rounded-[26px] border border-border-subtle bg-gradient-to-br from-surface-elevated via-surface-elevated to-surface-secondary p-4 shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
+          <article key={`${primaryValue}-${index}`} className="rounded-[4px] border border-border-subtle bg-gradient-to-br from-surface-elevated via-surface-elevated to-surface-secondary p-[3px] shadow-[0_10px_30px_rgba(0,0,0,0.04)]">
             <PrimaryCardHeader
               title={primaryValue}
               label={layout.headers[layout.primaryColumn]}
             />
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div className="mt-[3px] grid gap-[2px] sm:grid-cols-2">
               {secondaryEntries.map((entry) => (
-                <div key={`${entry.header}-${entry.cellIndex}`} className="rounded-2xl border border-border-subtle bg-surface-primary/80 px-3.5 py-3">
+                <div key={`${entry.header}-${entry.cellIndex}`} className="rounded-[3px] border border-border-subtle bg-surface-primary/80 px-[3px] py-[2px]">
                   <FieldEyebrow accent>{entry.header}</FieldEyebrow>
-                  <div className="mt-2 text-[15px] leading-relaxed text-content-primary">
+                  <div className="text-[5px] leading-relaxed text-content-primary">
                     {layout.formulaColumns.includes(entry.cellIndex) || looksLikeGrammarFormula(entry.value)
                       ? <HighlightFormula value={entry.value} />
                       : entry.value}
@@ -210,16 +210,16 @@ function ContrastCards({ layout }: { layout: ResolvedGrammarTableLayout }) {
 
 function PanelBlock({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-border-subtle bg-surface-primary/80 p-3.5 shadow-[0_4px_14px_rgba(0,0,0,0.03)]">
+    <div className="rounded-[3px] border border-border-subtle bg-surface-primary/80 p-[3px] shadow-[0_4px_14px_rgba(0,0,0,0.03)]">
       <FieldEyebrow accent>{title}</FieldEyebrow>
-      <div className="mt-2.5 text-[15px] leading-[1.8] text-content-secondary">{children}</div>
+      <div className="mt-[1px] text-[3.5px] leading-[1.8] text-content-secondary">{children}</div>
     </div>
   );
 }
 
 function ConceptPanels({ layout }: { layout: ResolvedGrammarTableLayout }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-[2px]">
       {layout.rows.map((row, index) => {
         const primaryValue = getPrimaryValue(layout, row, index);
         const details = layout.headers
@@ -231,14 +231,14 @@ function ConceptPanels({ layout }: { layout: ResolvedGrammarTableLayout }) {
           .filter((entry) => entry.value && entry.cellIndex !== layout.primaryColumn);
 
         return (
-          <article key={`${primaryValue}-${index}`} className="overflow-hidden rounded-[28px] border border-border-subtle bg-gradient-to-br from-surface-elevated via-surface-elevated to-surface-secondary">
-            <div className="space-y-4 p-4 sm:p-5">
+          <article key={`${primaryValue}-${index}`} className="overflow-hidden rounded-[4px] border border-border-subtle bg-gradient-to-br from-surface-elevated via-surface-elevated to-surface-secondary">
+            <div className="space-y-1 p-[3px]">
               <PrimaryCardHeader
                 title={primaryValue}
                 label={layout.headers[layout.primaryColumn]}
               />
 
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-[2px] sm:grid-cols-2">
                 {details.map((entry) => (
                   <PanelBlock key={`${entry.header}-${entry.cellIndex}`} title={entry.header}>
                     {layout.formulaColumns.includes(entry.cellIndex) || looksLikeGrammarFormula(entry.value)
@@ -257,7 +257,7 @@ function ConceptPanels({ layout }: { layout: ResolvedGrammarTableLayout }) {
 
 function MatrixDesktop({ layout }: { layout: ResolvedGrammarTableLayout }) {
   return (
-    <div className="hidden overflow-x-auto rounded-[26px] border border-border-subtle sm:block">
+    <div className="hidden overflow-x-auto rounded-[4px] border border-border-subtle sm:block">
       <table className="min-w-full border-separate border-spacing-0 text-left text-sm">
         <thead>
           <tr className="bg-[var(--accent-subtle)]">
@@ -265,8 +265,8 @@ function MatrixDesktop({ layout }: { layout: ResolvedGrammarTableLayout }) {
               <th
                 key={`${header}-${index}`}
                 className={[
-                  "border-b border-border-subtle px-4 py-3 text-[11px] font-black uppercase tracking-[0.16em] text-[var(--accent)]",
-                  index === 0 ? "sticky left-0 z-[1] bg-[color:rgba(192,57,90,0.12)]" : "",
+                  "border-b border-border-subtle px-[3px] py-[1.5px] text-[2.5px] font-black uppercase tracking-[0.16em] text-[var(--accent)]",
+                  index === 0 ? "sticky left-0 z-[1] bg-[color:rgba(153,51,49,0.12)]" : "",
                 ].join(" ")}
               >
                 {header}
@@ -283,7 +283,7 @@ function MatrixDesktop({ layout }: { layout: ResolvedGrammarTableLayout }) {
                   <td
                     key={`${header}-${cellIndex}-${rowIndex}`}
                     className={[
-                      "border-b border-border-subtle px-4 py-3 align-top text-[15px] text-content-primary",
+                      "border-b border-border-subtle px-[3px] py-[1.5px] align-top text-[3.5px] text-content-primary",
                       cellIndex === 0 ? "sticky left-0 bg-inherit font-bold" : "",
                     ].join(" ")}
                   >
@@ -308,13 +308,13 @@ function MatrixMobile({ layout }: { layout: ResolvedGrammarTableLayout }) {
         const primaryValue = getPrimaryValue(layout, row, rowIndex);
 
         return (
-          <article key={`${primaryValue}-${rowIndex}`} className="rounded-[24px] border border-border-subtle bg-surface-primary/80 p-4">
+          <article key={`${primaryValue}-${rowIndex}`} className="rounded-[4px] border border-border-subtle bg-surface-primary/80 p-[3px]">
             <PrimaryCardHeader
               title={primaryValue}
               label={layout.headers[layout.primaryColumn]}
             />
 
-            <div className="mt-3 space-y-2">
+            <div className="mt-1 space-y-[2px]">
               {layout.headers.map((header, cellIndex) => {
                 const value = row[cellIndex]?.trim() ?? "";
                 if (!value || cellIndex === layout.primaryColumn) {
@@ -322,9 +322,9 @@ function MatrixMobile({ layout }: { layout: ResolvedGrammarTableLayout }) {
                 }
 
                 return (
-                  <div key={`${header}-${cellIndex}-${rowIndex}`} className="rounded-2xl border border-border-subtle bg-surface-elevated/90 px-3.5 py-3">
+                  <div key={`${header}-${cellIndex}-${rowIndex}`} className="rounded-[3px] border border-border-subtle bg-surface-elevated/90 px-[3px] py-[2px]">
                     <FieldEyebrow accent>{header}</FieldEyebrow>
-                    <div className="mt-2 text-[15px] leading-relaxed text-content-primary">
+                    <div className="text-[5px] leading-relaxed text-content-primary">
                       {layout.formulaColumns.includes(cellIndex) || looksLikeGrammarFormula(value)
                         ? <HighlightFormula value={value} />
                         : value}

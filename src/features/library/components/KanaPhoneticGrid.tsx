@@ -187,6 +187,7 @@ function MiniCell({
   isLocked,
   animationsEnabled,
   unlocking = false,
+  sequenceIndex = 0,
   onClick,
 }: {
   kana: Kana;
@@ -194,34 +195,48 @@ function MiniCell({
   isLocked: boolean;
   animationsEnabled: boolean;
   unlocking?: boolean;
+  sequenceIndex?: number;
   onClick?: () => void;
 }) {
+  const effectiveLocked = isLocked && !unlocking;
+  const unlockSequenceDelay = animationsEnabled
+    ? Math.min(sequenceIndex, 8) * 0.1
+    : 0;
   const unlockingOverlay = unlocking ? (
     <motion.div
       key="unlock-burst"
       className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center overflow-visible"
       initial={{ opacity: 1 }}
       animate={{ opacity: 0 }}
-      transition={{ delay: animationsEnabled ? 2.1 : 0.9, duration: 0.4 }}
+      transition={{ delay: unlockSequenceDelay + (animationsEnabled ? 2.05 : 0.9), duration: 0.4 }}
     >
       <div className="absolute inset-0 overflow-hidden rounded-2xl">
         <motion.div
           className="absolute inset-0 rounded-2xl"
           initial={{ opacity: 0.78 }}
           animate={{ opacity: 0 }}
-          transition={{ duration: animationsEnabled ? 1.9 : 0.8 }}
+          transition={{ delay: unlockSequenceDelay, duration: animationsEnabled ? 1.9 : 0.8 }}
           style={{
             background: `radial-gradient(circle, rgba(${c.unlockRgba},0.48) 0%, transparent 70%)`,
           }}
         />
         {animationsEnabled && (
-          <motion.div
-            className="absolute rounded-2xl border-2"
-            initial={{ opacity: 0.92, scale: 0.52 }}
-            animate={{ opacity: 0, scale: 1.48 }}
-            transition={{ duration: 0.88, ease: [0.22, 1, 0.36, 1] }}
-            style={{ inset: 0, borderColor: `rgba(${c.unlockRgba},0.52)` }}
-          />
+          <>
+            <motion.div
+              className="absolute rounded-2xl border-2"
+              initial={{ opacity: 0.92, scale: 0.52 }}
+              animate={{ opacity: 0, scale: 1.48 }}
+              transition={{ delay: unlockSequenceDelay, duration: 0.88, ease: [0.22, 1, 0.36, 1] }}
+              style={{ inset: 0, borderColor: `rgba(${c.unlockRgba},0.52)` }}
+            />
+            <motion.div
+              className="absolute rounded-2xl border"
+              initial={{ opacity: 0.58, scale: 0.72 }}
+              animate={{ opacity: 0, scale: 1.7 }}
+              transition={{ delay: unlockSequenceDelay + 0.16, duration: 1.02, ease: [0.22, 1, 0.36, 1] }}
+              style={{ inset: -4, borderColor: `rgba(${c.unlockRgba},0.28)` }}
+            />
+          </>
         )}
       </div>
       <motion.div
@@ -241,6 +256,7 @@ function MiniCell({
             : { y: -22, opacity: [0, 1, 0], scale: 1 }
         }
         transition={{
+          delay: unlockSequenceDelay + 0.05,
           duration: animationsEnabled ? 1.9 : 0.9,
           times: animationsEnabled ? [0, 0.14, 0.68, 1] : [0, 0.3, 1],
           ease: [0.22, 1, 0.36, 1],
@@ -257,24 +273,46 @@ function MiniCell({
     <button
       type="button"
       onClick={onClick}
-      disabled={isLocked}
+      disabled={effectiveLocked}
       className={[
         "group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-2xl border py-2 text-center transition-all duration-150 select-none",
-        isLocked
+        effectiveLocked
           ? "cursor-default border-border-subtle/40 bg-surface-secondary/50 opacity-55"
           : "active:scale-95",
       ].join(" ")}
       style={
-        !isLocked
+        !effectiveLocked
           ? { background: c.accentCellBg, borderColor: c.accentBorder, minHeight: "58px" }
           : { minHeight: "58px" }
       }
     >
       {unlockingOverlay}
-      {isLocked ? (
+      {effectiveLocked ? (
         <LockKeyhole size={13} className="text-content-muted" />
       ) : (
-        <>
+        <motion.div
+          initial={false}
+          animate={
+            unlocking
+              ? {
+                  scale: [0.94, 1.06, 1],
+                  y: [6, -6, 0],
+                  filter: [
+                    "brightness(1)",
+                    "brightness(1.18)",
+                    "brightness(1)",
+                  ],
+                }
+              : { scale: 1, y: 0, filter: "brightness(1)" }
+          }
+          transition={{
+            delay: unlockSequenceDelay,
+            duration: animationsEnabled ? 0.95 : 0.45,
+            times: [0, 0.38, 1],
+            ease: [0.22, 1, 0.36, 1],
+          }}
+          className="flex flex-col items-center gap-0.5"
+        >
           <span
             className="text-xl font-black leading-none"
             style={{ color: c.accent }}
@@ -284,7 +322,7 @@ function MiniCell({
           <span className="text-[7px] font-bold uppercase leading-none text-content-muted">
             {kana.romaji}
           </span>
-        </>
+        </motion.div>
       )}
     </button>
   );
@@ -337,6 +375,7 @@ export function KanaPhoneticGrid({
   );
 
   let cardIndex = 0;
+  let mobileCellIndex = 0;
 
   return (
     <div className="w-full">
@@ -425,6 +464,7 @@ export function KanaPhoneticGrid({
                   if (!kana)
                     return <MEmptyCell key={`empty-${row.key}-${colIndex}`} />;
                   const isLocked = lockedIds.has(kana.id);
+                  const idx = mobileCellIndex++;
                   return (
                     <MiniCell
                       key={kana.id}
@@ -433,6 +473,7 @@ export function KanaPhoneticGrid({
                       isLocked={isLocked}
                       animationsEnabled={platformMotion.shouldAnimate}
                       unlocking={newlyUnlockedIds.has(kana.id)}
+                      sequenceIndex={idx}
                       onClick={isLocked ? undefined : () => onKanaClick(kana)}
                     />
                   );

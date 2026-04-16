@@ -38,6 +38,7 @@ import {
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 // import { getPrimaryMeaning } from "@/features/kanji";
 
 type QuizCompletionResult = {
@@ -157,6 +158,34 @@ export default function LibraryPage() {
     null,
   );
 
+  const startUnlockAnimation = useCallback(
+    (ids: string[], target: "kanji" | "kana") => {
+      if (ids.length === 0) return;
+
+      if (unlockAnimationTimerRef.current !== null) {
+        clearTimeout(unlockAnimationTimerRef.current);
+      }
+
+      const nextUnlockedIds = new Set(ids);
+
+      if (target === "kanji") {
+        setNewlyUnlockedKanjiIds(nextUnlockedIds);
+      } else {
+        setNewlyUnlockedKanaIds(nextUnlockedIds);
+      }
+
+      unlockAnimationTimerRef.current = setTimeout(() => {
+        if (target === "kanji") {
+          setNewlyUnlockedKanjiIds(new Set());
+          return;
+        }
+
+        setNewlyUnlockedKanaIds(new Set());
+      }, 2800);
+    },
+    [],
+  );
+
   const {
     themes,
     filteredThemes,
@@ -248,34 +277,32 @@ export default function LibraryPage() {
 
     if (isPracticeOnly) return;
 
-    const nextUserPoints = await reloadLockedStatus();
-    const effectiveUserPoints = Math.max(
-      nextUserPoints,
+    const optimisticUserPoints = Math.max(
+      userPoints,
       _result?.resultingModulePoints ?? 0,
     );
 
-    if (!lockedIdsBeforeQuiz) return;
+    if (typeof _result?.resultingModulePoints === "number") {
+      dispatchMasteryProgressSync({ points: optimisticUserPoints });
+    }
+
+    if (!lockedIdsBeforeQuiz) {
+      void reloadLockedStatus();
+      return;
+    }
 
     const unlockedIds = kanjis
       .filter(
         (kanji) =>
           lockedIdsBeforeQuiz.has(kanji.id) &&
-          effectiveUserPoints >= kanji.pointsToUnlock,
+          optimisticUserPoints >= kanji.pointsToUnlock,
       )
       .map((kanji) => kanji.id);
 
-    if (unlockedIds.length === 0) return;
+    startUnlockAnimation(unlockedIds, "kanji");
 
-    if (unlockAnimationTimerRef.current !== null) {
-      clearTimeout(unlockAnimationTimerRef.current);
-    }
-
-    const nextUnlockedIds = new Set(unlockedIds);
-    setNewlyUnlockedKanjiIds(nextUnlockedIds);
-    unlockAnimationTimerRef.current = setTimeout(() => {
-      setNewlyUnlockedKanjiIds(new Set());
-    }, 2500);
-  }, [kanjis, quizKanji, reloadLockedStatus]);
+    void reloadLockedStatus();
+  }, [kanjis, quizKanji, reloadLockedStatus, startUnlockAnimation, userPoints]);
 
   const handleKanaClick = (kana: Kana) => {
     setDrawerEntity({ id: kana.id, kind: "kana", kanaType: kana.kanaType });
@@ -292,43 +319,49 @@ export default function LibraryPage() {
 
     if (isPracticeOnly) return;
 
-    const nextKanaState = await reloadKanaLockedStatus();
-    const effectiveKanaPoints = Math.max(
-      nextKanaState.userKanaPoints,
+    const optimisticKanaPoints = Math.max(
+      userKanaPoints,
       _result?.resultingModulePoints ?? 0,
     );
 
-    if (!lockedHiraganaIdsBeforeQuiz && !lockedKatakanaIdsBeforeQuiz) return;
+    if (typeof _result?.resultingModulePoints === "number") {
+      dispatchMasteryProgressSync({ kanaPoints: optimisticKanaPoints });
+    }
+
+    if (!lockedHiraganaIdsBeforeQuiz && !lockedKatakanaIdsBeforeQuiz) {
+      void reloadKanaLockedStatus();
+      return;
+    }
 
     const unlockedIds = [
       ...hiraganas
         .filter(
           (kana) =>
             lockedHiraganaIdsBeforeQuiz?.has(kana.id) &&
-            effectiveKanaPoints >= kana.pointsToUnlock,
+            optimisticKanaPoints >= kana.pointsToUnlock,
         )
         .map((kana) => kana.id),
       ...katakanas
         .filter(
           (kana) =>
             lockedKatakanaIdsBeforeQuiz?.has(kana.id) &&
-            effectiveKanaPoints >= kana.pointsToUnlock,
+            optimisticKanaPoints >= kana.pointsToUnlock,
         )
         .map((kana) => kana.id),
     ];
 
-    if (unlockedIds.length === 0) return;
+    startUnlockAnimation(unlockedIds, "kana");
 
-    if (unlockAnimationTimerRef.current !== null) {
-      clearTimeout(unlockAnimationTimerRef.current);
-    }
+    void reloadKanaLockedStatus();
+  }, [hiraganas, katakanas, quizKana, reloadKanaLockedStatus, startUnlockAnimation, userKanaPoints]);
 
-    const nextUnlockedIds = new Set(unlockedIds);
-    setNewlyUnlockedKanaIds(nextUnlockedIds);
-    unlockAnimationTimerRef.current = setTimeout(() => {
-      setNewlyUnlockedKanaIds(new Set());
-    }, 2500);
-  }, [hiraganas, katakanas, quizKana, reloadKanaLockedStatus]);
+  useEffect(() => {
+    return () => {
+      if (unlockAnimationTimerRef.current !== null) {
+        clearTimeout(unlockAnimationTimerRef.current);
+      }
+    };
+  }, []);
 
   const handleCategoryChange = (cat: string | null) => {
     setSelectedCategory(cat);

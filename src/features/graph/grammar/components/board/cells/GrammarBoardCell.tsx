@@ -1,134 +1,95 @@
 "use client";
 
 import { memo } from "react";
-import { LockKeyhole } from "lucide-react";
 import type { GrammarBoardCellViewModel } from "../../../types";
 
 type PanelKind = "goal" | "banner" | "wide" | "tower" | "standard";
 
-type PinkCellVariant = {
-  shell: string;
-  watermark: string;
+type BoardCardVariant = {
+  bg: string;
+  text: string;
+  badge: string;
+  kanji: string;
+  border: string;
 };
 
-const WATERMARK_CHARACTER_PATTERN =
-  /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\u30fc\u3005\u3006\u30f5\u30f6]/g;
-
-const UNLOCKED_PINK_VARIANTS: readonly PinkCellVariant[] = [
+const UNLOCKED_CARD_VARIANTS: readonly BoardCardVariant[] = [
   {
-    shell:
-      "border-[#e9becd]/90 bg-[linear-gradient(145deg,rgba(255,241,246,0.98),rgba(255,248,250,0.98)_56%,rgba(248,223,232,0.96))] dark:border-[#875064]/72 dark:bg-[linear-gradient(145deg,rgba(96,48,63,0.96),rgba(72,35,49,0.96)_56%,rgba(84,42,56,0.95))]",
-    watermark: "text-[#c74d71]/34 dark:text-[#ff9fba]/[0.34]",
+    bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
+    text: "text-content-primary dark:text-white",
+    badge: "bg-content-primary/10 dark:bg-white/10",
+    kanji: "text-content-primary dark:text-white",
+    border: "border-content-primary/10 dark:border-white/10",
   },
   {
-    shell:
-      "border-[#efc5d4]/90 bg-[linear-gradient(145deg,rgba(255,239,245,0.98),rgba(255,247,249,0.98)_56%,rgba(251,227,236,0.96))] dark:border-[#94546c]/72 dark:bg-[linear-gradient(145deg,rgba(107,52,69,0.96),rgba(81,38,55,0.96)_56%,rgba(93,46,62,0.95))]",
-    watermark: "text-[#d25d7d]/34 dark:text-[#ffacc1]/[0.34]",
+    bg: "bg-accent/15 dark:bg-accent/20",
+    text: "text-content-primary dark:text-white",
+    badge: "bg-accent/15 dark:bg-accent/25",
+    kanji: "text-accent dark:text-accent",
+    border: "border-accent/20 dark:border-accent/25",
   },
   {
-    shell:
-      "border-[#e7b6c7]/90 bg-[linear-gradient(145deg,rgba(255,236,242,0.98),rgba(255,244,247,0.98)_56%,rgba(246,217,228,0.96))] dark:border-[#7f4b60]/72 dark:bg-[linear-gradient(145deg,rgba(91,45,60,0.96),rgba(68,33,46,0.96)_56%,rgba(79,40,53,0.95))]",
-    watermark: "text-[#be4568]/34 dark:text-[#ff97b3]/[0.34]",
+    bg: "bg-surface-inset dark:bg-[#202020]",
+    text: "text-content-primary dark:text-white",
+    badge: "bg-content-primary/10 dark:bg-white/10",
+    kanji: "text-content-primary dark:text-white",
+    border: "border-content-primary/10 dark:border-white/10",
   },
   {
-    shell:
-      "border-[#f0cad6]/90 bg-[linear-gradient(145deg,rgba(255,243,247,0.98),rgba(255,249,251,0.98)_56%,rgba(252,231,238,0.96))] dark:border-[#9b5c71]/72 dark:bg-[linear-gradient(145deg,rgba(111,58,72,0.96),rgba(85,43,56,0.96)_56%,rgba(97,50,63,0.95))]",
-    watermark: "text-[#d96d8c]/34 dark:text-[#ffb6ca]/[0.34]",
-  },
-  {
-    shell:
-      "border-[#e4b2c4]/90 bg-[linear-gradient(145deg,rgba(255,234,241,0.98),rgba(255,242,246,0.98)_56%,rgba(245,212,224,0.96))] dark:border-[#7a465b]/72 dark:bg-[linear-gradient(145deg,rgba(87,41,56,0.96),rgba(65,31,43,0.96)_56%,rgba(75,37,50,0.95))]",
-    watermark: "text-[#b93d63]/34 dark:text-[#ff8eac]/[0.34]",
-  },
-  {
-    shell:
-      "border-[#ecc0cf]/90 bg-[linear-gradient(145deg,rgba(255,240,245,0.98),rgba(255,246,249,0.98)_56%,rgba(249,224,233,0.96))] dark:border-[#8d5568]/72 dark:bg-[linear-gradient(145deg,rgba(101,52,65,0.96),rgba(76,38,50,0.96)_56%,rgba(88,45,58,0.95))]",
-    watermark: "text-[#ce5578]/34 dark:text-[#ffa6bc]/[0.34]",
+    bg: "bg-surface-secondary dark:bg-surface-secondary",
+    text: "text-content-primary dark:text-white",
+    badge: "bg-content-primary/10 dark:bg-white/10",
+    kanji: "text-content-primary dark:text-white",
+    border: "border-content-primary/10 dark:border-white/10",
   },
 ] as const;
 
-const UNLOCKED_STATE_ACCENTS = {
+const LOCKED_CARD_VARIANT: BoardCardVariant = {
+  bg: "bg-surface-secondary/90 dark:bg-surface-secondary",
+  text: "text-content-primary dark:text-white",
+  badge: "bg-black/5 dark:bg-white/10",
+  kanji: "text-content-primary dark:text-white",
+  border: "border-content-primary/10 dark:border-white/10",
+};
+
+const CARD_STATE_ACCENTS = {
   active:
-    "ring-1 ring-white/52 shadow-[0_22px_42px_-26px_rgba(192,57,90,0.24)] dark:ring-white/[0.10] dark:shadow-[0_20px_38px_-24px_rgba(0,0,0,0.44)]",
+    "shadow-[0_20px_40px_rgba(0,0,0,0.14)] dark:shadow-[0_18px_38px_rgba(0,0,0,0.34)]",
   available:
-    "shadow-[0_16px_30px_-24px_rgba(192,57,90,0.16)] dark:shadow-[0_18px_32px_-24px_rgba(0,0,0,0.42)]",
+    "shadow-[0_12px_28px_rgba(0,0,0,0.08)]",
   completed:
-    "shadow-[0_14px_28px_-24px_rgba(192,57,90,0.14)] dark:shadow-[0_16px_28px_-24px_rgba(0,0,0,0.40)] saturate-[0.96]",
+    "shadow-[0_14px_30px_rgba(0,0,0,0.09)]",
+  locked:
+    "shadow-[0_10px_22px_rgba(0,0,0,0.06)]",
 } as const;
 
-const STATUS_STYLES = {
-  active: {
-    shell: "",
-    helper:
-      "border-slate-200/90 bg-white/86 text-slate-700 dark:border-white/[0.10] dark:bg-white/[0.06] dark:text-slate-100",
-    title: "text-slate-950 dark:text-white",
-    subtitle: "text-slate-600 dark:text-slate-200/90",
-    watermark: "",
-    lockBadge:
-      "border-slate-200/90 bg-white/86 text-slate-700 dark:border-white/[0.10] dark:bg-white/[0.06] dark:text-slate-100",
-  },
-  available: {
-    shell: "",
-    helper:
-      "border-slate-200/85 bg-white/82 text-slate-600 dark:border-white/[0.08] dark:bg-white/[0.05] dark:text-slate-200",
-    title: "text-slate-900 dark:text-slate-50",
-    subtitle: "text-slate-600 dark:text-slate-200/90",
-    watermark: "",
-    lockBadge:
-      "border-slate-200/85 bg-white/82 text-slate-600 dark:border-white/[0.08] dark:bg-white/[0.05] dark:text-slate-200",
-  },
-  completed: {
-    shell: "",
-    helper:
-      "border-slate-200/85 bg-white/80 text-slate-600 dark:border-white/[0.08] dark:bg-white/[0.05] dark:text-slate-200",
-    title: "text-slate-900 dark:text-slate-50",
-    subtitle: "text-slate-600 dark:text-slate-200/90",
-    watermark: "",
-    lockBadge:
-      "border-slate-200/85 bg-white/80 text-slate-600 dark:border-white/[0.08] dark:bg-white/[0.05] dark:text-slate-200",
-  },
-  locked: {
-    shell:
-      "border-black/[0.06] bg-surface-tertiary shadow-[0_1px_3px_rgba(0,0,0,0.06)] dark:border-white/[0.06] dark:bg-surface-tertiary dark:shadow-none",
-    helper:
-      "border-black/[0.06] bg-white/74 text-slate-600 dark:border-white/[0.06] dark:bg-black/[0.18] dark:text-slate-200",
-    title:
-      "text-slate-700 dark:text-[#d1d5db]",
-    subtitle:
-      "text-slate-500 dark:text-[#9ca3af]",
-    watermark:
-      "text-[#c0395a]/16 dark:text-[#ff8faa]/[0.18]",
-    lockBadge:
-      "border-black/[0.06] bg-white/78 text-slate-600 dark:border-white/[0.06] dark:bg-black/[0.22] dark:text-[#d1d5db]",
-  },
-} as const;
+function getPresentationVisualState(cell: GrammarBoardCellViewModel) {
+  if (cell.layout.order === 1 && cell.visualState === "active") {
+    return "available";
+  }
 
-function getUnlockedPinkVariant(index: number) {
-  return UNLOCKED_PINK_VARIANTS[index % UNLOCKED_PINK_VARIANTS.length];
+  return cell.visualState;
+}
+
+function getCardVariant(cell: GrammarBoardCellViewModel) {
+  if (cell.visualState === "locked") {
+    return LOCKED_CARD_VARIANT;
+  }
+
+  return UNLOCKED_CARD_VARIANTS[
+    cell.progress.index % UNLOCKED_CARD_VARIANTS.length
+  ];
 }
 
 function getShellClass(cell: GrammarBoardCellViewModel) {
-  if (cell.visualState === "locked") {
-    return STATUS_STYLES.locked.shell;
-  }
+  const variant = getCardVariant(cell);
+  const visualState = getPresentationVisualState(cell);
 
-  const variant = getUnlockedPinkVariant(cell.progress.index);
-  const stateAccent =
-    cell.visualState === "active"
-      ? UNLOCKED_STATE_ACCENTS.active
-      : cell.visualState === "completed"
-        ? UNLOCKED_STATE_ACCENTS.completed
-        : UNLOCKED_STATE_ACCENTS.available;
-
-  return `${variant.shell} ${stateAccent}`;
-}
-
-function getWatermarkToneClass(cell: GrammarBoardCellViewModel) {
-  if (cell.visualState === "locked") {
-    return STATUS_STYLES.locked.watermark;
-  }
-
-  return getUnlockedPinkVariant(cell.progress.index).watermark;
+  return [
+    variant.bg,
+    variant.border,
+    CARD_STATE_ACCENTS[visualState],
+  ].join(" ");
 }
 
 function getPanelKind(layout: GrammarBoardCellViewModel["layout"]): PanelKind {
@@ -153,147 +114,243 @@ function getPanelKind(layout: GrammarBoardCellViewModel["layout"]): PanelKind {
   return "standard";
 }
 
-function getWatermarkFrameClass(panelKind: PanelKind) {
-  if (panelKind === "goal") {
-    return "left-[1%] right-[1%] top-[12%]";
-  }
-
-  if (panelKind === "banner") {
-    return "left-[1%] right-[1%] top-[14%]";
-  }
-
-  if (panelKind === "wide") {
-    return "left-[1%] right-[1%] top-[14%]";
-  }
-
-  if (panelKind === "tower") {
-    return "left-[2%] right-[2%] top-[10%]";
-  }
-
-  return "left-[1.5%] right-[1.5%] top-[12%]";
-}
-
-function getWatermarkCharacterClass(
-  panelKind: PanelKind,
-  characterCount: number,
-) {
-  const compact = characterCount >= 5;
-
-  if (panelKind === "goal") {
-    return compact
-      ? "text-[clamp(3.2rem,6.2vw,5.4rem)] -ml-[0.08em] first:ml-0"
-      : "text-[clamp(4.4rem,8.4vw,7.2rem)] -ml-[0.08em] first:ml-0";
-  }
-
-  if (panelKind === "banner") {
-    return compact
-      ? "text-[clamp(2.5rem,4.8vw,3.8rem)] -ml-[0.08em] first:ml-0"
-      : "text-[clamp(3.4rem,6.2vw,5rem)] -ml-[0.08em] first:ml-0";
-  }
-
-  if (panelKind === "wide") {
-    return compact
-      ? "text-[clamp(2.3rem,4.2vw,3.4rem)] -ml-[0.08em] first:ml-0"
-      : "text-[clamp(3rem,5.4vw,4.3rem)] -ml-[0.08em] first:ml-0";
-  }
-
-  if (panelKind === "tower") {
-    return compact
-      ? "text-[clamp(1.6rem,3vw,2.2rem)] -ml-[0.06em] first:ml-0"
-      : "text-[clamp(2rem,3.6vw,2.8rem)] -ml-[0.06em] first:ml-0";
-  }
-
-  return compact
-    ? "text-[clamp(2rem,3.6vw,2.8rem)] -ml-[0.08em] first:ml-0"
-    : "text-[clamp(2.7rem,4.8vw,3.9rem)] -ml-[0.08em] first:ml-0";
-}
-
 function getContentWidthClass(panelKind: PanelKind) {
   if (panelKind === "goal") {
-    return "max-w-[84%]";
-  }
-
-  if (panelKind === "banner") {
     return "max-w-[88%]";
   }
 
+  if (panelKind === "banner") {
+    return "max-w-[90%]";
+  }
+
   if (panelKind === "wide") {
-    return "max-w-[88%]";
+    return "max-w-[92%]";
   }
 
   if (panelKind === "tower") {
-    return "max-w-full";
+    return "max-w-[94%]";
   }
 
-  return "max-w-[90%]";
+  return "max-w-[92%]";
 }
 
-function getTopSpacerClass(panelKind: PanelKind) {
+function getWatermarkFrameClass(panelKind: PanelKind) {
   if (panelKind === "goal") {
-    return "h-[30%]";
+    return "left-0 right-0 top-0 bottom-[18%] flex items-start justify-start pl-1 pt-1 sm:pl-2 sm:pt-2";
   }
 
   if (panelKind === "banner") {
-    return "h-[24%]";
+    return "left-0 right-0 top-0 bottom-[12%] flex items-start justify-start pl-1 pt-1 sm:pl-2 sm:pt-2";
   }
 
   if (panelKind === "wide") {
-    return "h-[22%]";
+    return "left-0 right-0 top-0 bottom-[10%] flex items-start justify-start pl-1 pt-1 sm:pl-2 sm:pt-2";
   }
 
   if (panelKind === "tower") {
-    return "h-[18%]";
+    return "left-0 right-0 top-0 bottom-[8%] flex items-start justify-start pl-1 pt-1";
   }
 
-  return "h-[20%]";
+  return "left-0 right-0 top-0 bottom-[10%] flex items-start justify-start pl-1 pt-1 sm:pl-2 sm:pt-2";
 }
 
-function getTitleClass(panelKind: PanelKind) {
+function getContentPaddingClass(panelKind: PanelKind) {
   if (panelKind === "goal") {
-    return "text-[1.02rem] sm:text-[1.1rem] leading-[1.02] [-webkit-line-clamp:3]";
+    return "p-4 sm:p-5";
   }
 
   if (panelKind === "banner") {
-    return "text-[0.94rem] leading-[1.06] [-webkit-line-clamp:2]";
+    return "p-3.5 sm:p-4";
   }
 
   if (panelKind === "wide") {
-    return "text-[0.88rem] leading-[1.08] [-webkit-line-clamp:3]";
+    return "p-3.5";
   }
 
   if (panelKind === "tower") {
-    return "text-[0.77rem] leading-[1.06] [-webkit-line-clamp:4]";
+    return "p-2.5";
   }
 
-  return "text-[0.82rem] leading-[1.08] [-webkit-line-clamp:3]";
+  return "p-3";
 }
 
-function getContentPaddingClass(panelKind: PanelKind, locked: boolean) {
+function getWatermarkTextClass(
+  panelKind: PanelKind,
+  visualState: GrammarBoardCellViewModel["visualState"],
+  characterCount: number,
+  lineCount: number,
+) {
+  const emphasized = visualState === "active" || visualState === "completed";
+  const compact = characterCount >= 5 || lineCount >= 2;
+
   if (panelKind === "goal") {
-    return locked ? "p-3.5 sm:p-4" : "p-4 sm:p-5";
+    return emphasized
+      ? compact
+        ? "text-[5.8rem] sm:text-[7.2rem] leading-[0.74] opacity-[0.16] scale-105"
+        : "text-[7.4rem] sm:text-[9rem] leading-[0.78] opacity-[0.16] scale-105"
+      : compact
+        ? "text-[5.2rem] sm:text-[6.6rem] leading-[0.74] opacity-[0.10]"
+        : "text-[6.8rem] sm:text-[8.2rem] leading-[0.78] opacity-[0.10]";
   }
 
   if (panelKind === "banner") {
-    return locked ? "p-3 sm:p-3.5" : "p-3.5 sm:p-4";
+    return emphasized
+      ? compact
+        ? "text-[4.4rem] sm:text-[5.6rem] leading-[0.74] opacity-[0.15] scale-105"
+        : "text-[5.4rem] sm:text-[6.8rem] leading-[0.78] opacity-[0.15] scale-105"
+      : compact
+        ? "text-[3.9rem] sm:text-[5rem] leading-[0.74] opacity-[0.09]"
+        : "text-[4.8rem] sm:text-[6rem] leading-[0.78] opacity-[0.09]";
   }
 
   if (panelKind === "wide") {
-    return locked ? "p-3" : "p-3.5";
+    return emphasized
+      ? compact
+        ? "text-[3.5rem] sm:text-[4.2rem] leading-[0.74] opacity-[0.15] scale-105"
+        : "text-[4.6rem] sm:text-[5.4rem] leading-[0.78] opacity-[0.15] scale-105"
+      : compact
+        ? "text-[3.1rem] sm:text-[3.8rem] leading-[0.74] opacity-[0.09]"
+        : "text-[4rem] sm:text-[4.8rem] leading-[0.78] opacity-[0.09]";
   }
 
   if (panelKind === "tower") {
-    return locked ? "p-2.5" : "p-3";
+    return emphasized
+      ? compact
+        ? "text-[2.8rem] leading-[0.72] opacity-[0.14] scale-105"
+        : "text-[3.2rem] leading-[0.78] opacity-[0.14] scale-105"
+      : compact
+        ? "text-[2.4rem] leading-[0.72] opacity-[0.09]"
+        : "text-[2.8rem] leading-[0.78] opacity-[0.09]";
   }
 
-  return locked ? "p-2.5" : "p-3";
+  return emphasized
+    ? compact
+      ? "text-[3.3rem] sm:text-[4rem] leading-[0.74] opacity-[0.15] scale-105"
+      : "text-[4.3rem] sm:text-[5rem] leading-[0.78] opacity-[0.15] scale-105"
+    : compact
+      ? "text-[2.9rem] sm:text-[3.5rem] leading-[0.74] opacity-[0.09]"
+      : "text-[3.7rem] sm:text-[4.4rem] leading-[0.78] opacity-[0.09]";
 }
 
-function getWatermarkCharacters(symbol: string) {
-  const japaneseCharacters = symbol.match(WATERMARK_CHARACTER_PATTERN)?.join("");
-  const normalized = (japaneseCharacters || symbol).replace(/\s+/g, "").trim();
-  const source = normalized.length > 0 ? normalized : "文法";
+function getWatermarkToneClass(cell: GrammarBoardCellViewModel) {
+  const variant = getCardVariant(cell);
+  const visualState = getPresentationVisualState(cell);
 
-  return Array.from(source).slice(0, 6);
+  if (visualState === "locked") {
+    return `${variant.kanji} opacity-[0.12] dark:opacity-[0.16]`;
+  }
+
+  return `${variant.kanji} ${visualState === "active" ? "opacity-[0.16]" : "opacity-[0.09]"}`;
+}
+
+function getOuterCornerClass(order: number) {
+  if (order === 1) {
+    return "rounded-br-[22px]";
+  }
+
+  if (order === 5) {
+    return "rounded-bl-[22px]";
+  }
+
+  if (order === 9) {
+    return "rounded-tl-[22px]";
+  }
+
+  if (order === 13) {
+    return "rounded-tr-[22px]";
+  }
+
+  return "";
+}
+
+function getInnerCornerClass(order: number) {
+  if (order === 1) {
+    return "rounded-br-[21px]";
+  }
+
+  if (order === 5) {
+    return "rounded-bl-[21px]";
+  }
+
+  if (order === 9) {
+    return "rounded-tl-[21px]";
+  }
+
+  if (order === 13) {
+    return "rounded-tr-[21px]";
+  }
+
+  return "";
+}
+
+function getWatermarkDisplayText(symbol: string, panelKind: PanelKind) {
+  const normalized = symbol.replace(/\s+/g, "").trim() || "文法";
+  const characters = Array.from(normalized);
+
+  if (normalized.includes("・")) {
+    return normalized.split("・").join("\n");
+  }
+
+  if (panelKind === "tower" && normalized.length >= 3) {
+    return characters.slice(0, 4).join("\n");
+  }
+
+  if (panelKind === "goal" && characters.length >= 4) {
+    const splitIndex = Math.ceil(characters.length / 2);
+    return `${characters.slice(0, splitIndex).join("")}\n${characters.slice(splitIndex, 6).join("")}`;
+  }
+
+  if ((panelKind === "standard" || panelKind === "wide") && characters.length >= 4) {
+    const splitIndex = Math.min(3, Math.ceil(characters.length / 2));
+    return `${characters.slice(0, splitIndex).join("")}\n${characters.slice(splitIndex, 6).join("")}`;
+  }
+
+  if (panelKind === "banner" && characters.length >= 5) {
+    const splitIndex = Math.ceil(characters.length / 2);
+    return `${characters.slice(0, splitIndex).join("")}\n${characters.slice(splitIndex, 6).join("")}`;
+  }
+
+  return normalized;
+}
+
+function getWatermarkBlockClass(panelKind: PanelKind, lineCount: number) {
+  if (panelKind === "goal") {
+    return lineCount > 1 ? "max-w-[120%] -translate-x-[3%]" : "max-w-[118%] -translate-x-[2%]";
+  }
+
+  if (panelKind === "banner") {
+    return lineCount > 1 ? "max-w-[122%] -translate-x-[3%]" : "max-w-[120%] -translate-x-[2%]";
+  }
+
+  if (panelKind === "wide") {
+    return lineCount > 1 ? "max-w-[122%] -translate-x-[4%]" : "max-w-[118%] -translate-x-[2%]";
+  }
+
+  if (panelKind === "tower") {
+    return "max-w-[108%] -translate-x-[2%]";
+  }
+
+  return lineCount > 1 ? "max-w-[118%] -translate-x-[3%]" : "max-w-[114%] -translate-x-[2%]";
+}
+
+function getSpanishTitleClass(panelKind: PanelKind) {
+  if (panelKind === "goal") {
+    return "text-[0.86rem] sm:text-[0.94rem] leading-[1.15]";
+  }
+
+  if (panelKind === "banner") {
+    return "text-[0.76rem] sm:text-[0.82rem] leading-[1.15]";
+  }
+
+  if (panelKind === "wide") {
+    return "text-[0.72rem] sm:text-[0.78rem] leading-[1.16]";
+  }
+
+  if (panelKind === "tower") {
+    return "text-[0.58rem] leading-[1.14]";
+  }
+
+  return "text-[0.68rem] sm:text-[0.74rem] leading-[1.16]";
 }
 
 interface GrammarBoardCellProps {
@@ -301,22 +358,8 @@ interface GrammarBoardCellProps {
   onSelect: (lessonId: string) => void;
 }
 
-function getHelperText(cell: GrammarBoardCellViewModel) {
-  const { progress, visualState } = cell;
-
-  if (progress.isMock) {
-    return "Contenido en preparacion";
-  }
-
-  if (visualState === "locked") {
-    return `Necesitas ${progress.pointsToUnlock} pts`;
-  }
-
-  if (progress.pointsToUnlock > 0) {
-    return `${progress.pointsToUnlock} pts`;
-  }
-
-  return "Gratis";
+function getPointsBadgeText(cell: GrammarBoardCellViewModel) {
+  return `${Math.max(cell.progress.pointsToUnlock, 0)}`;
 }
 
 interface GrammarBoardCellPointsBadgeProps {
@@ -330,9 +373,6 @@ function GrammarBoardCellPointsBadgeComponent({
   left,
   top,
 }: GrammarBoardCellPointsBadgeProps) {
-  const helperText = getHelperText(cell);
-  const styles = STATUS_STYLES[cell.visualState];
-
   return (
     <div
       aria-hidden
@@ -343,9 +383,12 @@ function GrammarBoardCellPointsBadgeComponent({
       }}
     >
       <span
-        className={`inline-flex rounded-full border px-2.5 py-1 text-[10px] font-semibold backdrop-blur-sm transition-all duration-500 ${styles.helper}`}
+        className="edge-score-label min-w-[52px]"
+        style={{
+          color: "var(--text-primary)",
+        }}
       >
-        {helperText}
+        <span className="edge-score-value">{getPointsBadgeText(cell)}</span>
       </span>
     </div>
   );
@@ -355,114 +398,70 @@ function GrammarBoardCellComponent({
   cell,
   onSelect,
 }: GrammarBoardCellProps) {
-  const { layout, progress, visualState, interactive } = cell;
+  const { layout, progress, interactive } = cell;
+  const isComingSoonCell = progress.isMock;
   const panelKind = getPanelKind(layout);
-  const isGoal = panelKind === "goal";
-  const isTower = panelKind === "tower";
-  const isLocked = visualState === "locked";
-  const styles = STATUS_STYLES[visualState];
-  const watermarkCharacters = getWatermarkCharacters(progress.symbol);
-  const helperText = getHelperText(cell);
-  const secondaryText = progress.isMock
-    ? "Nueva leccion en camino"
-    : isGoal
-      ? "Meta principal del recorrido"
-      : visualState === "completed"
-        ? "Lista para repasar"
-        : visualState === "active"
-          ? "Continua tu avance"
-          : "";
+  const variant = getCardVariant(cell);
   const shellClass = getShellClass(cell);
+  const presentationVisualState = getPresentationVisualState(cell);
   const watermarkToneClass = getWatermarkToneClass(cell);
+  const watermarkText = isComingSoonCell
+    ? ""
+    : getWatermarkDisplayText(progress.symbol, panelKind);
+  const watermarkCharacterCount = progress.symbol.replace(/\s+/g, "").length;
+  const watermarkLineCount = watermarkText.split("\n").length;
+  const outerCornerClass = getOuterCornerClass(layout.order);
+  const innerCornerClass = getInnerCornerClass(layout.order);
   const hoverClass = interactive
-    ? "hover:brightness-[1.03] hover:shadow-[0_26px_46px_-24px_rgba(255,173,196,0.46)] dark:hover:brightness-[1.08] dark:hover:shadow-[0_24px_42px_-24px_rgba(255,173,196,0.20)]"
+    ? "hover:shadow-[0_20px_36px_rgba(0,0,0,0.13)] dark:hover:shadow-[0_20px_36px_rgba(0,0,0,0.40)]"
     : "cursor-default";
-  const hoverOverlayClass = interactive
-    ? "pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 bg-[radial-gradient(circle_at_50%_36%,rgba(255,255,255,0.34),rgba(255,255,255,0.14)_38%,transparent_74%)] dark:bg-[radial-gradient(circle_at_50%_36%,rgba(255,255,255,0.14),rgba(255,255,255,0.05)_38%,transparent_74%)]"
-    : "pointer-events-none absolute inset-0 opacity-0";
-  const watermarkMotionClass = interactive
-    ? "group-hover:scale-[1.08]"
-    : "";
-  const contentMotionClass = interactive
-    ? "group-hover:scale-[1.035]"
-    : "";
 
   return (
-    <button
-      type="button"
-      disabled={!interactive}
-      onClick={() => onSelect(progress.id)}
+    <div
       data-grammar-board-cell="true"
-      className={`group absolute text-left outline-none transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] focus-visible:z-20 focus-visible:ring-2 focus-visible:ring-slate-500/30 dark:focus-visible:ring-white/15 ${hoverClass}`}
+      className={`group absolute text-left outline-none transition-shadow duration-300 focus-visible:z-20 ${outerCornerClass} ${hoverClass}`}
       style={{
         left: `${layout.x}%`,
         top: `${layout.y}%`,
         width: `${layout.width}%`,
         height: `${layout.height}%`,
       }}
-      aria-label={progress.title}
     >
-      <div className={`relative h-full w-full overflow-hidden border ${shellClass}`}>
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.24),rgba(255,255,255,0)_38%)] dark:bg-[linear-gradient(180deg,rgba(0,0,0,0.14),rgba(0,0,0,0)_34%)]" />
-        <div className={hoverOverlayClass} />
-        <div className="pointer-events-none absolute inset-0 bg-[repeating-linear-gradient(0deg,rgba(17,24,39,0.018),rgba(17,24,39,0.018)_1px,transparent_1px,transparent_8px)] opacity-70 dark:bg-[repeating-linear-gradient(0deg,rgba(255,255,255,0.015),rgba(255,255,255,0.015)_1px,transparent_1px,transparent_8px)]" />
-        <div className="pointer-events-none absolute inset-[1px] border border-white/60 dark:border-black/20" />
+      <button
+        type="button"
+        disabled={!interactive}
+        onClick={() => onSelect(progress.id)}
+        className={`relative h-full w-full border font-sans ${outerCornerClass} ${shellClass}`}
+        aria-label={isComingSoonCell ? "Proximamente" : progress.title}
+      >
+        <div className={`pointer-events-none absolute inset-0 ${outerCornerClass} bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-70`} />
+        <div className={`pointer-events-none absolute inset-0 ${outerCornerClass} bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.14),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.08),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.05),transparent_28%)]`} />
+        <div className={`pointer-events-none absolute inset-[1px] border border-white/50 dark:border-white/10 ${innerCornerClass}`} />
 
-        <div
-          aria-hidden
-          className={`pointer-events-none absolute ${getWatermarkFrameClass(panelKind)}`}
-        >
+        {!isComingSoonCell ? (
           <div
-            className={`flex w-full items-center justify-center overflow-visible whitespace-nowrap transition-transform duration-500 ${watermarkToneClass} ${watermarkMotionClass}`}
+            aria-hidden
+            className={`pointer-events-none absolute z-0 overflow-hidden ${getWatermarkFrameClass(panelKind)}`}
           >
-            {watermarkCharacters.map((character, index) => (
-              <span
-                key={`${progress.id}-${index}-${character}`}
-                className={`block select-none font-black leading-none tracking-[-0.08em] ${getWatermarkCharacterClass(panelKind, watermarkCharacters.length)}`}
-              >
-                {character}
-              </span>
-            ))}
+            <span
+              className={`block select-none whitespace-pre-line font-black tracking-[0.12em] ${getWatermarkBlockClass(panelKind, watermarkLineCount)} ${watermarkToneClass} ${getWatermarkTextClass(panelKind, presentationVisualState, watermarkCharacterCount, watermarkLineCount)}`}
+            >
+              {watermarkText}
+            </span>
+          </div>
+        ) : null}
+
+        <div className={`relative z-10 flex h-full items-end justify-start ${getContentPaddingClass(panelKind)}`}>
+          <div className={`min-w-0 ${getContentWidthClass(panelKind)}`}>
+            <h3
+              className={`font-semibold tracking-tight [display:-webkit-box] [-webkit-box-orient:vertical] overflow-hidden [-webkit-line-clamp:3] opacity-85 ${getSpanishTitleClass(panelKind)} ${variant.text}`}
+            >
+              {isComingSoonCell ? "Proximamente" : progress.title}
+            </h3>
           </div>
         </div>
-
-        <div className={`relative z-10 flex h-full flex-col justify-between transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${contentMotionClass} ${getContentPaddingClass(panelKind, isLocked)}`}>
-          <div aria-hidden className={getTopSpacerClass(panelKind)} />
-
-          {isLocked ? (
-            <div className={`min-h-0 ${getContentWidthClass(panelKind)}`}>
-              <div className={`mb-3 flex ${isTower ? "justify-center" : "justify-start"}`}>
-                <div className={`flex h-10 w-10 items-center justify-center rounded-xl border backdrop-blur-sm ${styles.lockBadge}`}>
-                  <LockKeyhole className="h-4.5 w-4.5" strokeWidth={2.1} />
-                </div>
-              </div>
-
-              <h3
-                className={`font-extrabold tracking-tight [display:-webkit-box] [-webkit-box-orient:vertical] overflow-hidden ${getTitleClass(panelKind)} ${styles.title}`}
-              >
-                {progress.isMock ? "Proximamente" : progress.title}
-              </h3>
-              <p className={`mt-2 ${isTower ? "text-[10px]" : "text-[11px]"} font-medium leading-[1.18] ${styles.subtitle}`}>
-                {progress.isMock ? "Nueva leccion en camino" : helperText}
-              </p>
-            </div>
-          ) : (
-            <div className={`min-h-0 ${getContentWidthClass(panelKind)}`}>
-              <h3
-                className={`font-extrabold tracking-tight [display:-webkit-box] [-webkit-box-orient:vertical] overflow-hidden ${getTitleClass(panelKind)} ${styles.title}`}
-              >
-                {progress.title}
-              </h3>
-              {secondaryText ? (
-                <p className={`mt-2 ${isTower ? "text-[10px]" : "text-[11px]"} font-medium leading-[1.18] ${styles.subtitle}`}>
-                  {secondaryText}
-                </p>
-              ) : null}
-            </div>
-          )}
-        </div>
-      </div>
-    </button>
+      </button>
+    </div>
   );
 }
 

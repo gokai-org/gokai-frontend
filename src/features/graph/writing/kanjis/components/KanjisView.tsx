@@ -616,11 +616,7 @@ export default function KanjisView() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="absolute inset-0 bg-surface-primary">
-        <WritingBoardLoading scriptType="kanji" />
-      </div>
-    );
+    return <WritingBoardLoading scriptType="kanji" />;
   }
 
   return (
@@ -672,6 +668,7 @@ export default function KanjisView() {
           onViewportChange={syncViewportToScene}
           initialNodeId={selectedId}
           focusedNodeId={focusedNodeId}
+          drawerOpen={drawerOpen}
           onInteractionChange={handleInteractionChange}
           qualityProfile={qualityProfile}
           translateExtent={translateExtent}

@@ -11,7 +11,7 @@ export function useGrammarLessons() {
   const [boardItems, setBoardItems] = useState<GrammarBoardProgress[]>(() =>
     buildGrammarBoardItems([]),
   );
-  const [status, setStatus] = useState<Status>("idle");
+  const [status, setStatus] = useState<Status>("loading");
   const [error, setError] = useState<string | null>(null);
 
   const fetch = useCallback(async () => {

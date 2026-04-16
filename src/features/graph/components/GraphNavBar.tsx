@@ -27,18 +27,28 @@ export default function GraphNavBar() {
   const { hidden } = useSidebar();
   const navRef = useRef<HTMLDivElement | null>(null);
   const [writingMenuOpen, setWritingMenuOpen] = useState(false);
+  const [pendingWritingTab, setPendingWritingTab] = useState<WritingTab | null>(null);
 
   const activeWritingTab = useMemo(() => {
+    if (!pathname.startsWith("/dashboard/graph/writing")) {
+      return null;
+    }
+
     const tab = searchParams.get("tab");
     return tab === "hiragana" || tab === "katakana" || tab === "kanji"
       ? tab
       : null;
-  }, [searchParams]);
+  }, [pathname, searchParams]);
+
+  const isWritingPending =
+    pendingWritingTab !== null && !pathname.startsWith("/dashboard/graph/writing");
+  const displayedWritingTab = activeWritingTab ?? pendingWritingTab;
 
   const showWritingMenu = writingMenuOpen;
 
   const handleWritingSelection = useCallback(
     (tab: WritingTab) => {
+      setPendingWritingTab(tab);
       setWritingMenuOpen(false);
       router.push(`/dashboard/graph/writing?tab=${tab}`);
     },
@@ -58,7 +68,11 @@ export default function GraphNavBar() {
   }, [writingMenuOpen]);
 
   return (
-    <div ref={navRef} className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none">
+    <div
+      ref={navRef}
+      data-zoom-exclude="true"
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+    >
       <motion.div
         initial={{ y: -20, opacity: 0 }}
         animate={hidden ? { y: -20, opacity: 0 } : { y: 0, opacity: 1 }}
@@ -70,6 +84,10 @@ export default function GraphNavBar() {
         {TABS.map((tab) => {
           const isActive = isTabActive(pathname, tab.href);
           const isWriting = tab.href === "/dashboard/graph/writing";
+          const isVisuallyActive = isWriting
+            ? isActive || writingMenuOpen || isWritingPending
+            : isActive && !writingMenuOpen && !isWritingPending;
+
           return (
             <MotionLink
               key={tab.href}
@@ -77,6 +95,7 @@ export default function GraphNavBar() {
               {...(isWriting ? { "data-writing-nav-escritura": "true" } : {})}
               onClick={(e) => {
                 if (!isWriting) {
+                  setPendingWritingTab(null);
                   setWritingMenuOpen(false);
                   return;
                 }
@@ -90,7 +109,7 @@ export default function GraphNavBar() {
               whileTap={{ scale: 0.96 }}
               transition={{ type: "spring", stiffness: 500, damping: 30 }}
             >
-              {isActive && (
+              {isVisuallyActive && (
                 <motion.span
                   layoutId="graph-nav-active"
                   className="absolute inset-0 rounded-lg bg-gradient-to-r from-accent to-accent-hover shadow-md shadow-accent/30"
@@ -99,7 +118,7 @@ export default function GraphNavBar() {
               )}
               <span
                 className={`relative z-10 ${
-                  isActive
+                  isVisuallyActive
                     ? "text-content-inverted"
                     : "text-content-secondary hover:text-content-primary"
                 }`}
@@ -113,7 +132,7 @@ export default function GraphNavBar() {
 
       {showWritingMenu && !hidden && (
         <WritingSubMenu
-          activeTab={activeWritingTab}
+          activeTab={displayedWritingTab}
           onTabChange={handleWritingSelection}
         />
       )}
