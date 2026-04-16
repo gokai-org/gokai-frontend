@@ -185,6 +185,7 @@ export default function HiraganaView() {
       onNodeAction={handleNodeAction}
       quizActive={quizItem !== null}
       drawerOpen={detailNodeId !== null}
+      focusedNodeId={detailNodeId}
       masteryModuleId="hiragana"
       masteryPoints={userPoints}
       autoTriggerOnNewMastery={false}

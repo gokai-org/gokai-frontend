@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useState, type DragEvent } from "react";
-import { motion, AnimatePresence, Reorder } from "framer-motion";
 import { RotateCcw, CheckCircle2 } from "lucide-react";
 import type { OrderExam } from "../../../types";
 
@@ -152,24 +151,24 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="kanji-detail-scroll flex-1 min-h-0 space-y-5 overflow-y-auto pr-1">
-        {/* ── Prompt ───────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-4 py-4">
-          <div className="absolute -right-6 -top-6 h-16 w-16 rounded-full bg-accent/8 blur-2xl" />
-          <p className="relative text-sm leading-relaxed text-content-primary sm:text-[15px] sm:leading-7">
+      <div className="kanji-detail-scroll flex-1 min-h-0 space-y-[4px] overflow-y-auto pr-[0.5px]">
+        {/* ── Prompt ───────────────────────────────────────────── */}
+        <div className="relative overflow-hidden rounded-[3px] border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-[3.5px] py-[3.5px]">
+          <div className="absolute -right-6 -top-6 h-[12px] w-[12px] rounded-full bg-accent/8 blur-xl" />
+          <p className="relative text-[3px] leading-[1.5] text-content-primary">
             {question.question}
           </p>
         </div>
 
         {/* ── Answer zone ──────────────────────────────────── */}
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-content-muted">
+          <p className="mb-[1px] text-[2.5px] font-semibold uppercase tracking-wider text-content-muted">
             Tu respuesta
           </p>
           <div
             onDragOver={handleAnswerZoneDragOver}
             onDrop={handleAnswerZoneDrop}
-            className={`min-h-[54px] rounded-2xl border-2 border-dashed px-3 py-3 transition-colors duration-200 ${
+            className={`min-h-[12px] rounded-[3px] border-2 border-dashed px-[2.5px] py-[2.5px] transition-colors duration-200 ${
               answered
                 ? isCorrect
                   ? "border-emerald-400/60 bg-emerald-50/40 dark:bg-emerald-950/15"
@@ -182,134 +181,90 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
             }`}
           >
             {placed.length === 0 ? (
-              <p className="text-center text-xs text-content-muted">
+              <p className="text-center text-[2.5px] text-content-muted">
                 Arrastra o toca las palabras de abajo para construir la frase
               </p>
             ) : (
-              <Reorder.Group
-                axis="x"
-                values={placed}
-                onReorder={(newOrder) => {
-                  if (!answered) {
-                    setPlaced(newOrder);
-                  }
-                }}
-                className="flex gap-2 overflow-x-auto pb-1"
-              >
-                <AnimatePresence mode="popLayout">
-                  {placed.map((word, i) => (
-                    <Reorder.Item
-                      key={`${word}-${i}`}
-                      value={word}
-                      initial={{ opacity: 0, scale: 0.75, y: -6 }}
-                      animate={{ opacity: 1, scale: 1, y: 0 }}
-                      exit={{ opacity: 0, scale: 0.75, y: 6 }}
-                      transition={{ type: "spring", stiffness: 420, damping: 20 }}
-                      whileHover={!answered ? { scale: 1.04, y: -1 } : {}}
-                      whileTap={!answered ? { scale: 0.93 } : {}}
-                      whileDrag={!answered ? { scale: 1.05, zIndex: 5 } : undefined}
-                      dragListener={!answered}
-                      onClick={() => remove(word)}
-                      className={`rounded-xl border px-3 py-1.5 text-sm font-semibold transition-all duration-150 ${
-                        answered
-                          ? isCorrect
-                            ? "border-emerald-400/60 bg-emerald-100/60 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-                            : "border-red-400/50 bg-red-100/60 text-red-600 dark:bg-red-950/30 dark:text-red-400"
-                          : "cursor-grab border-accent/50 bg-accent/10 text-accent hover:opacity-75 active:cursor-grabbing"
-                      }`}
-                    >
-                      {word}
-                    </Reorder.Item>
-                  ))}
-                </AnimatePresence>
-              </Reorder.Group>
+              <div className="flex flex-wrap gap-[2px]">
+                {placed.map((word, i) => (
+                  <button
+                    key={`${word}-${i}`}
+                    type="button"
+                    disabled={answered}
+                    onClick={() => remove(word)}
+                    className={`rounded-[2px] border px-[2.5px] py-[1px] text-[3px] font-semibold transition-colors duration-150 ${
+                      answered
+                        ? isCorrect
+                          ? "border-emerald-400/60 bg-emerald-100/60 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                          : "border-red-400/50 bg-red-100/60 text-red-600 dark:bg-red-950/30 dark:text-red-400"
+                        : "cursor-pointer border-accent/50 bg-accent/10 text-accent hover:opacity-75"
+                    }`}
+                  >
+                    {word}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </div>
 
         {/* ── Pool ─────────────────────────────────────────── */}
         {!answered && (
-            <div className="flex min-h-[40px] flex-wrap gap-2">
-              <AnimatePresence mode="popLayout">
-                {pool.map((word, i) => (
-                  <motion.button
-                    key={word + i}
-                    layout
-                    draggable
-                    onDragStartCapture={(event) => handlePoolDragStart(event, word)}
-                    onDragEnd={handleDragEnd}
-                    initial={{ opacity: 0, scale: 0.8, y: 8 }}
-                    animate={{ opacity: 1, scale: 1, y: 0, transition: { delay: i * 0.04, type: "spring", stiffness: 380, damping: 18 } }}
-                    exit={{ opacity: 0, scale: 0.7, transition: { duration: 0.15 } }}
-                    whileHover={{ scale: 1.06, y: -2 }}
-                    whileTap={{ scale: 0.93 }}
-                    type="button"
-                    onClick={() => take(word)}
-                    className="cursor-pointer rounded-xl border border-border-default bg-surface-elevated px-3.5 py-2 text-sm font-semibold text-content-primary shadow-sm transition-colors duration-150 hover:border-accent/50 hover:bg-accent/8 hover:text-accent"
-                  >
-                    {word}
-                  </motion.button>
-                ))}
-              </AnimatePresence>
+            <div className="flex min-h-[9px] flex-wrap gap-[2px]">
+              {pool.map((word, i) => (
+                <button
+                  key={word + i}
+                  draggable
+                  onDragStartCapture={(event) => handlePoolDragStart(event, word)}
+                  onDragEnd={handleDragEnd}
+                  type="button"
+                  onClick={() => take(word)}
+                  className="cursor-pointer rounded-[2px] border border-border-default bg-surface-elevated px-[3px] py-[1.5px] text-[3px] font-semibold text-content-primary shadow-sm transition-colors duration-150 hover:border-accent/50 hover:bg-accent/8 hover:text-accent"
+                >
+                  {word}
+                </button>
+              ))}
             </div>
         )}
 
         {/* ── Correct answer reveal ─────────────────────────── */}
-        <AnimatePresence>
-          {answered && !isCorrect && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-start gap-2.5 rounded-xl border border-emerald-400/50 bg-emerald-50/50 p-3 dark:bg-emerald-950/20"
-            >
-              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
-              <div className="text-sm">
+        {answered && !isCorrect && (
+            <div className="flex items-start gap-[2px] rounded-[2px] border border-emerald-400/50 bg-emerald-50/50 p-[2.5px] dark:bg-emerald-950/20">
+              <CheckCircle2 className="h-[3.5px] w-[3.5px] shrink-0 text-emerald-500" />
+              <div className="text-[3px]">
                 <p className="font-semibold text-emerald-700 dark:text-emerald-300">Respuesta correcta:</p>
                 <p className="text-emerald-600 dark:text-emerald-400">{correctAnswer}</p>
               </div>
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
 
-        <AnimatePresence>
-          {answered && isCorrect && (
-            <motion.div
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-2.5 rounded-xl border border-emerald-400/50 bg-emerald-50/50 p-3 dark:bg-emerald-950/20"
-            >
-              <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500" />
-              <p className="text-sm font-semibold text-emerald-700 dark:text-emerald-300">¡Orden correcto!</p>
-            </motion.div>
+        {answered && isCorrect && (
+            <div className="flex items-center gap-[2px] rounded-[2px] border border-emerald-400/50 bg-emerald-50/50 p-[2.5px] dark:bg-emerald-950/20">
+              <CheckCircle2 className="h-[3.5px] w-[3.5px] shrink-0 text-emerald-500" />
+              <p className="text-[3px] font-semibold text-emerald-700 dark:text-emerald-300">¡Orden correcto!</p>
+            </div>
           )}
-        </AnimatePresence>
       </div>
 
       {/* ── Actions ──────────────────────────────────────── */}
       {!answered && (
-        <div className="shrink-0 border-t border-border-subtle bg-surface-primary pt-4">
-          <div className="flex gap-2.5">
-            <motion.button
+        <div className="shrink-0 border-t border-border-subtle bg-surface-primary pt-[3.5px]">
+          <div className="flex gap-[2px]">
+            <button
               type="button"
               onClick={reset}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border-subtle bg-surface-elevated text-content-muted shadow-sm transition-colors hover:border-border-default hover:text-content-primary"
+              className="flex h-[8px] w-[8px] shrink-0 items-center justify-center rounded-[2px] border border-border-subtle bg-surface-elevated text-content-muted transition-colors hover:border-border-default hover:text-content-primary"
             >
-              <motion.span whileHover={{ rotate: -180 }} transition={{ duration: 0.35 }} className="inline-flex">
-                <RotateCcw className="h-4 w-4" />
-              </motion.span>
-            </motion.button>
-            <motion.button
+              <RotateCcw className="h-[3.5px] w-[3.5px]" />
+            </button>
+            <button
               type="button"
               disabled={placed.length === 0}
               onClick={checkAnswer}
-              whileHover={placed.length ? { scale: 1.01 } : {}}
-              whileTap={placed.length ? { scale: 0.98 } : {}}
-              className="flex-1 rounded-xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
+              className="flex-1 rounded-[2px] bg-gradient-to-r from-accent to-accent-hover py-[2px] text-[3px] font-bold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
             >
               Confirmar
-            </motion.button>
+            </button>
           </div>
         </div>
       )}

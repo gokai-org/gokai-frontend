@@ -22,6 +22,13 @@ import {
   type WritingBoardLayout,
 } from "../lib/boardBuilder";
 import { useWritingBoardQuality } from "../hooks/useWritingBoardQuality";
+import {
+  formatBackgroundViewportState,
+  normalizeViewportForBackground,
+  type BackgroundViewportCssState,
+  type BackgroundViewportState,
+} from "../lib/backgroundViewport";
+import { getDrawerAwareFocusViewport } from "../lib/focusViewport";
 import type {
   WritingBoardNode,
   WritingBoardEdge,
@@ -37,76 +44,8 @@ import type { MasteryModuleId } from "@/features/mastery/types";
 import { MasteryBoardWrapper } from "@/features/mastery/components/MasteryBoardWrapper";
 import { handleReactFlowError } from "@/features/graph/lib/reactFlowErrorHandler";
 
-type BackgroundViewportState = {
-  x: number;
-  y: number;
-  zoom: number;
-};
-
-type BackgroundViewportCssState = {
-  x: string;
-  y: string;
-  zoom: string;
-};
-
 const WRITING_PRO_OPTIONS = { hideAttribution: true };
 const WRITING_DEFAULT_EDGE_OPTIONS = { type: "writing-edge" };
-
-function clamp(v: number, min: number, max: number) {
-  return Math.min(max, Math.max(min, v));
-}
-
-function snap(v: number, step: number) {
-  return step <= 0 ? v : Math.round(v / step) * step;
-}
-
-function getBackgroundViewportConfig(signals: WritingBoardQualitySignals) {
-  const compact = signals.width <= 1180 || signals.pointerType === "coarse";
-  const positionStep = compact || signals.devicePixelRatio >= 2 ? 0.5 : 1;
-
-  return {
-    compact,
-    positionStep,
-    zoomStep: compact ? 0.0015 : 0.001,
-    xLimit: Math.max(
-      signals.width * (compact ? 2.8 : 2.25),
-      compact ? 1400 : 980,
-    ),
-    yLimit: Math.max(
-      signals.height * (compact ? 1.95 : 1.6),
-      compact ? 960 : 720,
-    ),
-  };
-}
-
-function normalizeViewportForBackground(
-  viewport: Viewport,
-  signals: WritingBoardQualitySignals,
-) {
-  const cfg = getBackgroundViewportConfig(signals);
-
-  return {
-    x: snap(clamp(viewport.x, -cfg.xLimit, cfg.xLimit), cfg.positionStep),
-    y: snap(clamp(viewport.y, -cfg.yLimit, cfg.yLimit), cfg.positionStep),
-    zoom: snap(viewport.zoom, cfg.zoomStep),
-  };
-}
-
-function formatBgViewport(
-  state: BackgroundViewportState,
-  signals: WritingBoardQualitySignals,
-): BackgroundViewportCssState {
-  const cfg = getBackgroundViewportConfig(signals);
-  const x = snap(state.x, cfg.positionStep);
-  const y = snap(state.y, cfg.positionStep);
-  const zoom = snap(state.zoom, cfg.zoomStep);
-
-  return {
-    x: `${x.toFixed(cfg.positionStep < 1 ? 1 : 0)}px`,
-    y: `${y.toFixed(cfg.positionStep < 1 ? 1 : 0)}px`,
-    zoom: zoom.toFixed(4),
-  };
-}
 
 const PLANET_CENTER_X = 84;
 const PLANET_CENTER_Y = 78;
@@ -141,6 +80,7 @@ interface InnerMapProps {
   focusedNodeId: string | null;
   onInteractionChange: (isInteracting: boolean) => void;
   qualityProfile: WritingBoardQualityProfile;
+  drawerOpen: boolean;
   translateExtent?: [[number, number], [number, number]];
   nodeTypes: NodeTypes;
   edgeTypes: EdgeTypes;
@@ -157,6 +97,7 @@ function WritingBoardMapInner({
   focusedNodeId,
   onInteractionChange,
   qualityProfile,
+  drawerOpen,
   translateExtent: translateExtentProp,
   nodeTypes,
   edgeTypes,
@@ -222,10 +163,26 @@ function WritingBoardMapInner({
 
       const focusPoint = getPlanetFocusPoint(focusedNode);
 
-      void setCenter(focusPoint.x, focusPoint.y, {
-        zoom: qualityProfile.camera.focusZoom,
-        duration: qualityProfile.camera.focusDuration,
-      });
+      if (drawerOpen) {
+        void setViewport(
+          getDrawerAwareFocusViewport({
+            focusX: focusPoint.x,
+            focusY: focusPoint.y,
+            zoom: qualityProfile.camera.drawerFocusZoom,
+            viewportWidth: qualityProfile.signals.width,
+            viewportHeight: qualityProfile.signals.height,
+            drawerOpen,
+          }),
+          {
+            duration: qualityProfile.camera.focusDuration,
+          },
+        );
+      } else {
+        void setCenter(focusPoint.x, focusPoint.y, {
+          zoom: qualityProfile.camera.focusZoom,
+          duration: qualityProfile.camera.focusDuration,
+        });
+      }
 
       const frame = window.requestAnimationFrame(() => {
         onViewportChange(getViewport());
@@ -254,9 +211,13 @@ function WritingBoardMapInner({
     getViewport,
     nodes,
     onViewportChange,
+    qualityProfile.camera.drawerFocusZoom,
     qualityProfile.camera.focusZoom,
     qualityProfile.camera.focusDuration,
     qualityProfile.camera.restoreDuration,
+    qualityProfile.signals.height,
+    qualityProfile.signals.width,
+    drawerOpen,
     setCenter,
     setViewport,
   ]);
@@ -297,7 +258,7 @@ function WritingBoardMapInner({
       edgeTypes={stableEdgeTypes}
       onlyRenderVisibleElements
       minZoom={qualityProfile.camera.overviewZoom}
-      maxZoom={qualityProfile.camera.focusZoom}
+      maxZoom={qualityProfile.camera.drawerFocusZoom}
       translateExtent={translateExtentProp ?? layout.translateExtent}
       nodesDraggable={false}
       nodesConnectable={false}
@@ -673,7 +634,7 @@ export function WritingBoardView({
       state: BackgroundViewportState,
       signals: WritingBoardQualitySignals,
     ) => {
-      const fmt = formatBgViewport(state, signals);
+      const fmt = formatBackgroundViewportState(state, signals);
       const prev = appliedViewportCss.current;
 
       if (fmt.x !== prev.x) {
@@ -827,11 +788,7 @@ export function WritingBoardView({
   }, []);
 
   if (loading) {
-    return (
-      <div className="absolute inset-0 bg-surface-primary">
-        <WritingBoardLoading scriptType={scriptType} />
-      </div>
-    );
+    return <WritingBoardLoading scriptType={scriptType} />;
   }
 
   if (error) {
@@ -884,6 +841,7 @@ export function WritingBoardView({
             focusedNodeId={focusedNodeIdProp ?? unlockFocusNodeId}
             onInteractionChange={handleInteractionChange}
             qualityProfile={qualityProfile}
+            drawerOpen={drawerOpen}
             translateExtent={translateExtent}
             nodeTypes={stableNodeTypes}
             edgeTypes={stableEdgeTypes}

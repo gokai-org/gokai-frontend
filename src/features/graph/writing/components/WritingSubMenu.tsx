@@ -69,8 +69,9 @@ function WritingTabIcon({
 }) {
   const inactiveGradient =
     shape === "circle"
-      ? "from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30]"
-      : "from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30]";
+      ? "from-[#E5E7EB] to-[#D6DAE1] dark:from-[#4a464c] dark:to-[#2e2a30]"
+      : "from-[#E5E7EB] to-[#D6DAE1] dark:from-[#4a464c] dark:to-[#2e2a30]";
+  const inactiveText = "text-[#8D96A5] dark:text-[#8f8793]";
 
   if (shape === "shogi") {
     return (
@@ -79,7 +80,7 @@ function WritingTabIcon({
           symbol={symbol}
           gradient={isActive ? gradient : inactiveGradient}
           hoverTransition=""
-          textOverride={isActive ? "text-white" : "text-[#C4BDD2] dark:text-white/40"}
+          textOverride={isActive ? "text-white" : inactiveText}
         />
       </div>
     );
@@ -92,7 +93,7 @@ function WritingTabIcon({
           symbol={symbol}
           gradient={isActive ? gradient : inactiveGradient}
           hoverTransition=""
-          textOverride={isActive ? "text-white" : "text-[#C4BDD2] dark:text-white/40"}
+          textOverride={isActive ? "text-white" : inactiveText}
         />
       </div>
     );
@@ -101,10 +102,10 @@ function WritingTabIcon({
   return (
     <div
       className={[
-        "flex h-9 w-9 sm:h-10 sm:w-10 md:h-12 md:w-12 items-center justify-center rounded-full border font-black leading-none",
+        "flex h-10 w-10 sm:h-11 sm:w-11 md:h-12 md:w-12 items-center justify-center rounded-full border font-black leading-none",
         isActive
           ? `bg-gradient-to-br ${gradient} border-transparent text-white shadow-[0_4px_16px_rgba(153,51,49,0.28)]`
-          : "border-border-subtle bg-gradient-to-br from-[#F5F3F9] to-[#EDEBF3] text-[#C4BDD2] dark:border-white/[0.08] dark:from-[#4a464c] dark:to-[#2e2a30] dark:text-white/40",
+          : "border-border-default bg-gradient-to-br from-[#E5E7EB] to-[#D6DAE1] text-[#8D96A5] dark:border-white/[0.08] dark:from-[#4a464c] dark:to-[#2e2a30] dark:text-[#8f8793]",
       ].join(" ")}
     >
       <span className="text-base sm:text-lg md:text-[22px]">{symbol}</span>
@@ -124,13 +125,13 @@ export default function WritingSubMenu({
   const mastered = useMasteredModules();
 
   return (
-    <div className="fixed top-[66px] sm:top-[78px] left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+    <div className="fixed top-[68px] sm:top-[80px] md:top-[84px] left-1/2 -translate-x-1/2 z-40 pointer-events-none">
       <motion.div
-        initial={{ y: -12, opacity: 0 }}
+        initial={{ y: -8, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: -12, opacity: 0, transition: { duration: 0.22, ease: [0.4, 0, 1, 1] } }}
-        transition={{ delay: 0.35, duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-        className="pointer-events-auto flex items-center gap-3 sm:gap-4 md:gap-6 rounded-2xl bg-surface-primary/60 backdrop-blur-xl px-3 py-2 sm:px-4 sm:py-2.5 md:px-6 md:py-3 shadow-[0_2px_16px_rgba(0,0,0,0.08)]"
+        exit={{ y: -8, opacity: 0, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } }}
+        transition={{ delay: 0.12, duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+        className="pointer-events-auto flex items-center gap-4 sm:gap-5 md:gap-6 rounded-2xl bg-surface-primary/60 backdrop-blur-xl px-4 py-3 sm:px-5 sm:py-3 md:px-6 md:py-3.5 shadow-[0_2px_16px_rgba(0,0,0,0.08)]"
       >
         {TABS.map((tab) => {
           const isActive = activeTab === tab.id;
@@ -143,8 +144,9 @@ export default function WritingSubMenu({
               key={tab.id}
               type="button"
               onClick={() => onTabChange(tab.id)}
-              className="group relative flex flex-col items-center gap-1 sm:gap-1.5 outline-none"
+              className="group relative flex min-w-[72px] sm:min-w-[78px] md:min-w-[84px] flex-col items-center gap-2 sm:gap-2.5 outline-none"
             >
+              <div className="flex h-11 items-center justify-center sm:h-12 md:h-14">
                 <motion.div
                   className="relative flex items-center justify-center"
                   whileHover={{ scale: 1.12 }}
@@ -152,13 +154,14 @@ export default function WritingSubMenu({
                   animate={{ boxShadow: "none" }}
                   transition={{ type: "spring", stiffness: 400, damping: 25 }}
                 >
-                <WritingTabIcon
-                  shape={tab.shape}
-                  symbol={tab.symbol}
-                  gradient={gradient}
-                  isActive={isActive}
-                />
-              </motion.div>
+                  <WritingTabIcon
+                    shape={tab.shape}
+                    symbol={tab.symbol}
+                    gradient={gradient}
+                    isActive={isActive}
+                  />
+                </motion.div>
+              </div>
 
               {/* Label */}
               <span
@@ -174,7 +177,7 @@ export default function WritingSubMenu({
               {isActive && (
                 <motion.div
                   layoutId="writing-tab-indicator"
-                  className="absolute -bottom-1 h-1 w-1 rounded-full"
+                  className="absolute -bottom-1.5 h-1 w-1 rounded-full"
                   style={{ backgroundColor: color }}
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
                 />

@@ -6,6 +6,7 @@ export { listGrammarLessons, getGrammarLesson, submitGrammarQuiz } from "./api/g
 
 // Hooks
 export { useGrammarLessons } from "./hooks/useGrammarLessons";
+export { useGrammarBoard } from "./hooks/useGrammarBoard";
 export { useGrammarLesson } from "./hooks/useGrammarLesson";
 export { useGrammarTableLayout } from "./hooks/useGrammarTableLayout";
 
@@ -27,7 +28,13 @@ export type {
   OrderExam,
   GrammarQuizSubmitBody,
   GrammarBoardStatus,
+  GrammarBoardVisualState,
   GrammarBoardProgress,
-  GrammarBoardNodeData,
-  GrammarBoardEdgeData,
+  GrammarBoardCellSize,
+  GrammarBoardRouteTier,
+  GrammarBoardCellLayout,
+  GrammarBoardPathSegment,
+  GrammarBoardCellViewModel,
+  GrammarBoardStats,
+  GrammarBoardViewModel,
 } from "./types";

@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { ShogiSymbolBox } from "@/features/library/components/ScriptCardLayout";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useWritingBoardQuality } from "../hooks/useWritingBoardQuality";
 import { WritingBoardBackground } from "./WritingBoardBackground";
@@ -28,7 +27,7 @@ const SCRIPT_THEME: Record<
     solid: "rgba(168,102,181,0.95)",
     soft: "rgba(123,63,138,0.12)",
     gradient: "linear-gradient(to bottom right, #7B3F8A, #A866B5)",
-    gradientFaded: "linear-gradient(to bottom right, rgba(123,63,138,0.65), rgba(168,102,181,0.55))",
+    gradientFaded: "linear-gradient(to bottom right, #693674, #8f54a0)",
   },
   katakana: {
     glow: "rgba(27,80,120,0.18)",
@@ -36,7 +35,7 @@ const SCRIPT_THEME: Record<
     solid: "rgba(46,130,181,0.95)",
     soft: "rgba(27,80,120,0.12)",
     gradient: "linear-gradient(to bottom right, #1B5078, #2E82B5)",
-    gradientFaded: "linear-gradient(to bottom right, rgba(27,80,120,0.65), rgba(46,130,181,0.55))",
+    gradientFaded: "linear-gradient(to bottom right, #174768, #276f96)",
   },
   kanji: {
     glow: "rgba(186,72,69,0.18)",
@@ -44,7 +43,7 @@ const SCRIPT_THEME: Record<
     solid: "rgba(186,72,69,0.95)",
     soft: "rgba(186,72,69,0.12)",
     gradient: "linear-gradient(to bottom right, #BA4845, #D06460)",
-    gradientFaded: "linear-gradient(to bottom right, rgba(186,72,69,0.65), rgba(208,100,96,0.55))",
+    gradientFaded: "linear-gradient(to bottom right, #a43f3c, #bf5a56)",
   },
 };
 
@@ -54,8 +53,111 @@ const GOLD_THEME = {
   solid: "rgba(212,168,67,0.95)",
   soft: "rgba(212,168,67,0.12)",
   gradient: "linear-gradient(to bottom right, #D4A843, #C49B3B)",
-  gradientFaded: "linear-gradient(to bottom right, rgba(212,168,67,0.65), rgba(196,155,59,0.55))",
+  gradientFaded: "linear-gradient(to bottom right, #bc973a, #a98631)",
 };
+
+const SHOGI_PATH =
+  "path('M 18 3 Q 22 0 26 3 L 40 15 Q 44 18 44 23 L 44 50 Q 44 56 38 56 L 6 56 Q 0 56 0 50 L 0 23 Q 0 18 4 15 Z')";
+
+interface WritingLoaderPieceProps {
+  scriptType: NonNullable<WritingBoardLoadingProps["scriptType"]>;
+  symbol: string;
+  theme: (typeof SCRIPT_THEME)["hiragana"];
+  width: number;
+  height: number;
+  isCenter?: boolean;
+}
+
+function WritingLoaderPiece({
+  scriptType,
+  symbol,
+  theme,
+  width,
+  height,
+  isCenter = false,
+}: WritingLoaderPieceProps) {
+  if (scriptType === "hiragana") {
+    return (
+      <div
+        className="relative flex items-center justify-center"
+        style={{ width, height }}
+      >
+        <div
+          className="absolute inset-0"
+          style={{
+            clipPath: SHOGI_PATH,
+            background: isCenter ? theme.gradient : theme.gradientFaded,
+            boxShadow: `inset 0 1px 0 rgba(255,255,255,0.24), 0 10px 22px ${theme.glow}`,
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-[1px]"
+          style={{
+            clipPath: SHOGI_PATH,
+            border: "1px solid rgba(255,255,255,0.18)",
+          }}
+        />
+        <span
+          className={[
+            "relative z-10 select-none font-black leading-none text-white",
+            isCenter ? "text-[30px] sm:text-[34px]" : "text-[18px]",
+          ].join(" ")}
+          style={{ filter: `drop-shadow(0 0 8px ${theme.glow})` }}
+        >
+          {symbol}
+        </span>
+      </div>
+    );
+  }
+
+  if (scriptType === "katakana") {
+    return (
+      <div
+        className="relative flex items-center justify-center rounded-[16px]"
+        style={{
+          width,
+          height,
+          background: isCenter ? theme.gradient : theme.gradientFaded,
+          boxShadow: `inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 22px ${theme.glow}`,
+        }}
+      >
+        <div className="pointer-events-none absolute inset-[1px] rounded-[15px] border border-white/14" />
+        <span
+          className={[
+            "relative z-10 select-none font-black leading-none text-white",
+            isCenter ? "text-[30px] sm:text-[34px]" : "text-[18px]",
+          ].join(" ")}
+          style={{ filter: `drop-shadow(0 0 8px ${theme.glow})` }}
+        >
+          {symbol}
+        </span>
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="relative flex items-center justify-center overflow-hidden rounded-full"
+      style={{
+        width,
+        height,
+        background: isCenter ? theme.gradient : theme.gradientFaded,
+        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.18), 0 10px 22px ${theme.glow}`,
+      }}
+    >
+      <div className="pointer-events-none absolute inset-[1px] rounded-full border border-white/14" />
+      <span
+        className={[
+          "relative z-10 select-none font-black leading-none text-white",
+          isCenter ? "text-[32px] sm:text-[36px]" : "text-[18px]",
+        ].join(" ")}
+        style={{ filter: `drop-shadow(0 0 8px ${theme.glow})` }}
+      >
+        {symbol}
+      </span>
+    </div>
+  );
+}
 
 const SCRIPT_LABEL: Record<
   NonNullable<WritingBoardLoadingProps["scriptType"]>,
@@ -90,18 +192,8 @@ export default function WritingBoardLoading({
   const mastered = useMasteredModules();
   const isMastered = mastered.has(scriptType);
   const theme = isMastered ? GOLD_THEME : SCRIPT_THEME[scriptType];
-  const shogiGradient = isMastered
-    ? "from-[#D4A843] to-[#C49B3B]"
-    : "from-[#7B3F8A] to-[#A866B5]";
-  const isHiragana = scriptType === "hiragana";
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useWritingBoardQuality(graphicsProfile);
-  const shapeClass =
-    scriptType === "kanji"
-      ? "rounded-full"
-      : scriptType === "katakana"
-        ? "rounded-xl"
-        : "rounded-[16px]";
   const sideSize =
     scriptType === "kanji"
       ? { width: 56, height: 56 }
@@ -114,10 +206,6 @@ export default function WritingBoardLoading({
       : scriptType === "katakana"
         ? { width: 62, height: 82 }
         : { width: 64, height: 82 };
-  const centerSymbolClass =
-    scriptType === "kanji"
-      ? "text-[32px] sm:text-[36px]"
-      : "text-[30px] sm:text-[34px]";
 
   return (
     <div
@@ -206,33 +294,13 @@ export default function WritingBoardLoading({
               ease: "easeInOut",
             }}
           >
-            {isHiragana ? (
-              <div
-                className="relative flex items-center justify-center"
-                style={{ width: sideSize.width, height: sideSize.height }}
-              >
-                <div className="scale-[1.15] opacity-75">
-                  <ShogiSymbolBox
-                    symbol={SCRIPT_SIDE_SYMBOLS[scriptType][0]}
-                    gradient={shogiGradient}
-                    hoverTransition=""
-                  />
-                </div>
-              </div>
-            ) : (
-              <div
-                className={`relative flex items-center justify-center ${shapeClass}`}
-                style={{
-                  width: sideSize.width,
-                  height: sideSize.height,
-                  background: theme.gradientFaded,
-                }}
-              >
-                <span className="select-none text-[18px] font-bold leading-none text-white/60">
-                  {SCRIPT_SIDE_SYMBOLS[scriptType][0]}
-                </span>
-              </div>
-            )}
+            <WritingLoaderPiece
+              scriptType={scriptType}
+              symbol={SCRIPT_SIDE_SYMBOLS[scriptType][0]}
+              theme={theme}
+              width={sideSize.width}
+              height={sideSize.height}
+            />
           </motion.div>
 
           {/* node 2 */}
@@ -250,68 +318,33 @@ export default function WritingBoardLoading({
               times: [0, 0.18, 0.32, 0.42, 0.55, 1],
             }}
           >
-            {isHiragana ? (
-              <div
-                className="relative flex items-center justify-center"
-                style={{ width: centerSize.width, height: centerSize.height }}
-              >
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{
-                    background: `radial-gradient(circle, ${theme.soft} 0%, transparent 72%)`,
-                  }}
-                  animate={{
-                    opacity: [0.45, 0.75, 0.45, 0.45, 1, 0.55],
-                    scale: [1, 1.03, 1, 1, 1.14, 1.02],
-                  }}
-                  transition={{
-                    duration: 1.8,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    times: [0, 0.18, 0.32, 0.42, 0.55, 1],
-                  }}
-                />
-                <div className="relative z-10 scale-[1.45]">
-                  <ShogiSymbolBox
-                    symbol={SCRIPT_SYMBOL[scriptType]}
-                    gradient={shogiGradient}
-                    hoverTransition=""
-                  />
-                </div>
-              </div>
-            ) : (
-              <div
-                className={`relative flex items-center justify-center overflow-hidden ${shapeClass}`}
-                style={{
-                  width: centerSize.width,
-                  height: centerSize.height,
-                  background: theme.gradient,
-                }}
-              >
-                <motion.div
-                  className={`absolute inset-0 ${shapeClass}`}
-                  style={{
-                    background: `radial-gradient(circle, ${theme.soft} 0%, transparent 70%)`,
-                  }}
-                  animate={{
-                    opacity: [0.45, 0.75, 0.45, 0.45, 1, 0.55],
-                    scale: [1, 1.03, 1, 1, 1.14, 1.02],
-                  }}
-                  transition={{
-                    duration: 1.8,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    times: [0, 0.18, 0.32, 0.42, 0.55, 1],
-                  }}
-                />
-                <span
-                  className={`select-none font-black leading-none text-white ${centerSymbolClass}`}
-                  style={{ filter: `drop-shadow(0 0 8px ${theme.glow})` }}
-                >
-                  {SCRIPT_SYMBOL[scriptType]}
-                </span>
-              </div>
-            )}
+            <motion.div
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: `radial-gradient(circle, ${theme.soft} 0%, transparent 72%)`,
+              }}
+              animate={{
+                opacity: [0.45, 0.75, 0.45, 0.45, 1, 0.55],
+                scale: [1, 1.03, 1, 1, 1.14, 1.02],
+              }}
+              transition={{
+                duration: 1.8,
+                repeat: Infinity,
+                ease: "easeInOut",
+                times: [0, 0.18, 0.32, 0.42, 0.55, 1],
+              }}
+            />
+
+            <div className="relative z-10">
+              <WritingLoaderPiece
+                scriptType={scriptType}
+                symbol={SCRIPT_SYMBOL[scriptType]}
+                theme={theme}
+                width={centerSize.width}
+                height={centerSize.height}
+                isCenter
+              />
+            </div>
           </motion.div>
 
           {/* node 3 */}
@@ -326,63 +359,35 @@ export default function WritingBoardLoading({
               delay: 0.4,
             }}
           >
-            {isHiragana ? (
-              <div
-                className="relative flex items-center justify-center"
-                style={{ width: sideSize.width, height: sideSize.height }}
-              >
-                <motion.div
-                  className="scale-[1.15] opacity-75"
-                  animate={{ opacity: [0.42, 0.8, 0.42] }}
-                  transition={{
-                    duration: 1.4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.55,
-                  }}
-                >
-                  <ShogiSymbolBox
-                    symbol={SCRIPT_SIDE_SYMBOLS[scriptType][1]}
-                    gradient={shogiGradient}
-                    hoverTransition=""
-                  />
-                </motion.div>
-              </div>
-            ) : (
-              <div
-                className={`relative flex items-center justify-center ${shapeClass}`}
-                style={{
-                  width: sideSize.width,
-                  height: sideSize.height,
-                  background: theme.gradientFaded,
-                }}
-              >
-                <motion.span
-                  className="select-none text-[18px] font-bold leading-none text-white/60"
-                  animate={{ opacity: [0.35, 0.8, 0.35] }}
-                  transition={{
-                    duration: 1.4,
-                    repeat: Infinity,
-                    ease: "easeInOut",
-                    delay: 0.55,
-                  }}
-                >
-                  {SCRIPT_SIDE_SYMBOLS[scriptType][1]}
-                </motion.span>
-              </div>
-            )}
+            <motion.div
+              animate={{ opacity: [0.82, 1, 0.82] }}
+              transition={{
+                duration: 1.4,
+                repeat: Infinity,
+                ease: "easeInOut",
+                delay: 0.55,
+              }}
+            >
+              <WritingLoaderPiece
+                scriptType={scriptType}
+                symbol={SCRIPT_SIDE_SYMBOLS[scriptType][1]}
+                theme={theme}
+                width={sideSize.width}
+                height={sideSize.height}
+              />
+            </motion.div>
           </motion.div>
 
           {/* flowing particle */}
             <motion.div
             className="absolute top-[84px] z-10 h-[10px] w-[10px] rounded-full sm:top-[106px]"
             style={{
-                left: 48,
+                left: "48px",
                 background: theme.solid,
                 boxShadow: `0 0 18px ${theme.glow}`,
             }}
             animate={{
-                x: [0, 86, 86, 190],
+                left: ["48px", "calc(50% - 5px)", "calc(50% - 5px)", "238px"],
                 opacity: [0, 1, 1, 0.95, 0],
                 scale: [0.7, 1, 1.3, 1, 0.8],
             }}

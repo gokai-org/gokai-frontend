@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import { motion, AnimatePresence } from "framer-motion";
 import type { QuestionExam } from "../../../types";
 import { CheckCircle2, XCircle } from "lucide-react";
 
@@ -18,18 +17,18 @@ export default function GrammarQuestionExercise({
   onSelect,
 }: Props) {
   return (
-    <div className="space-y-5">
-      {/* ── Question bubble ──────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-2xl border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-4 py-4">
-        <div className="absolute -right-6 -top-6 h-16 w-16 rounded-full bg-accent/8 blur-2xl" />
+    <div className="space-y-[4px]">
+      {/* ── Question bubble ──────────────────────────────────── */}
+      <div className="relative overflow-hidden rounded-[3px] border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-[3.5px] py-[3.5px]">
+        <div className="absolute -right-6 -top-6 h-[12px] w-[12px] rounded-full bg-accent/8 blur-xl" />
         <p
-          className="relative text-sm leading-relaxed text-content-primary sm:text-[15px] sm:leading-7"
+          className="relative text-[3px] leading-[1.5] text-content-primary"
           dangerouslySetInnerHTML={{ __html: question.question }}
         />
       </div>
 
       {/* ── Options ─────────────────────────────────────── */}
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-[2.5px]">
         {question.options.map((opt, i) => {
           const isSelected = selectedIndex === i;
           const isCorrect  = opt.correct;
@@ -69,21 +68,16 @@ export default function GrammarQuestionExercise({
           };
 
           return (
-            <motion.button
+            <button
               key={i}
               type="button"
               disabled={answered}
               onClick={() => onSelect(i)}
-              whileHover={!answered ? { scale: 1.01, y: -1 } : {}}
-              whileTap={!answered ? { scale: 0.98 } : {}}
-              initial={{ opacity: 0, x: -8 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.06, duration: 0.2 }}
-              className={`flex w-full items-center gap-3 rounded-2xl border px-4 py-3 text-left text-sm transition-all duration-200 ${stateClass[state]}`}
+              className={`flex w-full items-center gap-[2.5px] rounded-[3px] border px-[3.5px] py-[2.5px] text-left text-[3px] transition-colors duration-200 ${stateClass[state]}`}
             >
               {/* Letter badge */}
               <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl border text-[11px] font-black transition-all duration-200 ${badgeClass[state]}`}
+                className={`flex h-[6px] w-[6px] shrink-0 items-center justify-center rounded-[2px] border text-[2.5px] font-black transition-all duration-200 ${badgeClass[state]}`}
               >
                 {String.fromCharCode(65 + i)}
               </span>
@@ -92,29 +86,13 @@ export default function GrammarQuestionExercise({
                 {opt.option}
               </span>
 
-              <AnimatePresence mode="wait">
-                {answered && isCorrect && (
-                  <motion.span
-                    key="check"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  >
-                    <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-500" />
-                  </motion.span>
-                )}
-                {answered && isSelected && !isCorrect && (
-                  <motion.span
-                    key="x"
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 15 }}
-                  >
-                    <XCircle className="h-5 w-5 shrink-0 text-red-500" />
-                  </motion.span>
-                )}
-              </AnimatePresence>
-            </motion.button>
+              {answered && isCorrect && (
+                <CheckCircle2 className="h-[4px] w-[4px] shrink-0 text-emerald-500" />
+              )}
+              {answered && isSelected && !isCorrect && (
+                <XCircle className="h-[4px] w-[4px] shrink-0 text-red-500" />
+              )}
+            </button>
           );
         })}
       </div>

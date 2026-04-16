@@ -49,6 +49,7 @@ export function ScriptCard({
 }: ScriptCardProps) {
   const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
     useCardAnimation(index);
+  const effectiveLocked = locked && !unlocking;
   const masteredModules = useMasteredModules();
   const isMastered = masteredModules.has(variant as MasteryModuleId);
   const baseConfig = SCRIPT_CARD_CONFIG[variant];
@@ -65,6 +66,7 @@ export function ScriptCard({
         katakana: { hex: "#1B5078", rgba: "27,80,120" },
       } as const)[variant];
   const unlockBadgeText = variant === "kanji" ? "+30" : "+5";
+  const unlockSequenceDelay = animationsEnabled ? Math.min(index, 8) * 0.12 : 0;
 
   // ── Long-press to toggle favourite on mobile ──────────────────────────────
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -101,7 +103,7 @@ export function ScriptCard({
   const cardClassName = [
     "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] text-left",
     "min-h-[190px] select-none",
-    locked
+    effectiveLocked
       ? "items-center justify-center bg-surface-tertiary dark:bg-[#1a181c] border border-border-default/70 dark:border-white/[0.05] cursor-default p-4"
       : [
           "p-5",
@@ -158,7 +160,7 @@ export function ScriptCard({
   );
 
   // ── Minimal locked layout (board-node style) ─────────────────────────────
-  const lockedContent = locked ? (
+  const lockedContent = effectiveLocked ? (
     <div className="flex flex-col items-center gap-3">
       {/* Dimmed symbol shape */}
       {config.symbolShape === "circle" && (
@@ -195,27 +197,45 @@ export function ScriptCard({
       className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center rounded-[22px] overflow-hidden"
       initial={{ opacity: 1 }}
       animate={{ opacity: 0 }}
-      transition={{ delay: animationsEnabled ? 2.1 : 0.9, duration: 0.4 }}
+      transition={{ delay: unlockSequenceDelay + (animationsEnabled ? 2.15 : 0.95), duration: 0.45 }}
     >
       {/* Radial glow — variant color */}
       <motion.div
         className="absolute inset-0 rounded-[22px]"
         initial={{ opacity: 0.78 }}
         animate={{ opacity: 0 }}
-        transition={{ duration: animationsEnabled ? 1.9 : 0.8 }}
+        transition={{ delay: unlockSequenceDelay, duration: animationsEnabled ? 1.95 : 0.85 }}
         style={{
           background: `radial-gradient(circle, rgba(${unlockColor.rgba},0.48) 0%, transparent 70%)`,
         }}
       />
+      <motion.div
+        className="absolute inset-[10px] rounded-[18px]"
+        initial={{ opacity: 0.58, scale: 0.88 }}
+        animate={{ opacity: 0, scale: 1.12 }}
+        transition={{ delay: unlockSequenceDelay + 0.08, duration: animationsEnabled ? 1.15 : 0.6 }}
+        style={{
+          boxShadow: `0 0 0 1px rgba(${unlockColor.rgba},0.18), 0 0 36px rgba(${unlockColor.rgba},0.28)`,
+        }}
+      />
       {/* Expanding ring — skipped on reduced animations */}
       {animationsEnabled && (
-        <motion.div
-          className="absolute rounded-[24px] border-2"
-          initial={{ opacity: 0.92, scale: 0.52 }}
-          animate={{ opacity: 0, scale: 1.48 }}
-          transition={{ duration: 0.88, ease: [0.22, 1, 0.36, 1] }}
-          style={{ inset: 0, borderColor: `rgba(${unlockColor.rgba},0.52)` }}
-        />
+        <>
+          <motion.div
+            className="absolute rounded-[24px] border-2"
+            initial={{ opacity: 0.92, scale: 0.52 }}
+            animate={{ opacity: 0, scale: 1.48 }}
+            transition={{ delay: unlockSequenceDelay, duration: 0.88, ease: [0.22, 1, 0.36, 1] }}
+            style={{ inset: 0, borderColor: `rgba(${unlockColor.rgba},0.52)` }}
+          />
+          <motion.div
+            className="absolute rounded-[24px] border"
+            initial={{ opacity: 0.64, scale: 0.7 }}
+            animate={{ opacity: 0, scale: 1.72 }}
+            transition={{ delay: unlockSequenceDelay + 0.18, duration: 1.05, ease: [0.22, 1, 0.36, 1] }}
+            style={{ inset: -6, borderColor: `rgba(${unlockColor.rgba},0.32)` }}
+          />
+        </>
       )}
       {/* Points badge floating up — variant color */}
       <motion.div
@@ -235,6 +255,7 @@ export function ScriptCard({
             : { y: -22, opacity: [0, 1, 0], scale: 1 }
         }
         transition={{
+          delay: unlockSequenceDelay + 0.06,
           duration: animationsEnabled ? 1.9 : 0.9,
           times: animationsEnabled ? [0, 0.14, 0.68, 1] : [0, 0.3, 1],
           ease: [0.22, 1, 0.36, 1],
@@ -247,7 +268,7 @@ export function ScriptCard({
     </motion.div>
   ) : null;
 
-  const layout = !locked ? (
+  const layout = !effectiveLocked ? (
     <ScriptCardLayout
       symbol={symbol}
       title={title}
@@ -265,7 +286,7 @@ export function ScriptCard({
     />
   ) : null;
 
-  const effectiveOnClick = locked ? undefined : onClick;
+  const effectiveOnClick = effectiveLocked ? undefined : onClick;
 
   const cardEl = effectiveOnClick ? (
     <div
@@ -307,7 +328,38 @@ export function ScriptCard({
 
   return (
     <motion.div className="h-full" {...motionProps}>
-      {cardEl}
+      <motion.div
+        className="h-full"
+        initial={false}
+        animate={
+          unlocking
+            ? {
+                scale: [0.96, 1.045, 0.992, 1],
+                y: [8, -10, 1, 0],
+                rotate: [0, -0.5, 0.25, 0],
+                filter: [
+                  "brightness(1)",
+                  "brightness(1.18)",
+                  "brightness(1.05)",
+                  "brightness(1)",
+                ],
+              }
+            : {
+                scale: 1,
+                y: 0,
+                rotate: 0,
+                filter: "brightness(1)",
+              }
+        }
+        transition={{
+          delay: unlockSequenceDelay,
+          duration: animationsEnabled ? 1.2 : 0.55,
+          times: [0, 0.28, 0.7, 1],
+          ease: [0.22, 1, 0.36, 1],
+        }}
+      >
+        {cardEl}
+      </motion.div>
     </motion.div>
   );
 }

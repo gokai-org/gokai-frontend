@@ -15,12 +15,14 @@ function buildCameraProfile(
 ): WritingBoardCameraProfile {
   const baseTransition = graphicsProfile.cameraTransitionDuration;
   const baseRestore = graphicsProfile.cameraRestoreDuration;
+  const drawerZoomBoost = width < 768 ? 0.34 : width < 1200 ? 0.3 : 0.28;
 
   if (width < 768) {
     return tier === "high"
       ? {
           overviewZoom: 1.14,
           focusZoom: 1.58,
+          drawerFocusZoom: 1.58 + drawerZoomBoost,
           initialDuration: baseTransition,
           focusDuration: baseTransition + 40,
           restoreDuration: baseRestore + 30,
@@ -29,6 +31,7 @@ function buildCameraProfile(
         ? {
             overviewZoom: 1.08,
             focusZoom: 1.48,
+            drawerFocusZoom: 1.48 + drawerZoomBoost,
             initialDuration: baseTransition - 20,
             focusDuration: baseTransition + 20,
             restoreDuration: baseRestore + 20,
@@ -36,6 +39,7 @@ function buildCameraProfile(
         : {
             overviewZoom: 1.02,
             focusZoom: 1.34,
+            drawerFocusZoom: 1.34 + drawerZoomBoost,
             initialDuration: baseTransition - 20,
             focusDuration: baseTransition + 10,
             restoreDuration: baseRestore + 10,
@@ -47,6 +51,7 @@ function buildCameraProfile(
       ? {
           overviewZoom: 1.02,
           focusZoom: 1.42,
+          drawerFocusZoom: 1.42 + drawerZoomBoost,
           initialDuration: baseTransition - 20,
           focusDuration: baseTransition + 20,
           restoreDuration: baseRestore + 20,
@@ -55,6 +60,7 @@ function buildCameraProfile(
         ? {
             overviewZoom: 0.96,
             focusZoom: 1.34,
+            drawerFocusZoom: 1.34 + drawerZoomBoost,
             initialDuration: baseTransition - 20,
             focusDuration: baseTransition + 10,
             restoreDuration: baseRestore + 10,
@@ -62,6 +68,7 @@ function buildCameraProfile(
         : {
             overviewZoom: 0.9,
             focusZoom: 1.22,
+            drawerFocusZoom: 1.22 + drawerZoomBoost,
             initialDuration: baseTransition - 20,
             focusDuration: baseTransition,
             restoreDuration: baseRestore,
@@ -72,6 +79,7 @@ function buildCameraProfile(
     ? {
         overviewZoom: 0.98,
         focusZoom: 1.36,
+        drawerFocusZoom: 1.36 + drawerZoomBoost,
         initialDuration: baseTransition - 20,
         focusDuration: baseTransition,
         restoreDuration: baseRestore,
@@ -80,6 +88,7 @@ function buildCameraProfile(
       ? {
           overviewZoom: 0.92,
           focusZoom: 1.26,
+          drawerFocusZoom: 1.26 + drawerZoomBoost,
           initialDuration: baseTransition - 20,
           focusDuration: baseTransition,
           restoreDuration: baseRestore,
@@ -87,6 +96,7 @@ function buildCameraProfile(
       : {
           overviewZoom: 0.86,
           focusZoom: 1.16,
+          drawerFocusZoom: 1.16 + drawerZoomBoost,
           initialDuration: baseTransition - 20,
           focusDuration: baseTransition,
           restoreDuration: baseRestore,

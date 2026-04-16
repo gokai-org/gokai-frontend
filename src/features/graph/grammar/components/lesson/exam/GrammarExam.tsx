@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import type { ExamItem } from "../../../types";
 import { submitGrammarQuiz } from "../../../api/grammarApi";
 import GrammarQuestionExercise from "./GrammarQuestionExercise";
@@ -193,47 +192,43 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
       : "Terminaste el examen, pero todavia hay estructuras que conviene repasar antes del siguiente intento.";
 
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex h-full min-h-0 flex-col"
-      >
-        <div className="kanji-detail-scroll flex-1 min-h-0 overflow-y-auto pr-1">
-          <div className="mx-auto flex w-full max-w-xl flex-col gap-4 py-1">
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <p className="text-3xl font-black text-content-primary">
+      <div className="flex h-full min-h-0 flex-col">
+          <div className="kanji-detail-scroll flex-1 min-h-0 overflow-y-auto pr-[0.5px]">
+          <div className="mx-auto flex w-full flex-col gap-[3.5px] py-[0.5px]">
+            <div className="space-y-[3.5px]">
+              <div className="space-y-[1px]">
+                <p className="text-[6.5px] font-black text-content-primary">
                   Resumen del intento
                 </p>
-                <p className="text-sm leading-6 text-content-secondary">
+                <p className="text-[3px] leading-[1.5] text-content-secondary">
                   {subtitle}
                 </p>
               </div>
 
-              <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border-subtle pt-4">
+              <div className="flex flex-wrap items-end justify-between gap-[3.5px] border-t border-border-subtle pt-[3.5px]">
                 <div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+                  <p className="text-[2px] font-black uppercase tracking-[0.2em] text-content-muted">
                     Resultado
                   </p>
                   <p
-                    className="mt-1 text-4xl font-black text-content-primary"
+                    className="mt-[1px] text-[8px] font-black text-content-primary"
                     style={scoreStyle}
                   >
                     {score}
-                    <span className="ml-1 text-base font-semibold text-content-muted">
+                    <span className="ml-[1px] text-[3.5px] font-semibold text-content-muted">
                       /100
                     </span>
                   </p>
                 </div>
 
                 <div className="text-left sm:text-right">
-                  <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+                  <p className="text-[2px] font-black uppercase tracking-[0.2em] text-content-muted">
                     Estado
                   </p>
-                  <p className="mt-1 text-sm font-bold text-content-primary" style={scoreStyle}>
+                  <p className="mt-[1px] text-[3px] font-bold text-content-primary" style={scoreStyle}>
                     {statusLabel}
                   </p>
-                  <p className="mt-1 text-sm text-content-secondary">
+                  <p className="mt-[1px] text-[3px] text-content-secondary">
                     {correctCount} de {total} respuestas correctas
                   </p>
                 </div>
@@ -241,81 +236,69 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
 
             </div>
 
-            {submitting && (
-              <motion.p
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                className="text-xs text-content-muted"
-              >
-                Guardando resultados...
-              </motion.p>
-            )}
+          {submitting && (
+            <p className="text-[2.5px] text-content-muted">
+              Guardando resultados...
+            </p>
+          )}
 
             {submitError && (
-              <p className="text-xs text-content-secondary">
+              <p className="text-[2.5px] text-content-secondary">
                 No se pudo guardar el resultado: {submitError}
               </p>
             )}
           </div>
         </div>
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="shrink-0 flex w-full flex-col gap-2.5 border-t border-border-subtle bg-surface-primary pt-4 sm:flex-row"
+        <div
+          className="shrink-0 flex w-full flex-col gap-[2px] border-t border-border-subtle bg-surface-primary pt-[3.5px] sm:flex-row"
         >
           <button
             type="button"
             onClick={onRetry}
-            className="flex-1 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3 text-sm font-black text-white shadow-lg shadow-accent/15 transition hover:shadow-xl hover:shadow-accent/20"
+            className="flex-1 rounded-[3px] bg-gradient-to-r from-accent to-accent-hover px-[3.5px] py-[2.5px] text-[3px] font-black text-white shadow-sm transition hover:opacity-95"
           >
             Repetir examen
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-2xl border border-border-subtle bg-surface-secondary px-4 py-3 text-sm font-semibold text-content-secondary transition hover:bg-surface-tertiary sm:min-w-28"
+            className="rounded-[3px] border border-border-subtle bg-surface-secondary px-[3.5px] py-[2.5px] text-[3px] font-semibold text-content-secondary transition hover:bg-surface-tertiary"
           >
             Cerrar
           </button>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
     );
   }
 
   if (!current) return null;
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-5">
+    <div className="flex h-full min-h-0 flex-col gap-[4px]">
       {/* ── Context card ─────────────────────────────────── */}
-      <div className="shrink-0 space-y-2">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-accent px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-white">
+      <div className="shrink-0 space-y-[2px]">
+        <div className="flex flex-wrap items-center gap-[2px]">
+          <span className="rounded-full bg-accent px-[2px] py-[0.5px] text-[2px] font-black uppercase tracking-[0.18em] text-white">
             {exerciseMeta?.label}
           </span>
-          <span className="rounded-full bg-surface-secondary px-2.5 py-1 text-[11px] font-semibold text-content-secondary">
+          <span className="rounded-full bg-surface-secondary px-[2px] py-[0.5px] text-[2.5px] font-semibold text-content-secondary">
             {correctCount} correctas
           </span>
-          <span className="rounded-full bg-surface-secondary px-2.5 py-1 text-[11px] font-semibold text-content-muted">
+          <span className="rounded-full bg-surface-secondary px-[2px] py-[0.5px] text-[2.5px] font-semibold text-content-muted">
             {answered ? "Respuesta revisada" : "Modo interactivo"}
           </span>
         </div>
-        <p className="text-sm leading-6 text-content-secondary">
+        <p className="text-[3px] leading-[1.5] text-content-secondary">
           {exerciseMeta?.hint}
         </p>
       </div>
 
       {/* ── Exercise ─────────────────────────────────────── */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={`exercise-${currentIdx}`}
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          className={current.type === "question" ? "kanji-detail-scroll flex-1 min-h-0 overflow-y-auto pr-1" : "flex-1 min-h-0"}
-        >
+      <div
+        key={`exercise-${currentIdx}`}
+        className={current.type === "question" ? "kanji-detail-scroll flex-1 min-h-0 overflow-y-auto pr-1" : "flex-1 min-h-0"}
+      >
           {current.type === "question" && (
             <GrammarQuestionExercise
               question={current}
@@ -340,19 +323,18 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
               onAnswer={handleSubAnswer}
             />
           )}
-        </motion.div>
-      </AnimatePresence>
+        </div>
 
       {/* ── Question controls ─────────────────────────────── */}
       {(current.type === "question" || ((current.type === "complete" || current.type === "order") && answered)) && (
-        <div className="shrink-0 border-t border-border-subtle bg-surface-primary pt-4">
+        <div className="shrink-0 border-t border-border-subtle bg-surface-primary pt-[3.5px]">
           {current.type === "question" && (
             !answered ? (
               <button
                 type="button"
                 disabled={selectedIdx === null}
                 onClick={handleQuestionConfirm}
-                className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-35 disabled:cursor-not-allowed"
+                className="w-full rounded-[2px] bg-gradient-to-r from-accent to-accent-hover py-[2px] text-[3px] font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-35 disabled:cursor-not-allowed"
               >
                 Confirmar
               </button>
@@ -360,9 +342,9 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
               <button
                 type="button"
                 onClick={proceed}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
+                className="flex w-full items-center justify-center gap-[1.5px] rounded-[2px] bg-gradient-to-r from-accent to-accent-hover py-[2px] text-[3px] font-bold text-white shadow-sm transition hover:opacity-90"
               >
-                <CheckCircle2 className="h-4 w-4" />
+                <CheckCircle2 className="h-[3.5px] w-[3.5px]" />
                 {currentIdx + 1 >= total ? "Ver resultados" : "Siguiente"}
               </button>
             )
@@ -373,9 +355,9 @@ export default function GrammarExam({ grammarId, exam, onFinish, onClose, onRetr
         <button
           type="button"
           onClick={proceed}
-          className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-90"
+          className="flex w-full items-center justify-center gap-[1.5px] rounded-[2px] bg-gradient-to-r from-accent to-accent-hover py-[2px] text-[3px] font-bold text-white shadow-sm transition hover:opacity-90"
         >
-          <CheckCircle2 className="h-4 w-4" />
+          <CheckCircle2 className="h-[3.5px] w-[3.5px]" />
           {currentIdx + 1 >= total ? "Ver resultados" : "Siguiente"}
         </button>
       )}

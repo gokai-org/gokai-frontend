@@ -19,6 +19,7 @@ import type {
   KanjiBoardQualityProfile,
 } from "../types";
 import { handleReactFlowError } from "@/features/graph/lib/reactFlowErrorHandler";
+import { getDrawerAwareFocusViewport } from "../../shared/lib/focusViewport";
 
 const nodeTypes = {
   "kanji-planet": KanjiBoardNode,
@@ -44,6 +45,7 @@ interface KanjiBoardMapProps {
   onViewportChange: (viewport: Viewport) => void;
   initialNodeId: string | null;
   focusedNodeId: string | null;
+  drawerOpen: boolean;
   onInteractionChange: (isInteracting: boolean) => void;
   qualityProfile: KanjiBoardQualityProfile;
   translateExtent?: [[number, number], [number, number]];
@@ -70,6 +72,7 @@ function KanjiBoardMapInner({
   onViewportChange,
   initialNodeId: _initialNodeId,
   focusedNodeId,
+  drawerOpen,
   onInteractionChange,
   qualityProfile,
   translateExtent: translateExtentProp,
@@ -136,10 +139,27 @@ function KanjiBoardMapInner({
       }
 
       const focusPoint = getPlanetFocusPoint(focusedNode);
-      void setCenter(focusPoint.x, focusPoint.y, {
-        zoom: qualityProfile.camera.focusZoom,
-        duration: qualityProfile.camera.focusDuration,
-      });
+
+      if (drawerOpen) {
+        void setViewport(
+          getDrawerAwareFocusViewport({
+            focusX: focusPoint.x,
+            focusY: focusPoint.y,
+            zoom: qualityProfile.camera.drawerFocusZoom,
+            viewportWidth: qualityProfile.signals.width,
+            viewportHeight: qualityProfile.signals.height,
+            drawerOpen,
+          }),
+          {
+            duration: qualityProfile.camera.focusDuration,
+          },
+        );
+      } else {
+        void setCenter(focusPoint.x, focusPoint.y, {
+          zoom: qualityProfile.camera.focusZoom,
+          duration: qualityProfile.camera.focusDuration,
+        });
+      }
 
       const frame = window.requestAnimationFrame(() => {
         onViewportChange(getViewport());
@@ -167,9 +187,13 @@ function KanjiBoardMapInner({
     getViewport,
     nodes,
     onViewportChange,
+    qualityProfile.camera.drawerFocusZoom,
     qualityProfile.camera.focusDuration,
     qualityProfile.camera.focusZoom,
     qualityProfile.camera.restoreDuration,
+    qualityProfile.signals.height,
+    qualityProfile.signals.width,
+    drawerOpen,
     setCenter,
     setViewport,
   ]);
@@ -213,7 +237,7 @@ function KanjiBoardMapInner({
       edgeTypes={stableEdgeTypes}
       onlyRenderVisibleElements
       minZoom={qualityProfile.camera.overviewZoom}
-      maxZoom={qualityProfile.camera.focusZoom}
+      maxZoom={qualityProfile.camera.drawerFocusZoom}
       translateExtent={translateExtentProp ?? layout.translateExtent}
       nodesDraggable={false}
       nodesConnectable={false}

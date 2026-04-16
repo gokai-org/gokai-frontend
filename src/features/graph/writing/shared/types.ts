@@ -40,6 +40,7 @@ export type WritingBoardQualitySignals = GraphicsQualitySignals;
 export interface WritingBoardCameraProfile {
   overviewZoom: number;
   focusZoom: number;
+  drawerFocusZoom: number;
   initialDuration: number;
   focusDuration: number;
   restoreDuration: number;

@@ -156,9 +156,8 @@ export function KanjiQuizModal({
 
   const isPracticeSession = totalRounds === 1;
   const isMixedCompletion = quiz.totalRounds > 1;
-  const earnedCompletionReward =
-    !isPracticeSession && pointsDelta >= KANJI_COMPLETION_REWARD;
-  const isNewlyCompleted = isMixedCompletion && earnedCompletionReward;
+  const isNewlyCompleted =
+    !wasCompletedBefore && isMixedCompletion && finalScore === 100;
   const isDominated =
     wasCompletedBefore && isMixedCompletion && state.step === "celebration";
   const displayPointsDelta = isPracticeSession
@@ -172,8 +171,7 @@ export function KanjiQuizModal({
     displayedUpdatedPoints ?? currentModulePoints + displayPointsDelta;
   const triggeredModuleMastery =
     isNewlyCompleted &&
-    currentModulePoints < MASTERY_THRESHOLDS.kanji &&
-    resultingModulePoints >= MASTERY_THRESHOLDS.kanji;
+    currentModulePoints + KANJI_COMPLETION_REWARD >= MASTERY_THRESHOLDS.kanji;
 
   const handleClose = useCallback(() => {
     const completionResult: KanjiQuizCompletionResult | undefined =

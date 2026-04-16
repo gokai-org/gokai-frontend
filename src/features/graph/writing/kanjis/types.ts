@@ -40,6 +40,7 @@ export type KanjiBoardQualitySignals = GraphicsQualitySignals;
 export interface KanjiBoardCameraProfile {
   overviewZoom: number;
   focusZoom: number;
+  drawerFocusZoom: number;
   initialDuration: number;
   focusDuration: number;
   restoreDuration: number;

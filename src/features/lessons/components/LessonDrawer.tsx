@@ -7,6 +7,10 @@ import type { Kanji } from "@/features/kanji/types";
 import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { getLessonsForNode } from "../lib/lessonService";
+import {
+  LESSON_DRAWER_DESKTOP_WIDTH,
+  LESSON_DRAWER_MAX_VIEWPORT_RATIO,
+} from "../lib/drawerLayout";
 import LessonShell from "./LessonShell";
 import { SkeletonDrawerContent } from "@/shared/ui/Skeleton";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
@@ -211,7 +215,7 @@ export default function LessonDrawer({
   const asideClasses =
     screen === "desktop"
       ? [
-          "pointer-events-auto flex h-full w-[440px] max-w-[90vw] flex-col overflow-hidden rounded-3xl border border-border-default/60 bg-surface-primary shadow-2xl",
+          "pointer-events-auto flex h-full flex-col overflow-hidden rounded-3xl border border-border-default/60 bg-surface-primary shadow-2xl",
         ].join(" ")
       : screen === "tablet"
         ? [
@@ -239,6 +243,14 @@ export default function LessonDrawer({
   const exitAnimation =
     screen === "desktop" ? { x: 60, opacity: 0 } : { scale: 0.96, opacity: 0 };
 
+  const desktopAsideStyle =
+    screen === "desktop"
+      ? {
+          width: `${LESSON_DRAWER_DESKTOP_WIDTH}px`,
+          maxWidth: `${Math.round(LESSON_DRAWER_MAX_VIEWPORT_RATIO * 100)}vw`,
+        }
+      : undefined;
+
   return (
     <AnimatePresence>
       {open && (
@@ -261,6 +273,7 @@ export default function LessonDrawer({
               exit={exitAnimation}
               transition={{ type: "spring", stiffness: 260, damping: 26 }}
               style={{
+                ...desktopAsideStyle,
                 ...(writingActive ? { pointerEvents: "none" as const } : {}),
                 ...kanaAccentVars,
               }}
