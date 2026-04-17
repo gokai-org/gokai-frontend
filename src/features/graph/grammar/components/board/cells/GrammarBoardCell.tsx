@@ -355,7 +355,7 @@ function getSpanishTitleClass(panelKind: PanelKind) {
 
 interface GrammarBoardCellProps {
   cell: GrammarBoardCellViewModel;
-  onSelect: (lessonId: string) => void;
+  onSelect: (lessonId: string, target: HTMLButtonElement | null) => void;
 }
 
 function getPointsBadgeText(cell: GrammarBoardCellViewModel) {
@@ -430,7 +430,7 @@ function GrammarBoardCellComponent({
       <button
         type="button"
         disabled={!interactive}
-        onClick={() => onSelect(progress.id)}
+        onClick={(event) => onSelect(progress.id, event.currentTarget)}
         className={`relative h-full w-full border font-sans ${outerCornerClass} ${shellClass}`}
         aria-label={isComingSoonCell ? "Proximamente" : progress.title}
       >
