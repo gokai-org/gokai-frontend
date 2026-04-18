@@ -47,6 +47,7 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
     UserKanaProgressDetailedResponse[]
   >(() => initialCache?.progressItems ?? []);
   const [loading, setLoading] = useState(() => initialCache === null);
+  const [hasResolvedInitialStatus, setHasResolvedInitialStatus] = useState(false);
   const optimisticKanaPointsRef = useRef(initialCache?.userKanaPoints ?? 0);
   const activeUserIdRef = useRef<string | null>(initialCache?.userId ?? knownUserId);
   const progressItemsRef = useRef<UserKanaProgressDetailedResponse[]>(
@@ -132,6 +133,7 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
       };
     } finally {
       setLoading(false);
+      setHasResolvedInitialStatus(true);
     }
   }, [applyUserKanaPoints, persistStatusCache]);
 
@@ -191,6 +193,7 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
     lockedHiraganaIds,
     lockedKatakanaIds,
     loading,
+    hasResolvedInitialStatus,
     progressById,
     reload: fetchStatus,
   };

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { TextStepperComponent } from "../../../types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { RichText } from "../../../lib/richText";
 
 export default function GrammarExamplesSection({ examples }: { examples: TextStepperComponent }) {
   const [idx, setIdx] = useState(0);
@@ -29,7 +30,7 @@ export default function GrammarExamplesSection({ examples }: { examples: TextSte
         <div className="space-y-3 px-3.5 py-3.5 text-center lg:space-y-4 lg:px-5 lg:py-5">
           <div className="rounded-[16px] bg-surface-primary/75 px-3.5 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] lg:px-4 lg:py-4">
             <p className="text-[1.02rem] font-bold leading-[1.45] text-content-primary lg:text-[1.18rem] xl:text-[1.3rem]">
-              {current.kanji}
+              <RichText text={current.kanji} />
             </p>
             <div className="mt-2 flex justify-center">
               <p className="inline-flex items-center rounded-full bg-accent/10 px-2.5 py-1 text-[12px] font-semibold text-accent lg:text-[13px]">
@@ -43,7 +44,7 @@ export default function GrammarExamplesSection({ examples }: { examples: TextSte
               Interpretación
             </p>
             <p className="mt-2 text-[13px] leading-[1.55] text-content-secondary lg:text-sm">
-              {current.meaning}
+              <RichText text={current.meaning} />
             </p>
           </div>
         </div>

@@ -1,12 +1,45 @@
 "use client";
 
-import { useMemo } from "react";
 import { motion } from "framer-motion";
 import { BookText, RefreshCw } from "lucide-react";
 import type { GrammarLesson } from "../../types";
 import GrammarLessonContent from "./GrammarLessonContent";
 
 type GrammarLessonStatus = "idle" | "loading" | "error" | "success";
+
+const overlayVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.18 },
+  },
+  closing: {
+    opacity: 0,
+    transition: { duration: 0.18 },
+  },
+};
+
+const panelVariants = {
+  hidden: { opacity: 0, scale: 0.985, y: 16 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      duration: 0.24,
+      ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
+    },
+  },
+  closing: {
+    opacity: 0,
+    scale: 0.985,
+    y: 12,
+    transition: {
+      duration: 0.18,
+      ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
+    },
+  },
+};
 
 export interface GrammarLessonModalProps {
   lesson: GrammarLesson | null;
@@ -27,53 +60,6 @@ export default function GrammarLessonModal({
   onStartExam,
   isClosing = false,
 }: GrammarLessonModalProps) {
-  const overlayVariants = useMemo(
-    () => ({
-      hidden: { opacity: 0 },
-      visible: {
-        opacity: 1,
-        transition: {
-          duration: 0.18,
-        },
-      },
-      closing: {
-        opacity: 0,
-        transition: {
-          duration: 0.18,
-        },
-      },
-    }),
-    [],
-  );
-
-  const panelVariants = useMemo(
-    () => ({
-      hidden: {
-        opacity: 0,
-        scale: 0.985,
-        y: 16,
-      },
-      visible: {
-        opacity: 1,
-        scale: 1,
-        y: 0,
-        transition: {
-          duration: 0.24,
-          ease: [0.22, 1, 0.36, 1] as [number, number, number, number],
-        },
-      },
-      closing: {
-        opacity: 0,
-        scale: 0.985,
-        y: 12,
-        transition: {
-          duration: 0.18,
-          ease: [0.4, 0, 0.2, 1] as [number, number, number, number],
-        },
-      },
-    }),
-    [],
-  );
 
   return (
     <motion.div

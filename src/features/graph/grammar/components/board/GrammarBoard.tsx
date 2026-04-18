@@ -7,13 +7,15 @@ import {
   GrammarBoardCellPointsBadge,
 } from "@/features/graph/grammar/components/board/cells/GrammarBoardCell";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
-import { GrammarBoardBackdrop } from "./overlays/GrammarBoardBackdrop";
+import { GrammarBoardBackground } from "./overlays/GrammarBoardBackground";
 import GrammarBoardLoading from "./GrammarBoardLoading";
 import type { GrammarBoardViewModel } from "../../types";
 import {
   resolveGrammarBoardZoomTransform,
   type GrammarBoardTargetRect,
 } from "../../lib/grammarBoardZoom";
+import { createGrammarBoardViewModel } from "../../lib/grammarBoardLayout";
+import { GRAMMAR_SUGOROKU_SLOTS_VERTICAL } from "../../constants/grammarBoard";
 
 const BOARD_EASE = [0.22, 1, 0.36, 1] as const;
 type GrammarBoardTransitionState = "idle" | "zooming-in" | "hidden" | "zooming-out";
@@ -94,8 +96,25 @@ export function GrammarBoard({
   const showLoading = status === "idle" || status === "loading";
   const platformMotion = usePlatformMotion();
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
+  const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
   const [focusTargetRect, setFocusTargetRect] = useState<GrammarBoardTargetRect | null>(null);
+
+  // Portrait mode: use vertical snake layout
+  const isPortrait = viewportSize.width > 0 && viewportSize.height > viewportSize.width;
+
+  const boardItems = useMemo(
+    () => board.cells.map((c) => c.progress),
+    [board.cells],
+  );
+
+  const verticalBoard = useMemo(
+    () => createGrammarBoardViewModel(boardItems, board.activeId, GRAMMAR_SUGOROKU_SLOTS_VERTICAL),
+    [boardItems, board.activeId],
+  );
+
+  // Use the correct board for the current orientation
+  const activeBoard = isPortrait ? verticalBoard : board;
 
   const handleSelect = useCallback(
     (lessonId: string, target: HTMLButtonElement | null) => {
@@ -119,8 +138,8 @@ export function GrammarBoard({
   );
 
   const cellsById = useMemo(
-    () => new Map(board.cells.map((cell) => [cell.progress.id, cell])),
-    [board.cells],
+    () => new Map(activeBoard.cells.map((cell) => [cell.progress.id, cell])),
+    [activeBoard.cells],
   );
   const focusCell = useMemo(
     () => (focusLessonId ? cellsById.get(focusLessonId) ?? null : null),
@@ -132,8 +151,9 @@ export function GrammarBoard({
         focusCell,
         viewportSize,
         focusLessonId ? focusTargetRect : null,
+        { portrait: isPortrait },
       ),
-    [focusCell, focusLessonId, focusTargetRect, viewportSize],
+    [focusCell, focusLessonId, focusTargetRect, viewportSize, isPortrait],
   );
 
   const entranceMode = platformMotion.entranceMode;
@@ -149,83 +169,101 @@ export function GrammarBoard({
     (platformMotion.shouldUseLightAnimations ? 0.56 : 0.72) *
       platformMotion.durationScale,
   );
-  const boardResetDuration = Math.max(
-    0.34,
-    (platformMotion.shouldUseLightAnimations ? 0.42 : 0.52) *
+  const boardZoomOutDuration = Math.max(
+    0.32,
+    (platformMotion.shouldUseLightAnimations ? 0.36 : 0.46) *
       platformMotion.durationScale,
   );
 
-  useEffect(() => {
-    const viewport = boardViewportRef.current;
+  const setBoardViewportRef = useCallback((node: HTMLDivElement | null) => {
+    resizeObserverRef.current?.disconnect();
+    boardViewportRef.current = node;
 
-    if (!viewport) {
+    if (!node) {
       return;
     }
 
-    const updateViewportSize = () => {
-      setViewportSize({
-        width: viewport.clientWidth,
-        height: viewport.clientHeight,
+    setViewportSize({ width: node.clientWidth, height: node.clientHeight });
+
+    if (typeof ResizeObserver !== "undefined") {
+      const observer = new ResizeObserver(() => {
+        setViewportSize({ width: node.clientWidth, height: node.clientHeight });
       });
-    };
-
-    updateViewportSize();
-
-    if (typeof ResizeObserver === "undefined") {
-      window.addEventListener("resize", updateViewportSize);
-      return () => window.removeEventListener("resize", updateViewportSize);
+      observer.observe(node);
+      resizeObserverRef.current = observer;
     }
+  }, []);
 
-    const observer = new ResizeObserver(() => {
-      updateViewportSize();
-    });
-
-    observer.observe(viewport);
-
+  useEffect(() => {
     return () => {
-      observer.disconnect();
+      resizeObserverRef.current?.disconnect();
     };
   }, []);
 
   const boardViewportAnimation = useMemo(() => {
+    // Zoom-in: la cámara se acerca suavemente a la casilla y el tablero se desvanece al final
     if (
       transitionState === "zooming-in" &&
-      focusCell &&
       viewportSize.width > 0 &&
       viewportSize.height > 0
     ) {
+      const zoomEase = [0.4, 0, 1, 1] as const;
+
       return {
-        x: [0, zoomTransform.x * 0.2, zoomTransform.x],
-        y: [0, zoomTransform.y * 0.2, zoomTransform.y],
-        scale: [1, Math.max(1.24, 1 + (zoomTransform.scale - 1) * 0.22), zoomTransform.scale],
-        opacity: [1, 1, 0.82, 0],
-        filter: [
-          "blur(0px) saturate(1)",
-          "blur(0px) saturate(1.02)",
-          "blur(6px) saturate(1.04)",
-          "blur(16px) saturate(1.06)",
-        ],
+        x: zoomTransform.x,
+        y: zoomTransform.y,
+        scale: zoomTransform.scale,
+        opacity: 0,
+        filter: "blur(10px) saturate(1.04)",
         transition: {
-          duration: boardZoomDuration,
-          ease: BOARD_EASE,
-          times: [0, 0.4, 0.78, 1],
+          x: { duration: boardZoomDuration, ease: zoomEase },
+          y: { duration: boardZoomDuration, ease: zoomEase },
+          scale: { duration: boardZoomDuration, ease: zoomEase },
+          opacity: {
+            delay: boardZoomDuration * 0.78,
+            duration: boardZoomDuration * 0.22,
+            ease: "easeIn",
+          },
+          filter: {
+            delay: boardZoomDuration * 0.72,
+            duration: boardZoomDuration * 0.28,
+            ease: "easeIn",
+          },
         },
       };
     }
 
+    // Tablero invisible y congelado en posición zoom mientras la lección está abierta
     if (transitionState === "hidden") {
       return {
         x: zoomTransform.x,
         y: zoomTransform.y,
         scale: zoomTransform.scale,
         opacity: 0,
-        filter: "blur(18px) saturate(1.08)",
+        filter: "blur(10px) saturate(1.04)",
+        transition: { duration: 0 },
+      };
+    }
+
+    // Zoom-out: el tablero reaparece y vuelve a su escala original (espejo del zoom-in)
+    if (transitionState === "zooming-out") {
+      return {
+        x: 0,
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        filter: "blur(0px) saturate(1)",
         transition: {
-          duration: 0,
+          x: { duration: boardZoomOutDuration, ease: BOARD_EASE },
+          y: { duration: boardZoomOutDuration, ease: BOARD_EASE },
+          scale: { duration: boardZoomOutDuration, ease: BOARD_EASE },
+          opacity: { duration: boardZoomOutDuration * 0.25, ease: "easeOut" },
+          filter: { duration: boardZoomOutDuration * 0.2, ease: "easeOut" },
         },
       };
     }
 
+    // Idle: tablero en reposo
     return {
       x: 0,
       y: 0,
@@ -233,15 +271,14 @@ export function GrammarBoard({
       opacity: 1,
       filter: "blur(0px) saturate(1)",
       transition: {
-        duration: transitionState === "zooming-out" ? boardResetDuration : boardDuration,
+        duration: boardDuration,
         ease: BOARD_EASE,
       },
     };
   }, [
     boardDuration,
-    boardResetDuration,
     boardZoomDuration,
-    focusCell,
+    boardZoomOutDuration,
     transitionState,
     viewportSize.height,
     viewportSize.width,
@@ -250,8 +287,23 @@ export function GrammarBoard({
     zoomTransform.y,
   ]);
 
+  const boardFrameClassName = isPortrait
+    ? "h-full w-full px-3 pb-3 sm:px-6 sm:pb-4"
+    : "h-full w-full p-6 sm:p-8 lg:p-10";
+
+  const boardFrameStyle = isPortrait
+    ? {
+        // 3.75rem ≈ 60px — just enough to clear the fixed nav bar (~56px)
+        paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.75rem)",
+        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))",
+      }
+    : undefined;
+
   return (
-    <AnimatePresence initial={false} mode="wait">
+    <>
+      <GrammarBoardBackground />
+
+      <AnimatePresence initial={false} mode="wait">
       {showLoading ? (
         <motion.div
           key="grammar-board-loading"
@@ -275,7 +327,7 @@ export function GrammarBoard({
       ) : (
         <motion.div
           key="grammar-board-content"
-          ref={boardViewportRef}
+          ref={setBoardViewportRef}
           className="absolute inset-0 overflow-hidden select-none"
           initial={
             shouldAnimateBoardReveal
@@ -309,12 +361,10 @@ export function GrammarBoard({
             }}
             animate={boardViewportAnimation}
           >
-            <GrammarBoardBackdrop />
-
-            <div className="h-full w-full p-6 sm:p-8 lg:p-10">
+            <div className={boardFrameClassName} style={boardFrameStyle}>
               <div className="relative h-full w-full rounded-[24px]">
                 <div className="relative z-10 h-full w-full">
-                  {board.cells.map((cell) => (
+                  {activeBoard.cells.map((cell) => (
                     <GrammarBoardCell
                       key={cell.progress.id}
                       cell={cell}
@@ -323,7 +373,7 @@ export function GrammarBoard({
                   ))}
 
                   <div className="pointer-events-none absolute inset-0 z-20 overflow-visible">
-                    {board.path.map((segment) => {
+                    {activeBoard.path.map((segment) => {
                       const sourceCell = cellsById.get(segment.fromId);
                       const targetCell = cellsById.get(segment.toId);
 
@@ -339,6 +389,7 @@ export function GrammarBoard({
                           cell={targetCell}
                           left={badgePosition.left}
                           top={badgePosition.top}
+                          compact={isPortrait}
                         />
                       );
                     })}
@@ -350,6 +401,7 @@ export function GrammarBoard({
           </motion.div>
         </motion.div>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </>
   );
 }

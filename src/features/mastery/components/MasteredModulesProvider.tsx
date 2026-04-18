@@ -86,6 +86,7 @@ type MasteredSet = ReadonlySet<MasteryModuleId>;
 const MasteredModulesContext = createContext<MasteredSet>(
   new Set<MasteryModuleId>(),
 );
+const MasteredModulesLoadingContext = createContext<boolean>(true);
 
 /**
  * Returns the set of modules the current user has mastered.
@@ -93,6 +94,10 @@ const MasteredModulesContext = createContext<MasteredSet>(
  */
 export function useMasteredModules(): MasteredSet {
   return useContext(MasteredModulesContext);
+}
+
+export function useMasteredModulesLoading(): boolean {
+  return useContext(MasteredModulesLoadingContext);
 }
 
 // ---------------------------------------------------------------------------
@@ -113,6 +118,7 @@ export function MasteredModulesProvider({
   const [mastered, setMastered] = useState<MasteredSet>(
     () => readMasteredModulesCache(),
   );
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     getCurrentUser()
@@ -129,6 +135,9 @@ export function MasteredModulesProvider({
       })
       .catch(() => {
         // Keep the empty set — graceful degradation.
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, []);
 
@@ -145,8 +154,10 @@ export function MasteredModulesProvider({
   );
 
   return (
-    <MasteredModulesContext.Provider value={mastered}>
-      {children}
-    </MasteredModulesContext.Provider>
+    <MasteredModulesLoadingContext.Provider value={loading}>
+      <MasteredModulesContext.Provider value={mastered}>
+        {children}
+      </MasteredModulesContext.Provider>
+    </MasteredModulesLoadingContext.Provider>
   );
 }

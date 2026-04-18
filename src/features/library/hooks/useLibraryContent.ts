@@ -46,6 +46,7 @@ export function useLibraryContent(searchQuery: string) {
   const [loadingHiraganas, setLoadingHiraganas] = useState(
     () => initialCache === null,
   );
+  const [hasResolvedInitialContent, setHasResolvedInitialContent] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +89,8 @@ export function useLibraryContent(searchQuery: string) {
       ) {
         writeCache(LIBRARY_CONTENT_CACHE_KEY, currentCache);
       }
+
+      setHasResolvedInitialContent(true);
     })();
 
     return () => {
@@ -154,6 +157,7 @@ export function useLibraryContent(searchQuery: string) {
     normalizedQuery,
     isSearching: normalizedQuery.length > 0,
     isGlobalLoading: loadingKanjis || loadingKatakanas || loadingHiraganas,
+    hasResolvedInitialContent,
     loadingKanjis,
     loadingKatakanas,
     loadingHiraganas,

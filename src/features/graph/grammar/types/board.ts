@@ -23,6 +23,8 @@ export interface GrammarBoardSlot {
   size: GrammarBoardCellSize;
   routeTier: GrammarBoardRouteTier;
   curveDirection?: -1 | 0 | 1;
+  /** When set, overrides the default order-based corner rounding on the cell. */
+  outerCornerClass?: string;
 }
 
 export interface GrammarBoardCellLayout extends GrammarBoardSlot {

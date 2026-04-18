@@ -14,7 +14,6 @@ type GrammarViewStage =
   | "board"
   | "zooming-in"
   | "lesson"
-  | "lesson-closing"
   | "quiz"
   | "zooming-out";
 
@@ -34,7 +33,7 @@ export default function GrammarView() {
     () =>
       Math.round(
         Math.max(
-          420,
+          480,
           (platformMotion.shouldUseLightAnimations ? 560 : 720) *
             platformMotion.durationScale,
         ),
@@ -42,12 +41,13 @@ export default function GrammarView() {
     [platformMotion.durationScale, platformMotion.shouldUseLightAnimations],
   );
 
-  const lessonExitDurationMs = useMemo(
+  const zoomOutDurationMs = useMemo(
     () =>
       Math.round(
         Math.max(
-          180,
-          (platformMotion.shouldUseLightAnimations ? 220 : 280) * platformMotion.durationScale,
+          320,
+          (platformMotion.shouldUseLightAnimations ? 360 : 460) *
+            platformMotion.durationScale,
         ),
       ),
     [platformMotion.durationScale, platformMotion.shouldUseLightAnimations],
@@ -58,6 +58,7 @@ export default function GrammarView() {
       return;
     }
 
+    const duration = stage === "zooming-out" ? zoomOutDurationMs : zoomDurationMs;
     const timeoutId = window.setTimeout(() => {
       if (stage === "zooming-in") {
         setStage("lesson");
@@ -66,26 +67,12 @@ export default function GrammarView() {
 
       setStage("board");
       setSelectedLessonId(null);
-    }, zoomDurationMs);
+    }, duration);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [stage, zoomDurationMs]);
-
-  useEffect(() => {
-    if (stage !== "lesson-closing") {
-      return;
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setStage("zooming-out");
-    }, lessonExitDurationMs);
-
-    return () => {
-      window.clearTimeout(timeoutId);
-    };
-  }, [lessonExitDurationMs, stage]);
+  }, [stage, zoomDurationMs, zoomOutDurationMs]);
 
   useEffect(() => {
     setHidden(stage !== "board");
@@ -115,7 +102,7 @@ export default function GrammarView() {
       return;
     }
 
-    setStage("lesson-closing");
+    setStage("zooming-out");
   }, [selectedLessonId, stage]);
 
   const handleStartExam = useCallback(() => {
@@ -131,7 +118,7 @@ export default function GrammarView() {
       return;
     }
 
-    setStage("zooming-out");
+    setStage("lesson");
   }, [stage]);
 
   const boardTransitionState =
@@ -154,7 +141,7 @@ export default function GrammarView() {
       />
 
       <AnimatePresence>
-        {(stage === "lesson" || stage === "lesson-closing") && selectedLessonId ? (
+        {(stage === "lesson" || stage === "zooming-out") && selectedLessonId ? (
           <GrammarLessonModal
             lesson={lesson}
             status={lessonStatus}
@@ -164,7 +151,7 @@ export default function GrammarView() {
               void refetch();
             }}
             onStartExam={handleStartExam}
-            isClosing={stage === "lesson-closing"}
+            isClosing={stage === "zooming-out"}
           />
         ) : null}
 

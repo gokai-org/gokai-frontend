@@ -40,6 +40,7 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
     () => initialCache?.results ?? [],
   );
   const [loading, setLoading] = useState(() => initialCache === null);
+  const [hasResolvedInitialStatus, setHasResolvedInitialStatus] = useState(false);
   const optimisticUserPointsRef = useRef(initialCache?.userPoints ?? 0);
   const activeUserIdRef = useRef<string | null>(initialCache?.userId ?? knownUserId);
   const resultsRef = useRef<KanjiLessonResult[]>(initialCache?.results ?? []);
@@ -106,6 +107,7 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
       nextPoints = 0;
     } finally {
       setLoading(false);
+      setHasResolvedInitialStatus(true);
     }
 
     const mergedUserPoints = applyUserPoints(nextPoints, activeUserIdRef.current);
@@ -173,6 +175,7 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
     completedKanjiIds,
     userPoints,
     loading,
+    hasResolvedInitialStatus,
     reload: fetchPoints,
   };
 }

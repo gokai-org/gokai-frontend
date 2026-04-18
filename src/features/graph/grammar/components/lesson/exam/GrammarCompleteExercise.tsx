@@ -37,10 +37,14 @@ export default function GrammarCompleteExercise({
     () => [...new Map(question.options.map((o) => [`${o.value}-${o.text}`, o])).values()],
     [question.options],
   );
-  const availableCountByText = allOptions.reduce<Record<string, number>>((acc, option) => {
-    acc[option.text] = (acc[option.text] ?? 0) + 1;
-    return acc;
-  }, {});
+  const availableCountByText = useMemo(
+    () =>
+      allOptions.reduce<Record<string, number>>((acc, option) => {
+        acc[option.text] = (acc[option.text] ?? 0) + 1;
+        return acc;
+      }, {}),
+    [allOptions],
+  );
   const selectedCountByText = Object.values(selections).reduce<Record<string, number>>((acc, text) => {
     acc[text] = (acc[text] ?? 0) + 1;
     return acc;

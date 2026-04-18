@@ -1,6 +1,7 @@
 "use client";
 
 import type { TableComponent } from "../../types";
+import { RichText } from "../../lib/richText";
 
 interface GrammarLessonTableProps {
   table: TableComponent;
@@ -49,7 +50,7 @@ export default function GrammarLessonTable({ table }: GrammarLessonTableProps) {
                         cellIndex === 0 ? "font-semibold text-content-primary" : "",
                       ].join(" ")}
                     >
-                      {cell.value || <span className="text-content-muted">-</span>}
+                      {cell.value ? <RichText text={cell.value} /> : <span className="text-content-muted">-</span>}
                     </td>
                   ))}
                 </tr>

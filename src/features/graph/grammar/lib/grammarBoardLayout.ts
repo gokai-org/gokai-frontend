@@ -7,6 +7,7 @@ import type {
   GrammarBoardPathSegment,
   GrammarBoardPoint,
   GrammarBoardProgress,
+  GrammarBoardSlot,
   GrammarBoardStatus,
   GrammarBoardViewModel,
 } from "../types";
@@ -37,9 +38,12 @@ function getPathStatus(
   return "available";
 }
 
-export function buildGrammarBoardLayout(ids: readonly string[]) {
-  return ids.slice(0, GRAMMAR_SUGOROKU_SLOTS.length).map((id, index) => ({
-    ...GRAMMAR_SUGOROKU_SLOTS[index],
+export function buildGrammarBoardLayout(
+  ids: readonly string[],
+  slots: readonly GrammarBoardSlot[] = GRAMMAR_SUGOROKU_SLOTS,
+) {
+  return ids.slice(0, slots.length).map((id, index) => ({
+    ...(slots[index] as GrammarBoardSlot),
     id,
   }));
 }
@@ -79,8 +83,9 @@ export function buildGrammarBoardPath(
 export function createGrammarBoardViewModel(
   items: readonly GrammarBoardProgress[],
   activeId: string | null,
+  slots?: readonly GrammarBoardSlot[],
 ): GrammarBoardViewModel {
-  const layout = buildGrammarBoardLayout(items.map((item) => item.id));
+  const layout = buildGrammarBoardLayout(items.map((item) => item.id), slots);
   const itemsById = new Map(items.map((item) => [item.id, item]));
 
   const cells = layout.flatMap((cellLayout) => {

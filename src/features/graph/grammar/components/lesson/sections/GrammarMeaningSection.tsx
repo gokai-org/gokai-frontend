@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { ImageStepperComponent } from "../../../types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { RichText } from "../../../lib/richText";
 
 export default function GrammarMeaningSection({ meaning }: { meaning: ImageStepperComponent }) {
   const [idx, setIdx] = useState(0);
@@ -18,7 +19,7 @@ export default function GrammarMeaningSection({ meaning }: { meaning: ImageStepp
             {idx + 1}
           </span>
           <p className="text-[13px] leading-[1.5] text-content-secondary lg:text-sm lg:leading-relaxed">
-            {current.description}
+            <RichText text={current.description} />
           </p>
         </div>
       </div>
