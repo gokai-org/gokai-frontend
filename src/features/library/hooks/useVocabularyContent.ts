@@ -21,6 +21,7 @@ export function useVocabularyContent(searchQuery: string) {
   const [loadingThemes, setLoadingThemes] = useState(true);
   const [loadingSubthemes, setLoadingSubthemes] = useState(false);
   const [loadingWords, setLoadingWords] = useState(false);
+  const [hasResolvedInitialThemes, setHasResolvedInitialThemes] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -31,6 +32,7 @@ export function useVocabularyContent(searchQuery: string) {
         console.error("Error loading themes:", error);
       } finally {
         setLoadingThemes(false);
+        setHasResolvedInitialThemes(true);
       }
     })();
   }, []);
@@ -112,6 +114,7 @@ export function useVocabularyContent(searchQuery: string) {
     filteredWords,
     selectedTheme,
     selectedSubtheme,
+    hasResolvedInitialThemes,
     loadingThemes,
     loadingSubthemes,
     loadingWords,

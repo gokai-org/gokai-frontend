@@ -1,11 +1,9 @@
 "use client";
 
-import Image, { type ImageLoaderProps } from "next/image";
 import { useState } from "react";
 import type { ImageStepperComponent } from "../../../types";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-
-const passthroughImageLoader = ({ src }: ImageLoaderProps) => src;
+import { RichText } from "../../../lib/richText";
 
 export default function GrammarMeaningSection({ meaning }: { meaning: ImageStepperComponent }) {
   const [idx, setIdx] = useState(0);
@@ -14,67 +12,43 @@ export default function GrammarMeaningSection({ meaning }: { meaning: ImageStepp
   if (!current) return null;
 
   return (
-    <div className="space-y-4">
-      {current.img && (
-        <div className="overflow-hidden rounded-2xl border border-accent/20 dark:border-accent/20 bg-surface-secondary">
-          <div className="relative h-52 w-full">
-            <Image
-              loader={passthroughImageLoader}
-              unoptimized
-              src={current.img}
-              alt={`Ilustración ${idx + 1}`}
-              fill
-              sizes="(max-width: 768px) 100vw, 768px"
-              className="mx-auto object-contain p-3"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      <div className="rounded-2xl border border-border-primary/50 bg-surface-secondary p-4">
+    <div className="space-y-3 lg:space-y-4">
+      <div className="rounded-[18px] bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(255,255,255,0.62))] p-3.5 shadow-[0_14px_30px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04] dark:bg-[linear-gradient(180deg,rgba(41,41,41,0.88),rgba(28,28,28,0.84))] dark:ring-white/[0.06] lg:rounded-2xl lg:p-4">
         <div className="flex items-start gap-3">
-          <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10 dark:bg-accent/20 text-[11px] font-black text-accent dark:text-accent">
+          <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-accent/10 text-[10px] font-black text-accent dark:bg-accent/20 dark:text-accent lg:h-6 lg:w-6 lg:text-[11px]">
             {idx + 1}
           </span>
-          <p className="text-sm text-content-secondary leading-relaxed">{current.description}</p>
+          <p className="text-[13px] leading-[1.5] text-content-secondary lg:text-sm lg:leading-relaxed">
+            <RichText text={current.description} />
+          </p>
         </div>
       </div>
 
       {/* Stepper controls */}
       {steps.length > 1 && (
-        <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center justify-between gap-3 rounded-[16px] bg-[linear-gradient(180deg,rgba(255,255,255,0.74),rgba(255,255,255,0.58))] px-3 py-2.5 shadow-[0_10px_24px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04] dark:bg-[linear-gradient(180deg,rgba(41,41,41,0.88),rgba(28,28,28,0.84))] dark:ring-white/[0.06] lg:px-3.5 lg:py-3">
           <button
             type="button"
             disabled={idx === 0}
             onClick={() => setIdx((i) => i - 1)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border-primary/60 text-content-secondary transition hover:border-accent/40 dark:hover:border-accent/50 hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-surface-primary/72 text-content-secondary shadow-[0_6px_18px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04] transition hover:text-accent hover:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-surface-primary/60 dark:ring-white/[0.08] dark:hover:ring-accent/40 lg:h-9 lg:w-9 lg:rounded-xl"
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </button>
 
-          <div className="flex gap-1.5">
-            {steps.map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setIdx(i)}
-                className={`h-2 rounded-full transition-all duration-200 ${
-                  i === idx ? "w-5 bg-accent" : "w-2 bg-border-primary/50 hover:bg-accent/40"
-                }`}
-              />
-            ))}
+          <div className="flex items-center gap-1.5 rounded-full bg-surface-primary/82 px-2.5 py-1 text-[11px] font-semibold text-content-muted shadow-[0_6px_16px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.04] dark:ring-white/[0.08] lg:text-xs">
+            <span>{idx + 1}</span>
+            <span>/</span>
+            <span>{steps.length}</span>
           </div>
 
           <button
             type="button"
             disabled={idx === steps.length - 1}
             onClick={() => setIdx((i) => i + 1)}
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-border-primary/60 text-content-secondary transition hover:border-accent/40 dark:hover:border-accent/50 hover:text-accent disabled:opacity-30 disabled:cursor-not-allowed"
+            className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-surface-primary/72 text-content-secondary shadow-[0_6px_18px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04] transition hover:text-accent hover:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-surface-primary/60 dark:ring-white/[0.08] dark:hover:ring-accent/40 lg:h-9 lg:w-9 lg:rounded-xl"
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </button>
         </div>
       )}

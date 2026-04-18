@@ -59,6 +59,10 @@ const GOLD_THEME = {
 const SHOGI_PATH =
   "path('M 18 3 Q 22 0 26 3 L 40 15 Q 44 18 44 23 L 44 50 Q 44 56 38 56 L 6 56 Q 0 56 0 50 L 0 23 Q 0 18 4 15 Z')";
 
+// SHOGI_PATH scaled ~1.455× to fill the 64×82 center container
+const SHOGI_PATH_LARGE =
+  "path('M 26 4 Q 32 0 38 4 L 58 22 Q 64 26 64 34 L 64 73 Q 64 82 55 82 L 9 82 Q 0 82 0 73 L 0 34 Q 0 26 6 22 Z')";
+
 interface WritingLoaderPieceProps {
   scriptType: NonNullable<WritingBoardLoadingProps["scriptType"]>;
   symbol: string;
@@ -77,15 +81,15 @@ function WritingLoaderPiece({
   isCenter = false,
 }: WritingLoaderPieceProps) {
   if (scriptType === "hiragana") {
+    const shogiPath = isCenter ? SHOGI_PATH_LARGE : SHOGI_PATH;
     return (
       <div
         className="relative flex items-center justify-center"
-        style={{ width, height }}
+        style={{ width, height, clipPath: shogiPath }}
       >
         <div
           className="absolute inset-0"
           style={{
-            clipPath: SHOGI_PATH,
             background: isCenter ? theme.gradient : theme.gradientFaded,
             boxShadow: `inset 0 1px 0 rgba(255,255,255,0.24), 0 10px 22px ${theme.glow}`,
           }}
@@ -93,7 +97,6 @@ function WritingLoaderPiece({
         <div
           className="pointer-events-none absolute inset-[1px]"
           style={{
-            clipPath: SHOGI_PATH,
             border: "1px solid rgba(255,255,255,0.18)",
           }}
         />

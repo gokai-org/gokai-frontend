@@ -17,23 +17,20 @@ export default function GrammarQuestionExercise({
   onSelect,
 }: Props) {
   return (
-    <div className="space-y-[4px]">
-      {/* ── Question bubble ──────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-[3px] border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-[3.5px] py-[3.5px]">
-        <div className="absolute -right-6 -top-6 h-[12px] w-[12px] rounded-full bg-accent/8 blur-xl" />
+    <div className="kanji-detail-scroll flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto pr-1 sm:gap-5">
+      <div className="relative overflow-hidden rounded-[18px] border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-3.5 py-3.5 sm:rounded-[24px] sm:px-6 sm:py-6">
+        <div className="absolute -right-14 -top-14 h-28 w-28 rounded-full bg-accent/8 blur-3xl" />
         <p
-          className="relative text-[3px] leading-[1.5] text-content-primary"
+          className="relative text-[13px] leading-5 text-content-primary sm:text-lg sm:leading-8"
           dangerouslySetInnerHTML={{ __html: question.question }}
         />
       </div>
 
-      {/* ── Options ─────────────────────────────────────── */}
-      <div className="flex flex-col gap-[2.5px]">
+      <div className="grid gap-2.5 sm:gap-4">
         {question.options.map((opt, i) => {
           const isSelected = selectedIndex === i;
-          const isCorrect  = opt.correct;
+          const isCorrect = opt.correct;
 
-          // State derivation
           const state: "idle" | "selected" | "correct" | "wrong" | "dimmed" =
             !answered
               ? isSelected ? "selected" : "idle"
@@ -44,27 +41,27 @@ export default function GrammarQuestionExercise({
                   : "dimmed";
 
           const stateClass: Record<typeof state, string> = {
-            idle:     "border-border-subtle bg-surface-primary hover:border-accent/40 hover:bg-accent/4 cursor-pointer",
-            selected: "border-accent/60 bg-accent/8 cursor-pointer",
-            correct:  "border-emerald-400/70 bg-emerald-50/60 dark:bg-emerald-950/25",
-            wrong:    "border-red-400/70 bg-red-50/60 dark:bg-red-950/25",
-            dimmed:   "border-border-subtle bg-transparent opacity-40 cursor-default",
+            idle: "cursor-pointer border-black/[0.05] bg-surface-primary shadow-[0_8px_24px_rgba(0,0,0,0.04)] hover:border-accent/30 hover:bg-accent/4 dark:border-white/[0.08]",
+            selected: "cursor-pointer border-accent/60 bg-accent/8",
+            correct: "border-emerald-400/70 bg-emerald-50/60 dark:bg-emerald-950/25",
+            wrong: "border-red-400/70 bg-red-50/60 dark:bg-red-950/25",
+            dimmed: "cursor-default border-black/[0.04] bg-transparent opacity-40 dark:border-white/[0.06]",
           };
 
           const badgeClass: Record<typeof state, string> = {
-            idle:     "border-border-default text-content-muted bg-surface-secondary",
+            idle: "border-black/[0.05] bg-surface-secondary text-content-muted dark:border-white/[0.08]",
             selected: "border-accent bg-accent text-white",
-            correct:  "border-emerald-500 bg-emerald-500 text-white",
-            wrong:    "border-red-500 bg-red-500 text-white",
-            dimmed:   "border-border-subtle text-content-tertiary",
+            correct: "border-emerald-500 bg-emerald-500 text-white",
+            wrong: "border-red-500 bg-red-500 text-white",
+            dimmed: "border-black/[0.04] text-content-tertiary dark:border-white/[0.06]",
           };
 
           const textClass: Record<typeof state, string> = {
-            idle:     "text-content-primary",
-            selected: "text-content-primary font-semibold",
-            correct:  "text-emerald-700 dark:text-emerald-300 font-semibold",
-            wrong:    "text-red-600 dark:text-red-400",
-            dimmed:   "text-content-tertiary",
+            idle: "text-content-primary",
+            selected: "font-semibold text-content-primary",
+            correct: "font-semibold text-emerald-700 dark:text-emerald-300",
+            wrong: "text-red-600 dark:text-red-400",
+            dimmed: "text-content-tertiary",
           };
 
           return (
@@ -73,25 +70,24 @@ export default function GrammarQuestionExercise({
               type="button"
               disabled={answered}
               onClick={() => onSelect(i)}
-              className={`flex w-full items-center gap-[2.5px] rounded-[3px] border px-[3.5px] py-[2.5px] text-left text-[3px] transition-colors duration-200 ${stateClass[state]}`}
+              className={`flex min-h-[54px] w-full items-center gap-3 rounded-[16px] border px-3 py-2.5 text-left transition-colors duration-200 sm:min-h-[84px] sm:gap-4 sm:rounded-[22px] sm:px-5 sm:py-4 ${stateClass[state]}`}
             >
-              {/* Letter badge */}
               <span
-                className={`flex h-[6px] w-[6px] shrink-0 items-center justify-center rounded-[2px] border text-[2.5px] font-black transition-all duration-200 ${badgeClass[state]}`}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-[11px] font-black leading-none transition-all duration-200 sm:h-11 sm:w-11 sm:rounded-xl sm:text-base ${badgeClass[state]}`}
               >
                 {String.fromCharCode(65 + i)}
               </span>
 
-              <span className={`flex-1 leading-snug transition-colors duration-200 ${textClass[state]}`}>
+              <span className={`flex-1 text-[12px] leading-[1.35rem] transition-colors duration-200 sm:text-base sm:leading-7 ${textClass[state]}`}>
                 {opt.option}
               </span>
 
-              {answered && isCorrect && (
-                <CheckCircle2 className="h-[4px] w-[4px] shrink-0 text-emerald-500" />
-              )}
-              {answered && isSelected && !isCorrect && (
-                <XCircle className="h-[4px] w-[4px] shrink-0 text-red-500" />
-              )}
+              {answered && isCorrect ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 sm:h-5 sm:w-5" />
+              ) : null}
+              {answered && isSelected && !isCorrect ? (
+                <XCircle className="h-4 w-4 shrink-0 text-red-500 sm:h-5 sm:w-5" />
+              ) : null}
             </button>
           );
         })}

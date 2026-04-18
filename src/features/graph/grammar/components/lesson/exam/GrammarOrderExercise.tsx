@@ -1,7 +1,7 @@
 ﻿"use client";
 
-import { useState, type DragEvent } from "react";
-import { RotateCcw, CheckCircle2 } from "lucide-react";
+import { useCallback, useEffect, useState, type DragEvent } from "react";
+import { CheckCircle2 } from "lucide-react";
 import type { OrderExam } from "../../../types";
 
 function shuffleWords(words: string[]) {
@@ -12,7 +12,7 @@ function normalizeSentence(text: string) {
   return text
     .normalize("NFKC")
     .replace(/[\s\u3000]+/g, "")
-    .replace(/[。．\.、,！!？?「」『』（）()]/g, "")
+    .replace(/[。．\.,！!？?「」『』（）()]/g, "")
     .trim();
 }
 
@@ -72,12 +72,22 @@ interface Props {
   question: OrderExam;
   answered: boolean;
   onAnswer: (correct: boolean) => void;
+  onFooterStateChange?: (state: {
+    canConfirm: boolean;
+    onConfirm: () => void;
+    secondaryAction?: { label: string; onAction: () => void } | null;
+  } | null) => void;
 }
 
-export default function GrammarOrderExercise({ question, answered, onAnswer }: Props) {
+export default function GrammarOrderExercise({
+  question,
+  answered,
+  onAnswer,
+  onFooterStateChange,
+}: Props) {
   const orderOptions = getOrderOptions(question);
   const correctAnswer = getOrderAnswer(question);
-  const [pool, setPool]     = useState<string[]>(() => shuffleWords(orderOptions));
+  const [pool, setPool] = useState<string[]>(() => shuffleWords(orderOptions));
   const [placed, setPlaced] = useState<string[]>([]);
   const [draggedWord, setDraggedWord] = useState<string | null>(null);
 
@@ -103,19 +113,19 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
     setPool((p) => [...p, word]);
   }
 
-  function reset() {
+  const reset = useCallback(() => {
     if (answered) return;
 
     setPool(shuffleWords(orderOptions));
     setPlaced([]);
     setDraggedWord(null);
-  }
+  }, [answered, orderOptions]);
 
-  function checkAnswer() {
+  const checkAnswer = useCallback(() => {
     if (answered || placed.length === 0) return;
     const correct = isOrderAnswerCorrect(question, placed);
     onAnswer(correct);
-  }
+  }, [answered, onAnswer, placed, question]);
 
   function handlePoolDragStart(event: DragEvent<HTMLButtonElement>, word: string) {
     if (answered) return;
@@ -149,50 +159,70 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
 
   const isCorrect = answered && isOrderAnswerCorrect(question, placed);
 
+  useEffect(() => {
+    if (!onFooterStateChange) {
+      return;
+    }
+
+    if (answered) {
+      onFooterStateChange(null);
+      return;
+    }
+
+    onFooterStateChange({
+      canConfirm: placed.length > 0,
+      onConfirm: checkAnswer,
+      secondaryAction: {
+        label: "Reiniciar",
+        onAction: reset,
+      },
+    });
+
+    return () => onFooterStateChange(null);
+  }, [answered, checkAnswer, onFooterStateChange, placed.length, reset]);
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="kanji-detail-scroll flex-1 min-h-0 space-y-[4px] overflow-y-auto pr-[0.5px]">
-        {/* ── Prompt ───────────────────────────────────────────── */}
-        <div className="relative overflow-hidden rounded-[3px] border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-[3.5px] py-[3.5px]">
-          <div className="absolute -right-6 -top-6 h-[12px] w-[12px] rounded-full bg-accent/8 blur-xl" />
-          <p className="relative text-[3px] leading-[1.5] text-content-primary">
+      <div className="kanji-detail-scroll flex-1 min-h-0 space-y-4 overflow-y-auto pr-1 sm:space-y-6">
+        <div className="relative overflow-hidden rounded-[20px] border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-4 py-4 sm:rounded-[24px] sm:px-6 sm:py-6">
+          <div className="absolute -right-14 -top-14 h-28 w-28 rounded-full bg-accent/8 blur-3xl" />
+          <p className="relative text-sm leading-6 text-content-primary sm:text-lg sm:leading-8">
             {question.question}
           </p>
         </div>
 
-        {/* ── Answer zone ──────────────────────────────────── */}
         <div>
-          <p className="mb-[1px] text-[2.5px] font-semibold uppercase tracking-wider text-content-muted">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted sm:text-xs sm:tracking-[0.18em]">
             Tu respuesta
           </p>
           <div
             onDragOver={handleAnswerZoneDragOver}
             onDrop={handleAnswerZoneDrop}
-            className={`min-h-[12px] rounded-[3px] border-2 border-dashed px-[2.5px] py-[2.5px] transition-colors duration-200 ${
+            className={`min-h-[88px] rounded-[20px] border-2 border-dashed px-3 py-3 transition-colors duration-200 sm:min-h-[132px] sm:rounded-[24px] sm:px-5 sm:py-5 ${
               answered
                 ? isCorrect
                   ? "border-emerald-400/60 bg-emerald-50/40 dark:bg-emerald-950/15"
                   : "border-red-400/50 bg-red-50/40 dark:bg-red-950/15"
                 : draggedWord
                   ? "border-accent/50 bg-accent/8"
-                : placed.length
-                  ? "border-accent/35 bg-accent/4"
-                  : "border-border-subtle bg-surface-secondary/50"
+                  : placed.length
+                    ? "border-accent/35 bg-accent/4"
+                    : "border-black/[0.05] bg-surface-secondary/50 dark:border-white/[0.08]"
             }`}
           >
             {placed.length === 0 ? (
-              <p className="text-center text-[2.5px] text-content-muted">
+              <p className="flex min-h-[58px] items-center justify-center text-center text-xs leading-5 text-content-muted sm:min-h-[80px] sm:text-base sm:leading-6">
                 Arrastra o toca las palabras de abajo para construir la frase
               </p>
             ) : (
-              <div className="flex flex-wrap gap-[2px]">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
                 {placed.map((word, i) => (
                   <button
                     key={`${word}-${i}`}
                     type="button"
                     disabled={answered}
                     onClick={() => remove(word)}
-                    className={`rounded-[2px] border px-[2.5px] py-[1px] text-[3px] font-semibold transition-colors duration-150 ${
+                    className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors duration-150 sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-[15px] ${
                       answered
                         ? isCorrect
                           ? "border-emerald-400/60 bg-emerald-100/60 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
@@ -208,66 +238,41 @@ export default function GrammarOrderExercise({ question, answered, onAnswer }: P
           </div>
         </div>
 
-        {/* ── Pool ─────────────────────────────────────────── */}
-        {!answered && (
-            <div className="flex min-h-[9px] flex-wrap gap-[2px]">
-              {pool.map((word, i) => (
-                <button
-                  key={word + i}
-                  draggable
-                  onDragStartCapture={(event) => handlePoolDragStart(event, word)}
-                  onDragEnd={handleDragEnd}
-                  type="button"
-                  onClick={() => take(word)}
-                  className="cursor-pointer rounded-[2px] border border-border-default bg-surface-elevated px-[3px] py-[1.5px] text-[3px] font-semibold text-content-primary shadow-sm transition-colors duration-150 hover:border-accent/50 hover:bg-accent/8 hover:text-accent"
-                >
-                  {word}
-                </button>
-              ))}
-            </div>
-        )}
-
-        {/* ── Correct answer reveal ─────────────────────────── */}
-        {answered && !isCorrect && (
-            <div className="flex items-start gap-[2px] rounded-[2px] border border-emerald-400/50 bg-emerald-50/50 p-[2.5px] dark:bg-emerald-950/20">
-              <CheckCircle2 className="h-[3.5px] w-[3.5px] shrink-0 text-emerald-500" />
-              <div className="text-[3px]">
-                <p className="font-semibold text-emerald-700 dark:text-emerald-300">Respuesta correcta:</p>
-                <p className="text-emerald-600 dark:text-emerald-400">{correctAnswer}</p>
-              </div>
-            </div>
-          )}
-
-        {answered && isCorrect && (
-            <div className="flex items-center gap-[2px] rounded-[2px] border border-emerald-400/50 bg-emerald-50/50 p-[2.5px] dark:bg-emerald-950/20">
-              <CheckCircle2 className="h-[3.5px] w-[3.5px] shrink-0 text-emerald-500" />
-              <p className="text-[3px] font-semibold text-emerald-700 dark:text-emerald-300">¡Orden correcto!</p>
-            </div>
-          )}
-      </div>
-
-      {/* ── Actions ──────────────────────────────────────── */}
-      {!answered && (
-        <div className="shrink-0 border-t border-border-subtle bg-surface-primary pt-[3.5px]">
-          <div className="flex gap-[2px]">
-            <button
-              type="button"
-              onClick={reset}
-              className="flex h-[8px] w-[8px] shrink-0 items-center justify-center rounded-[2px] border border-border-subtle bg-surface-elevated text-content-muted transition-colors hover:border-border-default hover:text-content-primary"
-            >
-              <RotateCcw className="h-[3.5px] w-[3.5px]" />
-            </button>
-            <button
-              type="button"
-              disabled={placed.length === 0}
-              onClick={checkAnswer}
-              className="flex-1 rounded-[2px] bg-gradient-to-r from-accent to-accent-hover py-[2px] text-[3px] font-bold text-white shadow-sm transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-35"
-            >
-              Confirmar
-            </button>
+        {!answered ? (
+          <div className="flex min-h-[44px] flex-wrap gap-2 sm:min-h-[56px] sm:gap-3">
+            {pool.map((word, i) => (
+              <button
+                key={word + i}
+                draggable
+                onDragStartCapture={(event) => handlePoolDragStart(event, word)}
+                onDragEnd={handleDragEnd}
+                type="button"
+                onClick={() => take(word)}
+                className="cursor-pointer rounded-xl border border-black/[0.05] bg-surface-elevated px-3 py-1.5 text-xs font-semibold text-content-primary shadow-sm transition-colors duration-150 hover:border-accent/50 hover:bg-accent/8 hover:text-accent dark:border-white/[0.08] sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-[15px]"
+              >
+                {word}
+              </button>
+            ))}
           </div>
-        </div>
-      )}
+        ) : null}
+
+        {answered && !isCorrect ? (
+          <div className="flex items-start gap-3 rounded-[18px] border border-emerald-400/50 bg-emerald-50/50 p-3 dark:bg-emerald-950/20 sm:rounded-[20px] sm:p-4">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 sm:h-5 sm:w-5" />
+            <div className="text-xs leading-5 sm:text-[15px] sm:leading-6">
+              <p className="font-semibold text-emerald-700 dark:text-emerald-300">Respuesta correcta:</p>
+              <p className="text-emerald-600 dark:text-emerald-400">{correctAnswer}</p>
+            </div>
+          </div>
+        ) : null}
+
+        {answered && isCorrect ? (
+          <div className="flex items-center gap-3 rounded-[18px] border border-emerald-400/50 bg-emerald-50/50 p-3 dark:bg-emerald-950/20 sm:rounded-[20px] sm:p-4">
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 sm:h-5 sm:w-5" />
+            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 sm:text-[15px]">¡Orden correcto!</p>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

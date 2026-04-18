@@ -1287,6 +1287,21 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+.edge-score-label--compact {
+  min-width: 30px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 9px;
+}
+
+.edge-score-label--compact .edge-score-value {
+  font-size: 9px;
+}
+
+.dark .edge-score-label--compact {
+  /* inherits dark edge-score-label overrides */
+}
+
 .edge-score-value {
   display: block;
   font-size: 12px;

@@ -283,6 +283,19 @@ function getInnerCornerClass(order: number) {
   return "";
 }
 
+function resolveCornerClasses(layout: GrammarBoardCellViewModel["layout"]) {
+  if (layout.outerCornerClass !== undefined) {
+    const outer = layout.outerCornerClass;
+    const inner = outer.replace(/22px/g, "21px");
+    return { outer, inner };
+  }
+
+  return {
+    outer: getOuterCornerClass(layout.order),
+    inner: getInnerCornerClass(layout.order),
+  };
+}
+
 function getWatermarkDisplayText(symbol: string, panelKind: PanelKind) {
   const normalized = symbol.replace(/\s+/g, "").trim() || "文法";
   const characters = Array.from(normalized);
@@ -355,7 +368,7 @@ function getSpanishTitleClass(panelKind: PanelKind) {
 
 interface GrammarBoardCellProps {
   cell: GrammarBoardCellViewModel;
-  onSelect: (lessonId: string) => void;
+  onSelect: (lessonId: string, target: HTMLButtonElement | null) => void;
 }
 
 function getPointsBadgeText(cell: GrammarBoardCellViewModel) {
@@ -366,12 +379,14 @@ interface GrammarBoardCellPointsBadgeProps {
   cell: GrammarBoardCellViewModel;
   left: number;
   top: number;
+  compact?: boolean;
 }
 
 function GrammarBoardCellPointsBadgeComponent({
   cell,
   left,
   top,
+  compact = false,
 }: GrammarBoardCellPointsBadgeProps) {
   return (
     <div
@@ -383,7 +398,7 @@ function GrammarBoardCellPointsBadgeComponent({
       }}
     >
       <span
-        className="edge-score-label min-w-[52px]"
+        className={compact ? "edge-score-label edge-score-label--compact" : "edge-score-label min-w-[52px]"}
         style={{
           color: "var(--text-primary)",
         }}
@@ -410,8 +425,7 @@ function GrammarBoardCellComponent({
     : getWatermarkDisplayText(progress.symbol, panelKind);
   const watermarkCharacterCount = progress.symbol.replace(/\s+/g, "").length;
   const watermarkLineCount = watermarkText.split("\n").length;
-  const outerCornerClass = getOuterCornerClass(layout.order);
-  const innerCornerClass = getInnerCornerClass(layout.order);
+  const { outer: outerCornerClass, inner: innerCornerClass } = resolveCornerClasses(layout);
   const hoverClass = interactive
     ? "hover:shadow-[0_20px_36px_rgba(0,0,0,0.13)] dark:hover:shadow-[0_20px_36px_rgba(0,0,0,0.40)]"
     : "cursor-default";
@@ -430,7 +444,7 @@ function GrammarBoardCellComponent({
       <button
         type="button"
         disabled={!interactive}
-        onClick={() => onSelect(progress.id)}
+        onClick={(event) => onSelect(progress.id, event.currentTarget)}
         className={`relative h-full w-full border font-sans ${outerCornerClass} ${shellClass}`}
         aria-label={isComingSoonCell ? "Proximamente" : progress.title}
       >

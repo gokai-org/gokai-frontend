@@ -37,7 +37,10 @@ import {
   themeToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
-import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import {
+  useMasteredModules,
+  useMasteredModulesLoading,
+} from "@/features/mastery/components/MasteredModulesProvider";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 // import { getPrimaryMeaning } from "@/features/kanji";
 
@@ -126,6 +129,7 @@ export default function LibraryPage() {
     allLibraryItems,
     isSearching,
     isGlobalLoading,
+    hasResolvedInitialContent,
     loadingKanjis,
     loadingKatakanas,
     loadingHiraganas,
@@ -135,6 +139,8 @@ export default function LibraryPage() {
     lockedKanjiIds,
     completedKanjiIds,
     userPoints,
+    loading: loadingKanjiStatus,
+    hasResolvedInitialStatus: hasResolvedInitialKanjiStatus,
     reload: reloadLockedStatus,
   } =
     useKanjiLockedStatus(kanjis);
@@ -143,6 +149,8 @@ export default function LibraryPage() {
     lockedHiraganaIds,
     lockedKatakanaIds,
     progressById,
+    loading: loadingKanaStatus,
+    hasResolvedInitialStatus: hasResolvedInitialKanaStatus,
     reload: reloadKanaLockedStatus,
   } = useKanaLockedStatus(hiraganas, katakanas);
   const [newlyUnlockedKanjiIds, setNewlyUnlockedKanjiIds] = useState<
@@ -193,6 +201,7 @@ export default function LibraryPage() {
     filteredWords,
     selectedTheme,
     selectedSubtheme,
+    hasResolvedInitialThemes,
     loadingThemes,
     loadingSubthemes,
     loadingWords,
@@ -201,7 +210,7 @@ export default function LibraryPage() {
     resetVocabularyView,
   } = useVocabularyContent(searchQuery);
 
-  const { recentItems, addRecentItem } = useRecentItems();
+  const { recentItems, addRecentItem, loading: loadingRecentItems } = useRecentItems();
 
   const {
     favoriteKanjis,
@@ -211,7 +220,9 @@ export default function LibraryPage() {
     toggleFavorite,
     toggleFavoriteKanji,
     getTotalFavorites,
+    loading: loadingFavorites,
   } = useFavorites();
+  const masteryLoading = useMasteredModulesLoading();
 
   const dynamicCategories = buildLibraryCategories({
     totalFavorites: getTotalFavorites(),
@@ -379,10 +390,21 @@ export default function LibraryPage() {
     : selectedTheme
       ? filteredSubthemes.length
       : filteredThemes.length;
+  const isLibraryBootstrapping =
+    !hasResolvedInitialContent ||
+    !hasResolvedInitialKanjiStatus ||
+    !hasResolvedInitialKanaStatus ||
+    !hasResolvedInitialThemes ||
+    loadingFavorites ||
+    loadingRecentItems ||
+    masteryLoading;
 
   return (
     <DashboardShell>
-      {isGlobalLoading ? (
+      {isLibraryBootstrapping ||
+      isGlobalLoading ||
+      loadingKanjiStatus ||
+      loadingKanaStatus ? (
         <LibrarySkeleton />
       ) : (
         <>
