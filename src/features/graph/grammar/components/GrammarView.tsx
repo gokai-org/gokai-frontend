@@ -75,7 +75,12 @@ export default function GrammarView() {
   }, [stage, zoomDurationMs, zoomOutDurationMs]);
 
   useEffect(() => {
-    setHidden(stage !== "board");
+    if (stage === "lesson" || stage === "quiz") {
+      setHidden(true);
+    } else if (stage === "board") {
+      setHidden(false);
+    }
+
     return () => setHidden(false);
   }, [setHidden, stage]);
 
