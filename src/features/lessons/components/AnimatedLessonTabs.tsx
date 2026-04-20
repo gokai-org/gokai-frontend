@@ -71,6 +71,7 @@ export function AnimatedLessonTabs<T extends string>({
 }) {
   return (
     <div
+      data-help-target="lesson-section-tabs"
       className={[
         "grid gap-1 rounded-xl border border-border-subtle bg-surface-secondary p-1 sm:rounded-2xl",
         className,

@@ -10,7 +10,10 @@ export default function Page() {
   const completedActivities = 6;
 
   return (
-    <div className="absolute inset-0 h-full w-full overflow-hidden bg-surface-primary z-0">
+    <div
+      data-help-target="graph-canvas"
+      className="absolute inset-0 h-full w-full overflow-hidden bg-surface-primary z-0"
+    >
       <UserGraph
         userId={userId}
         level={currentLevel}

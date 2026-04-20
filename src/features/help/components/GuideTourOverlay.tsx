@@ -1,10 +1,8 @@
 "use client";
 
-import { useEffect, useCallback, useRef } from "react";
-import {
-  motion,
-  AnimatePresence,
-} from "framer-motion";
+import { useEffect, useCallback, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
   ChevronLeft,
@@ -13,69 +11,283 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { useGuideTour } from "./GuideTourProvider";
+import {
+  GUIDE_SPOTLIGHT_GLOW,
+  getGuideCardMetrics,
+  isGuideStepReady,
+  getSpotlightCardStyle,
+  resolveGuideTarget,
+  resolveSpotlightRect,
+  type SpotlightRect,
+} from "@/features/help/utils/guideOverlay";
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
-/* ── Dirección de la transición ── */
 function useDirection() {
   const dirRef = useRef<1 | -1>(1);
   return {
     get: () => dirRef.current,
-    set: (d: 1 | -1) => {
-      dirRef.current = d;
+    set: (direction: 1 | -1) => {
+      dirRef.current = direction;
     },
   };
 }
 
 export function GuideTourOverlay() {
-  const { activeTour, currentStep, nextStep, prevStep, closeTour, goToStep } =
+  const { activeTour, currentStep, nextStep, prevStep, closeTour } =
     useGuideTour();
   const direction = useDirection();
   const visible = !!activeTour;
-
-  // Cerrar con Escape, navegar con flechas
-  const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (!activeTour) return;
-      if (e.key === "Escape") closeTour();
-      if (e.key === "ArrowRight") {
-        direction.set(1);
-        nextStep();
-      }
-      if (e.key === "ArrowLeft") {
-        direction.set(-1);
-        prevStep();
-      }
-    },
-    [activeTour, closeTour, nextStep, prevStep, direction],
-  );
-
-  useEffect(() => {
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
-
-  // Bloquear scroll
-  useEffect(() => {
-    if (activeTour) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [activeTour]);
-
-  if (!activeTour && !visible) return null;
+  const [targetRect, setTargetRect] = useState<SpotlightRect | null>(null);
+  const [cardHeight, setCardHeight] = useState(320);
+  const [stepReady, setStepReady] = useState(false);
+  const [viewportSize, setViewportSize] = useState(() => ({
+    width: typeof window === "undefined" ? 1280 : window.innerWidth,
+    height: typeof window === "undefined" ? 900 : window.innerHeight,
+  }));
+  const spotlightCardRef = useRef<HTMLDivElement | null>(null);
 
   const step = activeTour?.steps[currentStep];
   const totalSteps = activeTour?.steps.length ?? 0;
   const isFirst = currentStep === 0;
   const isLast = currentStep === totalSteps - 1;
   const progress = totalSteps > 0 ? ((currentStep + 1) / totalSteps) * 100 : 0;
+  const canAdvance = !!activeTour && !!step && stepReady;
+
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (!activeTour) {
+        return;
+      }
+
+      if (event.key === "Escape") {
+        closeTour();
+      }
+
+      if (event.key === "ArrowRight") {
+        if (!canAdvance) {
+          return;
+        }
+
+        setStepReady(false);
+        direction.set(1);
+        nextStep();
+      }
+
+      if (event.key === "ArrowLeft") {
+        direction.set(-1);
+        prevStep();
+      }
+    },
+    [activeTour, canAdvance, closeTour, nextStep, prevStep, direction],
+  );
+
+  useEffect(() => {
+    const handleResize = () => {
+      setViewportSize({
+        width: window.innerWidth,
+        height: window.innerHeight,
+      });
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    if (activeTour) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [activeTour]);
+
+  useEffect(() => {
+    if (!activeTour || !step) {
+      return;
+    }
+
+    let frameId: number | null = null;
+
+    const updateStepReady = () => {
+      setStepReady(isGuideStepReady(step.selector));
+    };
+
+    const queueUpdate = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      frameId = requestAnimationFrame(() => {
+        updateStepReady();
+      });
+    };
+
+    const mutationObserver = new MutationObserver(() => {
+      queueUpdate();
+    });
+
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+    });
+
+    queueUpdate();
+
+    window.addEventListener("resize", queueUpdate);
+    window.addEventListener("scroll", queueUpdate, true);
+
+    return () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      mutationObserver.disconnect();
+      window.removeEventListener("resize", queueUpdate);
+      window.removeEventListener("scroll", queueUpdate, true);
+    };
+  }, [activeTour, currentStep, step, step?.selector]);
+
+  useEffect(() => {
+    if (!activeTour || !step?.selector) {
+      return;
+    }
+
+    const selector = step.selector;
+
+    let frameId: number | null = null;
+    let resizeObserver: ResizeObserver | null = null;
+    let observedTarget: HTMLElement | null = null;
+    const timeoutIds: Array<ReturnType<typeof setTimeout>> = [];
+
+    const measure = () => {
+      const target = resolveGuideTarget(selector);
+
+      if (!target) {
+        setTargetRect(null);
+        return;
+      }
+
+      setTargetRect(
+        resolveSpotlightRect(
+          target,
+          step.spotlightPadding ?? 16,
+          step.spotlightInsets,
+        ),
+      );
+
+      if (observedTarget === target) {
+        return;
+      }
+
+      resizeObserver?.disconnect();
+      observedTarget = target;
+      resizeObserver = new ResizeObserver(() => {
+        if (frameId !== null) {
+          cancelAnimationFrame(frameId);
+        }
+
+        frameId = requestAnimationFrame(() => {
+          measure();
+        });
+      });
+      resizeObserver.observe(target);
+    };
+
+    const queueMeasure = () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      frameId = requestAnimationFrame(() => {
+        measure();
+      });
+    };
+
+    const scrollTargetIntoView = () => {
+      if (step.autoScroll === false) {
+        return;
+      }
+
+      const target = resolveGuideTarget(selector);
+
+      target?.scrollIntoView({
+        block: "center",
+        inline: "center",
+        behavior: "smooth",
+      });
+    };
+
+    scrollTargetIntoView();
+    queueMeasure();
+
+    timeoutIds.push(setTimeout(queueMeasure, 160));
+    timeoutIds.push(setTimeout(queueMeasure, 360));
+    timeoutIds.push(setTimeout(scrollTargetIntoView, 120));
+
+    window.addEventListener("resize", queueMeasure);
+    window.addEventListener("scroll", queueMeasure, true);
+
+    return () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+
+      resizeObserver?.disconnect();
+      timeoutIds.forEach((timeoutId) => clearTimeout(timeoutId));
+      window.removeEventListener("resize", queueMeasure);
+      window.removeEventListener("scroll", queueMeasure, true);
+    };
+  }, [activeTour, currentStep, step?.selector, step?.autoScroll, step?.spotlightPadding, step?.spotlightInsets]);
+
+  const spotlightMode = !!step?.selector && targetRect !== null;
+
+  useEffect(() => {
+    if (!spotlightMode || !spotlightCardRef.current) {
+      return;
+    }
+
+    const updateSize = () => {
+      const rect = spotlightCardRef.current?.getBoundingClientRect();
+
+      if (!rect) {
+        return;
+      }
+
+      setCardHeight(rect.height);
+    };
+
+    updateSize();
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateSize();
+    });
+
+    resizeObserver.observe(spotlightCardRef.current);
+    window.addEventListener("resize", updateSize);
+
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateSize);
+    };
+  }, [spotlightMode, currentStep]);
 
   const handleNext = () => {
+    if (!canAdvance) {
+      return;
+    }
+
+    setStepReady(false);
     direction.set(1);
     nextStep();
   };
@@ -85,12 +297,6 @@ export function GuideTourOverlay() {
     prevStep();
   };
 
-  const handleGoTo = (idx: number) => {
-    direction.set(idx > currentStep ? 1 : -1);
-    goToStep(idx);
-  };
-
-  /* Variantes para contenido que transiciona dentro del mismo card */
   const contentVariants = {
     enter: (dir: number) => ({
       opacity: 0,
@@ -109,274 +315,287 @@ export function GuideTourOverlay() {
     }),
   };
 
-  return (
+  const cardMetrics = useMemo(
+    () => getGuideCardMetrics(viewportSize.width, viewportSize.height),
+    [viewportSize],
+  );
+
+  const spotlightCardStyle = useMemo(() => {
+    if (!spotlightMode || !targetRect) {
+      return undefined;
+    }
+
+    return getSpotlightCardStyle(
+      targetRect,
+      cardMetrics.width,
+      cardHeight,
+      step?.position,
+    );
+  }, [spotlightMode, targetRect, cardMetrics.width, cardHeight, step?.position]);
+
+  if (typeof document === "undefined" || !visible || !activeTour || !step) {
+    return null;
+  }
+
+  const renderCard = (compact: boolean) => (
+    <div
+      className={compact
+        ? "flex h-full min-h-0 flex-col overflow-hidden rounded-[24px] border border-border-subtle/80 bg-surface-primary shadow-[0_28px_60px_-24px_rgba(10,10,14,0.5)] sm:rounded-[28px]"
+        : "flex h-full min-h-0 flex-1 flex-col overflow-hidden rounded-[24px] border border-border-subtle/80 bg-surface-primary shadow-2xl shadow-black/25 sm:rounded-3xl"
+      }
+    >
+      <div className="relative overflow-hidden bg-gradient-to-br from-accent via-[#8a2e2c] to-accent-hover px-4 pt-4 pb-3 text-content-inverted sm:px-6 sm:pt-5 sm:pb-4">
+        <div className="absolute top-[-20px] right-[-10px] h-28 w-28 rounded-full bg-surface-primary/[0.04]" />
+        <div className="absolute bottom-[-12px] left-[55%] h-16 w-16 rounded-full bg-surface-primary/[0.04]" />
+
+        <div className="relative z-10">
+          <div className="mb-3 flex items-center justify-between">
+            <div className="flex min-w-0 items-center gap-2">
+              <motion.div
+                animate={{ rotate: [0, 15, -15, 0] }}
+                transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+              >
+                <Sparkles className="h-3.5 w-3.5 text-white/60 sm:h-4 sm:w-4" />
+              </motion.div>
+              <span className="truncate text-[10px] font-bold uppercase tracking-[0.12em] text-white/60 sm:text-[11px]">
+                {activeTour.title}
+              </span>
+            </div>
+
+            <motion.button
+              whileHover={{ scale: 1.12, rotate: 90 }}
+              whileTap={{ scale: 0.88 }}
+              onClick={closeTour}
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-surface-primary/10 transition-colors duration-200 hover:bg-surface-primary/20"
+            >
+              <X className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            </motion.button>
+          </div>
+
+          <div className="h-[3px] w-full overflow-hidden rounded-full bg-surface-primary/10">
+            <motion.div
+              className="h-full rounded-full bg-surface-primary/90"
+              animate={{ width: `${progress}%` }}
+              transition={{ duration: 0.6, ease }}
+            />
+          </div>
+
+          <motion.p
+            key={`counter-${currentStep}`}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-2 text-[10px] font-medium text-white/50 sm:text-[11px]"
+          >
+            Paso {currentStep + 1} de {totalSteps}
+          </motion.p>
+        </div>
+      </div>
+
+      <div
+        className={compact
+          ? "relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-5 sm:py-4"
+          : "relative min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6 sm:py-5"
+        }
+      >
+        <AnimatePresence mode="wait" custom={direction.get()}>
+          <motion.div
+            key={currentStep}
+            custom={direction.get()}
+            variants={contentVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.35, ease }}
+            className={compact ? "flex flex-col gap-4" : "flex items-start gap-4"}
+          >
+            {step.icon && (
+              <motion.div
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.4, ease, delay: 0.1 }}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl border border-accent/10 bg-gradient-to-br from-accent/10 to-accent/5 text-accent sm:h-12 sm:w-12"
+              >
+                {step.icon}
+              </motion.div>
+            )}
+
+            <div className="min-w-0 flex-1">
+              <motion.h3
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.08 }}
+                className="mb-1.5 text-[15px] font-extrabold leading-snug text-content-primary sm:text-base"
+              >
+                {step.title}
+              </motion.h3>
+              <motion.p
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.15 }}
+                className="text-[13px] leading-relaxed text-content-tertiary sm:text-sm"
+              >
+                {step.description}
+              </motion.p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
+
+      <div className={compact ? "px-4 pb-3 sm:px-5 sm:pb-4" : "px-4 pb-4 sm:px-6 sm:pb-5"}>
+        <div className="flex items-center justify-between gap-3">
+          <motion.button
+            onClick={handlePrev}
+            disabled={isFirst}
+            whileHover={isFirst ? {} : { x: -3 }}
+            whileTap={isFirst ? {} : { scale: 0.95 }}
+            className={`flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-[13px] font-bold transition-all duration-200 sm:px-4 sm:text-sm ${
+              isFirst
+                ? "cursor-not-allowed text-content-muted"
+                : "text-content-tertiary hover:bg-surface-tertiary hover:text-content-primary"
+            }`}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Anterior
+          </motion.button>
+
+          <motion.button
+            onClick={handleNext}
+            disabled={!canAdvance}
+            whileHover={canAdvance ? { scale: 1.03 } : {}}
+            whileTap={canAdvance ? { scale: 0.96 } : {}}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-bold shadow-lg transition-all duration-300 sm:px-5 sm:text-sm ${
+              !canAdvance
+                ? "cursor-wait bg-surface-tertiary text-content-muted shadow-none"
+                : isLast
+                ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-content-inverted shadow-emerald-500/25"
+                : "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-accent/25"
+            }`}
+          >
+            <AnimatePresence mode="wait">
+              {!canAdvance ? (
+                <motion.span
+                  key="waiting"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="flex items-center gap-2"
+                >
+                  Esperando...
+                </motion.span>
+              ) : isLast ? (
+                <motion.span
+                  key="finish"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="flex items-center gap-2"
+                >
+                  <CheckCircle2 className="h-4 w-4" />
+                  ¡Entendido!
+                </motion.span>
+              ) : (
+                <motion.span
+                  key="next"
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  className="flex items-center gap-2"
+                >
+                  Siguiente
+                  <ChevronRight className="h-4 w-4" />
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </motion.button>
+        </div>
+      </div>
+    </div>
+  );
+
+  return createPortal(
     <AnimatePresence>
-      {visible && activeTour && step && (
-        <motion.div
-          key="tour-overlay"
+      <motion.div
+        key="tour-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.35, ease }}
+        className="pointer-events-none fixed inset-0 z-[99999] isolate"
+      >
+        <motion.button
+          type="button"
+          className="pointer-events-auto absolute inset-0 bg-black/46"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.35, ease }}
-          className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+          transition={{ duration: 0.35 }}
+          onClick={closeTour}
+          aria-label="Cerrar guía"
+        />
+
+        {spotlightMode && targetRect ? (
+          <>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.28, ease }}
+              className="pointer-events-none absolute rounded-[28px] border border-white/30"
+              style={{
+                top: targetRect.top,
+                left: targetRect.left,
+                width: targetRect.width,
+                height: targetRect.height,
+                boxShadow: GUIDE_SPOTLIGHT_GLOW,
+              }}
+            />
+
+            <motion.div
+              ref={spotlightCardRef}
+              initial={{ opacity: 0, y: 18, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.98 }}
+              transition={{ duration: 0.34, ease }}
+              className="pointer-events-auto absolute z-10 max-h-[calc(100dvh-2rem)]"
+              style={{
+                ...spotlightCardStyle,
+                maxHeight: cardMetrics.maxHeight,
+              }}
+            >
+              {renderCard(true)}
+            </motion.div>
+          </>
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ y: 40, scale: 0.92, opacity: 0 }}
+              animate={{ y: 0, scale: 1, opacity: 1 }}
+              exit={{ y: 30, scale: 0.95, opacity: 0 }}
+              transition={{ duration: 0.5, ease }}
+              className="pointer-events-auto relative z-10 w-full max-w-[560px]"
+              style={{
+                maxWidth: cardMetrics.width,
+                maxHeight: cardMetrics.maxHeight,
+              }}
+            >
+              {renderCard(false)}
+            </motion.div>
+          </div>
+        )}
+
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          className="absolute bottom-6 left-1/2 z-10 -translate-x-1/2"
         >
-          {/* ── Backdrop ── */}
-          <motion.div
-            className="absolute inset-0 bg-black/60 backdrop-blur-[6px]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.4 }}
-            onClick={closeTour}
-          />
-
-          {/* ── Glow decorativo que se mueve sutilmente ── */}
-          <motion.div
-            className="absolute top-1/2 left-1/2 w-[400px] h-[400px] pointer-events-none -translate-x-1/2 -translate-y-1/2"
-            animate={{
-              scale: [1, 1.15, 1],
-              opacity: [0.08, 0.14, 0.08],
-            }}
-            transition={{
-              duration: 4,
-              repeat: Infinity,
-              ease: "easeInOut",
-            }}
-          >
-            <div className="w-full h-full rounded-full bg-accent blur-[100px]" />
-          </motion.div>
-
-          {/* ── Contenedor: Card + Step dots a la derecha ── */}
-          <motion.div
-            initial={{ y: 40, scale: 0.92, opacity: 0 }}
-            animate={{ y: 0, scale: 1, opacity: 1 }}
-            exit={{ y: 30, scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.5, ease }}
-            className="relative z-10 flex items-stretch gap-4 w-full max-w-[560px]"
-          >
-            {/* ════════ Card principal (no se recrea, solo el contenido interno transiciona) ════════ */}
-            <div className="flex-1 bg-surface-primary rounded-3xl shadow-2xl shadow-black/25 overflow-hidden border border-border-subtle/80 flex flex-col">
-              {/* ── Header ── */}
-              <div className="relative bg-gradient-to-br from-accent via-[#8a2e2c] to-accent-hover px-6 pt-5 pb-4 text-content-inverted overflow-hidden flex-shrink-0">
-                {/* Decorativos */}
-                <div className="absolute top-[-20px] right-[-10px] w-28 h-28 bg-surface-primary/[0.04] rounded-full" />
-                <div className="absolute bottom-[-12px] left-[55%] w-16 h-16 bg-surface-primary/[0.04] rounded-full" />
-
-                <div className="relative z-10">
-                  {/* Título + cerrar */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <motion.div
-                        animate={{ rotate: [0, 15, -15, 0] }}
-                        transition={{
-                          duration: 2,
-                          repeat: Infinity,
-                          repeatDelay: 3,
-                        }}
-                      >
-                        <Sparkles className="w-4 h-4 text-white/60" />
-                      </motion.div>
-                      <span className="text-[11px] font-bold text-white/60 uppercase tracking-[0.12em]">
-                        {activeTour.title}
-                      </span>
-                    </div>
-                    <motion.button
-                      whileHover={{ scale: 1.15, rotate: 90 }}
-                      whileTap={{ scale: 0.85 }}
-                      onClick={closeTour}
-                      className="w-7 h-7 rounded-full bg-surface-primary/10 hover:bg-surface-primary/20 flex items-center justify-center transition-colors duration-200"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </motion.button>
-                  </div>
-
-                  {/* Barra de progreso */}
-                  <div className="w-full h-[3px] bg-surface-primary/10 rounded-full overflow-hidden">
-                    <motion.div
-                      className="h-full bg-surface-primary/90 rounded-full"
-                      animate={{ width: `${progress}%` }}
-                      transition={{ duration: 0.6, ease }}
-                    />
-                  </div>
-
-                  {/* Paso X de N */}
-                  <motion.p
-                    key={`counter-${currentStep}`}
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="text-[11px] text-white/50 font-medium mt-2"
-                  >
-                    Paso {currentStep + 1} de {totalSteps}
-                  </motion.p>
-                </div>
-              </div>
-
-              {/* ── Contenido (transiciona suavemente dentro del mismo card) ── */}
-              <div className="flex-1 px-6 py-5 min-h-[160px] relative overflow-hidden">
-                <AnimatePresence mode="wait" custom={direction.get()}>
-                  <motion.div
-                    key={currentStep}
-                    custom={direction.get()}
-                    variants={contentVariants}
-                    initial="enter"
-                    animate="center"
-                    exit="exit"
-                    transition={{ duration: 0.35, ease }}
-                    className="flex items-start gap-4"
-                  >
-                    {/* Ícono animado */}
-                    {step.icon && (
-                      <motion.div
-                        initial={{ scale: 0.5, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ duration: 0.4, ease, delay: 0.1 }}
-                        className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent/10 to-accent/5 flex items-center justify-center flex-shrink-0 text-accent border border-accent/10"
-                      >
-                        {step.icon}
-                      </motion.div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <motion.h3
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.08 }}
-                        className="text-base font-extrabold text-content-primary mb-1.5"
-                      >
-                        {step.title}
-                      </motion.h3>
-                      <motion.p
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.15 }}
-                        className="text-sm text-content-tertiary leading-relaxed"
-                      >
-                        {step.description}
-                      </motion.p>
-                    </div>
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-
-              {/* ── Footer ── */}
-              <div className="px-6 pb-5 flex items-center justify-between gap-3 flex-shrink-0">
-                <motion.button
-                  onClick={handlePrev}
-                  disabled={isFirst}
-                  whileHover={isFirst ? {} : { x: -3 }}
-                  whileTap={isFirst ? {} : { scale: 0.95 }}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold transition-all duration-200 ${
-                    isFirst
-                      ? "text-content-muted cursor-not-allowed"
-                      : "text-content-tertiary hover:bg-surface-tertiary hover:text-content-primary"
-                  }`}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  Anterior
-                </motion.button>
-
-                <motion.button
-                  onClick={handleNext}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.96 }}
-                  layout
-                  className={`flex items-center gap-2 px-5 py-2 rounded-xl text-sm font-bold shadow-lg transition-all duration-300 ${
-                    isLast
-                      ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-content-inverted shadow-emerald-500/25"
-                      : "bg-gradient-to-r from-accent to-accent-hover text-content-inverted shadow-accent/25"
-                  }`}
-                >
-                  <AnimatePresence mode="wait">
-                    {isLast ? (
-                      <motion.span
-                        key="finish"
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        className="flex items-center gap-2"
-                      >
-                        <CheckCircle2 className="w-4 h-4" />
-                        ¡Entendido!
-                      </motion.span>
-                    ) : (
-                      <motion.span
-                        key="next"
-                        initial={{ opacity: 0, x: 10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
-                        className="flex items-center gap-2"
-                      >
-                        Siguiente
-                        <ChevronRight className="w-4 h-4" />
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.button>
-              </div>
-            </div>
-
-            {/* ════════ Step dots verticales a la derecha ════════ */}
-            <div className="flex flex-col items-center justify-center gap-2 py-4 flex-shrink-0">
-              {activeTour.steps.map((_, idx) => {
-                const isActive = idx === currentStep;
-                const isPast = idx < currentStep;
-                return (
-                  <motion.button
-                    key={idx}
-                    onClick={() => handleGoTo(idx)}
-                    className="relative flex items-center justify-center"
-                    whileHover={{ scale: 1.4 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    {/* Anillo activo */}
-                    {isActive && (
-                      <motion.div
-                        layoutId="active-ring"
-                        className="absolute w-6 h-6 rounded-full border-2 border-white/60"
-                        transition={{
-                          type: "spring",
-                          stiffness: 400,
-                          damping: 28,
-                        }}
-                      />
-                    )}
-                    {/* Dot */}
-                    <motion.div
-                      animate={{
-                        width: isActive ? 10 : 7,
-                        height: isActive ? 10 : 7,
-                        backgroundColor: isActive
-                          ? "#ffffff"
-                          : isPast
-                            ? "rgba(255,255,255,0.6)"
-                            : "rgba(255,255,255,0.2)",
-                      }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 500,
-                        damping: 30,
-                      }}
-                      className="rounded-full"
-                    />
-                  </motion.button>
-                );
-              })}
-            </div>
-          </motion.div>
-
-          {/* ── Tip de teclado ── */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-            className="absolute bottom-6 left-1/2 -translate-x-1/2 z-10"
-          >
-            <span className="text-[11px] text-white/30 font-medium tracking-wide">
-              ← → navegar · Esc cerrar
-            </span>
-          </motion.div>
+          <span className="text-[11px] font-medium tracking-wide text-white/35">
+            ← → navegar · Esc cerrar
+          </span>
         </motion.div>
-      )}
-    </AnimatePresence>
+      </motion.div>
+    </AnimatePresence>,
+    document.body,
   );
 }

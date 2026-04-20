@@ -27,6 +27,7 @@ interface GrammarBoardProps {
   status: GrammarBoardLoadStatus;
   onSelectLesson: (lessonId: string) => void;
   focusLessonId?: string | null;
+  helpTargetLessonId?: string | null;
   transitionState?: GrammarBoardTransitionState;
 }
 
@@ -91,6 +92,7 @@ export function GrammarBoard({
   status,
   onSelectLesson,
   focusLessonId = null,
+  helpTargetLessonId = null,
   transitionState = "idle",
 }: GrammarBoardProps) {
   const showLoading = status === "idle" || status === "loading";
@@ -333,6 +335,7 @@ export function GrammarBoard({
         <motion.div
           key="grammar-board-loading"
           className="absolute inset-0"
+          data-help-loading="true"
           exit={
             shouldAnimateBoardEntrance
               ? {
@@ -354,6 +357,7 @@ export function GrammarBoard({
           key="grammar-board-content"
           ref={setBoardViewportRef}
           className="absolute inset-0 overflow-hidden select-none"
+          data-help-target="grammar-board-canvas"
           initial={
             shouldAnimateBoardReveal
               ? {
@@ -394,6 +398,7 @@ export function GrammarBoard({
                       key={cell.progress.id}
                       cell={cell}
                       onSelect={handleSelect}
+                      helpTarget={cell.progress.id === helpTargetLessonId}
                       isPortrait={isPortrait}
                       isCompactPortrait={isCompactPortrait}
                       isTinyPortrait={isTinyPortrait}

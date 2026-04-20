@@ -203,17 +203,22 @@ function ContentFrame({
   title,
   children,
   stretch = false,
+  helpTarget,
 }: {
   eyebrow: string;
   title: string;
   children: React.ReactNode;
   stretch?: boolean;
+  helpTarget?: string;
 }) {
   return (
-    <section className={[
+    <section
+      data-help-target={helpTarget}
+      className={[
       "min-w-0 overflow-hidden rounded-[20px] bg-surface-tertiary shadow-[0_8px_24px_rgba(0,0,0,0.05)] xl:rounded-[30px] xl:bg-[linear-gradient(180deg,rgba(255,255,255,0.72),rgba(255,255,255,0.64))] xl:shadow-[0_22px_50px_rgba(0,0,0,0.08)] dark:xl:bg-[linear-gradient(180deg,rgba(20,20,20,0.92),rgba(16,16,16,0.9))]",
       stretch ? "flex min-h-full flex-col" : "",
-    ].join(" ")}>
+    ].join(" ")}
+    >
       <div className="border-b border-border-subtle px-3.5 py-3.5 lg:px-4 lg:py-4 xl:bg-[radial-gradient(circle_at_top_left,rgba(194,78,69,0.14),transparent_42%),linear-gradient(90deg,rgba(194,78,69,0.08),transparent)] xl:px-[clamp(1.1rem,1.8vw,1.5rem)] xl:py-[clamp(0.95rem,1.7vw,1.25rem)]">
         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent/80 lg:text-[11px] lg:tracking-[0.2em]">
           {eyebrow}
@@ -322,8 +327,14 @@ export default function GrammarLessonContent({ lesson, onClose, onStartExam }: G
                 Contenido de la lección
               </p>
 
-              <div className="flex flex-wrap items-center gap-y-3 pt-3 lg:flex-nowrap lg:gap-8">
-                <div className="flex min-w-0 flex-wrap items-center gap-2 lg:gap-3">
+              <div
+                data-help-target="grammar-lesson-actions-fallback"
+                className="flex flex-wrap items-center gap-y-3 pt-3 lg:flex-nowrap lg:gap-8"
+              >
+                <div
+                  data-help-target="grammar-lesson-panes"
+                  className="flex min-w-0 flex-wrap items-center gap-2 lg:gap-3"
+                >
                 {availablePanes.map((pane) => (
                   <LessonTabButton
                     key={pane.id}
@@ -336,7 +347,9 @@ export default function GrammarLessonContent({ lesson, onClose, onStartExam }: G
                 </div>
 
                 {exam.length > 0 ? (
-                  <ExamCallToAction onClick={onStartExam} />
+                  <div data-help-target="grammar-lesson-exam" data-help-target-priority="10">
+                    <ExamCallToAction onClick={onStartExam} />
+                  </div>
                 ) : null}
               </div>
             </div>
@@ -348,7 +361,7 @@ export default function GrammarLessonContent({ lesson, onClose, onStartExam }: G
         <div className="relative flex-1 min-h-0 min-w-0 overflow-hidden">
           <div className="kanji-detail-scroll h-full min-h-0 overflow-x-hidden overflow-y-auto px-4 py-4 [scrollbar-gutter:stable] [overscroll-behavior:contain] lg:px-[clamp(1rem,1.8vw,1.5rem)] lg:py-[clamp(1rem,1.8vw,1.5rem)] lg:pb-[clamp(1rem,1.8vw,1.5rem)]">
             <div className="mb-3 lg:hidden">
-              <div className="grid grid-cols-3 gap-2">
+              <div data-help-target="grammar-lesson-panes" className="grid grid-cols-3 gap-2">
                 {availablePanes.map((pane) => (
                   <MobilePaneButton
                     key={pane.id}
@@ -363,7 +376,12 @@ export default function GrammarLessonContent({ lesson, onClose, onStartExam }: G
 
             <div className="flex min-h-full flex-col">
               {resolvedPane === "conceptos" && meaning ? (
-                <ContentFrame stretch eyebrow="Conceptos" title="Idea central y significado">
+                <ContentFrame
+                  stretch
+                  helpTarget="grammar-lesson-active-frame"
+                  eyebrow="Conceptos"
+                  title="Idea central y significado"
+                >
                   {meaning.type === "image_stepper" ? (
                     <GrammarMeaningSection meaning={meaning} />
                   ) : (
@@ -373,13 +391,23 @@ export default function GrammarLessonContent({ lesson, onClose, onStartExam }: G
               ) : null}
 
               {resolvedPane === "estructura" && howToUse ? (
-                <ContentFrame stretch eyebrow="Estructura" title="Cómo se construye y se usa">
+                <ContentFrame
+                  stretch
+                  helpTarget="grammar-lesson-active-frame"
+                  eyebrow="Estructura"
+                  title="Cómo se construye y se usa"
+                >
                   <GrammarLessonTable table={howToUse} />
                 </ContentFrame>
               ) : null}
 
               {resolvedPane === "ejemplos" && examples ? (
-                <ContentFrame stretch eyebrow="Ejemplos" title="Frases y uso en contexto">
+                <ContentFrame
+                  stretch
+                  helpTarget="grammar-lesson-active-frame"
+                  eyebrow="Ejemplos"
+                  title="Frases y uso en contexto"
+                >
                   <GrammarExamplesSection examples={examples} />
                 </ContentFrame>
               ) : null}
@@ -390,8 +418,10 @@ export default function GrammarLessonContent({ lesson, onClose, onStartExam }: G
 
       {exam.length > 0 ? (
         <div className="shrink-0 rounded-b-[34px] border-t border-black/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,255,255,0.9))] px-4 py-3 shadow-[0_-10px_30px_rgba(0,0,0,0.06)] backdrop-blur-xl dark:border-white/[0.08] dark:bg-[linear-gradient(180deg,rgba(18,18,18,0.94),rgba(14,14,14,0.92))] lg:hidden">
-          <div className="mx-auto w-full max-w-[16rem]">
-            <ExamCallToAction centered compact onClick={onStartExam} />
+          <div data-help-target="grammar-lesson-actions-fallback" className="mx-auto w-full max-w-[16rem]">
+            <div data-help-target="grammar-lesson-exam" data-help-target-priority="10">
+              <ExamCallToAction centered compact onClick={onStartExam} />
+            </div>
           </div>
         </div>
       ) : null}

@@ -14,6 +14,7 @@ import type { User } from "@/features/auth/types";
 import { useSettings } from "@/features/configuration/hooks/useSettings";
 import type { UserSettings } from "@/features/configuration/types";
 import { AccountSettings } from "@/features/configuration/components/AccountSettings";
+import { HELP_GUIDE_SECTION_EVENT } from "@/features/help/utils/guideEvents";
 import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
@@ -63,6 +64,23 @@ export default function ConfigurationPage() {
     }
   }, [settingsLoading, settings.appearance.darkMode, setTheme]);
 
+  useEffect(() => {
+    const handleGuideSection = (event: Event) => {
+      const customEvent = event as CustomEvent<{ section?: string }>;
+      const nextSection = customEvent.detail?.section;
+
+      if (nextSection) {
+        setActiveSection(nextSection);
+      }
+    };
+
+    window.addEventListener(HELP_GUIDE_SECTION_EVENT, handleGuideSection);
+
+    return () => {
+      window.removeEventListener(HELP_GUIDE_SECTION_EVENT, handleGuideSection);
+    };
+  }, []);
+
   return (
     <div className="flex flex-col sm:flex-row h-full bg-surface-primary">
       <SettingsSidebar
@@ -94,7 +112,7 @@ export default function ConfigurationPage() {
           </div>
 
           {settingsLoading && activeSection !== "account" ? (
-            <div className="flex items-center justify-center py-12">
+            <div data-help-loading="true" className="flex items-center justify-center py-12">
               <div className="text-content-tertiary">
                 Cargando configuración...
               </div>
@@ -102,47 +120,61 @@ export default function ConfigurationPage() {
           ) : (
             <div className="space-y-6 md:space-y-8">
               {activeSection === "general" && (
-                <GeneralSettings
-                  settings={settings}
-                  updateSection={updateSection}
-                />
+                <div data-help-target="settings-general">
+                  <GeneralSettings
+                    settings={settings}
+                    updateSection={updateSection}
+                  />
+                </div>
               )}
               {activeSection === "notifications" && (
-                <NotificationSettings
-                  settings={settings}
-                  updateSection={updateSection}
-                />
+                <div data-help-target="settings-notifications">
+                  <NotificationSettings
+                    settings={settings}
+                    updateSection={updateSection}
+                  />
+                </div>
               )}
               {activeSection === "appearance" && (
-                <AppearanceSettings
-                  settings={settings}
-                  updateSection={updateSection}
-                />
+                <div data-help-target="settings-appearance">
+                  <AppearanceSettings
+                    settings={settings}
+                    updateSection={updateSection}
+                  />
+                </div>
               )}
               {activeSection === "learning" && (
-                <LearningSettings
-                  settings={settings}
-                  updateSection={updateSection}
-                />
+                <div data-help-target="settings-learning">
+                  <LearningSettings
+                    settings={settings}
+                    updateSection={updateSection}
+                  />
+                </div>
               )}
               {activeSection === "accessibility" && (
-                <AccessibilitySettings
-                  settings={settings}
-                  updateSection={updateSection}
-                />
+                <div data-help-target="settings-accessibility">
+                  <AccessibilitySettings
+                    settings={settings}
+                    updateSection={updateSection}
+                  />
+                </div>
               )}
               {activeSection === "privacy" && (
-                <PrivacySettings
-                  settings={settings}
-                  updateSection={updateSection}
-                />
+                <div data-help-target="settings-privacy">
+                  <PrivacySettings
+                    settings={settings}
+                    updateSection={updateSection}
+                  />
+                </div>
               )}
               {activeSection === "account" && (
-                <AccountSettings
-                  user={user}
-                  setUser={setUser}
-                  loading={loading}
-                />
+                <div data-help-target="settings-account">
+                  <AccountSettings
+                    user={user}
+                    setUser={setUser}
+                    loading={loading}
+                  />
+                </div>
               )}
             </div>
           )}

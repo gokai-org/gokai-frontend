@@ -30,6 +30,11 @@ import { MasteryBoardWrapper } from "@/features/mastery/components/MasteryBoardW
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
+import {
+  createLockedBoardAccessTour,
+  createWritingBoardContextTour,
+} from "@/features/help/utils/contextualTours";
 
 type KanjiQuizCompletionResult = {
   newlyCompleted: boolean;
@@ -61,6 +66,7 @@ export default function KanjisView() {
   const mastered = useMasteredModules();
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
+  const [helpSelectedNodeId, setHelpSelectedNodeId] = useState<string | null>(null);
   const [quizKanji, setQuizKanji] = useState<{
     id: string;
     symbol: string;
@@ -141,6 +147,13 @@ export default function KanjisView() {
     }
 
     if (
+      helpSelectedNodeId &&
+      items.some((item) => item.id === helpSelectedNodeId)
+    ) {
+      return helpSelectedNodeId;
+    }
+
+    if (
       manualSelectedId &&
       items.some((item) => item.id === manualSelectedId)
     ) {
@@ -153,7 +166,7 @@ export default function KanjisView() {
       items[0]?.id ??
       null
     );
-  }, [detailNodeId, items, manualSelectedId, summary.currentKanjiId]);
+  }, [detailNodeId, helpSelectedNodeId, items, manualSelectedId, summary.currentKanjiId]);
 
   const layoutIds = useMemo(() => items.map((item) => item.id), [items]);
   const layout = useMemo(() => buildKanjiBoardLayout(layoutIds), [layoutIds]);
@@ -177,7 +190,12 @@ export default function KanjisView() {
     [detailNodeId, items],
   );
 
-  const focusedNodeId = detailNodeId ?? unlockFocusNodeId;
+  const helpNodeId = useMemo(
+    () => items.find((item) => item.status !== "locked")?.id ?? null,
+    [items],
+  );
+
+  const focusedNodeId = detailNodeId ?? helpSelectedNodeId ?? unlockFocusNodeId;
 
   // Phase 1 — structural graph: stable across interactions; rebuilds only when
   // items, layout, or quality params change.  Does NOT hold selection/shaking/
@@ -257,6 +275,60 @@ export default function KanjisView() {
   const handleCloseDetail = useCallback(() => {
     setDetailNodeId(null);
   }, []);
+
+  const focusHelpNode = useCallback(() => {
+    if (!helpNodeId) {
+      return;
+    }
+
+    setDetailNodeId(null);
+    setHelpSelectedNodeId(helpNodeId);
+  }, [helpNodeId]);
+
+  const openHelpLesson = useCallback(() => {
+    if (!helpNodeId) {
+      return;
+    }
+
+    setHelpSelectedNodeId(null);
+    setManualSelectedId(helpNodeId);
+    setDetailNodeId(helpNodeId);
+  }, [helpNodeId]);
+
+  const resetHelpTourState = useCallback(() => {
+    setHelpSelectedNodeId(null);
+    setDetailNodeId(null);
+  }, []);
+
+  const buildHelpTour = useCallback(
+    () => {
+      if (!helpNodeId) {
+        return createLockedBoardAccessTour({
+          id: "kanji-context-tour-locked",
+          title: "Guia de Kanji",
+          scopeSelector: '[data-help-surface="kanji-board"]',
+          boardLabel: "Tablero de kanji",
+          requirementLabel: "puntos suficientes",
+        });
+      }
+
+      return createWritingBoardContextTour({
+        id: "kanji-context-tour",
+        title: "Guia de Kanji",
+        scopeSelector: '[data-help-surface="kanji-board"]',
+        scriptLabel: "kanji",
+        unitLabel: "kanji",
+        lessonSummary: "simbolo, lecturas, significados y escritura",
+        focusNode: focusHelpNode,
+        openLesson: openHelpLesson,
+        resetTourState: resetHelpTourState,
+        includeScriptTabs:
+          typeof document !== "undefined" &&
+          document.querySelector('[data-help-target="writing-script-tabs"]') !== null,
+      });
+    },
+    [focusHelpNode, helpNodeId, openHelpLesson, resetHelpTourState],
+  );
 
   const handleQuizStart = useCallback(
     (
@@ -632,12 +704,13 @@ export default function KanjisView() {
     >
       <div
         ref={rootRef}
+        data-help-surface="kanji-board"
         data-kanji-interacting="false"
         data-kanji-quiz-active="false"
         data-drawer-open={drawerOpen ? "true" : "false"}
         className="absolute inset-0 overflow-hidden bg-surface-primary"
       >
-      <div
+        <div
         ref={backgroundRef}
         data-kanji-interacting="false"
         data-kanji-quality={qualityProfile.tier}
@@ -657,53 +730,55 @@ export default function KanjisView() {
           qualityProfile={qualityProfile}
           graphicsProfile={graphicsProfile}
         />
-      </div>
+        </div>
 
-      <div className="absolute inset-0 z-10">
-        <KanjiBoardMap
-          nodes={graph.nodes}
-          edges={graph.edges}
-          layout={layout}
-          onSelect={handleSelect}
-          onViewportChange={syncViewportToScene}
-          initialNodeId={selectedId}
-          focusedNodeId={focusedNodeId}
-          drawerOpen={drawerOpen}
-          onInteractionChange={handleInteractionChange}
-          qualityProfile={qualityProfile}
-          translateExtent={translateExtent}
-          onSetCenterReady={handleSetCenterReady}
+        <div data-help-target="board-canvas" className="absolute inset-0 z-10">
+          <KanjiBoardMap
+            nodes={graph.nodes}
+            edges={graph.edges}
+            layout={layout}
+            onSelect={handleSelect}
+            onViewportChange={syncViewportToScene}
+            initialNodeId={selectedId}
+            focusedNodeId={focusedNodeId}
+            drawerOpen={drawerOpen}
+            onInteractionChange={handleInteractionChange}
+            qualityProfile={qualityProfile}
+            translateExtent={translateExtent}
+            onSetCenterReady={handleSetCenterReady}
+          />
+        </div>
+
+        <LessonDrawer
+          open={detailNodeId !== null}
+          onClose={handleCloseDetail}
+          nodeId={detailNodeId}
+          mode="writing"
+          userId={GRAPH_USER_ID}
+          entityId={selectedProgress?.kanji.id ?? null}
+          entityKind={selectedProgress ? "kanji" : null}
+          kanjiCtaDisabled={selectedProgress?.status === "locked"}
+          kanjiCtaDisabledReason={
+            selectedProgress?.status === "locked"
+              ? `Consigue ${selectedProgress.completionScore}% en el kanji anterior para desbloquear la práctica.`
+              : undefined
+          }
+          onQuizStart={handleQuizStart}
         />
+
+        {detailNodeId === null && <ContextualHelpButton getTour={buildHelpTour} />}
+
+        {quizKanji !== null && (
+          <KanjiQuizModal
+            kanjiId={quizKanji.id}
+            label={quizKanji.symbol}
+            quizType={quizKanji.quizType}
+            currentModulePoints={userPoints}
+            wasCompletedBefore={quizKanji.wasCompletedBefore}
+            onClose={handleQuizEnd}
+          />
+        )}
       </div>
-
-      <LessonDrawer
-        open={detailNodeId !== null}
-        onClose={handleCloseDetail}
-        nodeId={detailNodeId}
-        mode="writing"
-        userId={GRAPH_USER_ID}
-        entityId={selectedProgress?.kanji.id ?? null}
-        entityKind={selectedProgress ? "kanji" : null}
-        kanjiCtaDisabled={selectedProgress?.status === "locked"}
-        kanjiCtaDisabledReason={
-          selectedProgress?.status === "locked"
-            ? `Consigue ${selectedProgress.completionScore}% en el kanji anterior para desbloquear la práctica.`
-            : undefined
-        }
-        onQuizStart={handleQuizStart}
-      />
-
-      {quizKanji !== null && (
-        <KanjiQuizModal
-          kanjiId={quizKanji.id}
-          label={quizKanji.symbol}
-          quizType={quizKanji.quizType}
-          currentModulePoints={userPoints}
-          wasCompletedBefore={quizKanji.wasCompletedBefore}
-          onClose={handleQuizEnd}
-        />
-      )}
-    </div>
     </MasteryBoardWrapper>
   );
 }

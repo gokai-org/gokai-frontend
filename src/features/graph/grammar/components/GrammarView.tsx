@@ -4,6 +4,12 @@ import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useSidebar } from "@/shared/components/SidebarContext";
+import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
+import { createGrammarBoardContextTour } from "@/features/help/utils/contextualTours";
+import {
+  HELP_GUIDE_GRAMMAR_EVENT,
+  type HelpGuideGrammarDetail,
+} from "@/features/help/utils/guideEvents";
 import { GrammarBoard } from "./board";
 import GrammarLessonModal from "./lesson/GrammarLessonModal";
 import GrammarQuizModal from "./lesson/exam/GrammarQuizModal";
@@ -25,6 +31,7 @@ export default function GrammarView() {
   const platformMotion = usePlatformMotion();
   const { setHidden } = useSidebar();
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
+  const [helpFocusedLessonId, setHelpFocusedLessonId] = useState<string | null>(null);
   const [stage, setStage] = useState<GrammarViewStage>("board");
 
   const { lesson, status: lessonStatus, error, refetch } = useGrammarLesson(selectedLessonId);
@@ -51,6 +58,14 @@ export default function GrammarView() {
         ),
       ),
     [platformMotion.durationScale, platformMotion.shouldUseLightAnimations],
+  );
+
+  const helpLessonId = useMemo(
+    () =>
+      board.cells.find((cell) => cell.interactive && !cell.progress.isMock)?.progress.id ??
+      board.activeId ??
+      null,
+    [board.activeId, board.cells],
   );
 
   useEffect(() => {
@@ -126,6 +141,78 @@ export default function GrammarView() {
     setStage("lesson");
   }, [stage]);
 
+  const focusHelpLesson = useCallback(() => {
+    if (!helpLessonId) {
+      return;
+    }
+
+    setSelectedLessonId(null);
+    setStage("board");
+    setHelpFocusedLessonId(helpLessonId);
+  }, [helpLessonId]);
+
+  const openHelpLesson = useCallback(() => {
+    if (!helpLessonId) {
+      return;
+    }
+
+    if (
+      selectedLessonId === helpLessonId &&
+      (stage === "lesson" || stage === "quiz" || stage === "zooming-in")
+    ) {
+      return;
+    }
+
+    setHelpFocusedLessonId(null);
+    setSelectedLessonId(helpLessonId);
+    setStage("zooming-in");
+  }, [helpLessonId, selectedLessonId, stage]);
+
+  const resetHelpTourState = useCallback(() => {
+    setHelpFocusedLessonId(null);
+    setSelectedLessonId(null);
+    setStage("board");
+  }, []);
+
+  const buildHelpTour = useCallback(
+    () =>
+      createGrammarBoardContextTour({
+        id: "grammar-context-tour",
+        title: "Guia de Grammar",
+        scopeSelector: '[data-help-surface="grammar-board"]',
+        focusLesson: focusHelpLesson,
+        openLesson: openHelpLesson,
+        resetTourState: resetHelpTourState,
+      }),
+    [focusHelpLesson, openHelpLesson, resetHelpTourState],
+  );
+
+  useEffect(() => {
+    const handleGrammarGuideEvent = (
+      event: Event,
+    ) => {
+      const customEvent = event as CustomEvent<HelpGuideGrammarDetail>;
+      const action = customEvent.detail?.action;
+
+      if (action === "focus") {
+        focusHelpLesson();
+      } else if (action === "open") {
+        openHelpLesson();
+      } else if (action === "reset") {
+        resetHelpTourState();
+      }
+    };
+
+    window.addEventListener(HELP_GUIDE_GRAMMAR_EVENT, handleGrammarGuideEvent);
+
+    return () => {
+      window.removeEventListener(
+        HELP_GUIDE_GRAMMAR_EVENT,
+        handleGrammarGuideEvent,
+      );
+    };
+  }, [focusHelpLesson, openHelpLesson, resetHelpTourState]);
+
   const boardTransitionState =
     stage === "board"
       ? "idle"
@@ -136,14 +223,20 @@ export default function GrammarView() {
           : "hidden";
 
   return (
-    <div className="absolute inset-0 h-full w-full overflow-hidden">
+    <div
+      data-help-surface="grammar-board"
+      className="absolute inset-0 h-full w-full overflow-hidden"
+    >
       <GrammarBoard
         board={board}
         status={status}
         onSelectLesson={handleSelectLesson}
         focusLessonId={selectedLessonId}
+        helpTargetLessonId={helpFocusedLessonId}
         transitionState={boardTransitionState}
       />
+
+      {stage === "board" ? <ContextualHelpButton getTour={buildHelpTour} /> : null}
 
       <AnimatePresence>
         {(stage === "lesson" || stage === "zooming-out") && selectedLessonId ? (

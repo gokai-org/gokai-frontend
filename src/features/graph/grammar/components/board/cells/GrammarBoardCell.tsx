@@ -30,6 +30,7 @@ type ArtworkFitProfile = {
 interface GrammarBoardCellProps {
   cell: GrammarBoardCellViewModel;
   onSelect: (lessonId: string, target: HTMLButtonElement | null) => void;
+  helpTarget?: boolean;
   isPortrait?: boolean;
   isCompactPortrait?: boolean;
   isTinyPortrait?: boolean;
@@ -615,6 +616,7 @@ function GrammarBoardCellPointsBadgeComponent({
 function GrammarBoardCellComponent({
   cell,
   onSelect,
+  helpTarget = false,
   isPortrait = false,
   isCompactPortrait = false,
   isTinyPortrait = false,
@@ -677,6 +679,8 @@ function GrammarBoardCellComponent({
         type="button"
         disabled={!interactive}
         onClick={(event) => onSelect(progress.id, event.currentTarget)}
+        data-help-target={helpTarget ? "grammar-focus-cell" : undefined}
+        data-help-target-priority={helpTarget ? "10" : undefined}
         className={`relative h-full w-full border font-sans ${outerCornerClass} ${shellClass} ${buttonHoverClass}`}
         aria-label={isComingSoonCell ? "Proximamente" : progress.title}
       >
@@ -725,6 +729,7 @@ function areCellsEqual(
 
   return (
     previous.onSelect === next.onSelect &&
+    previous.helpTarget === next.helpTarget &&
     previous.isPortrait === next.isPortrait &&
     previous.isCompactPortrait === next.isCompactPortrait &&
     previous.isTinyPortrait === next.isTinyPortrait &&

@@ -802,6 +802,7 @@ export function WritingBoardView({
   const boardContent = (
     <div
       ref={rootRef}
+      data-help-surface={`${scriptType}-board`}
       data-kanji-interacting="false"
       data-kanji-quiz-active={quizActive ? "true" : "false"}
       data-drawer-open={drawerOpen ? "true" : "false"}
@@ -829,7 +830,7 @@ export function WritingBoardView({
         />
       </div>
 
-      <div className="absolute inset-0 z-10">
+      <div data-help-target="board-canvas" className="absolute inset-0 z-10">
         <ReactFlowProvider>
           <WritingBoardMapInner
             nodes={graph.nodes}
@@ -854,10 +855,12 @@ export function WritingBoardView({
     </div>
   );
 
-  if (masteryModuleId) {
+  const masteryModule = masteryModuleId;
+
+  if (masteryModule) {
     return (
       <MasteryBoardWrapper
-        moduleId={masteryModuleId}
+        moduleId={masteryModule}
         currentPoints={masteryPoints}
         autoTriggerOnNewMastery={autoTriggerOnNewMastery}
         totalItems={items.length}

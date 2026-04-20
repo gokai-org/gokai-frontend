@@ -15,6 +15,12 @@ import { useSidebar } from "@/shared/components/SidebarContext";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
+import { createWritingBoardContextTour } from "@/features/help/utils/contextualTours";
+import {
+  HELP_GUIDE_WRITING_EVENT,
+  type HelpGuideWritingDetail,
+} from "@/features/help/utils/guideEvents";
 
 type KanaQuizCompletionResult = {
   newlyCompleted: boolean;
@@ -45,6 +51,7 @@ export default function HiraganaView() {
   const { setHidden } = useSidebar();
   const mastered = useMasteredModules();
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
+  const [helpFocusedNodeId, setHelpFocusedNodeId] = useState<string | null>(null);
   const [quizItem, setQuizItem] = useState<{
     id: string;
     label: string;
@@ -62,6 +69,8 @@ export default function HiraganaView() {
     [detailNodeId, items],
   );
 
+  const helpNodeId = useMemo(() => items[0]?.id ?? null, [items]);
+
   const handleNodeAction = useCallback((item: WritingBoardProgress) => {
     setDetailNodeId(item.id);
   }, []);
@@ -69,6 +78,73 @@ export default function HiraganaView() {
   const handleCloseDetail = useCallback(() => {
     setDetailNodeId(null);
   }, []);
+
+  const focusHelpNode = useCallback(() => {
+    if (!helpNodeId) {
+      return;
+    }
+
+    setDetailNodeId(null);
+    setHelpFocusedNodeId(helpNodeId);
+  }, [helpNodeId]);
+
+  const openHelpLesson = useCallback(() => {
+    if (!helpNodeId) {
+      return;
+    }
+
+    setHelpFocusedNodeId(null);
+    setDetailNodeId(helpNodeId);
+  }, [helpNodeId]);
+
+  const resetHelpTourState = useCallback(() => {
+    setHelpFocusedNodeId(null);
+    setDetailNodeId(null);
+  }, []);
+
+  const buildHelpTour = useCallback(
+    () =>
+      createWritingBoardContextTour({
+        id: "hiragana-context-tour",
+        title: "Guia de Hiragana",
+        scopeSelector: '[data-help-surface="hiragana-board"]',
+        scriptLabel: "hiragana",
+        unitLabel: "kana",
+        lessonSummary: "significado, lectura y trazado",
+        focusNode: focusHelpNode,
+        openLesson: openHelpLesson,
+        resetTourState: resetHelpTourState,
+        includeScriptTabs:
+          typeof document !== "undefined" &&
+          document.querySelector('[data-help-target="writing-script-tabs"]') !== null,
+      }),
+    [focusHelpNode, openHelpLesson, resetHelpTourState],
+  );
+
+  useEffect(() => {
+    const handleWritingGuideEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<HelpGuideWritingDetail>;
+      const detail = customEvent.detail;
+
+      if (detail?.script !== "hiragana") {
+        return;
+      }
+
+      if (detail.action === "focus") {
+        focusHelpNode();
+      } else if (detail.action === "open") {
+        openHelpLesson();
+      } else if (detail.action === "reset") {
+        resetHelpTourState();
+      }
+    };
+
+    window.addEventListener(HELP_GUIDE_WRITING_EVENT, handleWritingGuideEvent);
+
+    return () => {
+      window.removeEventListener(HELP_GUIDE_WRITING_EVENT, handleWritingGuideEvent);
+    };
+  }, [focusHelpNode, openHelpLesson, resetHelpTourState]);
 
   const handleQuizStart = useCallback(
     (
@@ -185,7 +261,7 @@ export default function HiraganaView() {
       onNodeAction={handleNodeAction}
       quizActive={quizItem !== null}
       drawerOpen={detailNodeId !== null}
-      focusedNodeId={detailNodeId}
+      focusedNodeId={detailNodeId ?? helpFocusedNodeId}
       masteryModuleId="hiragana"
       masteryPoints={userPoints}
       autoTriggerOnNewMastery={false}
@@ -209,6 +285,8 @@ export default function HiraganaView() {
         }
         onQuizStart={handleQuizStart}
       />
+
+      {detailNodeId === null && <ContextualHelpButton getTour={buildHelpTour} />}
 
       {quizItem && (
         <KanaQuizModal

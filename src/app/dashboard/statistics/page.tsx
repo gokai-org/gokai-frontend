@@ -24,10 +24,12 @@ export default function StatsPage() {
   if (loading) {
     return (
       <DashboardShell>
-        <div className="mb-6 flex justify-end">
-          <StatsPeriodFilter period={period} onChange={setPeriod} />
+        <div data-help-loading="true">
+          <div className="mb-6 flex justify-end">
+            <StatsPeriodFilter period={period} onChange={setPeriod} />
+          </div>
+          <StatsSkeleton />
         </div>
-        <StatsSkeleton />
       </DashboardShell>
     );
   }
@@ -42,15 +44,17 @@ export default function StatsPage() {
         disabled={!animationsEnabled}
         mode={heavyAnimationsEnabled ? "default" : "light"}
       >
-        <StatsBanner
-          title={banner.title}
-          subtitle={banner.subtitle}
-          averageScore={averageScore}
-          streak={streak}
-          loading={loading}
-          animationsEnabled={animationsEnabled}
-          heavyAnimationsEnabled={heavyAnimationsEnabled}
-        />
+        <div data-help-target="stats-banner">
+          <StatsBanner
+            title={banner.title}
+            subtitle={banner.subtitle}
+            averageScore={averageScore}
+            streak={streak}
+            loading={loading}
+            animationsEnabled={animationsEnabled}
+            heavyAnimationsEnabled={heavyAnimationsEnabled}
+          />
+        </div>
       </AnimatedEntrance>
 
       <AnimatedEntrance
@@ -59,11 +63,13 @@ export default function StatsPage() {
         disabled={!animationsEnabled}
         mode={heavyAnimationsEnabled ? "default" : "light"}
       >
-        <StatsOverview
-          data={data.overview}
-          loading={loading}
-          animationsEnabled={animationsEnabled}
-        />
+        <div data-help-target="stats-overview">
+          <StatsOverview
+            data={data.overview}
+            loading={loading}
+            animationsEnabled={animationsEnabled}
+          />
+        </div>
       </AnimatedEntrance>
 
       <AnimatedEntrance
@@ -71,11 +77,13 @@ export default function StatsPage() {
         disabled={!animationsEnabled}
         mode={heavyAnimationsEnabled ? "default" : "light"}
       >
-        <StatsActivitySection
-          data={data.activity}
-          loading={loading}
-          animationsEnabled={animationsEnabled}
-        />
+        <div data-help-target="stats-activity">
+          <StatsActivitySection
+            data={data.activity}
+            loading={loading}
+            animationsEnabled={animationsEnabled}
+          />
+        </div>
       </AnimatedEntrance>
 
       <AnimatedEntrance
@@ -96,11 +104,13 @@ export default function StatsPage() {
         disabled={!animationsEnabled}
         mode={heavyAnimationsEnabled ? "default" : "light"}
       >
-        <StatsStreakSection
-          data={data.streakCalendar}
-          loading={loading}
-          animationsEnabled={animationsEnabled}
-        />
+        <div data-help-target="stats-streak">
+          <StatsStreakSection
+            data={data.streakCalendar}
+            loading={loading}
+            animationsEnabled={animationsEnabled}
+          />
+        </div>
       </AnimatedEntrance>
 
       <AnimatedEntrance
@@ -108,7 +118,9 @@ export default function StatsPage() {
         disabled={!animationsEnabled}
         mode={heavyAnimationsEnabled ? "default" : "light"}
       >
-        <StatsCTA animationsEnabled={animationsEnabled} />
+        <div data-help-target="stats-cta">
+          <StatsCTA animationsEnabled={animationsEnabled} />
+        </div>
       </AnimatedEntrance>
     </DashboardShell>
   );
