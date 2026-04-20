@@ -39,11 +39,13 @@ export default function Page() {
         disabled={!animationsEnabled}
         mode={heavyAnimationsEnabled ? "default" : "light"}
       >
-        <ReviewBanner
-          pendingCount={reviewItems.length}
-          animationsEnabled={animationsEnabled}
-          heavyAnimationsEnabled={heavyAnimationsEnabled}
-        />
+        <div data-help-target="reviews-banner">
+          <ReviewBanner
+            pendingCount={reviewItems.length}
+            animationsEnabled={animationsEnabled}
+            heavyAnimationsEnabled={heavyAnimationsEnabled}
+          />
+        </div>
       </AnimatedEntrance>
 
       <AnimatedEntrance
@@ -52,12 +54,14 @@ export default function Page() {
         disabled={!animationsEnabled}
         mode={heavyAnimationsEnabled ? "default" : "light"}
       >
-        <ReviewPendingSection
-          loading={loading}
-          error={error}
-          items={reviewItems}
-          onStart={handleStartReview}
-        />
+        <div data-help-target="reviews-pending" data-help-loading={loading ? "true" : undefined}>
+          <ReviewPendingSection
+            loading={loading}
+            error={error}
+            items={reviewItems}
+            onStart={handleStartReview}
+          />
+        </div>
       </AnimatedEntrance>
 
       <AnimatedEntrance
@@ -65,7 +69,9 @@ export default function Page() {
         disabled={!animationsEnabled}
         mode={heavyAnimationsEnabled ? "default" : "light"}
       >
-        <ReviewCTA />
+        <div data-help-target="reviews-cta">
+          <ReviewCTA />
+        </div>
       </AnimatedEntrance>
     </DashboardShell>
   );

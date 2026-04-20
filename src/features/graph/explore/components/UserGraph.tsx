@@ -112,7 +112,10 @@ export default function UserGraph({
 
   if (loading) {
     return (
-      <div className="absolute inset-0 flex items-center justify-center text-content-tertiary">
+      <div
+        data-help-loading="true"
+        className="absolute inset-0 flex items-center justify-center text-content-tertiary"
+      >
         Cargando kanji…
       </div>
     );

@@ -125,7 +125,10 @@ export default function WritingSubMenu({
   const mastered = useMasteredModules();
 
   return (
-    <div className="fixed top-[68px] sm:top-[80px] md:top-[84px] left-1/2 -translate-x-1/2 z-40 pointer-events-none">
+    <div
+      data-help-target="writing-script-tabs"
+      className="fixed top-[68px] sm:top-[80px] md:top-[84px] left-1/2 -translate-x-1/2 z-40 pointer-events-none"
+    >
       <motion.div
         initial={{ y: -8, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}

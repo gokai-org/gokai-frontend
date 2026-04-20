@@ -42,6 +42,7 @@ import {
   useMasteredModulesLoading,
 } from "@/features/mastery/components/MasteredModulesProvider";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+import { HELP_GUIDE_LIBRARY_RESET_EVENT } from "@/features/help/utils/guideEvents";
 // import { getPrimaryMeaning } from "@/features/kanji";
 
 type QuizCompletionResult = {
@@ -383,6 +384,22 @@ export default function LibraryPage() {
     }
   };
 
+  useEffect(() => {
+    const resetGuideState = () => {
+      setDrawerEntity(null);
+      setSelectedCategory(null);
+      setSearchQuery("");
+      resetVocabularyView();
+      window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
+    };
+
+    window.addEventListener(HELP_GUIDE_LIBRARY_RESET_EVENT, resetGuideState);
+
+    return () => {
+      window.removeEventListener(HELP_GUIDE_LIBRARY_RESET_EVENT, resetGuideState);
+    };
+  }, [resetVocabularyView]);
+
   const totalBaseContentCount =
     kanjis.length + katakanas.length + hiraganas.length;
   const vocabularyCurrentCount = selectedSubtheme
@@ -405,11 +422,16 @@ export default function LibraryPage() {
       isGlobalLoading ||
       loadingKanjiStatus ||
       loadingKanaStatus ? (
-        <LibrarySkeleton />
+        <div data-help-loading="true">
+          <LibrarySkeleton />
+        </div>
       ) : (
-        <>
+        <div data-help-target="library-page">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-2 rounded-full border border-border-default bg-surface-secondary px-4 py-2">
+            <div
+              data-help-target="library-search"
+              className="flex items-center gap-2 rounded-full border border-border-default bg-surface-secondary px-4 py-2"
+            >
               <Search className="h-4 w-4 text-content-muted" />
               <input
                 type="text"
@@ -427,11 +449,13 @@ export default function LibraryPage() {
             disabled={!animationsEnabled}
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >
-            <CategoryFilter
-              categories={dynamicCategories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={handleCategoryChange}
-            />
+            <div data-help-target="library-categories">
+              <CategoryFilter
+                categories={dynamicCategories}
+                selectedCategory={selectedCategory}
+                onSelectCategory={handleCategoryChange}
+              />
+            </div>
           </AnimatedEntrance>
 
           {isSearching && !selectedCategory && (
@@ -495,12 +519,14 @@ export default function LibraryPage() {
                 disabled={!animationsEnabled}
                 mode={heavyAnimationsEnabled ? "default" : "light"}
               >
-                <LibraryRecentPanel
-                  recentItems={recentItems}
-                  kanjis={kanjis}
-                  onOpenRecent={() => setSelectedCategory("recent")}
-                  onKanjiClick={handleKanjiClick}
-                />
+                <div data-help-target="library-recent">
+                  <LibraryRecentPanel
+                    recentItems={recentItems}
+                    kanjis={kanjis}
+                    onOpenRecent={() => setSelectedCategory("recent")}
+                    onKanjiClick={handleKanjiClick}
+                  />
+                </div>
               </AnimatedEntrance>
 
               <AnimatedEntrance
@@ -508,47 +534,53 @@ export default function LibraryPage() {
                 className="order-2 min-w-0 xl:order-1"
                 disabled={!animationsEnabled}
               >
-                <SectionHeader
-                  className="mb-4"
-                  title="Todo el contenido"
-                  action={
-                    <span className="text-sm font-medium text-content-tertiary">
-                      {totalBaseContentCount} elementos
-                    </span>
-                  }
-                />
-
-                {allLibraryItems.length > 0 ? (
-                  <LibraryGrid
-                    items={allLibraryItems}
-                    favoriteKanjis={favoriteKanjis}
-                    favoriteHiraganas={favoriteHiraganas}
-                    favoriteKatakanas={favoriteKatakanas}
-                    lockedKanjiIds={lockedKanjiIds}
-                    lockedHiraganaIds={lockedHiraganaIds}
-                    lockedKatakanaIds={lockedKatakanaIds}
-                    newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
-                    newlyUnlockedKanaIds={newlyUnlockedKanaIds}
-                    toggleFavoriteKanji={toggleFavoriteKanji}
-                    toggleFavoriteHiragana={(id) =>
-                      void toggleFavorite(id, "hiragana")
-                    }
-                    toggleFavoriteKatakana={(id) =>
-                      void toggleFavorite(id, "katakana")
-                    }
-                    onKanjiClick={handleKanjiClick}
-                    onKanaClick={handleKanaClick}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="mb-2 text-xl font-bold text-content-primary">
-                      No hay contenido
-                    </h3>
-                    <p className="max-w-md text-center text-content-secondary">
-                      No encontramos contenido disponible.
-                    </p>
+                <div data-help-target="library-main-section">
+                  <div data-help-target="library-main-overview">
+                    <SectionHeader
+                      className="mb-4"
+                      title="Todo el contenido"
+                      action={
+                        <span className="text-sm font-medium text-content-tertiary">
+                          {totalBaseContentCount} elementos
+                        </span>
+                      }
+                    />
                   </div>
-                )}
+
+                  <div data-help-target="library-main-grid">
+                    {allLibraryItems.length > 0 ? (
+                      <LibraryGrid
+                        items={allLibraryItems}
+                        favoriteKanjis={favoriteKanjis}
+                        favoriteHiraganas={favoriteHiraganas}
+                        favoriteKatakanas={favoriteKatakanas}
+                        lockedKanjiIds={lockedKanjiIds}
+                        lockedHiraganaIds={lockedHiraganaIds}
+                        lockedKatakanaIds={lockedKatakanaIds}
+                        newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
+                        newlyUnlockedKanaIds={newlyUnlockedKanaIds}
+                        toggleFavoriteKanji={toggleFavoriteKanji}
+                        toggleFavoriteHiragana={(id) =>
+                          void toggleFavorite(id, "hiragana")
+                        }
+                        toggleFavoriteKatakana={(id) =>
+                          void toggleFavorite(id, "katakana")
+                        }
+                        onKanjiClick={handleKanjiClick}
+                        onKanaClick={handleKanaClick}
+                      />
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-16">
+                        <h3 className="mb-2 text-xl font-bold text-content-primary">
+                          No hay contenido
+                        </h3>
+                        <p className="max-w-md text-center text-content-secondary">
+                          No encontramos contenido disponible.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </AnimatedEntrance>
             </div>
           )}
@@ -1066,7 +1098,7 @@ export default function LibraryPage() {
               onClose={handleKanaQuizClose}
             />
           )}
-        </>
+        </div>
       )}
     </DashboardShell>
   );

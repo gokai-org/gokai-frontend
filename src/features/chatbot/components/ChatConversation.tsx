@@ -29,7 +29,11 @@ export function ChatConversation({
       mode={heavyAnimationsEnabled ? "default" : "light"}
       className="w-full"
     >
-      <section className="w-full rounded-[30px] border border-border-subtle bg-surface-elevated shadow-[0_2px_18px_-8px_rgba(0,0,0,0.08)]">
+      <section
+        data-help-target="chat-conversation"
+        data-help-loading={isBootstrapping ? "true" : undefined}
+        className="w-full rounded-[30px] border border-border-subtle bg-surface-elevated shadow-[0_2px_18px_-8px_rgba(0,0,0,0.08)]"
+      >
         <div className="border-b border-border-subtle bg-surface-primary px-4 py-4 sm:px-6">
           <div className="flex items-center justify-between gap-4">
             <div>
@@ -47,7 +51,7 @@ export function ChatConversation({
           </div>
         </div>
 
-        <div className="px-3 py-3 sm:px-5 sm:py-5">
+        <div data-help-target="chat-messages" className="px-3 py-3 sm:px-5 sm:py-5">
           {isBootstrapping ? (
             <ChatSkeleton />
           ) : messages.length === 0 ? (

@@ -138,7 +138,10 @@ export function ChatInput({
   };
 
   return (
-    <div className="border-t border-border-default bg-surface-primary/95 px-4 py-3 backdrop-blur-sm sm:px-6 sm:py-4">
+    <div
+      data-help-target="chat-input"
+      className="border-t border-border-default bg-surface-primary/95 px-4 py-3 backdrop-blur-sm sm:px-6 sm:py-4"
+    >
       <div className="mx-auto w-full max-w-5xl">
         <ChatRecordingPanel
           isRecording={isRecording}
@@ -163,6 +166,7 @@ export function ChatInput({
             type="button"
             onClick={handleMicClick}
             disabled={disabled || isPreparing}
+            data-help-target="chat-mic"
             className={[
               "flex h-11 w-11 shrink-0 items-center justify-center self-center rounded-full border transition-all duration-300",
               isRecording

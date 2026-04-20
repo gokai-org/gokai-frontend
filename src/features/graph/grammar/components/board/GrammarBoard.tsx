@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   GrammarBoardCell,
   GrammarBoardCellPointsBadge,
-} from "@/features/graph/grammar/components/board/cells/GrammarBoardCell";
+} from "./cells/GrammarBoardCell";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { GrammarBoardBackground } from "./overlays/GrammarBoardBackground";
 import GrammarBoardLoading from "./GrammarBoardLoading";
@@ -27,6 +27,7 @@ interface GrammarBoardProps {
   status: GrammarBoardLoadStatus;
   onSelectLesson: (lessonId: string) => void;
   focusLessonId?: string | null;
+  helpTargetLessonId?: string | null;
   transitionState?: GrammarBoardTransitionState;
 }
 
@@ -91,6 +92,7 @@ export function GrammarBoard({
   status,
   onSelectLesson,
   focusLessonId = null,
+  helpTargetLessonId = null,
   transitionState = "idle",
 }: GrammarBoardProps) {
   const showLoading = status === "idle" || status === "loading";
@@ -102,6 +104,8 @@ export function GrammarBoard({
 
   // Portrait mode: use vertical snake layout
   const isPortrait = viewportSize.width > 0 && viewportSize.height > viewportSize.width;
+  const isCompactPortrait = isPortrait && viewportSize.width > 0 && viewportSize.width <= 430;
+  const isTinyPortrait = isPortrait && viewportSize.width > 0 && viewportSize.width <= 375;
 
   const boardItems = useMemo(
     () => board.cells.map((c) => c.progress),
@@ -123,6 +127,11 @@ export function GrammarBoard({
       if (viewport && target) {
         const viewportRect = viewport.getBoundingClientRect();
         const targetRect = target.getBoundingClientRect();
+
+        setViewportSize({
+          width: Math.max(viewport.clientWidth, Math.round(viewportRect.width)),
+          height: Math.max(viewport.clientHeight, Math.round(viewportRect.height)),
+        });
 
         setFocusTargetRect({
           left: targetRect.left - viewportRect.left,
@@ -288,14 +297,32 @@ export function GrammarBoard({
   ]);
 
   const boardFrameClassName = isPortrait
-    ? "h-full w-full px-3 pb-3 sm:px-6 sm:pb-4"
+    ? isTinyPortrait
+      ? "h-full w-full px-4 pb-2.5"
+      : isCompactPortrait
+        ? "h-full w-full px-4 pb-3"
+        : "h-full w-full px-3 pb-3 sm:px-6 sm:pb-4"
     : "h-full w-full p-6 sm:p-8 lg:p-10";
+
+  const boardCanvasClassName = isPortrait
+    ? isTinyPortrait
+      ? "relative mx-auto h-full w-[92%] max-w-[19.75rem] rounded-[24px]"
+      : isCompactPortrait
+        ? "relative mx-auto h-full w-[94%] max-w-[22rem] rounded-[24px]"
+        : "relative mx-auto h-full w-[96%] max-w-[27rem] rounded-[24px]"
+    : "relative h-full w-full rounded-[24px]";
 
   const boardFrameStyle = isPortrait
     ? {
-        // 3.75rem ≈ 60px — just enough to clear the fixed nav bar (~56px)
-        paddingTop: "calc(env(safe-area-inset-top, 0px) + 3.75rem)",
-        paddingBottom: "max(0.75rem, env(safe-area-inset-bottom, 0px))",
+        // Keep enough clearance for the fixed nav while preserving more room on tiny phones.
+        paddingTop: isTinyPortrait
+          ? "calc(env(safe-area-inset-top, 0px) + 3.35rem)"
+          : isCompactPortrait
+            ? "calc(env(safe-area-inset-top, 0px) + 3.5rem)"
+            : "calc(env(safe-area-inset-top, 0px) + 3.75rem)",
+        paddingBottom: isTinyPortrait
+          ? "max(0.5rem, env(safe-area-inset-bottom, 0px))"
+          : "max(0.75rem, env(safe-area-inset-bottom, 0px))",
       }
     : undefined;
 
@@ -308,6 +335,7 @@ export function GrammarBoard({
         <motion.div
           key="grammar-board-loading"
           className="absolute inset-0"
+          data-help-loading="true"
           exit={
             shouldAnimateBoardEntrance
               ? {
@@ -329,6 +357,7 @@ export function GrammarBoard({
           key="grammar-board-content"
           ref={setBoardViewportRef}
           className="absolute inset-0 overflow-hidden select-none"
+          data-help-target="grammar-board-canvas"
           initial={
             shouldAnimateBoardReveal
               ? {
@@ -362,13 +391,17 @@ export function GrammarBoard({
             animate={boardViewportAnimation}
           >
             <div className={boardFrameClassName} style={boardFrameStyle}>
-              <div className="relative h-full w-full rounded-[24px]">
+              <div className={boardCanvasClassName}>
                 <div className="relative z-10 h-full w-full">
                   {activeBoard.cells.map((cell) => (
                     <GrammarBoardCell
                       key={cell.progress.id}
                       cell={cell}
                       onSelect={handleSelect}
+                      helpTarget={cell.progress.id === helpTargetLessonId}
+                      isPortrait={isPortrait}
+                      isCompactPortrait={isCompactPortrait}
+                      isTinyPortrait={isTinyPortrait}
                     />
                   ))}
 
@@ -390,6 +423,7 @@ export function GrammarBoard({
                           left={badgePosition.left}
                           top={badgePosition.top}
                           compact={isPortrait}
+                          tiny={isTinyPortrait}
                         />
                       );
                     })}

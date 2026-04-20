@@ -195,6 +195,7 @@ export default function KanaLesson({
             animate="center"
             exit="exit"
             transition={LESSON_SECTION_TRANSITION}
+            data-help-target="lesson-section-content"
             className="origin-center will-change-transform"
             style={{ transformStyle: "preserve-3d" }}
           >
@@ -441,7 +442,7 @@ export default function KanaLesson({
         </AnimatePresence>
       </div>
 
-      <div>
+      <div data-help-target="lesson-quiz-actions">
         {onQuizStart && (
           <LessonCTA
             variant={ctaDisabled ? "disabled" : "complete"}

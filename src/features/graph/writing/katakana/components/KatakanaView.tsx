@@ -15,6 +15,11 @@ import { useSidebar } from "@/shared/components/SidebarContext";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
+import {
+  createLockedBoardAccessTour,
+  createWritingBoardContextTour,
+} from "@/features/help/utils/contextualTours";
 
 type KanaQuizCompletionResult = {
   newlyCompleted: boolean;
@@ -47,6 +52,7 @@ export default function KatakanaView() {
 
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
+  const [helpSelectedNodeId, setHelpSelectedNodeId] = useState<string | null>(null);
   const [quizItem, setQuizItem] = useState<{
     id: string;
     label: string;
@@ -67,6 +73,13 @@ export default function KatakanaView() {
     }
 
     if (
+      helpSelectedNodeId &&
+      items.some((item) => item.id === helpSelectedNodeId)
+    ) {
+      return helpSelectedNodeId;
+    }
+
+    if (
       manualSelectedId &&
       items.some((item) => item.id === manualSelectedId)
     ) {
@@ -78,11 +91,16 @@ export default function KatakanaView() {
       items[0]?.id ??
       null
     );
-  }, [detailNodeId, items, manualSelectedId]);
+  }, [detailNodeId, helpSelectedNodeId, items, manualSelectedId]);
 
   const selectedProgress = useMemo(
     () => items.find((item) => item.id === selectedId) ?? null,
     [items, selectedId],
+  );
+
+  const helpNodeId = useMemo(
+    () => items.find((item) => item.status !== "locked")?.id ?? null,
+    [items],
   );
 
   const handleNodeAction = useCallback((item: WritingBoardProgress) => {
@@ -93,6 +111,60 @@ export default function KatakanaView() {
   const handleCloseDetail = useCallback(() => {
     setDetailNodeId(null);
   }, []);
+
+  const focusHelpNode = useCallback(() => {
+    if (!helpNodeId) {
+      return;
+    }
+
+    setDetailNodeId(null);
+    setHelpSelectedNodeId(helpNodeId);
+  }, [helpNodeId]);
+
+  const openHelpLesson = useCallback(() => {
+    if (!helpNodeId) {
+      return;
+    }
+
+    setHelpSelectedNodeId(null);
+    setManualSelectedId(helpNodeId);
+    setDetailNodeId(helpNodeId);
+  }, [helpNodeId]);
+
+  const resetHelpTourState = useCallback(() => {
+    setHelpSelectedNodeId(null);
+    setDetailNodeId(null);
+  }, []);
+
+  const buildHelpTour = useCallback(
+    () => {
+      if (!helpNodeId) {
+        return createLockedBoardAccessTour({
+          id: "katakana-context-tour-locked",
+          title: "Guia de Katakana",
+          scopeSelector: '[data-help-surface="katakana-board"]',
+          boardLabel: "Tablero de katakana",
+          requirementLabel: "puntos suficientes",
+        });
+      }
+
+      return createWritingBoardContextTour({
+        id: "katakana-context-tour",
+        title: "Guia de Katakana",
+        scopeSelector: '[data-help-surface="katakana-board"]',
+        scriptLabel: "katakana",
+        unitLabel: "kana",
+        lessonSummary: "significado, lectura y trazado",
+        focusNode: focusHelpNode,
+        openLesson: openHelpLesson,
+        resetTourState: resetHelpTourState,
+        includeScriptTabs:
+          typeof document !== "undefined" &&
+          document.querySelector('[data-help-target="writing-script-tabs"]') !== null,
+      });
+    },
+    [focusHelpNode, helpNodeId, openHelpLesson, resetHelpTourState],
+  );
 
   const handleQuizStart = useCallback(
     (
@@ -210,7 +282,7 @@ export default function KatakanaView() {
       quizActive={quizItem !== null}
       drawerOpen={detailNodeId !== null}
       initialNodeId={selectedId}
-      focusedNodeId={detailNodeId}
+      focusedNodeId={detailNodeId ?? helpSelectedNodeId}
       masteryModuleId="katakana"
       masteryPoints={userPoints}
       autoTriggerOnNewMastery={false}
@@ -234,6 +306,8 @@ export default function KatakanaView() {
         }
         onQuizStart={handleQuizStart}
       />
+
+      {detailNodeId === null && <ContextualHelpButton getTour={buildHelpTour} />}
 
       {quizItem && (
         <KanaQuizModal

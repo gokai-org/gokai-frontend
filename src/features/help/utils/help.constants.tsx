@@ -1,6 +1,7 @@
 import {
   BarChart3,
   BookOpen,
+  BookText,
   GraduationCap,
   Heart,
   HelpCircle,
@@ -12,6 +13,7 @@ import {
   Star,
   Target,
   Zap,
+  Languages,
 } from "lucide-react";
 import type { FaqItem, GuideCardItem, TipItem } from "@/features/help/types";
 import type { HelpTabKey } from "@/features/help/types";
@@ -111,6 +113,24 @@ export const HELP_GUIDES: GuideCardItem[] = [
     color: "text-indigo-600 dark:text-indigo-400",
     bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
     tourIndex: 5,
+  },
+  {
+    icon: <BookText className="w-6 h-6" />,
+    title: "Tablero de Grammar",
+    description:
+      "Recorre el tablero de gramática y abre una lección visual paso a paso.",
+    color: "text-orange-600 dark:text-orange-400",
+    bgColor: "bg-orange-50 dark:bg-orange-950/40",
+    tourIndex: 6,
+  },
+  {
+    icon: <Languages className="w-6 h-6" />,
+    title: "Escritura de Hiragana",
+    description:
+      "Explora el tablero de hiragana, sus nodos y la lección lateral con guía visual.",
+    color: "text-fuchsia-600 dark:text-fuchsia-400",
+    bgColor: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
+    tourIndex: 7,
   },
 ];
 

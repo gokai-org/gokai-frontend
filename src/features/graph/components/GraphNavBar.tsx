@@ -70,6 +70,7 @@ export default function GraphNavBar() {
   return (
     <div
       ref={navRef}
+      data-help-target="graph-nav"
       data-zoom-exclude="true"
       className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
     >

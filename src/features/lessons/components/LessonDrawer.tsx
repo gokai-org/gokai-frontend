@@ -267,6 +267,8 @@ export default function LessonDrawer({
 
           <div className={wrapperClasses}>
             <motion.aside
+              data-help-target="lesson-drawer"
+              data-help-loading={loading ? "true" : undefined}
               className={asideClasses}
               initial={initialAnimation}
               animate={animateAnimation}
@@ -364,7 +366,10 @@ export default function LessonDrawer({
                 )}
               </div>
 
-              <div className="lesson-drawer-body flex-1 overflow-y-auto px-3 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4 lg:px-6 lg:pb-6 lg:pt-5">
+              <div
+                data-help-target="lesson-content"
+                className="lesson-drawer-body flex-1 overflow-y-auto px-3 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4 lg:px-6 lg:pb-6 lg:pt-5"
+              >
                 {loading && <SkeletonDrawerContent />}
 
                 {!loading && !active && (

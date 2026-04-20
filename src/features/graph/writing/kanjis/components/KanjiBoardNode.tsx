@@ -254,7 +254,11 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
         style={HANDLE_RIGHT}
       />
 
-      <div className="flex h-full w-full flex-col items-center justify-start pt-2">
+      <div
+        data-help-target={selected ? "writing-focus-node" : undefined}
+        data-help-target-priority={selected ? "10" : undefined}
+        className="flex h-full w-full flex-col items-center justify-start pt-2"
+      >
         <div className="relative flex h-[138px] w-[138px] items-center justify-center">
           <div
             className={[

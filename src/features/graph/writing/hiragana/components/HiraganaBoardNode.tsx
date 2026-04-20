@@ -143,7 +143,11 @@ function HiraganaBoardNode({ data }: NodeProps<WritingBoardNodeData>) {
       <Handle id="source-left" type="source" position={Position.Left} style={HANDLE_LEFT} />
       <Handle id="source-right" type="source" position={Position.Right} style={HANDLE_RIGHT} />
 
-      <div className="flex h-full w-full flex-col items-center justify-start pt-2">
+      <div
+        data-help-target={selected ? "writing-focus-node" : undefined}
+        data-help-target-priority={selected ? "10" : undefined}
+        className="flex h-full w-full flex-col items-center justify-start pt-2"
+      >
         <div className="relative flex h-[138px] w-[138px] items-center justify-center">
           {/* Glow / pulse / breathe halo — circular behind the shogi shape */}
           <div

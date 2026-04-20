@@ -74,12 +74,16 @@ export default function GrammarLessonModal({
         variants={panelVariants}
         initial="hidden"
         animate={isClosing ? "closing" : "visible"}
+        data-help-target="grammar-lesson-modal"
         className="relative flex h-[92dvh] w-[calc(100vw-2rem)] max-w-3xl flex-col overflow-hidden rounded-3xl shadow-2xl sm:h-[90dvh] sm:max-w-4xl lg:h-[calc(100dvh-2rem)] lg:w-[calc(100vw-2rem)] lg:max-w-[1680px] lg:rounded-none lg:shadow-none"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="relative z-10 flex-1 min-h-0 overflow-hidden lg:p-5">
           {status === "loading" || status === "idle" ? (
-            <div className="flex h-full min-h-[320px] flex-col items-center justify-center gap-4 rounded-[34px] border border-black/[0.05] bg-surface-primary shadow-2xl dark:border-white/[0.08]">
+            <div
+              data-help-loading="true"
+              className="flex h-full min-h-[320px] flex-col items-center justify-center gap-4 rounded-[34px] border border-black/[0.05] bg-surface-primary shadow-2xl dark:border-white/[0.08]"
+            >
               <div className="flex h-16 w-16 items-center justify-center rounded-[28px] border border-black/[0.05] bg-surface-secondary/45 shadow-[0_16px_34px_rgba(0,0,0,0.12)] dark:border-white/[0.08]">
                 <BookText className="h-6 w-6 text-accent" />
               </div>

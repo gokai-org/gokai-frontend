@@ -47,7 +47,10 @@ export function SettingsSidebar({
   return (
     <>
       {/* Mobile: horizontal scrollable tab strip */}
-      <div className="sm:hidden w-full border-b border-border-default bg-surface-primary overflow-x-auto flex-shrink-0">
+      <div
+        data-help-target="settings-sidebar"
+        className="sm:hidden w-full border-b border-border-default bg-surface-primary overflow-x-auto flex-shrink-0"
+      >
         <nav className="flex gap-1 px-2 py-2 min-w-max">
           {menuItems.map((item) => {
             const IconComponent = item.icon;
@@ -72,7 +75,7 @@ export function SettingsSidebar({
       </div>
 
       {/* sm+: vertical sidebar */}
-      <aside className="hidden sm:block sm:w-20 md:w-72 bg-surface-primary border-r border-border-default self-stretch flex-shrink-0">
+      <aside data-help-target="settings-sidebar" className="hidden sm:block sm:w-20 md:w-72 bg-surface-primary border-r border-border-default self-stretch flex-shrink-0">
         <div className="px-2 md:pl-0 md:pr-4 py-6">
           <h2 className="hidden md:block text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-4 pl-3">
             Configuración
