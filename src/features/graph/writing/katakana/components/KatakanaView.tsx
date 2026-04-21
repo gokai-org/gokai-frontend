@@ -24,6 +24,7 @@ import {
 type KanaQuizCompletionResult = {
   newlyCompleted: boolean;
   newlyCompletedPoints: number;
+  resultingModulePoints: number;
   dominated: boolean;
   score: number;
   triggeredModuleMastery: boolean;
@@ -59,6 +60,7 @@ export default function KatakanaView() {
     quizType?: KanaQuizType;
     wasCompletedBefore: boolean;
     isPracticeOnly: boolean;
+    progressEligible: boolean;
   } | null>(
     null,
   );
@@ -100,6 +102,11 @@ export default function KatakanaView() {
 
   const helpNodeId = useMemo(
     () => items.find((item) => item.status !== "locked")?.id ?? null,
+    [items],
+  );
+  const currentProgressKanaId = useMemo(
+    () =>
+      [...items].reverse().find((item) => item.status !== "locked")?.id ?? null,
     [items],
   );
 
@@ -178,16 +185,22 @@ export default function KatakanaView() {
       wasMasteredBeforeQuizRef.current = mastered.has("katakana");
       const wasCompletedBefore =
         items.find((item) => item.id === entity.id)?.status === "completed";
+      const progressEligible =
+        quizType === undefined &&
+        !wasCompletedBefore &&
+        entity.id === currentProgressKanaId;
       setDetailNodeId(null);
       setQuizItem({
         id: entity.id,
         label: entity.symbol,
         quizType,
         wasCompletedBefore,
-        isPracticeOnly: quizType !== undefined || wasCompletedBefore,
+        isPracticeOnly:
+          quizType !== undefined || wasCompletedBefore || !progressEligible,
+        progressEligible,
       });
     },
-    [items, mastered],
+    [currentProgressKanaId, items, mastered],
   );
 
   const handleQuizEnd = useCallback((result?: KanaQuizCompletionResult) => {
@@ -322,6 +335,7 @@ export default function KatakanaView() {
           quizType={quizItem.quizType}
           currentModulePoints={userPoints}
           wasCompletedBefore={quizItem.wasCompletedBefore}
+          progressEligible={quizItem.progressEligible}
           onClose={handleQuizEnd}
         />
       )}

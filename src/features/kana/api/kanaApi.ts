@@ -11,6 +11,9 @@ import type {
 } from "@/features/kana/types";
 import { normalizeKanaQuizQuestion } from "@/features/kana/utils/quizParser";
 
+const KANA_CONTENT_CACHE_TTL_MS = 1000 * 60 * 10;
+const KANA_PROGRESS_CACHE_TTL_MS = 30_000;
+
 /* ── Funciones unificadas ──────────────────────────────── */
 
 function normalizeKanaExamResponse(raw: KanaExamResponseRaw): KanaExamResponse {
@@ -24,12 +27,22 @@ function normalizeKanaExamResponse(raw: KanaExamResponseRaw): KanaExamResponse {
 export function listKanaCatalog() {
   return apiFetch<KanaListResponse>("/api/content/kana", {
     cache: "no-store",
+  }, {
+    dedupeKey: "/api/content/kana",
+    cacheKey: "/api/content/kana",
+    cacheTtlMs: KANA_CONTENT_CACHE_TTL_MS,
   });
 }
 
 export function listKana(kanaType: KanaType) {
-  return apiFetch<Kana[]>(`/api/content/kana?kana_type=${kanaType}`, {
+  const path = `/api/content/kana?kana_type=${kanaType}`;
+
+  return apiFetch<Kana[]>(path, {
     cache: "no-store",
+  }, {
+    dedupeKey: path,
+    cacheKey: path,
+    cacheTtlMs: KANA_CONTENT_CACHE_TTL_MS,
   });
 }
 
@@ -51,6 +64,11 @@ export function getKanaProgress() {
     "/api/content/kana/progress",
     {
       cache: "no-store",
+    },
+    {
+      dedupeKey: "/api/content/kana/progress",
+      cacheKey: "/api/content/kana/progress",
+      cacheTtlMs: KANA_PROGRESS_CACHE_TTL_MS,
     },
   );
 }

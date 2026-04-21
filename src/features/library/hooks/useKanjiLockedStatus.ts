@@ -30,6 +30,7 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
     if (knownUserId && cached.userId !== knownUserId) return null;
     return cached;
   })()).current;
+  const hasInitialCache = initialCache !== null;
 
   const [userPoints, setUserPoints] = useState<number>(
     () => initialCache?.userPoints ?? 0,
@@ -38,7 +39,9 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
     () => initialCache?.results ?? [],
   );
   const [loading, setLoading] = useState(() => initialCache === null);
-  const [hasResolvedInitialStatus, setHasResolvedInitialStatus] = useState(false);
+  const [hasResolvedInitialStatus, setHasResolvedInitialStatus] = useState(
+    hasInitialCache,
+  );
   const optimisticUserPointsRef = useRef(initialCache?.userPoints ?? 0);
   const activeUserIdRef = useRef<string | null>(initialCache?.userId ?? knownUserId);
   const resultsRef = useRef<KanjiLessonResult[]>(initialCache?.results ?? []);
@@ -90,7 +93,7 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
     try {
       const [user, lessonResultsResponse] = await Promise.all([
         getCurrentUser().catch(() => null),
-        getKanjiLessonResults().catch(() => null),
+        getKanjiLessonResults({ limit: 100 }).catch(() => null),
       ]);
 
       nextPoints = typeof user?.points === "number" ? user.points : 0;

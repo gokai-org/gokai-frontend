@@ -42,6 +42,7 @@ export interface KanaQuizModalProps {
   quizType?: KanaQuizType;
   currentModulePoints: number;
   wasCompletedBefore?: boolean;
+  progressEligible?: boolean;
   onClose: (result?: KanaQuizCompletionResult) => void;
   onComplete?: (result: KanaQuizCompletionResult) => void;
 }
@@ -53,13 +54,15 @@ export function KanaQuizModal({
   quizType,
   currentModulePoints,
   wasCompletedBefore = false,
+  progressEligible = true,
   onClose,
   onComplete,
 }: KanaQuizModalProps) {
   const quiz = useKanaQuiz();
   const platformMotion = usePlatformMotion();
   const autoClosedForMasteryRef = useRef(false);
-  const shouldPersistProgress = !wasCompletedBefore && quizType === undefined;
+  const shouldPersistProgress =
+    progressEligible && !wasCompletedBefore && quizType === undefined;
 
   const overlayVariants = useMemo(
     () => ({
@@ -149,7 +152,9 @@ export function KanaQuizModal({
   } = quiz;
 
   const isPracticeSession = quiz.totalRounds === 1;
+  const isProgressSession = shouldPersistProgress;
   const didPerfectMixedCompletion =
+    isProgressSession &&
     !isPracticeSession &&
     finalScore === 100 &&
     (state.step === "summary" || state.step === "celebration");
@@ -164,11 +169,16 @@ export function KanaQuizModal({
     ? 0
     : shouldShowUnlockedMastery
       ? Math.max(awardedPointsDelta, KANA_COMPLETION_REWARD)
-      : pointsDelta;
-  const shouldHidePointsDelta = isPracticeSession || reachedMasteryThisAttempt;
-  const displayedUpdatedPoints = isPracticeSession ? null : updatedPoints;
+      : isProgressSession
+        ? pointsDelta
+        : 0;
+  const shouldHidePointsDelta =
+    !isProgressSession || isPracticeSession || reachedMasteryThisAttempt;
+  const displayedUpdatedPoints =
+    isProgressSession && !isPracticeSession ? updatedPoints : null;
   const resultingModulePoints =
-    displayedUpdatedPoints ?? currentModulePoints + awardedPointsDelta;
+    displayedUpdatedPoints ??
+    currentModulePoints + (isProgressSession ? awardedPointsDelta : 0);
   const triggeredModuleMastery =
     isNewlyCompleted &&
     moduleMasteryThreshold !== null &&
@@ -560,14 +570,19 @@ export function KanaQuizModal({
                   onClose={handleClose}
                 />
               ) : (
-              <UnlockedMasterySequence
-                title={`Dominaste este ${kanaTypeLabel.toLowerCase()} por primera vez`}
-                subtitle={`Completaste el quiz perfecto y desbloqueaste progreso nuevo${label ? ` para ${label}` : ""}.`}
-                score={finalScore}
-                symbol={label || "あ"}
-                pointsDelta={displayPointsDelta}
-                onClose={handleClose}
-              />
+                <KanaQuizSummary
+                  score={finalScore}
+                  roundResults={roundResults}
+                  pointsDelta={displayPointsDelta}
+                  error={submitError}
+                  kanaTypeLabel={kanaTypeLabel}
+                  sessionType={quiz.sessionType}
+                  totalRounds={quiz.totalRounds}
+                  hidePointsDelta={shouldHidePointsDelta}
+                  reviewMode={!isProgressSession}
+                  onRetry={handleRetry}
+                  onClose={handleClose}
+                />
               ))}
 
             {state.step === "summary" &&
@@ -610,6 +625,7 @@ export function KanaQuizModal({
                 sessionType={quiz.sessionType}
                 totalRounds={quiz.totalRounds}
                 hidePointsDelta={shouldHidePointsDelta}
+                reviewMode={!isProgressSession}
                 onRetry={handleRetry}
                 onClose={handleClose}
               />
@@ -660,6 +676,7 @@ function KanaQuizSummary({
   sessionType,
   totalRounds,
   hidePointsDelta = false,
+  reviewMode = false,
   onRetry,
   onClose,
 }: {
@@ -671,6 +688,7 @@ function KanaQuizSummary({
   sessionType: KanaQuizType | "mixed";
   totalRounds: number;
   hidePointsDelta?: boolean;
+  reviewMode?: boolean;
   onRetry: () => void;
   onClose: () => void;
 }) {
@@ -687,9 +705,16 @@ function KanaQuizSummary({
   };
   const scoreStyle = score >= 70 ? { color: "var(--accent)" } : undefined;
   const statusClass = "text-content-primary";
-  const statusLabel = score >= 70 ? "Buen intento" : "Intentalo de nuevo";
-  const subtitle =
-    totalRounds === 1
+  const statusLabel = reviewMode
+    ? score === 100
+      ? "Repaso completado"
+      : "Repaso finalizado"
+    : score >= 70
+      ? "Buen intento"
+      : "Intentalo de nuevo";
+  const subtitle = reviewMode
+    ? `Este repaso no modifica progreso ni desbloquea puntos nuevos${kanaTypeLabel ? ` de ${kanaTypeLabel.toLowerCase()}` : ""}. Sirve para practicar nodos anteriores o ya resueltos.`
+    : totalRounds === 1
       ? `Este intento evalua ${quizTypeLabel.toLowerCase()} de ${kanaTypeLabel.toLowerCase()}. Necesitas 100 para cerrarlo perfecto.`
       : `El intento se cerro en el primer error. Para completar ${kanaTypeLabel.toLowerCase()} con todos los ejercicios debes repetir el quiz completo.`;
 

@@ -25,6 +25,7 @@ import {
 type KanaQuizCompletionResult = {
   newlyCompleted: boolean;
   newlyCompletedPoints: number;
+  resultingModulePoints: number;
   dominated: boolean;
   score: number;
   triggeredModuleMastery: boolean;
@@ -58,6 +59,7 @@ export default function HiraganaView() {
     quizType?: KanaQuizType;
     wasCompletedBefore: boolean;
     isPracticeOnly: boolean;
+    progressEligible: boolean;
   } | null>(null);
   const wasMasteredBeforeQuizRef = useRef(false);
   const pendingMasteryCelebrationRef = useRef(false);
@@ -70,6 +72,11 @@ export default function HiraganaView() {
   );
 
   const helpNodeId = useMemo(() => items[0]?.id ?? null, [items]);
+  const currentProgressKanaId = useMemo(
+    () =>
+      [...items].reverse().find((item) => item.status !== "locked")?.id ?? null,
+    [items],
+  );
 
   const handleNodeAction = useCallback((item: WritingBoardProgress) => {
     setDetailNodeId(item.id);
@@ -158,16 +165,22 @@ export default function HiraganaView() {
       wasMasteredBeforeQuizRef.current = mastered.has("hiragana");
       const wasCompletedBefore =
         items.find((item) => item.id === entity.id)?.status === "completed";
+      const progressEligible =
+        quizType === undefined &&
+        !wasCompletedBefore &&
+        entity.id === currentProgressKanaId;
       setDetailNodeId(null);
       setQuizItem({
         id: entity.id,
         label: entity.symbol,
         quizType,
         wasCompletedBefore,
-        isPracticeOnly: quizType !== undefined || wasCompletedBefore,
+        isPracticeOnly:
+          quizType !== undefined || wasCompletedBefore || !progressEligible,
+        progressEligible,
       });
     },
-    [items, mastered],
+    [currentProgressKanaId, items, mastered],
   );
 
   useEffect(() => {
@@ -301,6 +314,7 @@ export default function HiraganaView() {
           quizType={quizItem.quizType}
           currentModulePoints={userPoints}
           wasCompletedBefore={quizItem.wasCompletedBefore}
+          progressEligible={quizItem.progressEligible}
           onClose={handleQuizEnd}
         />
       )}

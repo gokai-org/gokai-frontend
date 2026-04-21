@@ -84,7 +84,7 @@ export function GradientCardLayout({
         <div
           className={[
             "inline-block rounded-2xl ring-2 ring-transparent",
-            "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
+            "group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
             hoverTransition,
           ].join(" ")}
         >
@@ -190,7 +190,7 @@ export function WordCardLayout({
               sizes="(max-width: 640px) 140px, 220px"
               className={[
                 "object-contain",
-                "opacity-[0.30] group-hover:opacity-[0.40] group-hover:scale-110",
+                "opacity-[0.30] group-hover:opacity-[0.40]",
                 hoverTransition,
               ].join(" ")}
               style={{
@@ -203,7 +203,7 @@ export function WordCardLayout({
           <span
             className={[
               "-translate-y-4 text-[75px] font-black leading-none select-none",
-              "text-accent/[0.22] group-hover:text-white/[0.16] group-hover:scale-110",
+              "text-accent/[0.22] group-hover:text-white/[0.16]",
               hoverTransition,
             ].join(" ")}
           >

@@ -74,6 +74,7 @@ export default function KanjisView() {
     quizType?: KanjiQuizType;
     wasCompletedBefore: boolean;
     isPracticeOnly: boolean;
+    progressEligible: boolean;
   } | null>(null);
   const [newlyUnlockedIds, setNewlyUnlockedIds] = useState<ReadonlySet<string>>(
     new Set(),
@@ -193,6 +194,11 @@ export default function KanjisView() {
 
   const helpNodeId = useMemo(
     () => items.find((item) => item.status !== "locked")?.id ?? null,
+    [items],
+  );
+  const currentProgressKanjiId = useMemo(
+    () =>
+      [...items].reverse().find((item) => item.status !== "locked")?.id ?? null,
     [items],
   );
 
@@ -356,14 +362,20 @@ export default function KanjisView() {
       wasMasteredBeforeQuizRef.current = mastered.has("kanji");
       const wasCompletedBefore =
         itemsRef.current.find((item) => item.id === kanji.id)?.status === "completed";
+      const progressEligible =
+        quizType === undefined &&
+        !wasCompletedBefore &&
+        kanji.id === currentProgressKanjiId;
       setQuizKanji({
         ...kanji,
         quizType,
         wasCompletedBefore,
-        isPracticeOnly: quizType !== undefined || wasCompletedBefore,
+        isPracticeOnly:
+          quizType !== undefined || wasCompletedBefore || !progressEligible,
+        progressEligible,
       });
     },
-    [mastered],
+    [currentProgressKanjiId, mastered],
   );
 
   const handleQuizEnd = useCallback((result?: KanjiQuizCompletionResult) => {
@@ -782,6 +794,7 @@ export default function KanjisView() {
             quizType={quizKanji.quizType}
             currentModulePoints={userPoints}
             wasCompletedBefore={quizKanji.wasCompletedBefore}
+            progressEligible={quizKanji.progressEligible}
             onClose={handleQuizEnd}
           />
         )}

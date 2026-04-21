@@ -70,6 +70,7 @@ export function KanaQuizCanvasExercise({
   const [lastFeedback, setLastFeedback] = useState<StrokeResult | null>(null);
   const [flashError, setFlashError] = useState(false);
   const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completionScheduledRef = useRef(false);
 
   const [prevQuestionIndex, setPrevQuestionIndex] = useState(questionIndex);
   if (questionIndex !== prevQuestionIndex) {
@@ -107,6 +108,7 @@ export function KanaQuizCanvasExercise({
     setStrokeResults([]);
     setLastFeedback(null);
     setFlashError(false);
+    completionScheduledRef.current = false;
     onPhaseChange("practice");
   }, [onPhaseChange]);
 
@@ -136,6 +138,11 @@ export function KanaQuizCanvasExercise({
 
       const nextIdx = practiceStrokeIndex + 1;
       if (nextIdx >= totalStrokes) {
+        if (completionScheduledRef.current) {
+          return;
+        }
+
+        completionScheduledRef.current = true;
         const allResults = [...strokeResults, result];
         const totalScore = allResults.reduce(
           (sum, r) => sum + r.pointsDelta,
@@ -157,6 +164,7 @@ export function KanaQuizCanvasExercise({
   const handleBackToDemo = useCallback(() => {
     setDemoStrokeIndex(0);
     setDemoAutoPlay(false);
+    completionScheduledRef.current = false;
     onPhaseChange("demo");
   }, [onPhaseChange]);
 

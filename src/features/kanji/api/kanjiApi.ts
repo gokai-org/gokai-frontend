@@ -5,8 +5,15 @@ import type {
   KanjiLessonResult,
 } from "@/features/kanji/types";
 
+const KANJI_CONTENT_CACHE_TTL_MS = 1000 * 60 * 10;
+const KANJI_RESULTS_CACHE_TTL_MS = 30_000;
+
 export function listKanjis() {
-  return apiFetch<Kanji[]>("/api/content/kanji", { cache: "no-store" });
+  return apiFetch<Kanji[]>("/api/content/kanji", { cache: "no-store" }, {
+    dedupeKey: "/api/content/kanji",
+    cacheKey: "/api/content/kanji",
+    cacheTtlMs: KANJI_CONTENT_CACHE_TTL_MS,
+  });
 }
 
 export function getKanji(id: string) {
@@ -27,10 +34,18 @@ export function getKanjiLessonResults(params?: {
 }) {
   const query = new URLSearchParams();
   if (params?.kanjiId) query.set("kanjiId", params.kanjiId);
-  if (params?.limit) query.set("limit", String(params.limit));
+  query.set("limit", String(params?.limit ?? 100));
 
   const qs = query.toString();
+  const path = `/api/user/kanji-lessons/results${qs ? `?${qs}` : ""}`;
+
   return apiFetch<{ results: KanjiLessonResult[] }>(
-    `/api/user/kanji-lessons/results${qs ? `?${qs}` : ""}`,
+    path,
+    undefined,
+    {
+      dedupeKey: path,
+      cacheKey: path,
+      cacheTtlMs: KANJI_RESULTS_CACHE_TTL_MS,
+    },
   );
 }

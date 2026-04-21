@@ -4,6 +4,10 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
+import {
+  useGuideTour,
+  type TourDefinition,
+} from "@/features/help/components/GuideTourProvider";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import WritingSubMenu, { type WritingTab } from "@/features/graph/writing/components/WritingSubMenu";
 
@@ -20,10 +24,29 @@ function isTabActive(pathname: string, href: string) {
   return pathname.startsWith(href);
 }
 
+function getRoutePath(route?: string) {
+  return route?.split("?")[0]?.split("#")[0];
+}
+
+function isWritingGuideTour(tour: TourDefinition | null) {
+  if (!tour) {
+    return false;
+  }
+
+  if (getRoutePath(tour.route) === "/dashboard/graph/writing") {
+    return true;
+  }
+
+  return /^(hiragana|katakana|kanji)-(context-tour(?:-locked)?|writing-guide)$/.test(
+    tour.id,
+  );
+}
+
 export default function GraphNavBar() {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { activeTour, pendingTour } = useGuideTour();
   const { hidden } = useSidebar();
   const navRef = useRef<HTMLDivElement | null>(null);
   const [writingMenuOpen, setWritingMenuOpen] = useState(false);
@@ -43,8 +66,10 @@ export default function GraphNavBar() {
   const isWritingPending =
     pendingWritingTab !== null && !pathname.startsWith("/dashboard/graph/writing");
   const displayedWritingTab = activeWritingTab ?? pendingWritingTab;
+  const guideNeedsWritingMenu =
+    isWritingGuideTour(activeTour) || isWritingGuideTour(pendingTour);
 
-  const showWritingMenu = writingMenuOpen;
+  const showWritingMenu = writingMenuOpen || guideNeedsWritingMenu;
 
   const handleWritingSelection = useCallback(
     (tab: WritingTab) => {

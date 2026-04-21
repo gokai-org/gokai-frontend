@@ -2,7 +2,6 @@
 
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
 import { createGrammarBoardContextTour } from "@/features/help/utils/contextualTours";
@@ -15,6 +14,7 @@ import { GrammarBoard } from "./board";
 import GrammarLessonModal from "./lesson/GrammarLessonModal";
 import GrammarQuizModal from "./lesson/exam/GrammarQuizModal";
 import { useGrammarBoard } from "../hooks/useGrammarBoard";
+import { useGrammarBoardQuality } from "../hooks/useGrammarBoardQuality";
 import { useGrammarLesson } from "../hooks/useGrammarLesson";
 
 type GrammarViewStage =
@@ -29,7 +29,7 @@ export default function GrammarView() {
     board,
     status,
   } = useGrammarBoard();
-  const platformMotion = usePlatformMotion();
+  const boardQuality = useGrammarBoardQuality();
   const { setHidden } = useSidebar();
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [helpFocusedLessonId, setHelpFocusedLessonId] = useState<string | null>(null);
@@ -38,27 +38,13 @@ export default function GrammarView() {
   const { lesson, status: lessonStatus, error, refetch } = useGrammarLesson(selectedLessonId);
 
   const zoomDurationMs = useMemo(
-    () =>
-      Math.round(
-        Math.max(
-          480,
-          (platformMotion.shouldUseLightAnimations ? 560 : 720) *
-            platformMotion.durationScale,
-        ),
-      ),
-    [platformMotion.durationScale, platformMotion.shouldUseLightAnimations],
+    () => boardQuality.boardZoomDurationMs,
+    [boardQuality.boardZoomDurationMs],
   );
 
   const zoomOutDurationMs = useMemo(
-    () =>
-      Math.round(
-        Math.max(
-          320,
-          (platformMotion.shouldUseLightAnimations ? 360 : 460) *
-            platformMotion.durationScale,
-        ),
-      ),
-    [platformMotion.durationScale, platformMotion.shouldUseLightAnimations],
+    () => boardQuality.boardZoomOutDurationMs,
+    [boardQuality.boardZoomOutDurationMs],
   );
 
   const helpLessonId = useMemo(
@@ -70,6 +56,10 @@ export default function GrammarView() {
   );
 
   useEffect(() => {
+    if (!boardQuality.shouldAnimateBoardZoom) {
+      return;
+    }
+
     if (stage !== "zooming-in" && stage !== "zooming-out") {
       return;
     }
@@ -88,7 +78,7 @@ export default function GrammarView() {
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [stage, zoomDurationMs, zoomOutDurationMs]);
+  }, [boardQuality.shouldAnimateBoardZoom, stage, zoomDurationMs, zoomOutDurationMs]);
 
   useEffect(() => {
     if (stage === "lesson" || stage === "quiz") {
@@ -113,9 +103,9 @@ export default function GrammarView() {
       }
 
       setSelectedLessonId(lessonId);
-      setStage("zooming-in");
+      setStage(boardQuality.shouldAnimateBoardZoom ? "zooming-in" : "lesson");
     },
-    [board.cells, stage],
+    [board.cells, boardQuality.shouldAnimateBoardZoom, stage],
   );
 
   const handleCloseLesson = useCallback(() => {
@@ -123,8 +113,14 @@ export default function GrammarView() {
       return;
     }
 
-    setStage("zooming-out");
-  }, [selectedLessonId, stage]);
+    if (boardQuality.shouldAnimateBoardZoom) {
+      setStage("zooming-out");
+      return;
+    }
+
+    setSelectedLessonId(null);
+    setStage("board");
+  }, [boardQuality.shouldAnimateBoardZoom, selectedLessonId, stage]);
 
   const handleStartExam = useCallback(() => {
     if (stage !== "lesson" || !lesson?.content?.exam?.length) {
@@ -166,8 +162,8 @@ export default function GrammarView() {
 
     setHelpFocusedLessonId(null);
     setSelectedLessonId(helpLessonId);
-    setStage("zooming-in");
-  }, [helpLessonId, selectedLessonId, stage]);
+    setStage(boardQuality.shouldAnimateBoardZoom ? "zooming-in" : "lesson");
+  }, [boardQuality.shouldAnimateBoardZoom, helpLessonId, selectedLessonId, stage]);
 
   const resetHelpTourState = useCallback(() => {
     setHelpFocusedLessonId(null);
@@ -221,8 +217,9 @@ export default function GrammarView() {
     };
   }, [focusHelpLesson, openHelpLesson, resetHelpTourState]);
 
-  const boardTransitionState =
-    stage === "board"
+  const boardTransitionState = !boardQuality.shouldAnimateBoardZoom
+    ? "idle"
+    : stage === "board"
       ? "idle"
       : stage === "zooming-in"
         ? "zooming-in"

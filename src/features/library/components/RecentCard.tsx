@@ -71,7 +71,6 @@ export function RecentCard({ item, index = 0, onClick }: RecentCardProps) {
             "text-[20px] font-bold",
             "shadow-[inset_0_1px_0_rgba(255,255,255,0.60)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
             "group-hover:bg-[#efdddd] group-hover:border-[#d4a8a6] dark:group-hover:bg-[#321414] dark:group-hover:border-[#5c2424]",
-            "group-hover:scale-105",
             hoverTransition,
           ].join(" ")}
         >

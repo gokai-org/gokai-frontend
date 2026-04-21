@@ -44,6 +44,7 @@ export interface KanjiQuizModalProps {
   quizType?: KanjiQuizType;
   currentModulePoints: number;
   wasCompletedBefore?: boolean;
+  progressEligible?: boolean;
   onClose: (result?: KanjiQuizCompletionResult) => void;
   onComplete?: (result: KanjiQuizCompletionResult) => void;
 }
@@ -54,6 +55,7 @@ export function KanjiQuizModal({
   quizType,
   currentModulePoints,
   wasCompletedBefore = false,
+  progressEligible = true,
   onClose,
   onComplete,
 }: KanjiQuizModalProps) {
@@ -62,7 +64,8 @@ export function KanjiQuizModal({
   const mastered = useMasteredModules();
   const isKanjiMastered = mastered.has("kanji");
   const autoClosedForMasteryRef = useRef(false);
-  const shouldPersistProgress = !wasCompletedBefore && quizType === undefined;
+  const shouldPersistProgress =
+    progressEligible && !wasCompletedBefore && quizType === undefined;
 
   const goldenAccentVars = useMemo<React.CSSProperties | undefined>(
     () =>
@@ -166,7 +169,9 @@ export function KanjiQuizModal({
   } = quiz;
 
   const isPracticeSession = totalRounds === 1;
+  const isProgressSession = shouldPersistProgress;
   const didPerfectMixedCompletion =
+    isProgressSession &&
     !isPracticeSession &&
     finalScore === 100 &&
     (state.step === "summary" || state.step === "celebration");
@@ -180,11 +185,16 @@ export function KanjiQuizModal({
     ? 0
     : shouldShowUnlockedMastery
       ? Math.max(awardedPointsDelta, KANJI_COMPLETION_REWARD)
-      : pointsDelta;
-  const shouldHidePointsDelta = isPracticeSession || reachedMasteryThisAttempt;
-  const displayedUpdatedPoints = isPracticeSession ? null : updatedPoints;
+      : isProgressSession
+        ? pointsDelta
+        : 0;
+  const shouldHidePointsDelta =
+    !isProgressSession || isPracticeSession || reachedMasteryThisAttempt;
+  const displayedUpdatedPoints =
+    isProgressSession && !isPracticeSession ? updatedPoints : null;
   const resultingModulePoints =
-    displayedUpdatedPoints ?? currentModulePoints + awardedPointsDelta;
+    displayedUpdatedPoints ??
+    currentModulePoints + (isProgressSession ? awardedPointsDelta : 0);
   const triggeredModuleMastery =
     isNewlyCompleted &&
     resultingModulePoints >= MASTERY_THRESHOLDS.kanji;
@@ -611,14 +621,19 @@ export function KanjiQuizModal({
                   onClose={handleClose}
                 />
               ) : (
-              <UnlockedMasterySequence
-                title="Dominaste este kanji por primera vez"
-                subtitle={`${label ? `${label} ` : "Este kanji "}quedo completado con un resultado perfecto y desbloqueo puntos nuevos.`}
-                score={finalScore}
-                symbol={label || "漢"}
-                pointsDelta={displayPointsDelta}
-                onClose={handleClose}
-              />
+                <QuizMultiRoundSummary
+                  roundResults={roundResults}
+                  label={label}
+                  sessionType={sessionType}
+                  totalRounds={totalRounds}
+                  updatedPoints={displayedUpdatedPoints}
+                  pointsDelta={displayPointsDelta}
+                  submitError={submitError}
+                  hidePointsDelta={shouldHidePointsDelta}
+                  reviewMode={!isProgressSession}
+                  onRetry={handleRetry}
+                  onClose={handleClose}
+                />
               ))}
 
             {state.step === "summary" &&
@@ -662,6 +677,7 @@ export function KanjiQuizModal({
                 pointsDelta={displayPointsDelta}
                 submitError={submitError}
                 hidePointsDelta={shouldHidePointsDelta}
+                reviewMode={!isProgressSession}
                 onRetry={handleRetry}
                 onClose={handleClose}
               />
@@ -777,6 +793,7 @@ function QuizMultiRoundSummary({
   pointsDelta,
   submitError,
   hidePointsDelta = false,
+  reviewMode = false,
   onRetry,
   onClose,
 }: {
@@ -788,6 +805,7 @@ function QuizMultiRoundSummary({
   pointsDelta: number;
   submitError: string | null;
   hidePointsDelta?: boolean;
+  reviewMode?: boolean;
   onRetry: () => void;
   onClose: () => void;
 }) {
@@ -810,9 +828,16 @@ function QuizMultiRoundSummary({
   };
   const scoreStyle = overallScore >= 70 ? { color: "var(--accent)" } : undefined;
   const statusClass = "text-content-primary";
-  const statusLabel = overallScore >= 70 ? "Buen intento" : "Intentalo de nuevo";
-  const subtitle =
-    totalRounds === 1
+  const statusLabel = reviewMode
+    ? overallScore === 100
+      ? "Repaso completado"
+      : "Repaso finalizado"
+    : overallScore >= 70
+      ? "Buen intento"
+      : "Intentalo de nuevo";
+  const subtitle = reviewMode
+    ? `Este repaso no modifica progreso ni desbloquea puntos nuevos${label ? ` para ${label}` : ""}. Sirve para practicar quizzes ya resueltos o nodos anteriores.`
+    : totalRounds === 1
       ? `Este intento evalua ${quizTypeLabel.toLowerCase()}. Necesitas 100 para cerrarlo perfecto.`
       : `El intento se cerro en el primer error. Para completar${label ? ` ${label}` : " este kanji"} con todos los ejercicios debes repetir el quiz completo.`;
 

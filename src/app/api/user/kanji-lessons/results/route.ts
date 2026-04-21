@@ -9,7 +9,6 @@ export async function POST(req: NextRequest) {
   const raw = getTokenFromRequest(req);
 
   if (!raw) {
-    console.error("[API ROUTE] No autenticado: no se encontró token");
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
@@ -17,18 +16,13 @@ export async function POST(req: NextRequest) {
 
   const tokenParts = token.split(".");
   if (tokenParts.length !== 3) {
-    console.error("[API ROUTE] Token inválido");
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }
 
   const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
   const userId = payload.userId || payload.sub || payload.id;
 
-  console.log("[API ROUTE] token payload:", payload);
-  console.log("[API ROUTE] userId detectado:", userId);
-
   if (!userId) {
-    console.error("[API ROUTE] No se encontró ID de usuario en el token");
     return NextResponse.json(
       { error: "No se encontró ID de usuario" },
       { status: 401 },
@@ -37,14 +31,7 @@ export async function POST(req: NextRequest) {
 
   const body = await req.json().catch(() => null);
 
-  console.log("[API ROUTE] raw body recibido del frontend:", body);
-  console.log(
-    "[API ROUTE] raw body JSON recibido del frontend:",
-    JSON.stringify(body, null, 2),
-  );
-
   if (!body) {
-    console.error("[API ROUTE] Body JSON inválido");
     return NextResponse.json({ error: "Body JSON inválido" }, { status: 400 });
   }
 
@@ -64,14 +51,7 @@ export async function POST(req: NextRequest) {
     })),
   };
 
-  console.log("[API ROUTE] backendBody transformado:", backendBody);
-  console.log(
-    "[API ROUTE] backendBody JSON transformado:",
-    JSON.stringify(backendBody, null, 2),
-  );
-
   const upstreamUrl = `${apiConfig.usersApiBase}/users/${userId}/kanji-lessons/results`;
-  console.log("[API ROUTE] enviando a upstream:", upstreamUrl);
 
   const upstream = await fetch(upstreamUrl, {
     method: "POST",
@@ -85,13 +65,6 @@ export async function POST(req: NextRequest) {
 
   const data = await upstream.json().catch(() => ({}));
 
-  console.log("[API ROUTE] upstream status:", upstream.status);
-  console.log("[API ROUTE] upstream response:", data);
-  console.log(
-    "[API ROUTE] upstream response JSON:",
-    JSON.stringify(data, null, 2),
-  );
-
   return NextResponse.json(data, { status: upstream.status });
 }
 
@@ -99,7 +72,6 @@ export async function GET(req: NextRequest) {
   const raw = getTokenFromRequest(req);
 
   if (!raw) {
-    console.error("[API ROUTE GET] No autenticado");
     return NextResponse.json({ error: "No autenticado" }, { status: 401 });
   }
 
@@ -107,18 +79,13 @@ export async function GET(req: NextRequest) {
 
   const tokenParts = token.split(".");
   if (tokenParts.length !== 3) {
-    console.error("[API ROUTE GET] Token inválido");
     return NextResponse.json({ error: "Token inválido" }, { status: 401 });
   }
 
   const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
   const userId = payload.userId || payload.sub || payload.id;
 
-  console.log("[API ROUTE GET] token payload:", payload);
-  console.log("[API ROUTE GET] userId detectado:", userId);
-
   if (!userId) {
-    console.error("[API ROUTE GET] No se encontró ID de usuario");
     return NextResponse.json(
       { error: "No se encontró ID de usuario" },
       { status: 401 },
@@ -132,17 +99,10 @@ export async function GET(req: NextRequest) {
   if (kanjiId) query.set("kanji_id", kanjiId);
 
   const limit = searchParams.get("limit");
-  if (limit) query.set("limit", limit);
-
-  console.log("[API ROUTE GET] searchParams frontend:", {
-    kanjiId,
-    limit,
-  });
+  query.set("limit", limit || "100");
 
   const qs = query.toString();
   const url = `${apiConfig.usersApiBase}/users/${userId}/kanji-lessons/results${qs ? `?${qs}` : ""}`;
-
-  console.log("[API ROUTE GET] url final al backend:", url);
 
   const upstream = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
@@ -150,13 +110,6 @@ export async function GET(req: NextRequest) {
   });
 
   const data = await upstream.json().catch(() => ({}));
-
-  console.log("[API ROUTE GET] upstream status:", upstream.status);
-  console.log("[API ROUTE GET] upstream response:", data);
-  console.log(
-    "[API ROUTE GET] upstream response JSON:",
-    JSON.stringify(data, null, 2),
-  );
 
   return NextResponse.json(data, { status: upstream.status });
 }

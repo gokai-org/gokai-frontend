@@ -6,26 +6,38 @@ import type {
   InterestsResponse,
 } from "@/features/auth/types";
 
+let currentUserRequest: Promise<User | null> | null = null;
+
 // ========================================
 // USUARIO
 // ========================================
 
 export async function getCurrentUser(): Promise<User | null> {
-  try {
-    const response = await fetch("/api/auth/user", {
-      cache: "no-store",
-      credentials: "include",
-    });
-    if (!response.ok) {
-      handleClientAuthFailure(response);
-      return null;
-    }
-    const data = await response.json();
-    return data.user;
-  } catch (error) {
-    console.error("Error fetching user:", error);
-    return null;
+  if (currentUserRequest) {
+    return currentUserRequest;
   }
+
+  currentUserRequest = (async () => {
+    try {
+      const response = await fetch("/api/auth/user", {
+        cache: "no-store",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        handleClientAuthFailure(response);
+        return null;
+      }
+      const data = await response.json();
+      return data.user;
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      return null;
+    } finally {
+      currentUserRequest = null;
+    }
+  })();
+
+  return currentUserRequest;
 }
 
 export async function updateUserEmail(email: string): Promise<void> {

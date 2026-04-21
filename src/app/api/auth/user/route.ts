@@ -39,11 +39,8 @@ export async function GET(req: NextRequest) {
     const token = getTokenFromRequest(req);
 
     if (!token) {
-      console.log("No token found");
       return NextResponse.json({ user: null }, { status: 401 });
     }
-
-    console.log("Decoding token to get user info");
 
     try {
       const tokenParts = token.split(".");
@@ -52,8 +49,6 @@ export async function GET(req: NextRequest) {
         const payload = JSON.parse(
           Buffer.from(tokenParts[1], "base64").toString(),
         );
-
-        console.log("Token payload:", payload);
 
         const userId = payload.userId || payload.sub || payload.id;
 
@@ -72,8 +67,6 @@ export async function GET(req: NextRequest) {
             cache: "no-store",
           },
         );
-
-        console.log("Backend response status:", response.status);
 
         if (!response.ok) {
           const errorText = await response.text();
@@ -137,7 +130,6 @@ export async function GET(req: NextRequest) {
         }
 
         const userData = await response.json();
-        console.log("User data from backend:", userData);
 
         const firstName = userData.first_name || "";
         const lastName = userData.last_name || "";

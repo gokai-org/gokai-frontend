@@ -37,6 +37,7 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
     if (knownUserId && cached.userId !== knownUserId) return null;
     return cached;
   })()).current;
+  const hasInitialCache = initialCache !== null;
 
   const [userKanaPoints, setUserKanaPoints] = useState<number>(
     () => initialCache?.userKanaPoints ?? 0,
@@ -45,7 +46,9 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
     UserKanaProgressDetailedResponse[]
   >(() => initialCache?.progressItems ?? []);
   const [loading, setLoading] = useState(() => initialCache === null);
-  const [hasResolvedInitialStatus, setHasResolvedInitialStatus] = useState(false);
+  const [hasResolvedInitialStatus, setHasResolvedInitialStatus] = useState(
+    hasInitialCache,
+  );
   const optimisticKanaPointsRef = useRef(initialCache?.userKanaPoints ?? 0);
   const activeUserIdRef = useRef<string | null>(initialCache?.userId ?? knownUserId);
   const progressItemsRef = useRef<UserKanaProgressDetailedResponse[]>(

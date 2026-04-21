@@ -31,6 +31,7 @@ interface GrammarBoardCellProps {
   cell: GrammarBoardCellViewModel;
   onSelect: (lessonId: string, target: HTMLButtonElement | null) => void;
   helpTarget?: boolean;
+  enableHoverMotion?: boolean;
   isPortrait?: boolean;
   isCompactPortrait?: boolean;
   isTinyPortrait?: boolean;
@@ -617,6 +618,7 @@ function GrammarBoardCellComponent({
   cell,
   onSelect,
   helpTarget = false,
+  enableHoverMotion = true,
   isPortrait = false,
   isCompactPortrait = false,
   isTinyPortrait = false,
@@ -644,7 +646,7 @@ function GrammarBoardCellComponent({
     isCompactPortrait,
     isTinyPortrait,
   );
-  const hoverEnabled = interactive && !isComingSoonCell;
+  const hoverEnabled = interactive && !isComingSoonCell && enableHoverMotion;
   const hoverClass = interactive
     ? "hover:shadow-[0_10px_22px_rgba(153,51,49,0.16)] dark:hover:shadow-[0_10px_26px_rgba(153,51,49,0.24)]"
     : "cursor-default";
@@ -730,6 +732,7 @@ function areCellsEqual(
   return (
     previous.onSelect === next.onSelect &&
     previous.helpTarget === next.helpTarget &&
+    previous.enableHoverMotion === next.enableHoverMotion &&
     previous.isPortrait === next.isPortrait &&
     previous.isCompactPortrait === next.isCompactPortrait &&
     previous.isTinyPortrait === next.isTinyPortrait &&

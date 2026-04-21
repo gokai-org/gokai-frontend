@@ -47,6 +47,7 @@ export async function getKanaQuiz(
   const raw = await apiFetch<KanaQuizResponseRaw>(
     path,
     { cache: "no-store" },
+    { dedupeKey: path },
   );
 
   return normalizeKanaQuizResponse(raw);
@@ -60,8 +61,6 @@ export async function submitKanaQuiz(
   kanaId: string,
   body: KanaQuizSubmitBody,
 ): Promise<KanaQuizSubmitResponse> {
-  console.warn("[KANA QUIZ POST] submitKanaQuiz called", { kanaId, body });
-  console.trace("[KANA QUIZ POST] call stack");
   return apiFetch<KanaQuizSubmitResponse>(`/api/content/kana/${kanaId}?resource=quiz`, {
     method: "POST",
     body: JSON.stringify(body),

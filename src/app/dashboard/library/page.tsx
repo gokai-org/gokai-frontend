@@ -1,7 +1,7 @@
 "use client";
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
@@ -15,7 +15,7 @@ import { LibraryRecentPanel } from "@/features/library/components/LibraryRecentP
 import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
 import { KanaPhoneticGrid } from "@/features/library/components/KanaPhoneticGrid";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
-import { LibrarySkeleton } from "@/shared/ui/Skeleton";
+import { LibrarySkeleton, SkeletonCard } from "@/shared/ui/Skeleton";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
 import { useVocabularyContent } from "@/features/library/hooks/useVocabularyContent";
@@ -37,10 +37,7 @@ import {
   themeToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
-import {
-  useMasteredModules,
-  useMasteredModulesLoading,
-} from "@/features/mastery/components/MasteredModulesProvider";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { HELP_GUIDE_LIBRARY_RESET_EVENT } from "@/features/help/utils/guideEvents";
 // import { getPrimaryMeaning } from "@/features/kanji";
@@ -65,6 +62,7 @@ export default function LibraryPage() {
     quizType?: KanjiQuizType;
     wasCompletedBefore: boolean;
     isPracticeOnly: boolean;
+    progressEligible: boolean;
   } | null>(null);
   const [quizKana, setQuizKana] = useState<{
     id: string;
@@ -73,6 +71,7 @@ export default function LibraryPage() {
     quizType?: KanaQuizType;
     wasCompletedBefore: boolean;
     isPracticeOnly: boolean;
+    progressEligible: boolean;
   } | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
@@ -129,7 +128,6 @@ export default function LibraryPage() {
     filteredKanjis: _filteredKanjis,
     allLibraryItems,
     isSearching,
-    isGlobalLoading,
     hasResolvedInitialContent,
     loadingKanjis,
     loadingKatakanas,
@@ -140,7 +138,6 @@ export default function LibraryPage() {
     lockedKanjiIds,
     completedKanjiIds,
     userPoints,
-    loading: loadingKanjiStatus,
     hasResolvedInitialStatus: hasResolvedInitialKanjiStatus,
     reload: reloadLockedStatus,
   } =
@@ -150,7 +147,6 @@ export default function LibraryPage() {
     lockedHiraganaIds,
     lockedKatakanaIds,
     progressById,
-    loading: loadingKanaStatus,
     hasResolvedInitialStatus: hasResolvedInitialKanaStatus,
     reload: reloadKanaLockedStatus,
   } = useKanaLockedStatus(hiraganas, katakanas);
@@ -202,7 +198,6 @@ export default function LibraryPage() {
     filteredWords,
     selectedTheme,
     selectedSubtheme,
-    hasResolvedInitialThemes,
     loadingThemes,
     loadingSubthemes,
     loadingWords,
@@ -223,7 +218,6 @@ export default function LibraryPage() {
     getTotalFavorites,
     loading: loadingFavorites,
   } = useFavorites();
-  const masteryLoading = useMasteredModulesLoading();
 
   const dynamicCategories = buildLibraryCategories({
     totalFavorites: getTotalFavorites(),
@@ -233,6 +227,27 @@ export default function LibraryPage() {
     hiraganaCount: hiraganas.length,
     themeCount: themes.length,
   });
+  const currentKanjiProgressId = useMemo(
+    () =>
+      [...kanjis]
+        .reverse()
+        .find((kanji) => !lockedKanjiIds.has(kanji.id))?.id ?? null,
+    [kanjis, lockedKanjiIds],
+  );
+  const currentHiraganaProgressId = useMemo(
+    () =>
+      [...hiraganas]
+        .reverse()
+        .find((kana) => !lockedHiraganaIds.has(kana.id))?.id ?? null,
+    [hiraganas, lockedHiraganaIds],
+  );
+  const currentKatakanaProgressId = useMemo(
+    () =>
+      [...katakanas]
+        .reverse()
+        .find((kana) => !lockedKatakanaIds.has(kana.id))?.id ?? null,
+    [katakanas, lockedKatakanaIds],
+  );
 
   const handleKanjiClick = (kanji: Kanji) => {
     addRecentItem("kanji", kanji.id);
@@ -251,33 +266,51 @@ export default function LibraryPage() {
       if (kind === "kanji") {
         lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
         const wasCompletedBefore = completedKanjiIds.has(entity.id);
+        const progressEligible =
+          quizType === undefined &&
+          !wasCompletedBefore &&
+          entity.id === currentKanjiProgressId;
         setQuizKanji({
           id: entity.id,
           symbol: entity.symbol,
           quizType: quizType as KanjiQuizType | undefined,
           wasCompletedBefore,
-          isPracticeOnly: quizType !== undefined || wasCompletedBefore,
+          isPracticeOnly:
+            quizType !== undefined || wasCompletedBefore || !progressEligible,
+          progressEligible,
         });
       } else {
         lockedHiraganaIdsBeforeQuizRef.current = new Set(lockedHiraganaIds);
         lockedKatakanaIdsBeforeQuizRef.current = new Set(lockedKatakanaIds);
         const wasCompletedBefore = progressById.get(entity.id)?.completed === true;
+        const progressEligible =
+          quizType === undefined &&
+          !wasCompletedBefore &&
+          entity.id ===
+            (kanaType === "katakana"
+              ? currentKatakanaProgressId
+              : currentHiraganaProgressId);
         setQuizKana({
           id: entity.id,
           symbol: entity.symbol,
           kanaType: kanaType ?? "hiragana",
           quizType: quizType as KanaQuizType | undefined,
           wasCompletedBefore,
-          isPracticeOnly: quizType !== undefined || wasCompletedBefore,
+          isPracticeOnly:
+            quizType !== undefined || wasCompletedBefore || !progressEligible,
+          progressEligible,
         });
       }
     },
     [
-      completedKanjiIds,
+      currentHiraganaProgressId,
+      currentKanjiProgressId,
+      currentKatakanaProgressId,
       drawerEntity,
       lockedKanjiIds,
       lockedHiraganaIds,
       lockedKatakanaIds,
+      completedKanjiIds,
       progressById,
     ],
   );
@@ -412,18 +445,11 @@ export default function LibraryPage() {
   const isLibraryBootstrapping =
     !hasResolvedInitialContent ||
     !hasResolvedInitialKanjiStatus ||
-    !hasResolvedInitialKanaStatus ||
-    !hasResolvedInitialThemes ||
-    loadingFavorites ||
-    loadingRecentItems ||
-    masteryLoading;
+    !hasResolvedInitialKanaStatus;
 
   return (
     <DashboardShell>
-      {isLibraryBootstrapping ||
-      isGlobalLoading ||
-      loadingKanjiStatus ||
-      loadingKanaStatus ? (
+      {isLibraryBootstrapping ? (
         <div data-help-loading="true">
           <LibrarySkeleton />
         </div>
@@ -525,6 +551,7 @@ export default function LibraryPage() {
                   <LibraryRecentPanel
                     recentItems={recentItems}
                     kanjis={kanjis}
+                    loading={loadingRecentItems}
                     onOpenRecent={() => setSelectedCategory("recent")}
                     onKanjiClick={handleKanjiClick}
                   />
@@ -603,7 +630,15 @@ export default function LibraryPage() {
                   </span>
                 </div>
 
-                {favoriteKanjis.size > 0 && (
+                {loadingFavorites && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {Array.from({ length: 12 }).map((_, index) => (
+                      <SkeletonCard key={index} />
+                    ))}
+                  </div>
+                )}
+
+                {!loadingFavorites && favoriteKanjis.size > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Kanjis
@@ -635,7 +670,7 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {favoriteData.grammar.length > 0 && (
+                {!loadingFavorites && favoriteData.grammar.length > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Gramática
@@ -656,7 +691,7 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {favoriteData.hiragana.length > 0 && (
+                {!loadingFavorites && favoriteData.hiragana.length > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Hiragana
@@ -690,7 +725,7 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {favoriteData.katakana.length > 0 && (
+                {!loadingFavorites && favoriteData.katakana.length > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Katakana
@@ -724,7 +759,7 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {favoriteData.word.length > 0 && (
+                {!loadingFavorites && favoriteData.word.length > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Vocabulario
@@ -745,7 +780,7 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {getTotalFavorites() === 0 && (
+                {!loadingFavorites && getTotalFavorites() === 0 && (
                   <div className="flex flex-col items-center justify-center py-16">
                     <h3 className="mb-2 text-xl font-bold text-content-primary">
                       No tienes favoritos aún
@@ -983,6 +1018,7 @@ export default function LibraryPage() {
               <LibraryCategorySection
                 title="Reciente"
                 countLabel={`${recentItems.length} elementos`}
+                loading={loadingRecentItems}
                 emptyTitle="No hay elementos recientes"
                 emptyDescription="Los elementos que visites aparecerán aquí."
               >
@@ -1085,6 +1121,7 @@ export default function LibraryPage() {
               quizType={quizKanji.quizType}
               currentModulePoints={userPoints}
               wasCompletedBefore={quizKanji.wasCompletedBefore}
+              progressEligible={quizKanji.progressEligible}
               onClose={handleQuizClose}
             />
           )}
@@ -1097,6 +1134,7 @@ export default function LibraryPage() {
               quizType={quizKana.quizType}
               currentModulePoints={userKanaPoints}
               wasCompletedBefore={quizKana.wasCompletedBefore}
+              progressEligible={quizKana.progressEligible}
               onClose={handleKanaQuizClose}
             />
           )}

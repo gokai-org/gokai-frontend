@@ -127,6 +127,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   const startingPointsRef = useRef<number | null>(null);
   const submittingRef = useRef(false);
   const persistProgressRef = useRef(true);
+  const roundTransitionRef = useRef(false);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -200,21 +201,9 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     setError(null);
 
     try {
-      const expectedQuizType = preferredQuizType ?? fallbackQuizType;
-      let response = await getKanjiQuiz(kanjiIdRef.current, preferredQuizType, {
+      const response = await getKanjiQuiz(kanjiIdRef.current, preferredQuizType, {
         fallbackType: fallbackQuizType,
       });
-
-      if (
-        !preferredQuizType &&
-        expectedQuizType &&
-        response.type !== expectedQuizType
-      ) {
-        response = await getKanjiQuiz(kanjiIdRef.current, undefined, {
-          fallbackType: expectedQuizType,
-          forceFallback: true,
-        });
-      }
 
       if (response.questions.length === 0) {
         throw new Error("El backend devolvio un quiz de kanji vacio");
@@ -273,11 +262,6 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       setSessionType(quizType ?? "mixed");
       setTotalRounds(quizType ? 1 : QUIZ_TOTAL_ROUNDS);
       persistProgressRef.current = shouldPersistProgress;
-      if (!shouldPersistProgress) {
-        console.warn(
-          `[KANJI QUIZ] Practice mode detected (type=${quizType ?? "mixed"}) - will NOT submit to backend`,
-        );
-      }
       roundResultsRef.current = [];
       setRoundResults([]);
       kanjiIdRef.current = kanjiId;
@@ -316,20 +300,17 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   }, []);
 
   const refreshPointsAfterSubmit = useCallback(
-    async (response?: KanjiQuizSubmitResponse | null) => {
+    (response?: KanjiQuizSubmitResponse | null) => {
+      if (!response) {
+        return;
+      }
+
       const submittedPoints = extractSubmittedKanjiPoints(response);
-
-      if (submittedPoints !== null) {
-        applyResolvedPoints(submittedPoints);
+      if (submittedPoints === null) {
         return;
       }
 
-      const user = await getCurrentUser().catch(() => null);
-      if (!user || typeof user.points !== "number") {
-        return;
-      }
-
-      applyResolvedPoints(user.points);
+      applyResolvedPoints(submittedPoints);
     },
     [applyResolvedPoints],
   );
@@ -342,6 +323,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     setState((s) => ({ ...s, step: "submitting" as KanjiQuizStep }));
 
     const completedPerfectQuiz =
+      persistProgressRef.current &&
       _results.length >= totalRounds &&
       _results.every((result) => result.score === 100);
 
@@ -358,6 +340,11 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   // ── Complete a single round (submit + advance) ──
   const completeRound = useCallback(
     async (quizType: KanjiQuizType, score: number) => {
+      if (roundTransitionRef.current) {
+        return;
+      }
+
+      roundTransitionRef.current = true;
       const elapsed = Math.round(
         (Date.now() - roundStartTimeRef.current) / 1000,
       );
@@ -371,13 +358,14 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
 
       // ── Practice mode: skip ALL backend submission ──
       if (!persistProgressRef.current) {
-        console.warn("[KANJI QUIZ] Practice mode – skipping submit & points refresh");
         setSubmitError(null);
         if (newRoundResults.length >= totalRounds) {
           await finalizeQuiz(newRoundResults);
+          roundTransitionRef.current = false;
           return;
         }
         await loadNextRound(undefined, getExpectedMixedRoundType(newRoundResults.length));
+        roundTransitionRef.current = false;
         return;
       }
 
@@ -392,7 +380,6 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
           return response;
         })
         .catch((err) => {
-          console.error("[KANJI QUIZ] Failed to submit round:", err);
           setSubmitError(extractSubmitErrorMessage(err));
           return null;
         });
@@ -400,13 +387,15 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       // Check if all rounds are done
       if (newRoundResults.length >= totalRounds) {
         const submitResponse = await submitPromise;
-        await refreshPointsAfterSubmit(submitResponse);
+        refreshPointsAfterSubmit(submitResponse);
         await finalizeQuiz(newRoundResults);
+        roundTransitionRef.current = false;
         return;
       }
 
       // Load next round from backend
       await loadNextRound(undefined, getExpectedMixedRoundType(newRoundResults.length));
+      roundTransitionRef.current = false;
     },
     [finalizeQuiz, loadNextRound, refreshPointsAfterSubmit, totalRounds],
   );
@@ -595,6 +584,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     roundStartTimeRef.current = 0;
     submittingRef.current = false;
     persistProgressRef.current = true;
+    roundTransitionRef.current = false;
   }, []);
 
   return {

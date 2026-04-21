@@ -5,10 +5,12 @@ import { recentToCardProps } from "@/features/library/utils/libraryMappers";
 import type { BackendRecentItem } from "@/features/library/types";
 import type { Kanji } from "@/features/kanji/types";
 import { PrimaryActionButton } from "@/shared/ui/PrimaryActionButton";
+import { SkeletonRecentCard } from "@/shared/ui/Skeleton";
 
 interface LibraryRecentPanelProps {
   recentItems: BackendRecentItem[];
   kanjis: Kanji[];
+  loading?: boolean;
   onOpenRecent: () => void;
   onKanjiClick: (kanji: Kanji) => void;
 }
@@ -16,6 +18,7 @@ interface LibraryRecentPanelProps {
 export function LibraryRecentPanel({
   recentItems,
   kanjis,
+  loading = false,
   onOpenRecent,
   onKanjiClick,
 }: LibraryRecentPanelProps) {
@@ -57,7 +60,17 @@ export function LibraryRecentPanel({
           </div>
         </div>
 
-        {recentItems.length > 0 ? (
+        {loading ? (
+          <>
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <SkeletonRecentCard key={index} />
+              ))}
+            </div>
+
+            <div className="mt-5 h-11 w-full animate-pulse rounded-2xl bg-surface-tertiary" />
+          </>
+        ) : recentItems.length > 0 ? (
           <>
             <div className="space-y-3">
               {recentItems.slice(0, 4).map((item, i) => (

@@ -5,6 +5,11 @@ import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
+const KANJI_QUIZ_POST_TIMEOUT_MS = 60000;
+const KANJI_QUIZ_GET_TIMEOUT_MS = 3500;
+const KANJI_DETAIL_TIMEOUT_MS = 6000;
+const USER_POINTS_TIMEOUT_MS = 5000;
+
 type KanjiQuizType = "kanji" | "meaning" | "reading" | "writing";
 
 type RawKanji = {
@@ -133,6 +138,28 @@ function decodeUserIdFromToken(token: string): string | null {
   }
 }
 
+function isTransientUpstreamFetchError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  if (error.name === "AbortError" || error.name === "TimeoutError") {
+    return true;
+  }
+
+  const cause = "cause" in error ? error.cause : null;
+  if (
+    cause &&
+    typeof cause === "object" &&
+    "code" in cause &&
+    (cause as { code?: string }).code === "UND_ERR_SOCKET"
+  ) {
+    return true;
+  }
+
+  return /fetch failed|other side closed/i.test(error.message);
+}
+
 async function fetchKanjiCatalog(token: string): Promise<NormalizedKanji[]> {
   const upstream = await fetch(`${apiConfig.contentApiBase}/content/kanjis`, {
     headers: {
@@ -140,6 +167,7 @@ async function fetchKanjiCatalog(token: string): Promise<NormalizedKanji[]> {
       "Content-Type": "application/json",
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(KANJI_DETAIL_TIMEOUT_MS),
   });
 
   const payload = (await upstream.json().catch(() => null)) as RawKanji[] | null;
@@ -163,7 +191,7 @@ async function fetchCurrentUserPoints(token: string): Promise<number> {
         "Content-Type": "application/json",
       },
       cache: "no-store",
-      signal: AbortSignal.timeout(1500),
+      signal: AbortSignal.timeout(USER_POINTS_TIMEOUT_MS),
     });
 
     if (!upstream.ok) {
@@ -201,7 +229,7 @@ async function fetchKanjiDetailsMap(
               "Content-Type": "application/json",
             },
             cache: "no-store",
-            signal: AbortSignal.timeout(2500),
+            signal: AbortSignal.timeout(KANJI_DETAIL_TIMEOUT_MS),
           },
         );
 
@@ -362,22 +390,41 @@ export async function GET(
             "Content-Type": "application/json",
           },
           cache: "no-store",
-          signal: AbortSignal.timeout(1200),
+          signal: AbortSignal.timeout(KANJI_QUIZ_GET_TIMEOUT_MS),
         });
 
         const text = await upstream.text().catch(() => "");
+        let upstreamPayload: unknown = null;
+
+        if (text) {
+          try {
+            upstreamPayload = JSON.parse(text);
+          } catch {
+            upstreamPayload = text;
+          }
+        }
 
         if (upstream.ok) {
-          return NextResponse.json(text ? JSON.parse(text) : null, {
-            status: upstream.status,
-          });
+          const upstreamQuizType =
+            upstreamPayload && typeof upstreamPayload === "object"
+              ? (upstreamPayload as { type?: unknown }).type
+              : undefined;
+
+          if (
+            !preferredFallbackQuizType ||
+            upstreamQuizType === preferredFallbackQuizType
+          ) {
+            return NextResponse.json(upstreamPayload, {
+              status: upstream.status,
+            });
+          }
         }
 
         let data: Record<string, unknown> = {};
-        try {
-          data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-        } catch {
-          data = { message: text };
+        if (upstreamPayload && typeof upstreamPayload === "object") {
+          data = upstreamPayload as Record<string, unknown>;
+        } else if (typeof upstreamPayload === "string") {
+          data = { message: upstreamPayload };
         }
 
         if (upstream.status < 500) {
@@ -505,18 +552,35 @@ export async function POST(
     );
   }
 
-  const upstream = await fetch(`${apiConfig.studyApiBase}/kanji/quiz/${id}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      type: body.type,
-      score: body.score,
-      duration: body.duration,
-    }),
-  });
+  let upstream: Response;
+
+  try {
+    upstream = await fetch(`${apiConfig.studyApiBase}/kanji/quiz/${id}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: body.type,
+        score: body.score,
+        duration: body.duration,
+      }),
+      signal: AbortSignal.timeout(KANJI_QUIZ_POST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (isTransientUpstreamFetchError(error)) {
+      return NextResponse.json(
+        {
+          message: "El servicio de quizzes no respondio a tiempo. Intenta de nuevo.",
+          success: false,
+        },
+        { status: 504 },
+      );
+    }
+
+    throw error;
+  }
 
   const text = await upstream.text().catch(() => "");
 

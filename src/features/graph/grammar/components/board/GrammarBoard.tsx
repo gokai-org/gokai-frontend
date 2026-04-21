@@ -14,6 +14,7 @@ import {
   resolveGrammarBoardZoomTransform,
   type GrammarBoardTargetRect,
 } from "../../lib/grammarBoardZoom";
+import { useGrammarBoardQuality } from "../../hooks/useGrammarBoardQuality";
 import { createGrammarBoardViewModel } from "../../lib/grammarBoardLayout";
 import { GRAMMAR_SUGOROKU_SLOTS_VERTICAL } from "../../constants/grammarBoard";
 
@@ -97,6 +98,7 @@ export function GrammarBoard({
 }: GrammarBoardProps) {
   const showLoading = status === "idle" || status === "loading";
   const platformMotion = usePlatformMotion();
+  const boardQuality = useGrammarBoardQuality();
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const [viewportSize, setViewportSize] = useState({ width: 0, height: 0 });
@@ -166,23 +168,21 @@ export function GrammarBoard({
   );
 
   const entranceMode = platformMotion.entranceMode;
-  const shouldAnimateBoardEntrance = platformMotion.shouldAnimate;
+  const shouldAnimateBoardEntrance = boardQuality.shouldAnimateBoardEntrance;
   const isLightEntrance = entranceMode === "light";
   const boardDuration = (isLightEntrance ? 0.34 : 0.46) * platformMotion.durationScale;
-  const boardEntryOffset = isLightEntrance ? 10 : 20;
-  const boardEntryScale = isLightEntrance ? 1 : 0.985;
-  const boardExitScale = isLightEntrance ? 1 : 0.992;
+  const boardEntryOffset = boardQuality.boardRevealOffset;
+  const boardEntryScale = boardQuality.boardRevealScale;
+  const boardExitScale = boardQuality.boardExitScale;
   const shouldAnimateBoardReveal = shouldAnimateBoardEntrance && !showLoading;
-  const boardZoomDuration = Math.max(
-    0.48,
-    (platformMotion.shouldUseLightAnimations ? 0.56 : 0.72) *
-      platformMotion.durationScale,
-  );
-  const boardZoomOutDuration = Math.max(
-    0.32,
-    (platformMotion.shouldUseLightAnimations ? 0.36 : 0.46) *
-      platformMotion.durationScale,
-  );
+  const boardZoomDuration = boardQuality.boardZoomDurationMs / 1000;
+  const boardZoomOutDuration = boardQuality.boardZoomOutDurationMs / 1000;
+  const effectiveZoomScale =
+    1 + (zoomTransform.scale - 1) * boardQuality.boardZoomScaleIntensity;
+  const boardZoomFilter =
+    boardQuality.boardZoomBlurPx > 0
+      ? `blur(${boardQuality.boardZoomBlurPx}px) saturate(${boardQuality.boardZoomSaturate})`
+      : "blur(0px) saturate(1)";
 
   const setBoardViewportRef = useCallback((node: HTMLDivElement | null) => {
     resizeObserverRef.current?.disconnect();
@@ -210,6 +210,20 @@ export function GrammarBoard({
   }, []);
 
   const boardViewportAnimation = useMemo(() => {
+    if (!boardQuality.shouldAnimateBoardZoom) {
+      return {
+        x: 0,
+        y: 0,
+        scale: 1,
+        opacity: 1,
+        filter: "blur(0px) saturate(1)",
+        transition: {
+          duration: boardDuration,
+          ease: BOARD_EASE,
+        },
+      };
+    }
+
     // Zoom-in: la cámara se acerca suavemente a la casilla y el tablero se desvanece al final
     if (
       transitionState === "zooming-in" &&
@@ -221,9 +235,9 @@ export function GrammarBoard({
       return {
         x: zoomTransform.x,
         y: zoomTransform.y,
-        scale: zoomTransform.scale,
+        scale: effectiveZoomScale,
         opacity: 0,
-        filter: "blur(10px) saturate(1.04)",
+        filter: boardZoomFilter,
         transition: {
           x: { duration: boardZoomDuration, ease: zoomEase },
           y: { duration: boardZoomDuration, ease: zoomEase },
@@ -247,9 +261,9 @@ export function GrammarBoard({
       return {
         x: zoomTransform.x,
         y: zoomTransform.y,
-        scale: zoomTransform.scale,
+        scale: effectiveZoomScale,
         opacity: 0,
-        filter: "blur(10px) saturate(1.04)",
+        filter: boardZoomFilter,
         transition: { duration: 0 },
       };
     }
@@ -285,13 +299,15 @@ export function GrammarBoard({
       },
     };
   }, [
+    boardQuality.shouldAnimateBoardZoom,
+    boardZoomFilter,
     boardDuration,
     boardZoomDuration,
     boardZoomOutDuration,
+    effectiveZoomScale,
     transitionState,
     viewportSize.height,
     viewportSize.width,
-    zoomTransform.scale,
     zoomTransform.x,
     zoomTransform.y,
   ]);
@@ -399,6 +415,7 @@ export function GrammarBoard({
                       cell={cell}
                       onSelect={handleSelect}
                       helpTarget={cell.progress.id === helpTargetLessonId}
+                      enableHoverMotion={boardQuality.shouldUseHoverMotion}
                       isPortrait={isPortrait}
                       isCompactPortrait={isCompactPortrait}
                       isTinyPortrait={isTinyPortrait}

@@ -48,6 +48,8 @@ export interface TourDefinition {
 interface GuideTourContextValue {
   /** Tour activo — null si no hay tour corriendo */
   activeTour: TourDefinition | null;
+  /** Tour pendiente de activarse — null si no hay navegación/espera */
+  pendingTour: TourDefinition | null;
   /** Step index actual (0-based) */
   currentStep: number;
   /** Iniciar un tour: navega a la ruta y muestra la guía */
@@ -268,6 +270,7 @@ export function GuideTourProvider({ children }: { children: React.ReactNode }) {
     <GuideTourContext.Provider
       value={{
         activeTour,
+        pendingTour,
         currentStep,
         startTour,
         nextStep,
