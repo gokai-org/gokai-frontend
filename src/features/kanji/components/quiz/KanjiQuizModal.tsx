@@ -22,6 +22,10 @@ import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { KanjiQuizWritingExercise } from "./KanjiQuizWritingExercise";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
+import {
+  ReaffirmedMasteryResult,
+  UnlockedMasterySequence,
+} from "@/shared/ui/ReaffirmedMasteryResult";
 
 const KANJI_COMPLETION_REWARD = 30;
 
@@ -58,6 +62,7 @@ export function KanjiQuizModal({
   const mastered = useMasteredModules();
   const isKanjiMastered = mastered.has("kanji");
   const autoClosedForMasteryRef = useRef(false);
+  const shouldPersistProgress = !wasCompletedBefore && quizType === undefined;
 
   const goldenAccentVars = useMemo<React.CSSProperties | undefined>(
     () =>
@@ -121,15 +126,21 @@ export function KanjiQuizModal({
   );
 
   useEffect(() => {
-    quiz.startQuiz(kanjiId, quizType);
+    quiz.startQuiz(kanjiId, {
+      quizType,
+      persistProgress: shouldPersistProgress,
+    });
     return () => quiz.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kanjiId, quizType]);
+  }, [kanjiId, quizType, shouldPersistProgress]);
 
   const handleRetry = useCallback(() => {
     quiz.reset();
-    quiz.startQuiz(kanjiId, quizType);
-  }, [quiz, kanjiId, quizType]);
+    quiz.startQuiz(kanjiId, {
+      quizType,
+      persistProgress: shouldPersistProgress,
+    });
+  }, [quiz, kanjiId, quizType, shouldPersistProgress]);
 
   const handleNextAfterFeedback = useCallback(() => {
     quiz.nextStep();
@@ -155,23 +166,28 @@ export function KanjiQuizModal({
   } = quiz;
 
   const isPracticeSession = totalRounds === 1;
-  const isMixedCompletion = quiz.totalRounds > 1;
-  const isNewlyCompleted =
-    !wasCompletedBefore && isMixedCompletion && finalScore === 100;
-  const isDominated =
-    wasCompletedBefore && isMixedCompletion && state.step === "celebration";
+  const didPerfectMixedCompletion =
+    !isPracticeSession &&
+    finalScore === 100 &&
+    (state.step === "summary" || state.step === "celebration");
+  const awardedPointsDelta = pointsDelta;
+  const isNewlyCompleted = didPerfectMixedCompletion && awardedPointsDelta > 0;
+  const shouldShowReaffirmedMastery =
+    didPerfectMixedCompletion && awardedPointsDelta === 0;
+  const shouldShowUnlockedMastery = isNewlyCompleted;
+  const isDominated = shouldShowReaffirmedMastery;
   const displayPointsDelta = isPracticeSession
     ? 0
-    : isNewlyCompleted
-      ? Math.max(pointsDelta, KANJI_COMPLETION_REWARD)
+    : shouldShowUnlockedMastery
+      ? Math.max(awardedPointsDelta, KANJI_COMPLETION_REWARD)
       : pointsDelta;
   const shouldHidePointsDelta = isPracticeSession || reachedMasteryThisAttempt;
   const displayedUpdatedPoints = isPracticeSession ? null : updatedPoints;
   const resultingModulePoints =
-    displayedUpdatedPoints ?? currentModulePoints + displayPointsDelta;
+    displayedUpdatedPoints ?? currentModulePoints + awardedPointsDelta;
   const triggeredModuleMastery =
     isNewlyCompleted &&
-    currentModulePoints + KANJI_COMPLETION_REWARD >= MASTERY_THRESHOLDS.kanji;
+    resultingModulePoints >= MASTERY_THRESHOLDS.kanji;
 
   const handleClose = useCallback(() => {
     const completionResult: KanjiQuizCompletionResult | undefined =
@@ -564,7 +580,24 @@ export function KanjiQuizModal({
               )}
 
             {state.step === "celebration" &&
-              (totalRounds === 1 ? (
+              (shouldShowReaffirmedMastery ? (
+                <ReaffirmedMasteryResult
+                  title="Volviste a dominar este kanji"
+                  subtitle={`${label ? `${label} ` : "Este kanji "}se resolvio otra vez con dominio total, sin otorgar puntos ni desbloqueos nuevos.`}
+                  score={finalScore}
+                  onRetry={handleRetry}
+                  onClose={handleClose}
+                />
+              ) : shouldShowUnlockedMastery ? (
+                <UnlockedMasterySequence
+                  title="Dominaste este kanji por primera vez"
+                  subtitle={`${label ? `${label} ` : "Este kanji "}quedo completado con un resultado perfecto y desbloqueo puntos nuevos.`}
+                  score={finalScore}
+                  symbol={label || "漢"}
+                  pointsDelta={displayPointsDelta}
+                  onClose={handleClose}
+                />
+              ) : totalRounds === 1 ? (
                 <KanjiPracticeResult
                   success
                   score={finalScore}
@@ -574,104 +607,39 @@ export function KanjiQuizModal({
                   error={submitError}
                   updatedPoints={displayedUpdatedPoints}
                   hidePointsDelta={shouldHidePointsDelta}
-                  isDominated={isDominated}
                   onRetry={handleRetry}
                   onClose={handleClose}
                 />
               ) : (
-              <motion.div
-                key="celebration"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.3 }}
-                className="flex flex-col items-center justify-center py-8 gap-6 text-center"
-              >
-                <div className="relative">
-                  <div className="kanji-celebration-halo absolute inset-[-24px] rounded-full" />
-                  <motion.div
-                    initial={{ scale: 0.3, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{ duration: 0.55, ease: [0.34, 1.56, 0.64, 1] }}
-                    className={`relative z-10 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-hover ${isKanjiMastered ? "shadow-[0_0_48px_rgba(212,168,67,0.52)]" : "shadow-[0_0_48px_rgba(186,72,66,0.52)]"}`}
-                  >
-                    <span className="text-5xl font-bold text-white select-none">
-                      {label || "漢"}
-                    </span>
-                  </motion.div>
-                </div>
-
-                {!shouldHidePointsDelta && displayPointsDelta > 0 && !isDominated && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 12, scale: 0.8 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{
-                      delay: 0.32,
-                      duration: 0.42,
-                      ease: [0.34, 1.56, 0.64, 1],
-                    }}
-                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2 shadow-lg shadow-accent/30"
-                  >
-                    <span className="text-xl font-black text-white">
-                      +{displayPointsDelta}
-                    </span>
-                    <span className="text-sm font-semibold text-white/80">
-                      puntos ganados
-                    </span>
-                  </motion.div>
-                )}
-
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.44, duration: 0.38 }}
-                  className="space-y-1.5"
-                >
-                  <p className="text-2xl font-black text-content-primary">
-                    {isDominated ? "¡Dominaste este kanji!" : "¡Kanji completado!"}
-                  </p>
-                  <p className="text-sm text-content-muted">
-                    {isDominated
-                      ? "Lo resolviste con dominio total y una ejecución perfecta."
-                      : totalRounds === 1
-                      ? !shouldHidePointsDelta && displayPointsDelta > 0
-                        ? `Has superado la practica de ${quizSubtitle.toLowerCase()}`
-                        : `Has completado la practica de ${quizSubtitle.toLowerCase()}`
-                      : !shouldHidePointsDelta && displayPointsDelta > 0
-                        ? `Has superado los ${totalRounds} ejercicios`
-                        : `Has completado los ${totalRounds} ejercicios`}
-                  </p>
-                </motion.div>
-
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleClose}
-                  className="mt-2 flex items-center gap-2 rounded-2xl border border-border-subtle bg-surface-secondary px-6 py-3 text-sm font-semibold text-content-secondary transition hover:bg-surface-tertiary"
-                >
-                  Cerrar
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </motion.button>
-              </motion.div>
+              <UnlockedMasterySequence
+                title="Dominaste este kanji por primera vez"
+                subtitle={`${label ? `${label} ` : "Este kanji "}quedo completado con un resultado perfecto y desbloqueo puntos nuevos.`}
+                score={finalScore}
+                symbol={label || "漢"}
+                pointsDelta={displayPointsDelta}
+                onClose={handleClose}
+              />
               ))}
 
             {state.step === "summary" &&
-              (totalRounds === 1 ? (
+              (shouldShowReaffirmedMastery ? (
+                <ReaffirmedMasteryResult
+                  title="Volviste a dominar este kanji"
+                  subtitle={`${label ? `${label} ` : "Este kanji "}se resolvio otra vez con dominio total, sin otorgar puntos ni desbloqueos nuevos.`}
+                  score={finalScore}
+                  onRetry={handleRetry}
+                  onClose={handleClose}
+                />
+              ) : shouldShowUnlockedMastery ? (
+                <UnlockedMasterySequence
+                  title="Dominaste este kanji por primera vez"
+                  subtitle={`${label ? `${label} ` : "Este kanji "}quedo completado con un resultado perfecto y desbloqueo puntos nuevos.`}
+                  score={finalScore}
+                  symbol={label || "漢"}
+                  pointsDelta={displayPointsDelta}
+                  onClose={handleClose}
+                />
+              ) : totalRounds === 1 ? (
                 <KanjiPracticeResult
                   success={finalScore === 100}
                   score={finalScore}
@@ -681,7 +649,6 @@ export function KanjiQuizModal({
                   error={submitError}
                   updatedPoints={displayedUpdatedPoints}
                   hidePointsDelta={shouldHidePointsDelta}
-                  isDominated={isDominated}
                   onRetry={handleRetry}
                   onClose={handleClose}
                 />
@@ -1036,7 +1003,6 @@ function KanjiPracticeResult({
   updatedPoints,
   error,
   hidePointsDelta = false,
-  isDominated = false,
   onRetry,
   onClose,
 }: {
@@ -1048,16 +1014,11 @@ function KanjiPracticeResult({
   updatedPoints: number | null;
   error: string | null;
   hidePointsDelta?: boolean;
-  isDominated?: boolean;
   onRetry: () => void;
   onClose: () => void;
 }) {
   const scoreStyle = success ? { color: "var(--accent)" } : undefined;
-  const title = isDominated
-    ? "Kanji dominado"
-    : success
-      ? "Practica completada"
-      : "Practica incompleta";
+  const title = success ? "Practica completada" : "Practica incompleta";
 
   return (
     <motion.div
@@ -1104,11 +1065,7 @@ function KanjiPracticeResult({
                 className="mt-1 text-sm font-bold text-content-primary"
                 style={scoreStyle}
               >
-                {isDominated
-                  ? "Dominado"
-                  : success
-                    ? "Aprobada"
-                    : "Requiere reintento"}
+                {success ? "Aprobada" : "Requiere reintento"}
               </p>
               {!hidePointsDelta && updatedPoints !== null && (
                 <p className="mt-1 text-xs text-content-muted">

@@ -39,6 +39,7 @@ import {
 type KanjiQuizCompletionResult = {
   newlyCompleted: boolean;
   newlyCompletedPoints: number;
+  resultingModulePoints: number;
   dominated: boolean;
   score: number;
   triggeredModuleMastery: boolean;
@@ -359,7 +360,7 @@ export default function KanjisView() {
         ...kanji,
         quizType,
         wasCompletedBefore,
-        isPracticeOnly: quizType !== undefined,
+        isPracticeOnly: quizType !== undefined || wasCompletedBefore,
       });
     },
     [mastered],
@@ -367,7 +368,9 @@ export default function KanjisView() {
 
   const handleQuizEnd = useCallback((result?: KanjiQuizCompletionResult) => {
     const isPracticeOnly = quizKanji?.isPracticeOnly === true;
-    const resultingPoints = userPoints + (result?.newlyCompletedPoints ?? 0);
+    const resultingPoints =
+      result?.resultingModulePoints ??
+      userPoints + (result?.newlyCompletedPoints ?? 0);
     const becameMastered =
       !wasMasteredBeforeQuizRef.current &&
       resultingPoints >= MASTERY_THRESHOLDS.kanji;
@@ -390,7 +393,9 @@ export default function KanjisView() {
     }
     if (result?.newlyCompleted && result.newlyCompletedPoints > 0) {
       dispatchMasteryProgressSync({
-        points: userPoints + result.newlyCompletedPoints,
+        points:
+          result.resultingModulePoints ??
+          userPoints + result.newlyCompletedPoints,
       });
     }
     if (result?.triggeredModuleMastery) {
@@ -766,7 +771,9 @@ export default function KanjisView() {
           onQuizStart={handleQuizStart}
         />
 
-        {detailNodeId === null && <ContextualHelpButton getTour={buildHelpTour} />}
+        {detailNodeId === null && quizKanji === null && (
+          <ContextualHelpButton getTour={buildHelpTour} />
+        )}
 
         {quizKanji !== null && (
           <KanjiQuizModal

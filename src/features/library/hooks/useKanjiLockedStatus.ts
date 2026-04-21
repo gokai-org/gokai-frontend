@@ -10,9 +10,8 @@ import {
   clearCache,
   KANJI_USER_CACHE_KEY,
   LIBRARY_KANJI_STATUS_CACHE_KEY,
-  LIBRARY_STATUS_TTL_MS,
   type LibraryKanjiStatusCache,
-  readFreshCache,
+  readCache,
   readKnownUserId,
   writeCache,
   writeKnownUserId,
@@ -23,9 +22,8 @@ const KANJI_COMPLETION_SCORE = 70;
 export function useKanjiLockedStatus(kanjis: Kanji[]) {
   const knownUserId = readKnownUserId(KANJI_USER_CACHE_KEY);
   const initialCache = useRef<LibraryKanjiStatusCache | null>((() => {
-    const cached = readFreshCache<LibraryKanjiStatusCache>(
+    const cached = readCache<LibraryKanjiStatusCache>(
       LIBRARY_KANJI_STATUS_CACHE_KEY,
-      LIBRARY_STATUS_TTL_MS,
     );
 
     if (!cached) return null;
@@ -68,14 +66,19 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
 
   const applyUserPoints = useCallback(
     (nextUserPoints: number, userId = activeUserIdRef.current) => {
-    optimisticUserPointsRef.current = nextUserPoints;
-    setUserPoints((previous) =>
-      previous === nextUserPoints ? previous : nextUserPoints,
-    );
+      const mergedUserPoints = Math.max(
+        nextUserPoints,
+        optimisticUserPointsRef.current,
+      );
 
-    persistStatusCache(userId, nextUserPoints, resultsRef.current);
+      optimisticUserPointsRef.current = mergedUserPoints;
+      setUserPoints((previous) =>
+        previous === mergedUserPoints ? previous : mergedUserPoints,
+      );
 
-    return nextUserPoints;
+      persistStatusCache(userId, mergedUserPoints, resultsRef.current);
+
+      return mergedUserPoints;
     },
     [persistStatusCache],
   );

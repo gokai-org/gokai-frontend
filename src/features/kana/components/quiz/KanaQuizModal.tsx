@@ -19,6 +19,10 @@ import {
 import { KanaQuizCanvasExercise } from "./KanaQuizCanvasExercise";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import {
+  ReaffirmedMasteryResult,
+  UnlockedMasterySequence,
+} from "@/shared/ui/ReaffirmedMasteryResult";
 
 const KANA_COMPLETION_REWARD = 5;
 
@@ -55,6 +59,7 @@ export function KanaQuizModal({
   const quiz = useKanaQuiz();
   const platformMotion = usePlatformMotion();
   const autoClosedForMasteryRef = useRef(false);
+  const shouldPersistProgress = !wasCompletedBefore && quizType === undefined;
 
   const overlayVariants = useMemo(
     () => ({
@@ -104,15 +109,25 @@ export function KanaQuizModal({
   );
 
   useEffect(() => {
-    quiz.startQuiz(kanaId, { kanaType, label, quizType });
+    quiz.startQuiz(kanaId, {
+      kanaType,
+      label,
+      quizType,
+      persistProgress: shouldPersistProgress,
+    });
     return () => quiz.reset();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kanaId, kanaType, quizType]);
+  }, [kanaId, kanaType, quizType, shouldPersistProgress]);
 
   const handleRetry = useCallback(() => {
     quiz.reset();
-    quiz.startQuiz(kanaId, { kanaType, label, quizType });
-  }, [quiz, kanaId, kanaType, label, quizType]);
+    quiz.startQuiz(kanaId, {
+      kanaType,
+      label,
+      quizType,
+      persistProgress: shouldPersistProgress,
+    });
+  }, [quiz, kanaId, kanaType, label, quizType, shouldPersistProgress]);
 
   const handleNextAfterFeedback = useCallback(() => {
     quiz.nextStep();
@@ -127,28 +142,37 @@ export function KanaQuizModal({
     finalScore,
     error,
     submitError,
+    updatedPoints,
     pointsDelta,
     reachedMasteryThisAttempt,
     roundResults,
   } = quiz;
 
   const isPracticeSession = quiz.totalRounds === 1;
-  const isMixedCompletion = quiz.totalRounds > 1;
-  const isNewlyCompleted =
-    !wasCompletedBefore && isMixedCompletion && finalScore === 100;
-  const isDominated =
-    wasCompletedBefore && isMixedCompletion && state.step === "celebration";
+  const didPerfectMixedCompletion =
+    !isPracticeSession &&
+    finalScore === 100 &&
+    (state.step === "summary" || state.step === "celebration");
+  const awardedPointsDelta = pointsDelta;
+  const isNewlyCompleted = didPerfectMixedCompletion && awardedPointsDelta > 0;
+  const shouldShowReaffirmedMastery =
+    didPerfectMixedCompletion && awardedPointsDelta === 0;
+  const shouldShowUnlockedMastery = isNewlyCompleted;
+  const isDominated = shouldShowReaffirmedMastery;
   const moduleMasteryThreshold = kanaType ? MASTERY_THRESHOLDS[kanaType] : null;
+  const displayPointsDelta = isPracticeSession
+    ? 0
+    : shouldShowUnlockedMastery
+      ? Math.max(awardedPointsDelta, KANA_COMPLETION_REWARD)
+      : pointsDelta;
+  const shouldHidePointsDelta = isPracticeSession || reachedMasteryThisAttempt;
+  const displayedUpdatedPoints = isPracticeSession ? null : updatedPoints;
+  const resultingModulePoints =
+    displayedUpdatedPoints ?? currentModulePoints + awardedPointsDelta;
   const triggeredModuleMastery =
     isNewlyCompleted &&
     moduleMasteryThreshold !== null &&
-    currentModulePoints + KANA_COMPLETION_REWARD >= moduleMasteryThreshold;
-  const displayPointsDelta = isPracticeSession
-    ? 0
-    : isNewlyCompleted
-      ? Math.max(pointsDelta, KANA_COMPLETION_REWARD)
-      : pointsDelta;
-  const shouldHidePointsDelta = isPracticeSession || reachedMasteryThisAttempt;
+    resultingModulePoints >= moduleMasteryThreshold;
 
   const handleClose = useCallback(() => {
     const completionResult: KanaQuizCompletionResult | undefined =
@@ -157,7 +181,7 @@ export function KanaQuizModal({
             score: quiz.finalScore,
             newlyCompleted: isNewlyCompleted,
             newlyCompletedPoints: isNewlyCompleted ? KANA_COMPLETION_REWARD : 0,
-            resultingModulePoints: currentModulePoints + displayPointsDelta,
+            resultingModulePoints,
             dominated: isDominated,
             triggeredModuleMastery,
           }
@@ -172,13 +196,12 @@ export function KanaQuizModal({
     }
     onClose(completionResult);
   }, [
-    currentModulePoints,
-    displayPointsDelta,
     isDominated,
     isNewlyCompleted,
     onClose,
     onComplete,
     quiz,
+    resultingModulePoints,
     triggeredModuleMastery,
   ]);
 
@@ -507,7 +530,24 @@ export function KanaQuizModal({
               )}
 
             {state.step === "celebration" &&
-              (quiz.totalRounds === 1 ? (
+              (shouldShowReaffirmedMastery ? (
+                <ReaffirmedMasteryResult
+                  title={`Volviste a dominar este ${kanaTypeLabel.toLowerCase()}`}
+                  subtitle={`Lo resolviste otra vez con dominio total. ${label ? `${label} ` : ""}se mantiene dominado sin sumar puntos nuevos.`}
+                  score={finalScore}
+                  onRetry={handleRetry}
+                  onClose={handleClose}
+                />
+              ) : shouldShowUnlockedMastery ? (
+                <UnlockedMasterySequence
+                  title={`Dominaste este ${kanaTypeLabel.toLowerCase()} por primera vez`}
+                  subtitle={`Completaste el quiz perfecto y desbloqueaste progreso nuevo${label ? ` para ${label}` : ""}.`}
+                  score={finalScore}
+                  symbol={label || "あ"}
+                  pointsDelta={displayPointsDelta}
+                  onClose={handleClose}
+                />
+              ) : quiz.totalRounds === 1 ? (
                 <KanaPracticeResult
                   success
                   score={finalScore}
@@ -516,102 +556,39 @@ export function KanaQuizModal({
                   pointsDelta={displayPointsDelta}
                   error={submitError}
                   hidePointsDelta={shouldHidePointsDelta}
-                  isDominated={isDominated}
                   onRetry={handleRetry}
                   onClose={handleClose}
                 />
               ) : (
-              <motion.div
-                key="celebration"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.3 }}
-                className="flex flex-col items-center justify-center py-8 gap-6 text-center"
-              >
-                <div className="relative">
-                  <div className="kanji-celebration-halo absolute inset-[-24px] rounded-full" />
-                  <motion.div
-                    initial={{ scale: 0.3, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    transition={{
-                      duration: 0.55,
-                      ease: [0.34, 1.56, 0.64, 1],
-                    }}
-                    className="relative z-10 flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-accent to-accent-hover"
-                    style={{ boxShadow: "0 0 48px var(--accent-glow, rgba(186,72,66,0.52))" }}
-                  >
-                    <span className="text-5xl font-bold text-white select-none">
-                      {label || "あ"}
-                    </span>
-                  </motion.div>
-                </div>
-
-                {!shouldHidePointsDelta && displayPointsDelta > 0 && !isDominated && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 12, scale: 0.8 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    transition={{
-                      delay: 0.32,
-                      duration: 0.42,
-                      ease: [0.34, 1.56, 0.64, 1],
-                    }}
-                    className="flex items-center gap-2 rounded-full bg-gradient-to-r from-accent to-accent-hover px-5 py-2 shadow-lg shadow-accent/30"
-                  >
-                    <span className="text-xl font-black text-white">
-                      +{displayPointsDelta}
-                    </span>
-                    <span className="text-sm font-semibold text-white/80">
-                      puntos ganados
-                    </span>
-                  </motion.div>
-                )}
-
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.44, duration: 0.38 }}
-                  className="space-y-1.5"
-                >
-                  <p className="text-2xl font-black text-content-primary">
-                    {isDominated ? `¡Dominaste este ${kanaTypeLabel.toLowerCase()}!` : "¡Ejercicio completado!"}
-                  </p>
-                  <p className="text-sm text-content-muted">
-                    {isDominated
-                      ? `Resolviste este ${kanaTypeLabel.toLowerCase()} con dominio total.`
-                      : `Has completado este ejercicio de ${kanaTypeLabel.toLowerCase()}`}
-                  </p>
-                </motion.div>
-
-                <motion.button
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.7 }}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={handleClose}
-                  className="mt-2 flex items-center gap-2 rounded-2xl border border-border-subtle bg-surface-secondary px-6 py-3 text-sm font-semibold text-content-secondary transition hover:bg-surface-tertiary"
-                >
-                  Cerrar
-                  <svg
-                    className="h-4 w-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2.5}
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M9 5l7 7-7 7"
-                    />
-                  </svg>
-                </motion.button>
-              </motion.div>
+              <UnlockedMasterySequence
+                title={`Dominaste este ${kanaTypeLabel.toLowerCase()} por primera vez`}
+                subtitle={`Completaste el quiz perfecto y desbloqueaste progreso nuevo${label ? ` para ${label}` : ""}.`}
+                score={finalScore}
+                symbol={label || "あ"}
+                pointsDelta={displayPointsDelta}
+                onClose={handleClose}
+              />
               ))}
 
             {state.step === "summary" &&
-              (quiz.totalRounds === 1 ? (
+              (shouldShowReaffirmedMastery ? (
+                <ReaffirmedMasteryResult
+                  title={`Volviste a dominar este ${kanaTypeLabel.toLowerCase()}`}
+                  subtitle={`Lo resolviste otra vez con dominio total. ${label ? `${label} ` : ""}se mantiene dominado sin sumar puntos nuevos.`}
+                  score={finalScore}
+                  onRetry={handleRetry}
+                  onClose={handleClose}
+                />
+              ) : shouldShowUnlockedMastery ? (
+                <UnlockedMasterySequence
+                  title={`Dominaste este ${kanaTypeLabel.toLowerCase()} por primera vez`}
+                  subtitle={`Completaste el quiz perfecto y desbloqueaste progreso nuevo${label ? ` para ${label}` : ""}.`}
+                  score={finalScore}
+                  symbol={label || "あ"}
+                  pointsDelta={displayPointsDelta}
+                  onClose={handleClose}
+                />
+              ) : quiz.totalRounds === 1 ? (
                 <KanaPracticeResult
                   success={finalScore === 100}
                   score={finalScore}
@@ -620,7 +597,6 @@ export function KanaQuizModal({
                   pointsDelta={displayPointsDelta}
                   error={submitError}
                   hidePointsDelta={shouldHidePointsDelta}
-                  isDominated={isDominated}
                   onRetry={handleRetry}
                   onClose={handleClose}
                 />
@@ -901,7 +877,6 @@ function KanaPracticeResult({
   pointsDelta: _pointsDelta,
   error,
   hidePointsDelta: _hidePointsDelta = false,
-  isDominated = false,
   onRetry,
   onClose,
 }: {
@@ -912,22 +887,14 @@ function KanaPracticeResult({
   pointsDelta: number;
   error: string | null;
   hidePointsDelta?: boolean;
-  isDominated?: boolean;
   onRetry: () => void;
   onClose: () => void;
 }) {
   const scoreStyle = success ? { color: "var(--accent)" } : undefined;
-
-  const title = isDominated
-    ? `${kanaTypeLabel} dominado`
-    : success
-      ? "Practica completada"
-      : "Practica incompleta";
-  const subtitle = isDominated
-    ? `Este ${kanaTypeLabel.toLowerCase()} ya es tuyo. Cerraste ${quizTypeLabel.toLowerCase()} con control total.`
-    : success
-      ? `Cerraste ${quizTypeLabel.toLowerCase()} de ${kanaTypeLabel.toLowerCase()} con precision.`
-      : `Te falto cerrar ${quizTypeLabel.toLowerCase()} de ${kanaTypeLabel.toLowerCase()} en 100.`;
+  const title = success ? "Practica completada" : "Practica incompleta";
+  const subtitle = success
+    ? `Cerraste ${quizTypeLabel.toLowerCase()} de ${kanaTypeLabel.toLowerCase()} con precision.`
+    : `Te falto cerrar ${quizTypeLabel.toLowerCase()} de ${kanaTypeLabel.toLowerCase()} en 100.`;
 
   return (
     <motion.div
@@ -973,11 +940,7 @@ function KanaPracticeResult({
                 className="mt-1 text-sm font-bold text-content-primary"
                 style={scoreStyle}
               >
-                {isDominated
-                  ? "Dominado"
-                  : success
-                    ? "Aprobada"
-                    : "Reintento recomendado"}
+                {success ? "Aprobada" : "Reintento recomendado"}
               </p>
             </div>
           </div>

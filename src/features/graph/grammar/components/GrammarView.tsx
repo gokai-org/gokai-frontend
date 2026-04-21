@@ -8,6 +8,7 @@ import { ContextualHelpButton } from "@/features/help/components/ContextualHelpB
 import { createGrammarBoardContextTour } from "@/features/help/utils/contextualTours";
 import {
   HELP_GUIDE_GRAMMAR_EVENT,
+  dispatchHelpGuideGrammar,
   type HelpGuideGrammarDetail,
 } from "@/features/help/utils/guideEvents";
 import { GrammarBoard } from "./board";
@@ -179,12 +180,19 @@ export default function GrammarView() {
       createGrammarBoardContextTour({
         id: "grammar-context-tour",
         title: "Guia de Grammar",
+        route: "/dashboard/graph/grammar",
         scopeSelector: '[data-help-surface="grammar-board"]',
-        focusLesson: focusHelpLesson,
-        openLesson: openHelpLesson,
-        resetTourState: resetHelpTourState,
+        focusLesson: () => {
+          dispatchHelpGuideGrammar("focus");
+        },
+        openLesson: () => {
+          dispatchHelpGuideGrammar("open");
+        },
+        resetTourState: () => {
+          dispatchHelpGuideGrammar("reset");
+        },
       }),
-    [focusHelpLesson, openHelpLesson, resetHelpTourState],
+    [],
   );
 
   useEffect(() => {

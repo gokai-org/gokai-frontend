@@ -250,23 +250,25 @@ export default function LibraryPage() {
       setDrawerEntity(null);
       if (kind === "kanji") {
         lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
+        const wasCompletedBefore = completedKanjiIds.has(entity.id);
         setQuizKanji({
           id: entity.id,
           symbol: entity.symbol,
           quizType: quizType as KanjiQuizType | undefined,
-          wasCompletedBefore: completedKanjiIds.has(entity.id),
-          isPracticeOnly: quizType !== undefined,
+          wasCompletedBefore,
+          isPracticeOnly: quizType !== undefined || wasCompletedBefore,
         });
       } else {
         lockedHiraganaIdsBeforeQuizRef.current = new Set(lockedHiraganaIds);
         lockedKatakanaIdsBeforeQuizRef.current = new Set(lockedKatakanaIds);
+        const wasCompletedBefore = progressById.get(entity.id)?.completed === true;
         setQuizKana({
           id: entity.id,
           symbol: entity.symbol,
           kanaType: kanaType ?? "hiragana",
           quizType: quizType as KanaQuizType | undefined,
-          wasCompletedBefore: progressById.get(entity.id)?.completed === true,
-          isPracticeOnly: quizType !== undefined,
+          wasCompletedBefore,
+          isPracticeOnly: quizType !== undefined || wasCompletedBefore,
         });
       }
     },

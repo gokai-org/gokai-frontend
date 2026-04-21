@@ -7,6 +7,14 @@ import type {
 } from "@/features/kana/types/quiz";
 import { normalizeKanaQuizResponse } from "@/features/kana/utils/quizParser";
 
+export type KanaQuizSubmitResponse = {
+  success?: boolean;
+  message?: string;
+  userPoints?: number | null;
+  kanaPoints?: number | null;
+  points?: number | null;
+};
+
 /**
  * Fetch the quiz for a kana from the backend (GOKAISTUDY).
  * The backend decides the question type based on user progress.
@@ -51,10 +59,10 @@ export async function getKanaQuiz(
 export async function submitKanaQuiz(
   kanaId: string,
   body: KanaQuizSubmitBody,
-): Promise<Record<string, unknown>> {
+): Promise<KanaQuizSubmitResponse> {
   console.warn("[KANA QUIZ POST] submitKanaQuiz called", { kanaId, body });
   console.trace("[KANA QUIZ POST] call stack");
-  return apiFetch<Record<string, unknown>>(`/api/content/kana/${kanaId}?resource=quiz`, {
+  return apiFetch<KanaQuizSubmitResponse>(`/api/content/kana/${kanaId}?resource=quiz`, {
     method: "POST",
     body: JSON.stringify(body),
   });

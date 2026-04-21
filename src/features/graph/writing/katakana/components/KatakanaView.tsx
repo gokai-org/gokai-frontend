@@ -184,7 +184,7 @@ export default function KatakanaView() {
         label: entity.symbol,
         quizType,
         wasCompletedBefore,
-        isPracticeOnly: quizType !== undefined,
+        isPracticeOnly: quizType !== undefined || wasCompletedBefore,
       });
     },
     [items, mastered],
@@ -193,6 +193,7 @@ export default function KatakanaView() {
   const handleQuizEnd = useCallback((result?: KanaQuizCompletionResult) => {
     const isPracticeOnly = quizItem?.isPracticeOnly === true;
     const resultingKanaPoints =
+      result?.resultingModulePoints ??
       userPoints + (result?.newlyCompletedPoints ?? 0);
     const becameMastered =
       !wasMasteredBeforeQuizRef.current &&
@@ -210,7 +211,9 @@ export default function KatakanaView() {
     }
     if (result?.newlyCompleted && result.newlyCompletedPoints > 0) {
       dispatchMasteryProgressSync({
-        kanaPoints: userPoints + result.newlyCompletedPoints,
+        kanaPoints:
+          result.resultingModulePoints ??
+          userPoints + result.newlyCompletedPoints,
       });
     }
     if (result?.triggeredModuleMastery) {
@@ -307,7 +310,9 @@ export default function KatakanaView() {
         onQuizStart={handleQuizStart}
       />
 
-      {detailNodeId === null && <ContextualHelpButton getTour={buildHelpTour} />}
+      {detailNodeId === null && quizItem === null && (
+        <ContextualHelpButton getTour={buildHelpTour} />
+      )}
 
       {quizItem && (
         <KanaQuizModal

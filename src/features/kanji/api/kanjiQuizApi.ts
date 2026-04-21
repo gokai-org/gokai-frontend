@@ -6,6 +6,13 @@ import type {
 } from "@/features/kanji/types/quiz";
 import { normalizeQuizResponse } from "@/features/kanji/utils/quizParser";
 
+export type KanjiQuizSubmitResponse = {
+  success?: boolean;
+  message?: string;
+  userPoints?: number | null;
+  points?: number | null;
+};
+
 /**
  * Fetch the quiz block for a kanji from the backend.
  * The backend decides the question type based on user progress.
@@ -49,10 +56,10 @@ export async function getKanjiQuiz(
 export async function submitKanjiQuiz(
   kanjiId: string,
   body: KanjiQuizSubmitBody,
-): Promise<{ success: boolean }> {
+): Promise<KanjiQuizSubmitResponse> {
   console.warn("[KANJI QUIZ POST] submitKanjiQuiz called", { kanjiId, body });
   console.trace("[KANJI QUIZ POST] call stack");
-  return apiFetch<{ success: boolean }>(`/api/content/kanji/${kanjiId}?resource=quiz`, {
+  return apiFetch<KanjiQuizSubmitResponse>(`/api/content/kanji/${kanjiId}?resource=quiz`, {
     method: "POST",
     body: JSON.stringify(body),
   });
