@@ -5,6 +5,11 @@ import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
+const KANJI_QUIZ_POST_TIMEOUT_MS = 60000;
+const KANJI_QUIZ_GET_TIMEOUT_MS = 3500;
+const KANJI_DETAIL_TIMEOUT_MS = 6000;
+const USER_POINTS_TIMEOUT_MS = 5000;
+
 type KanjiQuizType = "kanji" | "meaning" | "reading" | "writing";
 
 type RawKanji = {
@@ -24,6 +29,12 @@ type NormalizedKanji = ReturnType<typeof normalizeKanji>;
 type QuizOption = {
   correct: boolean;
   value: string;
+};
+
+type KanjiProgressPayload = {
+  hasUnlocked?: boolean;
+  kanjiId?: string;
+  completed?: boolean;
 };
 
 function parseStrokeList(raw: unknown): string[] {
@@ -101,6 +112,18 @@ function isKanjiQuizType(value: unknown): value is KanjiQuizType {
   );
 }
 
+function hasUsableKanjiQuizPayload(payload: unknown): payload is {
+  type?: KanjiQuizType;
+  questions: unknown[];
+} {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const questions = (payload as { questions?: unknown }).questions;
+  return Array.isArray(questions) && questions.length > 0;
+}
+
 function shuffleItems<T>(items: T[]): T[] {
   const next = [...items];
 
@@ -133,6 +156,28 @@ function decodeUserIdFromToken(token: string): string | null {
   }
 }
 
+function isTransientUpstreamFetchError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  if (error.name === "AbortError" || error.name === "TimeoutError") {
+    return true;
+  }
+
+  const cause = "cause" in error ? error.cause : null;
+  if (
+    cause &&
+    typeof cause === "object" &&
+    "code" in cause &&
+    (cause as { code?: string }).code === "UND_ERR_SOCKET"
+  ) {
+    return true;
+  }
+
+  return /fetch failed|other side closed/i.test(error.message);
+}
+
 async function fetchKanjiCatalog(token: string): Promise<NormalizedKanji[]> {
   const upstream = await fetch(`${apiConfig.contentApiBase}/content/kanjis`, {
     headers: {
@@ -140,6 +185,7 @@ async function fetchKanjiCatalog(token: string): Promise<NormalizedKanji[]> {
       "Content-Type": "application/json",
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(KANJI_DETAIL_TIMEOUT_MS),
   });
 
   const payload = (await upstream.json().catch(() => null)) as RawKanji[] | null;
@@ -163,7 +209,7 @@ async function fetchCurrentUserPoints(token: string): Promise<number> {
         "Content-Type": "application/json",
       },
       cache: "no-store",
-      signal: AbortSignal.timeout(1500),
+      signal: AbortSignal.timeout(USER_POINTS_TIMEOUT_MS),
     });
 
     if (!upstream.ok) {
@@ -178,6 +224,56 @@ async function fetchCurrentUserPoints(token: string): Promise<number> {
   } catch {
     return 0;
   }
+}
+
+async function fetchKanjiProgress(token: string): Promise<KanjiProgressPayload | null> {
+  try {
+    const upstream = await fetch(`${apiConfig.studyApiBase}/kanji/progress`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(KANJI_QUIZ_GET_TIMEOUT_MS),
+    });
+
+    if (!upstream.ok) {
+      return null;
+    }
+
+    const payload = (await upstream.json().catch(() => null)) as
+      | KanjiProgressPayload
+      | null;
+
+    if (!payload || payload.hasUnlocked === false) {
+      return null;
+    }
+
+    return typeof payload.kanjiId === "string" ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveUnlockedKanjiIds(
+  kanjiCatalog: NormalizedKanji[],
+  progress: KanjiProgressPayload | null,
+) {
+  if (!progress?.kanjiId) {
+    return new Set<string>();
+  }
+
+  const latestUnlockedIndex = kanjiCatalog.findIndex(
+    (item) => item.id === progress.kanjiId,
+  );
+
+  if (latestUnlockedIndex < 0) {
+    return new Set<string>();
+  }
+
+  return new Set(
+    kanjiCatalog.slice(0, latestUnlockedIndex + 1).map((item) => item.id),
+  );
 }
 
 async function fetchKanjiDetailsMap(
@@ -201,7 +297,7 @@ async function fetchKanjiDetailsMap(
               "Content-Type": "application/json",
             },
             cache: "no-store",
-            signal: AbortSignal.timeout(2500),
+            signal: AbortSignal.timeout(KANJI_DETAIL_TIMEOUT_MS),
           },
         );
 
@@ -257,7 +353,7 @@ function buildOptionSet(
 function buildFallbackKanjiQuiz(
   kanjiId: string,
   kanjiCatalog: NormalizedKanji[],
-  userPoints: number,
+  unlockedKanjiIds: ReadonlySet<string>,
   preferredQuizType: KanjiQuizType,
 ) {
   const mainKanji = kanjiCatalog.find((item) => item.id === kanjiId);
@@ -265,10 +361,7 @@ function buildFallbackKanjiQuiz(
     return null;
   }
 
-  const effectivePoints = Math.max(userPoints, mainKanji.pointsToUnlock);
-  const knownKanjis = kanjiCatalog.filter(
-    (item) => item.pointsToUnlock <= effectivePoints,
-  );
+  const knownKanjis = kanjiCatalog.filter((item) => unlockedKanjiIds.has(item.id));
   const questionPool = knownKanjis.length > 0 ? knownKanjis : [mainKanji];
   const questionCount = questionPool.length >= 5 ? 4 : 1;
   const questionKanjis = [
@@ -362,51 +455,72 @@ export async function GET(
             "Content-Type": "application/json",
           },
           cache: "no-store",
-          signal: AbortSignal.timeout(1200),
+          signal: AbortSignal.timeout(KANJI_QUIZ_GET_TIMEOUT_MS),
         });
 
         const text = await upstream.text().catch(() => "");
+        let upstreamPayload: unknown = null;
+
+        if (text) {
+          try {
+            upstreamPayload = JSON.parse(text);
+          } catch {
+            upstreamPayload = text;
+          }
+        }
 
         if (upstream.ok) {
-          return NextResponse.json(text ? JSON.parse(text) : null, {
-            status: upstream.status,
-          });
-        }
+          const upstreamQuizType =
+            upstreamPayload && typeof upstreamPayload === "object"
+              ? (upstreamPayload as { type?: unknown }).type
+              : undefined;
 
-        let data: Record<string, unknown> = {};
-        try {
-          data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-        } catch {
-          data = { message: text };
-        }
+          if (
+            hasUsableKanjiQuizPayload(upstreamPayload) &&
+            (
+              !preferredFallbackQuizType ||
+              upstreamQuizType === preferredFallbackQuizType
+            )
+          ) {
+            return NextResponse.json(upstreamPayload, {
+              status: upstream.status,
+            });
+          }
+        } else {
+          let data: Record<string, unknown> = {};
+          if (upstreamPayload && typeof upstreamPayload === "object") {
+            data = upstreamPayload as Record<string, unknown>;
+          } else if (typeof upstreamPayload === "string") {
+            data = { message: upstreamPayload };
+          }
 
-        if (upstream.status < 500) {
-          return NextResponse.json(
-            {
-              message: data.message || "Error al obtener quiz",
-              success: false,
-            },
-            { status: upstream.status },
-          );
+          if (upstream.status < 500) {
+            return NextResponse.json(
+              {
+                message: data.message || "Error al obtener quiz",
+                success: false,
+              },
+              { status: upstream.status },
+            );
+          }
         }
       } catch {
         // Fall through to local fast fallback.
       }
     }
 
-    const [kanjiCatalog, userPoints] = await Promise.all([
+    const [kanjiCatalog, progress] = await Promise.all([
       fetchKanjiCatalog(token).catch(() => []),
-      fetchCurrentUserPoints(token),
+      fetchKanjiProgress(token),
     ]);
     const selectedKanji = kanjiCatalog.find((item) => item.id === id);
+    const unlockedKanjiIds = resolveUnlockedKanjiIds(kanjiCatalog, progress);
 
-    if (selectedKanji && userPoints < selectedKanji.pointsToUnlock) {
+    if (selectedKanji && !unlockedKanjiIds.has(selectedKanji.id)) {
       return NextResponse.json(
         {
-          message: "No se tienen los puntos necesarios para este ejercicio",
+          message: "No se ha desbloqueado el kanji",
           success: false,
-          points: selectedKanji.pointsToUnlock,
-          userPoints,
         },
         { status: 403 },
       );
@@ -415,7 +529,7 @@ export async function GET(
     const fallbackQuiz = buildFallbackKanjiQuiz(
       id,
       kanjiCatalog,
-      userPoints,
+      unlockedKanjiIds,
       preferredQuizType ?? preferredFallbackQuizType ?? "kanji",
     );
 
@@ -484,6 +598,29 @@ export async function POST(
   const { id } = await params;
   const resource = req.nextUrl.searchParams.get("resource");
 
+  if (resource === "unlock") {
+    try {
+      const upstream = await fetch(`${apiConfig.studyApiBase}/kanji/${id}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+        signal: AbortSignal.timeout(KANJI_DETAIL_TIMEOUT_MS),
+      });
+
+      const data = await upstream.json().catch(() => ({}));
+      return NextResponse.json(data, { status: upstream.status });
+    } catch (error) {
+      console.error("[API] Error unlocking kanji:", error);
+      return NextResponse.json(
+        { message: "Error interno al desbloquear kanji", success: false },
+        { status: 500 },
+      );
+    }
+  }
+
   if (resource !== "quiz") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -505,18 +642,35 @@ export async function POST(
     );
   }
 
-  const upstream = await fetch(`${apiConfig.studyApiBase}/kanji/quiz/${id}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      type: body.type,
-      score: body.score,
-      duration: body.duration,
-    }),
-  });
+  let upstream: Response;
+
+  try {
+    upstream = await fetch(`${apiConfig.studyApiBase}/kanji/quiz/${id}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: body.type,
+        score: body.score,
+        duration: body.duration,
+      }),
+      signal: AbortSignal.timeout(KANJI_QUIZ_POST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (isTransientUpstreamFetchError(error)) {
+      return NextResponse.json(
+        {
+          message: "El servicio de quizzes no respondio a tiempo. Intenta de nuevo.",
+          success: false,
+        },
+        { status: 504 },
+      );
+    }
+
+    throw error;
+  }
 
   const text = await upstream.text().catch(() => "");
 
@@ -530,18 +684,32 @@ export async function POST(
 
     return NextResponse.json(
       {
-        message: data.message || "Error al enviar resultado del quiz",
+        message:
+          (typeof data.message === "string" && data.message) ||
+          (typeof data.error === "string" && data.error) ||
+          "Error al enviar resultado del quiz",
         success: false,
       },
       { status: upstream.status },
     );
   }
 
+  let responseBody: Record<string, unknown> = { success: true };
+
   try {
-    return NextResponse.json(text ? JSON.parse(text) : { success: true }, {
-      status: upstream.status,
-    });
+    responseBody = text ? (JSON.parse(text) as Record<string, unknown>) : { success: true };
   } catch {
-    return NextResponse.json({ success: true }, { status: upstream.status });
+    responseBody = { success: true };
   }
+
+  const userPoints = await fetchCurrentUserPoints(token);
+
+  return NextResponse.json(
+    {
+      ...responseBody,
+      userPoints,
+      points: userPoints,
+    },
+    { status: upstream.status },
+  );
 }

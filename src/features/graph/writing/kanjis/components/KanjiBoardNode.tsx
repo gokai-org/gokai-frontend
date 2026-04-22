@@ -1,11 +1,15 @@
 "use client";
 
-import { memo } from "react";
-import type { CSSProperties } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
+import type { CSSProperties, PointerEvent as ReactPointerEvent } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
 import { LockKeyhole } from "lucide-react";
 import type { KanjiBoardNodeData } from "../types";
 import { useMasteryTheme } from "@/features/mastery/components/MasteryThemeProvider";
+import {
+  KANJI_UNLOCK_HOLD_DURATION_MS,
+  useKanjiBoardInteraction,
+} from "../lib/KanjiBoardInteractionContext";
 
 // ── Sphere geometry within the node bounding box (168 × 196) ──────────────
 const _SX = 84; // sphere center X
@@ -182,8 +186,9 @@ function getPlanetStyles(
   };
 }
 
-function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
+function KanjiBoardNode({ id, data }: NodeProps<KanjiBoardNodeData>) {
   const { isGolden, phase } = useMasteryTheme();
+  const interaction = useKanjiBoardInteraction();
   const { progress, selected } = data;
   const styles = getPlanetStyles(
     progress.status,
@@ -202,6 +207,79 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
     !data.suppressUnlockPoints &&
     phase === "idle" &&
     !isGolden;
+
+  // ── Long-press to unlock ────────────────────────────────────────────────
+  const pressUnlockEnabled =
+    progress.status === "locked" &&
+    progress.canUnlock &&
+    interaction !== null;
+  const isUnlockPending = interaction?.unlockPendingId === id;
+  const isUnlockReadyNode = pressUnlockEnabled && !isUnlockPending;
+
+  const holdTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const holdTriggeredRef = useRef(false);
+  const [isHoldingUnlock, setIsHoldingUnlock] = useState(false);
+
+  const clearHoldTimer = useCallback(() => {
+    if (holdTimerRef.current !== null) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearHoldTimer, [clearHoldTimer]);
+
+  const handlePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!pressUnlockEnabled || isUnlockPending) return;
+      if (event.button !== undefined && event.button !== 0) return;
+
+      try {
+        event.currentTarget.setPointerCapture(event.pointerId);
+      } catch {
+        // Ignore pointer capture failures (e.g. unsupported pointer types).
+      }
+
+      holdTriggeredRef.current = false;
+      setIsHoldingUnlock(true);
+      clearHoldTimer();
+
+      holdTimerRef.current = setTimeout(() => {
+        holdTimerRef.current = null;
+        holdTriggeredRef.current = true;
+        setIsHoldingUnlock(false);
+        interaction?.onPressUnlock(id);
+      }, KANJI_UNLOCK_HOLD_DURATION_MS);
+    },
+    [clearHoldTimer, id, interaction, isUnlockPending, pressUnlockEnabled],
+  );
+
+  const releaseHold = useCallback(() => {
+    clearHoldTimer();
+    setIsHoldingUnlock(false);
+  }, [clearHoldTimer]);
+
+  const handlePointerUp = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      try {
+        event.currentTarget.releasePointerCapture(event.pointerId);
+      } catch {
+        // Ignore pointer release failures.
+      }
+      releaseHold();
+    },
+    [releaseHold],
+  );
+
+  const handlePointerCancel = useCallback(() => {
+    releaseHold();
+  }, [releaseHold]);
+
+  const handlePointerLeave = useCallback(() => {
+    releaseHold();
+  }, [releaseHold]);
+
+  const unlockHoldVisualActive = isHoldingUnlock || isUnlockPending;
 
   return (
     <>
@@ -257,7 +335,8 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
       <div
         data-help-target={selected ? "writing-focus-node" : undefined}
         data-help-target-priority={selected ? "10" : undefined}
-        className="flex h-full w-full flex-col items-center justify-start pt-2"
+        data-just-unlocked={interaction?.recentlyUnlockedIds?.has(id) ? "true" : undefined}
+        className={`flex h-full w-full flex-col items-center justify-start pt-2 ${interaction?.recentlyUnlockedIds?.has(id) ? "gokai-unlock-burst" : ""}`}
       >
         <div className="relative flex h-[138px] w-[138px] items-center justify-center">
           <div
@@ -306,7 +385,19 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
           )}
 
           <div
-            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}${data.unlocking ? " kanji-node-unlocking" : ""}${data.shaking ? " kanji-node-shaking" : ""}${data.selected && data.drawerOpen ? " kanji-node-drawer-open" : ""}`}
+            onPointerDown={pressUnlockEnabled ? handlePointerDown : undefined}
+            onPointerUp={pressUnlockEnabled ? handlePointerUp : undefined}
+            onPointerCancel={pressUnlockEnabled ? handlePointerCancel : undefined}
+            onPointerLeave={pressUnlockEnabled ? handlePointerLeave : undefined}
+            onClick={(event) => {
+              if (holdTriggeredRef.current) {
+                event.stopPropagation();
+                event.preventDefault();
+                holdTriggeredRef.current = false;
+              }
+            }}
+            className={`relative z-10 flex h-[92px] w-[92px] items-center justify-center rounded-full border font-semibold transition-transform duration-200 hover:scale-[1.03] ${styles.sphereClass}${data.unlocking ? " kanji-node-unlocking" : ""}${data.shaking ? " kanji-node-shaking" : ""}${data.selected && data.drawerOpen ? " kanji-node-drawer-open" : ""}${isUnlockReadyNode ? " kanji-node-unlock-ready" : ""}${unlockHoldVisualActive ? " kanji-node-hold-active" : ""}`}
+            style={pressUnlockEnabled ? { touchAction: "none", cursor: "pointer" } : undefined}
           >
             {progress.status === "locked" ? (
               <div className="flex flex-col items-center justify-center gap-1.5">
@@ -318,6 +409,34 @@ function KanjiBoardNode({ data }: NodeProps<KanjiBoardNodeData>) {
             ) : (
               <span className="text-[42px]">{progress.kanji.symbol}</span>
             )}
+            {pressUnlockEnabled ? (
+              <svg
+                className="pointer-events-none absolute inset-[-4px] z-20"
+                viewBox="0 0 100 100"
+                aria-hidden="true"
+              >
+                <circle
+                  cx="50"
+                  cy="50"
+                  r="47"
+                  fill="none"
+                  stroke={unlockRingColor}
+                  strokeWidth={3}
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 47}
+                  strokeDashoffset={
+                    unlockHoldVisualActive ? 0 : 2 * Math.PI * 47
+                  }
+                  transform="rotate(-90 50 50)"
+                  style={{
+                    transition: unlockHoldVisualActive
+                      ? `stroke-dashoffset ${KANJI_UNLOCK_HOLD_DURATION_MS}ms linear`
+                      : "stroke-dashoffset 200ms ease-out",
+                    opacity: unlockHoldVisualActive ? 1 : 0.55,
+                  }}
+                />
+              </svg>
+            ) : null}
           </div>
 
           {/* +30 points float — always shown when unlocking */}
@@ -357,6 +476,7 @@ export default memo(KanjiBoardNode, (previous, next) => {
     previous.data.unlocking === next.data.unlocking &&
     previous.data.suppressUnlockPoints === next.data.suppressUnlockPoints &&
     previous.data.shaking === next.data.shaking &&
-    previous.dragging === next.dragging
+    previous.dragging === next.dragging &&
+    previous.data.progress.canUnlock === next.data.progress.canUnlock
   );
 });

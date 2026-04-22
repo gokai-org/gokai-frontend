@@ -36,3 +36,20 @@ export type KanjiLessonResult = {
   correctExercises: number;
   completedAt: string;
 };
+
+export type KanjiExerciseType = "kanji" | "meaning" | "reading" | "writing";
+
+export type KanjiStudyProgress = {
+  kanjiId: string;
+  symbol: string;
+  pointsToUnlock: number;
+  exerciseType: KanjiExerciseType;
+  completed: boolean;
+};
+
+export type KanjiUnlockResponse = {
+  success: boolean;
+  message: string;
+  userPoints: number;
+  points?: number | null;
+};

@@ -9,9 +9,8 @@ import {
   clearCache,
   KANA_USER_CACHE_KEY,
   LIBRARY_KANA_STATUS_CACHE_KEY,
-  LIBRARY_STATUS_TTL_MS,
   type LibraryKanaStatusCache,
-  readFreshCache,
+  readCache,
   readKnownUserId,
   writeCache,
   writeKnownUserId,
@@ -30,15 +29,15 @@ function createProgressMap(items: UserKanaProgressDetailedResponse[]) {
 export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
   const knownUserId = readKnownUserId(KANA_USER_CACHE_KEY);
   const initialCache = useRef<LibraryKanaStatusCache | null>((() => {
-    const cached = readFreshCache<LibraryKanaStatusCache>(
+    const cached = readCache<LibraryKanaStatusCache>(
       LIBRARY_KANA_STATUS_CACHE_KEY,
-      LIBRARY_STATUS_TTL_MS,
     );
 
     if (!cached) return null;
     if (knownUserId && cached.userId !== knownUserId) return null;
     return cached;
   })()).current;
+  const hasInitialCache = initialCache !== null;
 
   const [userKanaPoints, setUserKanaPoints] = useState<number>(
     () => initialCache?.userKanaPoints ?? 0,
@@ -47,7 +46,9 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
     UserKanaProgressDetailedResponse[]
   >(() => initialCache?.progressItems ?? []);
   const [loading, setLoading] = useState(() => initialCache === null);
-  const [hasResolvedInitialStatus, setHasResolvedInitialStatus] = useState(false);
+  const [hasResolvedInitialStatus, setHasResolvedInitialStatus] = useState(
+    hasInitialCache,
+  );
   const optimisticKanaPointsRef = useRef(initialCache?.userKanaPoints ?? 0);
   const activeUserIdRef = useRef<string | null>(initialCache?.userId ?? knownUserId);
   const progressItemsRef = useRef<UserKanaProgressDetailedResponse[]>(
@@ -77,18 +78,23 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
 
   const applyUserKanaPoints = useCallback(
     (nextUserKanaPoints: number, userId = activeUserIdRef.current) => {
-    optimisticKanaPointsRef.current = nextUserKanaPoints;
-    setUserKanaPoints((previous) =>
-      previous === nextUserKanaPoints ? previous : nextUserKanaPoints,
-    );
+      const mergedUserKanaPoints = Math.max(
+        nextUserKanaPoints,
+        optimisticKanaPointsRef.current,
+      );
 
-    persistStatusCache(
-      userId,
-      nextUserKanaPoints,
-      progressItemsRef.current,
-    );
+      optimisticKanaPointsRef.current = mergedUserKanaPoints;
+      setUserKanaPoints((previous) =>
+        previous === mergedUserKanaPoints ? previous : mergedUserKanaPoints,
+      );
 
-    return nextUserKanaPoints;
+      persistStatusCache(
+        userId,
+        mergedUserKanaPoints,
+        progressItemsRef.current,
+      );
+
+      return mergedUserKanaPoints;
     },
     [persistStatusCache],
   );

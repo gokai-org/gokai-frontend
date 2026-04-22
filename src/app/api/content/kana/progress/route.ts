@@ -5,6 +5,8 @@ import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
+const KANA_PROGRESS_TIMEOUT_MS = 20000;
+
 type RawProgressItem = {
   kanaId?: string;
   kana_id?: string;
@@ -38,6 +40,28 @@ function normalizeProgressItem(raw: RawProgressItem) {
   };
 }
 
+function isTransientUpstreamFetchError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  if (error.name === "AbortError" || error.name === "TimeoutError") {
+    return true;
+  }
+
+  const cause = "cause" in error ? error.cause : null;
+  if (
+    cause &&
+    typeof cause === "object" &&
+    "code" in cause &&
+    (cause as { code?: string }).code === "UND_ERR_SOCKET"
+  ) {
+    return true;
+  }
+
+  return /fetch failed|other side closed/i.test(error.message);
+}
+
 export async function GET(req: NextRequest) {
   const raw = getTokenFromRequest(req);
 
@@ -54,6 +78,7 @@ export async function GET(req: NextRequest) {
         "Content-Type": "application/json",
       },
       cache: "no-store",
+      signal: AbortSignal.timeout(KANA_PROGRESS_TIMEOUT_MS),
     });
 
     const text = await upstream.text();
@@ -93,7 +118,16 @@ export async function GET(req: NextRequest) {
       items.map((item) => normalizeProgressItem(item as RawProgressItem)),
     );
   } catch (error) {
-    console.error("[API] Error fetching kana progress:", error);
+    if (isTransientUpstreamFetchError(error)) {
+      return NextResponse.json(
+        { message: "Servicio de progreso temporalmente no disponible", success: false },
+        {
+          status: 503,
+          headers: { "x-upstream-degraded": "study-kana-progress" },
+        },
+      );
+    }
+
     return NextResponse.json(
       { message: "Error interno al obtener progreso de kana", success: false },
       { status: 500 },

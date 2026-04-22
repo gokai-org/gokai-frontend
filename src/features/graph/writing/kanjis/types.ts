@@ -22,6 +22,10 @@ export interface KanjiBoardProgress {
   completionScore: number;
   progressPercent: number;
   bestResult: KanjiLessonResult | null;
+  unlocked: boolean;
+  canUnlock: boolean;
+  unlockCost: number;
+  isCurrent: boolean;
 }
 
 export interface KanjiBoardSummary {

@@ -52,7 +52,7 @@ export function ScriptSymbolBox({
         "inline-flex h-14 w-14 items-center justify-center overflow-hidden",
         "rounded-2xl bg-gradient-to-br font-black text-content-inverted shadow-lg",
         "ring-2 ring-transparent",
-        "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
+        "group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
         "text-[30px] leading-none",
         hoverTransition,
         gradient,
@@ -78,7 +78,7 @@ export function MahjongSymbolBox({
         "rounded-xl bg-gradient-to-br font-black shadow-lg",
         textOverride ?? "text-content-inverted",
         "ring-2 ring-transparent",
-        "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
+        "group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
         "text-[28px] leading-none",
         hoverTransition,
         gradient,
@@ -103,7 +103,7 @@ export function ShogiSymbolBox({
   return (
     <div
       className={[
-        "relative inline-flex h-[56px] w-[44px] group-hover:scale-110",
+        "relative inline-flex h-[56px] w-[44px]",
         hoverTransition,
       ].join(" ")}
       style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.30))" }}
@@ -223,7 +223,7 @@ export function ScriptCardLayout({
                 ? "bg-gradient-to-br from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30] text-[#C4BDD2] dark:text-white/40"
                 : [
                     "bg-gradient-to-br text-content-inverted",
-                    "group-hover:scale-110 group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
+                    "group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
                     hoverTransition,
                     config.thumbGradient,
                   ].join(" "),
@@ -321,7 +321,7 @@ export function ScriptCardLayout({
           }
           className={[
             "absolute bottom-4 right-4 z-20 rounded-full border p-2 shadow-sm",
-            "hover:scale-105 active:scale-95",
+            "active:scale-95",
             hoverTransition,
             isFavorite
               ? `opacity-100 ${config.heartBg}`

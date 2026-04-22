@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { Suspense, useState, useEffect, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -53,7 +54,8 @@ const PLAN_FEATURES = [
   },
 ];
 
-export default function CheckoutPage() {
+function CheckoutPageContent() {
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -61,6 +63,14 @@ export default function CheckoutPage() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+
+  const successPath = useMemo(() => {
+    if (searchParams.get("flow") === "premium-onboarding") {
+      return "/checkout/success?flow=premium-onboarding";
+    }
+
+    return "/checkout/success";
+  }, [searchParams]);
 
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 100);
@@ -112,7 +122,7 @@ export default function CheckoutPage() {
     );
     setCoupon("");
     setCouponLoading(false);
-    window.location.href = "/checkout/success";
+    window.location.href = successPath;
   }
 
   async function handleCheckout() {
@@ -128,7 +138,7 @@ export default function CheckoutPage() {
         setLoading(false);
         return;
       }
-      window.location.href = "/checkout/success";
+      window.location.href = successPath;
       return;
     }
 
@@ -137,7 +147,7 @@ export default function CheckoutPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          successUrl: `${window.location.origin}/checkout/success`,
+          successUrl: `${window.location.origin}${successPath}`,
         }),
       });
 
@@ -416,5 +426,15 @@ export default function CheckoutPage() {
         </motion.div>
       </div>
     </main>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={<main className="min-h-screen bg-surface-secondary" />}
+    >
+      <CheckoutPageContent />
+    </Suspense>
   );
 }

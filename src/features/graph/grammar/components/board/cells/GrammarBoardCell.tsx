@@ -1,8 +1,21 @@
 "use client";
 
-import { memo, type CSSProperties } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type PointerEvent as ReactPointerEvent,
+  type MouseEvent as ReactMouseEvent,
+} from "react";
+import { LockKeyhole } from "lucide-react";
 import { getGrammarBoardArtworkPreset } from "../../../constants/grammarBoardBackgrounds";
 import type { GrammarBoardCellViewModel } from "../../../types";
+
+const UNLOCK_HOLD_DURATION_MS = 720;
+const LOCKED_SHAKE_DURATION_MS = 580;
 
 type PanelKind = "goal" | "banner" | "wide" | "tower" | "standard";
 type ArtworkTone = "paper" | "accent" | "locked";
@@ -30,18 +43,14 @@ type ArtworkFitProfile = {
 interface GrammarBoardCellProps {
   cell: GrammarBoardCellViewModel;
   onSelect: (lessonId: string, target: HTMLButtonElement | null) => void;
+  onPressUnlock?: (lessonId: string) => void;
+  unlockPending?: boolean;
   helpTarget?: boolean;
+  enableHoverMotion?: boolean;
   isPortrait?: boolean;
   isCompactPortrait?: boolean;
   isTinyPortrait?: boolean;
-}
-
-interface GrammarBoardCellPointsBadgeProps {
-  cell: GrammarBoardCellViewModel;
-  left: number;
-  top: number;
-  compact?: boolean;
-  tiny?: boolean;
+  justUnlocked?: boolean;
 }
 
 const UNLOCKED_CARD_VARIANTS: readonly BoardCardVariant[] = [
@@ -76,10 +85,10 @@ const UNLOCKED_CARD_VARIANTS: readonly BoardCardVariant[] = [
 ] as const;
 
 const LOCKED_CARD_VARIANT: BoardCardVariant = {
-  bg: "bg-surface-secondary/90 dark:bg-surface-secondary",
+  bg: "bg-surface-tertiary dark:bg-[#1a181c]",
   text: "text-content-primary dark:text-white",
   badge: "bg-black/5 dark:bg-white/10",
-  border: "border-content-primary/10 dark:border-white/10",
+  border: "border-border-default/70 dark:border-white/[0.05]",
   artTone: "locked",
 };
 
@@ -581,48 +590,29 @@ function getArtworkLayerStyle(
   return style;
 }
 
-function getPointsBadgeText(cell: GrammarBoardCellViewModel) {
-  return `${Math.max(cell.progress.pointsToUnlock, 0)}`;
-}
-
-function GrammarBoardCellPointsBadgeComponent({
-  cell,
-  left,
-  top,
-  compact = false,
-  tiny = false,
-}: GrammarBoardCellPointsBadgeProps) {
-  return (
-    <div
-      aria-hidden
-      className={`pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-1/2 ${tiny ? "scale-[0.82]" : ""}`}
-      style={{
-        left: `${left}%`,
-        top: `${top}%`,
-      }}
-    >
-      <span
-        className={compact ? "edge-score-label edge-score-label--compact" : "edge-score-label min-w-[52px]"}
-        style={{
-          color: "var(--text-primary)",
-        }}
-      >
-        <span className="edge-score-value">{getPointsBadgeText(cell)}</span>
-      </span>
-    </div>
-  );
-}
-
 function GrammarBoardCellComponent({
   cell,
   onSelect,
+  onPressUnlock,
+  unlockPending = false,
   helpTarget = false,
+  enableHoverMotion = true,
   isPortrait = false,
   isCompactPortrait = false,
   isTinyPortrait = false,
+  justUnlocked = false,
 }: GrammarBoardCellProps) {
+  const holdTimerRef = useRef<number | null>(null);
+  const shakeTimerRef = useRef<number | null>(null);
+  const holdTriggeredRef = useRef(false);
+  const [isHoldingUnlock, setIsHoldingUnlock] = useState(false);
+  const [isLockedShakeActive, setIsLockedShakeActive] = useState(false);
   const { layout, progress, interactive } = cell;
   const isComingSoonCell = progress.isMock;
+  const isLockedCell = cell.visualState === "locked" && !isComingSoonCell;
+  const isUnlockReadyCell =
+    isLockedCell && progress.canUnlock;
+  const pressUnlockEnabled = isUnlockReadyCell && typeof onPressUnlock === "function";
   const panelKind = getPanelKind(layout);
   const variant = getCardVariant(cell);
   const shellClass = getShellClass(cell);
@@ -644,30 +634,149 @@ function GrammarBoardCellComponent({
     isCompactPortrait,
     isTinyPortrait,
   );
-  const hoverEnabled = interactive && !isComingSoonCell;
+  const hoverEnabled =
+    interactive && !isComingSoonCell && !isLockedCell && enableHoverMotion;
+  const hoverVisualsEnabled = hoverEnabled && !isHoldingUnlock && !unlockPending;
   const hoverClass = interactive
-    ? "hover:shadow-[0_10px_22px_rgba(153,51,49,0.16)] dark:hover:shadow-[0_10px_26px_rgba(153,51,49,0.24)]"
+    ? hoverVisualsEnabled
+      ? "hover:shadow-[0_10px_22px_rgba(153,51,49,0.16)] dark:hover:shadow-[0_10px_26px_rgba(153,51,49,0.24)]"
+      : ""
     : "cursor-default";
-  const buttonHoverClass = hoverEnabled
+  const buttonHoverClass = hoverVisualsEnabled
     ? "transition-[background-color,border-color,box-shadow] duration-300 ease-out hover:bg-accent hover:border-accent-hover dark:hover:bg-accent dark:hover:border-accent-hover"
     : "";
-  const titleHoverClass = hoverEnabled
-    ? "origin-left-bottom transition-[transform,color,opacity] duration-300 ease-out group-hover:scale-[1.12] group-hover:text-white dark:group-hover:text-white group-hover:opacity-100"
+  const titleHoverClass = hoverVisualsEnabled
+    ? "transition-[color,opacity] duration-300 ease-out group-hover:text-white dark:group-hover:text-white group-hover:opacity-100"
     : "";
-  const artworkHoverClass = hoverEnabled
+  const artworkHoverClass = hoverVisualsEnabled
     ? "transition-[transform,filter] duration-300 ease-out [transform:var(--grammar-artwork-transform)] group-hover:[transform:var(--grammar-artwork-hover-transform)]"
     : "[transform:var(--grammar-artwork-transform)]";
-  const artworkToneHoverClass = hoverEnabled
+  const artworkToneHoverClass = hoverVisualsEnabled
     ? "group-hover:bg-white/18 dark:group-hover:bg-white/18"
     : "";
-  const artworkEchoHoverClass = hoverEnabled
+  const artworkEchoHoverClass = hoverVisualsEnabled
     ? "group-hover:bg-white/10 dark:group-hover:bg-white/10"
     : "";
+  const unlockReadyArtworkPulseClass = isUnlockReadyCell
+    ? "animate-[grammar-board-unlock-artwork_2.8s_ease-in-out_infinite]"
+    : "";
+  const unlockHoldVisualActive = isHoldingUnlock || unlockPending;
+
+  const clearHoldTimer = useCallback(() => {
+    if (holdTimerRef.current !== null) {
+      window.clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+  }, []);
+
+  const triggerLockedShake = useCallback(() => {
+    if (!isLockedCell) {
+      return;
+    }
+
+    if (shakeTimerRef.current !== null) {
+      window.clearTimeout(shakeTimerRef.current);
+    }
+
+    setIsLockedShakeActive(false);
+
+    window.requestAnimationFrame(() => {
+      setIsLockedShakeActive(true);
+      shakeTimerRef.current = window.setTimeout(() => {
+        setIsLockedShakeActive(false);
+        shakeTimerRef.current = null;
+      }, LOCKED_SHAKE_DURATION_MS);
+    });
+  }, [isLockedCell]);
+
+  const stopHold = useCallback(() => {
+    clearHoldTimer();
+    setIsHoldingUnlock(false);
+  }, [clearHoldTimer]);
+
+  useEffect(() => {
+    if (!unlockPending) {
+      return;
+    }
+
+    clearHoldTimer();
+  }, [clearHoldTimer, unlockPending]);
+
+  useEffect(() => {
+    return () => {
+      clearHoldTimer();
+      if (shakeTimerRef.current !== null) {
+        window.clearTimeout(shakeTimerRef.current);
+      }
+    };
+  }, [clearHoldTimer]);
+
+  const handlePointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLButtonElement>) => {
+      if (!pressUnlockEnabled || unlockPending) {
+        return;
+      }
+
+      holdTriggeredRef.current = false;
+      setIsHoldingUnlock(true);
+      clearHoldTimer();
+
+      holdTimerRef.current = window.setTimeout(() => {
+        holdTriggeredRef.current = true;
+        setIsHoldingUnlock(false);
+        onPressUnlock?.(progress.id);
+        holdTimerRef.current = null;
+      }, UNLOCK_HOLD_DURATION_MS);
+
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId) === false) {
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+      }
+    },
+    [clearHoldTimer, onPressUnlock, pressUnlockEnabled, progress.id, unlockPending],
+  );
+
+  const handlePointerUp = useCallback(() => {
+    if (!pressUnlockEnabled) {
+      return;
+    }
+
+    stopHold();
+  }, [pressUnlockEnabled, stopHold]);
+
+  const handlePointerCancel = useCallback(() => {
+    if (!pressUnlockEnabled) {
+      return;
+    }
+
+    stopHold();
+  }, [pressUnlockEnabled, stopHold]);
+
+  const handleClick = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      if (holdTriggeredRef.current) {
+        holdTriggeredRef.current = false;
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      if (isLockedCell) {
+        event.preventDefault();
+        event.stopPropagation();
+        triggerLockedShake();
+        return;
+      }
+
+      onSelect(progress.id, event.currentTarget);
+    },
+    [isLockedCell, onSelect, progress.id, triggerLockedShake],
+  );
 
   return (
     <div
       data-grammar-board-cell="true"
-      className={`group absolute text-left outline-none transition-shadow duration-300 focus-visible:z-20 ${outerCornerClass} ${hoverClass}`}
+      data-just-unlocked={justUnlocked ? "true" : undefined}
+      className={`group absolute text-left outline-none transition-shadow duration-300 focus-visible:z-20 ${outerCornerClass} ${hoverClass} ${justUnlocked ? "gokai-unlock-burst" : ""} ${isLockedShakeActive ? "grammar-board-cell-shaking" : ""}`}
       style={{
         left: `${layout.x}%`,
         top: `${layout.y}%`,
@@ -677,16 +786,42 @@ function GrammarBoardCellComponent({
     >
       <button
         type="button"
-        disabled={!interactive}
-        onClick={(event) => onSelect(progress.id, event.currentTarget)}
+        disabled={isComingSoonCell}
+        onClick={handleClick}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onPointerLeave={handlePointerCancel}
         data-help-target={helpTarget ? "grammar-focus-cell" : undefined}
         data-help-target-priority={helpTarget ? "10" : undefined}
-        className={`relative h-full w-full border font-sans ${outerCornerClass} ${shellClass} ${buttonHoverClass}`}
+        className={`relative h-full w-full overflow-hidden border font-sans ${outerCornerClass} ${shellClass} ${buttonHoverClass}`}
+        aria-disabled={isLockedCell || !interactive ? true : undefined}
         aria-label={isComingSoonCell ? "Proximamente" : progress.title}
       >
         <div className={`pointer-events-none absolute inset-0 ${outerCornerClass} bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-70`} />
         <div className={`pointer-events-none absolute inset-0 ${outerCornerClass} bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.14),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.08),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.05),transparent_28%)]`} />
         <div className={`pointer-events-none absolute inset-[1px] border border-white/50 dark:border-white/10 ${innerCornerClass}`} />
+
+        {pressUnlockEnabled ? (
+          <>
+            <div
+              className={`pointer-events-none absolute inset-0 z-[1] ${outerCornerClass} bg-[linear-gradient(135deg,rgba(153,51,49,0.08),rgba(186,81,73,0.18),rgba(255,255,255,0.04))] transition-opacity duration-200 ${unlockHoldVisualActive ? "opacity-100" : "opacity-0"}`}
+            />
+            <div className={`pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1.5 overflow-hidden bg-black/6 dark:bg-white/8 ${innerCornerClass}`}>
+              <div
+                className={`h-full origin-left rounded-full bg-gradient-to-r from-accent via-[#C5544D] to-accent-hover shadow-[0_0_16px_rgba(153,51,49,0.28)] ${unlockPending ? "animate-pulse" : ""}`}
+                style={{
+                  transform: `scaleX(${unlockPending ? 1 : unlockHoldVisualActive ? 1 : 0})`,
+                  transition: unlockPending
+                    ? "transform 120ms ease-out"
+                    : isHoldingUnlock
+                      ? `transform ${UNLOCK_HOLD_DURATION_MS}ms linear`
+                      : "transform 140ms ease-out",
+                }}
+              />
+            </div>
+          </>
+        ) : null}
 
         <div
           aria-hidden
@@ -695,25 +830,37 @@ function GrammarBoardCellComponent({
           <div className={`absolute inset-0 ${artworkPalette.glow}`} />
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_88%_14%,rgba(255,255,255,0.08),transparent_34%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,0.06),transparent_30%)] dark:bg-[radial-gradient(circle_at_88%_14%,rgba(255,255,255,0.03),transparent_34%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,0.02),transparent_30%)]" />
           <span
-            className={`absolute ${artworkPalette.secondary} ${artworkHoverClass} ${artworkEchoHoverClass} mix-blend-multiply dark:mix-blend-screen`}
+            className={`absolute ${artworkPalette.secondary} ${artworkHoverClass} ${artworkEchoHoverClass} mix-blend-multiply dark:mix-blend-screen ${isLockedCell ? "saturate-0 opacity-80" : ""}`}
             style={echoArtworkStyle}
           />
           <span
-            className={`absolute ${artworkPalette.primary} ${artworkHoverClass} ${artworkToneHoverClass} mix-blend-multiply dark:mix-blend-screen`}
+            className={`absolute ${artworkPalette.primary} ${artworkHoverClass} ${artworkToneHoverClass} mix-blend-multiply dark:mix-blend-screen ${isLockedCell ? "saturate-0 opacity-90" : ""}`}
             style={primaryArtworkStyle}
           />
+          {isUnlockReadyCell ? (
+            <span
+              className={`absolute bg-[#b6413a] dark:bg-[#ff7868] ${artworkHoverClass} ${unlockReadyArtworkPulseClass} mix-blend-soft-light dark:mix-blend-screen`}
+              style={primaryArtworkStyle}
+            />
+          ) : null}
         </div>
 
         <div
-          className={`relative z-10 flex h-full items-end justify-start ${getContentPaddingClass(panelKind, isCompactPortrait, isTinyPortrait)}`}
+          className={`relative z-10 flex h-full ${isLockedCell ? "items-center justify-center p-4" : `items-end justify-start ${getContentPaddingClass(panelKind, isCompactPortrait, isTinyPortrait)}`}`}
         >
-          <div className={`min-w-0 ${getContentWidthClass(panelKind)}`}>
-            <h3
-              className={`font-semibold tracking-tight [display:-webkit-box] [-webkit-box-orient:vertical] overflow-hidden [-webkit-line-clamp:3] opacity-85 ${getSpanishTitleClass(panelKind, isPortrait, isCompactPortrait, isTinyPortrait)} ${variant.text} ${titleHoverClass}`}
-            >
-              {isComingSoonCell ? "Proximamente" : progress.title}
-            </h3>
-          </div>
+          {isLockedCell ? (
+            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white/72 text-content-muted/70 shadow-[0_10px_24px_rgba(0,0,0,0.12)] backdrop-blur-[2px] dark:border-white/10 dark:bg-white/[0.06] dark:text-white/30">
+              <LockKeyhole className="h-4.5 w-4.5" strokeWidth={2.1} />
+            </div>
+          ) : (
+            <div className={`min-w-0 ${getContentWidthClass(panelKind)}`}>
+              <h3
+                className={`font-semibold tracking-tight [display:-webkit-box] [-webkit-box-orient:vertical] overflow-hidden [-webkit-line-clamp:3] opacity-85 ${getSpanishTitleClass(panelKind, isPortrait, isCompactPortrait, isTinyPortrait)} ${variant.text} ${titleHoverClass}`}
+              >
+                {isComingSoonCell ? "Proximamente" : progress.title}
+              </h3>
+            </div>
+          )}
         </div>
       </button>
     </div>
@@ -729,14 +876,19 @@ function areCellsEqual(
 
   return (
     previous.onSelect === next.onSelect &&
+    previous.onPressUnlock === next.onPressUnlock &&
+    previous.unlockPending === next.unlockPending &&
     previous.helpTarget === next.helpTarget &&
+    previous.enableHoverMotion === next.enableHoverMotion &&
     previous.isPortrait === next.isPortrait &&
     previous.isCompactPortrait === next.isCompactPortrait &&
     previous.isTinyPortrait === next.isTinyPortrait &&
+    previous.justUnlocked === next.justUnlocked &&
     previousCell.visualState === nextCell.visualState &&
     previousCell.interactive === nextCell.interactive &&
     previousCell.progress.id === nextCell.progress.id &&
     previousCell.progress.index === nextCell.progress.index &&
+    previousCell.progress.canUnlock === nextCell.progress.canUnlock &&
     previousCell.progress.title === nextCell.progress.title &&
     previousCell.progress.pointsToUnlock === nextCell.progress.pointsToUnlock &&
     previousCell.progress.isMock === nextCell.progress.isMock &&
@@ -749,4 +901,3 @@ function areCellsEqual(
 }
 
 export const GrammarBoardCell = memo(GrammarBoardCellComponent, areCellsEqual);
-export const GrammarBoardCellPointsBadge = memo(GrammarBoardCellPointsBadgeComponent);

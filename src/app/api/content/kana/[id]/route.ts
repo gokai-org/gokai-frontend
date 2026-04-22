@@ -5,6 +5,12 @@ import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
+const KANA_QUIZ_POST_TIMEOUT_MS = 60000;
+const KANA_QUIZ_GET_TIMEOUT_MS = 3500;
+const KANA_DETAIL_TIMEOUT_MS = 6000;
+const KANA_PROGRESS_TIMEOUT_MS = 5000;
+const USER_POINTS_TIMEOUT_MS = 5000;
+
 type KanaQuizType = "from_kana" | "from_romaji" | "canvas";
 
 type RawKana = {
@@ -80,6 +86,18 @@ function isKanaQuizType(value: unknown): value is KanaQuizType {
   );
 }
 
+function hasUsableKanaQuizPayload(payload: unknown): payload is {
+  type?: KanaQuizType;
+  questions: unknown[];
+} {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const questions = (payload as { questions?: unknown }).questions;
+  return Array.isArray(questions) && questions.length > 0;
+}
+
 function normalizeProgressItem(raw: RawProgressItem) {
   return {
     kanaId: raw.kanaId ?? raw.kana_id ?? "",
@@ -128,6 +146,28 @@ function decodeUserIdFromToken(token: string): string | null {
   }
 }
 
+function isTransientUpstreamFetchError(error: unknown) {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  if (error.name === "AbortError" || error.name === "TimeoutError") {
+    return true;
+  }
+
+  const cause = "cause" in error ? error.cause : null;
+  if (
+    cause &&
+    typeof cause === "object" &&
+    "code" in cause &&
+    (cause as { code?: string }).code === "UND_ERR_SOCKET"
+  ) {
+    return true;
+  }
+
+  return /fetch failed|other side closed/i.test(error.message);
+}
+
 async function fetchCurrentUserKanaPoints(token: string): Promise<number> {
   const userId = decodeUserIdFromToken(token);
   if (!userId) {
@@ -141,7 +181,7 @@ async function fetchCurrentUserKanaPoints(token: string): Promise<number> {
         "Content-Type": "application/json",
       },
       cache: "no-store",
-      signal: AbortSignal.timeout(1500),
+      signal: AbortSignal.timeout(USER_POINTS_TIMEOUT_MS),
     });
 
     if (!upstream.ok) {
@@ -173,6 +213,7 @@ async function fetchKanaCatalog(token: string): Promise<NormalizedKana[]> {
       "Content-Type": "application/json",
     },
     cache: "no-store",
+    signal: AbortSignal.timeout(KANA_DETAIL_TIMEOUT_MS),
   });
 
   const payload = (await upstream.json().catch(() => null)) as
@@ -215,7 +256,7 @@ async function fetchKanaDetailsMap(
               "Content-Type": "application/json",
             },
             cache: "no-store",
-            signal: AbortSignal.timeout(2500),
+            signal: AbortSignal.timeout(KANA_DETAIL_TIMEOUT_MS),
           },
         );
 
@@ -251,7 +292,7 @@ async function fetchKanaProgressItem(token: string) {
         "Content-Type": "application/json",
       },
       cache: "no-store",
-      signal: AbortSignal.timeout(900),
+      signal: AbortSignal.timeout(KANA_PROGRESS_TIMEOUT_MS),
     });
 
     if (!upstream.ok) {
@@ -463,39 +504,61 @@ export async function GET(
             "Content-Type": "application/json",
           },
           cache: "no-store",
-          signal: AbortSignal.timeout(1200),
+          signal: AbortSignal.timeout(KANA_QUIZ_GET_TIMEOUT_MS),
         });
 
         const text = await upstream.text().catch(() => "");
+        let upstreamPayload: unknown = null;
+
+        if (text) {
+          try {
+            upstreamPayload = JSON.parse(text);
+          } catch {
+            upstreamPayload = text;
+          }
+        }
 
         if (upstream.ok) {
-          return NextResponse.json(text ? JSON.parse(text) : null, {
-            status: upstream.status,
-          });
-        }
+          const upstreamQuizType =
+            upstreamPayload && typeof upstreamPayload === "object"
+              ? (upstreamPayload as { type?: unknown }).type
+              : undefined;
 
-        let data: Record<string, unknown> = {};
-        try {
-          data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-        } catch {
-          data = { message: text };
-        }
+          if (
+            hasUsableKanaQuizPayload(upstreamPayload) &&
+            (
+              !preferredFallbackQuizType ||
+              upstreamQuizType === preferredFallbackQuizType
+            )
+          ) {
+            return NextResponse.json(upstreamPayload, {
+              status: upstream.status,
+            });
+          }
+        } else {
+          let data: Record<string, unknown> = {};
+          if (upstreamPayload && typeof upstreamPayload === "object") {
+            data = upstreamPayload as Record<string, unknown>;
+          } else if (typeof upstreamPayload === "string") {
+            data = { message: upstreamPayload };
+          }
 
-        if (upstream.status < 500) {
-          return NextResponse.json(
-            {
-              message: data.message || "Error al obtener quiz de kana",
-              success: false,
-              reachable:
-                typeof data.reachable === "boolean"
-                  ? data.reachable
-                  : upstream.status !== 403,
-              points: typeof data.points === "number" ? data.points : undefined,
-              userPoints:
-                typeof data.userPoints === "number" ? data.userPoints : undefined,
-            },
-            { status: upstream.status },
-          );
+          if (upstream.status < 500) {
+            return NextResponse.json(
+              {
+                message: data.message || "Error al obtener quiz de kana",
+                success: false,
+                reachable:
+                  typeof data.reachable === "boolean"
+                    ? data.reachable
+                    : upstream.status !== 403,
+                points: typeof data.points === "number" ? data.points : undefined,
+                userPoints:
+                  typeof data.userPoints === "number" ? data.userPoints : undefined,
+              },
+              { status: upstream.status },
+            );
+          }
         }
       } catch {
         // Fall through to local fast fallback.
@@ -628,18 +691,35 @@ export async function POST(
     );
   }
 
-  const upstream = await fetch(`${apiConfig.studyApiBase}/kana/quiz/${id}`, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      type: body.type,
-      score: body.score,
-      duration: body.duration,
-    }),
-  });
+  let upstream: Response;
+
+  try {
+    upstream = await fetch(`${apiConfig.studyApiBase}/kana/quiz/${id}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        type: body.type,
+        score: body.score,
+        duration: body.duration,
+      }),
+      signal: AbortSignal.timeout(KANA_QUIZ_POST_TIMEOUT_MS),
+    });
+  } catch (error) {
+    if (isTransientUpstreamFetchError(error)) {
+      return NextResponse.json(
+        {
+          message: "El servicio de quizzes no respondio a tiempo. Intenta de nuevo.",
+          success: false,
+        },
+        { status: 504 },
+      );
+    }
+
+    throw error;
+  }
 
   const text = await upstream.text().catch(() => "");
 
@@ -660,11 +740,22 @@ export async function POST(
     );
   }
 
+  let responseBody: Record<string, unknown> = { success: true };
+
   try {
-    return NextResponse.json(text ? JSON.parse(text) : { success: true }, {
-      status: upstream.status,
-    });
+    responseBody = text ? (JSON.parse(text) as Record<string, unknown>) : { success: true };
   } catch {
-    return NextResponse.json({ success: true }, { status: upstream.status });
+    responseBody = { success: true };
   }
+
+  const kanaPoints = await fetchCurrentUserKanaPoints(token);
+
+  return NextResponse.json(
+    {
+      ...responseBody,
+      kanaPoints,
+      userPoints: kanaPoints,
+    },
+    { status: upstream.status },
+  );
 }

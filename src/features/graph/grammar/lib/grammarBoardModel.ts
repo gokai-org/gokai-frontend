@@ -6,7 +6,9 @@ import type {
   GrammarBoardStatus,
   GrammarBoardVisualState,
   GrammarLessonSummary,
+  GrammarStudyProgress,
 } from "../types";
+import { resolveGrammarUnlockState } from "./grammarUnlockState";
 
 const JAPANESE_SYMBOL_PATTERN =
   /[\u3040-\u30ff\u3400-\u4dbf\u4e00-\u9fff\u30fc\u3005\u3006\u30f5\u30f6]+/g;
@@ -71,7 +73,17 @@ function resolveLessonStatus(lesson: GrammarLessonSummary): GrammarBoardStatus {
 
 export function buildGrammarBoardItems(
   lessons: readonly GrammarLessonSummary[],
+  options?: {
+    progress?: GrammarStudyProgress | null;
+    userPoints?: number;
+  },
 ): GrammarBoardProgress[] {
+  const hasUnlockContext = options !== undefined;
+  const unlockState = resolveGrammarUnlockState({
+    lessons,
+    progress: options?.progress ?? null,
+    userPoints: options?.userPoints ?? 0,
+  });
   const items: GrammarBoardProgress[] = [];
 
   for (let index = 0; index < GRAMMAR_BOARD_TOTAL; index += 1) {
@@ -84,9 +96,21 @@ export function buildGrammarBoardItems(
         symbol: extractLessonSymbol(lesson, index),
         title: lesson.title,
         pointsToUnlock: lesson.pointsToUnlock ?? 0,
-        status: resolveLessonStatus(lesson),
+        status: hasUnlockContext
+          ? unlockState.completedIds.has(lesson.id)
+            ? "completed"
+            : unlockState.unlockedIds.has(lesson.id)
+              ? "available"
+              : "locked"
+          : resolveLessonStatus(lesson),
         isMock: false,
-        isCurrent: lesson.current === true,
+        isCurrent: unlockState.latestUnlockedId === lesson.id,
+        unlocked: unlockState.unlockedIds.has(lesson.id),
+        isNextUnlockCandidate: unlockState.nextUnlockCandidateId === lesson.id,
+        canUnlock:
+          unlockState.nextUnlockCandidateId === lesson.id &&
+          unlockState.canUnlockNext,
+        unlockCost: lesson.pointsToUnlock ?? 0,
       });
       continue;
     }

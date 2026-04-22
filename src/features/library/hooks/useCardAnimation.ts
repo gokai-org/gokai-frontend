@@ -8,9 +8,9 @@ export const CARD_ANIMATION_EASE = [0.22, 1, 0.36, 1] as const;
  * Devuelve props de animación para tarjetas de la biblioteca.
  *
  * Usa `whileInView` en lugar de `animate` para que solo las tarjetas
- * visibles en pantalla procesen su animación. Esto evita que framer-motion
- * programe cientos de animaciones simultáneas al montar una sección grande
- * (ej. 71 hiragana) lo que bloqueaba la UI en móvil.
+ * visibles en pantalla procesen su animación. La entrada se limita a
+ * opacidad y desplazamiento vertical para evitar sensación de zoom o
+ * jitter al hacer scroll en desktop.
  *
  * El stagger se limita a los primeros 14 items (máx 420 ms de delay).
  * Cards más allá del índice 14 entran en viewport sin delay adicional.
@@ -30,7 +30,6 @@ export function useCardAnimation(
   const animationTarget = {
     opacity: 1,
     y: 0,
-    scale: 1,
     transition: {
       delay: cappedDelay,
       duration:
@@ -44,7 +43,6 @@ export function useCardAnimation(
         initial: {
           opacity: 0,
           y: heavyAnimationsEnabled ? 12 : 6,
-          scale: heavyAnimationsEnabled ? 0.97 : 1,
         },
         ...(useInView
           ? {
@@ -56,10 +54,12 @@ export function useCardAnimation(
     : {};
 
   const hoverTransition = platformMotion.shouldUseHoverAnimations
-    ? "transition-all duration-300 ease-out"
+    ? "transition-[transform,opacity,color,background-color,border-color,box-shadow,filter] duration-300 ease-out"
     : "";
 
-  const cardTransition = animationsEnabled ? "transition-all duration-200" : "";
+  const cardTransition = animationsEnabled
+    ? "transition-[transform,opacity,color,background-color,border-color,box-shadow,filter] duration-200 ease-out"
+    : "";
 
   return { animationsEnabled, motionProps, hoverTransition, cardTransition };
 }

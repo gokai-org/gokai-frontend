@@ -384,6 +384,7 @@ export function buildLibraryCategories(params: {
   kanjiCount: number;
   katakanaCount: number;
   hiraganaCount: number;
+  grammarCount: number;
   themeCount: number;
 }): LibraryCategory[] {
   return [
@@ -407,6 +408,13 @@ export function buildLibraryCategories(params: {
       icon: "",
       count: params.kanjiCount,
       color: "bg-[#B14540]",
+    },
+    {
+      id: "grammar",
+      name: "Grammar",
+      icon: "",
+      count: params.grammarCount,
+      color: "bg-[#BA5149]",
     },
     {
       id: "katakana",

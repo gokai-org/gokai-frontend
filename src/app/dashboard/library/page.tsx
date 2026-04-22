@@ -1,8 +1,9 @@
 "use client";
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
+import { useToast } from "@/shared/ui";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
 import { Search } from "lucide-react";
@@ -15,7 +16,7 @@ import { LibraryRecentPanel } from "@/features/library/components/LibraryRecentP
 import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
 import { KanaPhoneticGrid } from "@/features/library/components/KanaPhoneticGrid";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
-import { LibrarySkeleton } from "@/shared/ui/Skeleton";
+import { LibrarySkeleton, SkeletonCard } from "@/shared/ui/Skeleton";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
 import { useVocabularyContent } from "@/features/library/hooks/useVocabularyContent";
@@ -28,6 +29,8 @@ import type { Kana } from "@/features/kana/types";
 import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import { KanaQuizModal } from "@/features/kana/components/quiz";
+import { GrammarLibraryCollection } from "@/features/graph/grammar/components/library/GrammarLibraryCollection";
+import { GRAMMAR_BOARD_TOTAL } from "@/features/graph/grammar/constants/grammarBoard";
 import {
   buildLibraryCategories,
   kanjiToScriptCard,
@@ -37,10 +40,7 @@ import {
   themeToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
-import {
-  useMasteredModules,
-  useMasteredModulesLoading,
-} from "@/features/mastery/components/MasteredModulesProvider";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { HELP_GUIDE_LIBRARY_RESET_EVENT } from "@/features/help/utils/guideEvents";
 // import { getPrimaryMeaning } from "@/features/kanji";
@@ -65,6 +65,7 @@ export default function LibraryPage() {
     quizType?: KanjiQuizType;
     wasCompletedBefore: boolean;
     isPracticeOnly: boolean;
+    progressEligible: boolean;
   } | null>(null);
   const [quizKana, setQuizKana] = useState<{
     id: string;
@@ -73,12 +74,14 @@ export default function LibraryPage() {
     quizType?: KanaQuizType;
     wasCompletedBefore: boolean;
     isPracticeOnly: boolean;
+    progressEligible: boolean;
   } | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
 
   const { setBlurred } = useSidebar();
+  const toast = useToast();
   const mastered = useMasteredModules();
   useEffect(() => {
     setBlurred(drawerEntity !== null);
@@ -112,6 +115,9 @@ export default function LibraryPage() {
         root.style.setProperty("--scrollbar-thumb", "rgba(153,51,49,0.4)");
         root.style.setProperty("--scrollbar-thumb-hover", "rgba(186,81,73,0.65)");
       }
+    } else if (selectedCategory === "grammar") {
+      root.style.setProperty("--scrollbar-thumb", "rgba(153,51,49,0.4)");
+      root.style.setProperty("--scrollbar-thumb-hover", "rgba(186,81,73,0.65)");
     } else {
       root.style.removeProperty("--scrollbar-thumb");
       root.style.removeProperty("--scrollbar-thumb-hover");
@@ -129,7 +135,6 @@ export default function LibraryPage() {
     filteredKanjis: _filteredKanjis,
     allLibraryItems,
     isSearching,
-    isGlobalLoading,
     hasResolvedInitialContent,
     loadingKanjis,
     loadingKatakanas,
@@ -140,7 +145,6 @@ export default function LibraryPage() {
     lockedKanjiIds,
     completedKanjiIds,
     userPoints,
-    loading: loadingKanjiStatus,
     hasResolvedInitialStatus: hasResolvedInitialKanjiStatus,
     reload: reloadLockedStatus,
   } =
@@ -150,7 +154,6 @@ export default function LibraryPage() {
     lockedHiraganaIds,
     lockedKatakanaIds,
     progressById,
-    loading: loadingKanaStatus,
     hasResolvedInitialStatus: hasResolvedInitialKanaStatus,
     reload: reloadKanaLockedStatus,
   } = useKanaLockedStatus(hiraganas, katakanas);
@@ -160,7 +163,6 @@ export default function LibraryPage() {
   const [newlyUnlockedKanaIds, setNewlyUnlockedKanaIds] = useState<
     ReadonlySet<string>
   >(new Set());
-  const lockedKanjiIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const lockedHiraganaIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const lockedKatakanaIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -202,7 +204,6 @@ export default function LibraryPage() {
     filteredWords,
     selectedTheme,
     selectedSubtheme,
-    hasResolvedInitialThemes,
     loadingThemes,
     loadingSubthemes,
     loadingWords,
@@ -217,27 +218,59 @@ export default function LibraryPage() {
     favoriteKanjis,
     favoriteHiraganas,
     favoriteKatakanas,
+    favoriteGrammar,
     favoriteData,
     toggleFavorite,
     toggleFavoriteKanji,
     getTotalFavorites,
     loading: loadingFavorites,
   } = useFavorites();
-  const masteryLoading = useMasteredModulesLoading();
 
   const dynamicCategories = buildLibraryCategories({
     totalFavorites: getTotalFavorites(),
     recentCount: recentItems.length,
     kanjiCount: kanjis.length,
+    grammarCount: GRAMMAR_BOARD_TOTAL,
     katakanaCount: katakanas.length,
     hiraganaCount: hiraganas.length,
     themeCount: themes.length,
   });
-
+  const currentKanjiProgressId = useMemo(
+    () =>
+      [...kanjis]
+        .reverse()
+        .find((kanji) => !lockedKanjiIds.has(kanji.id))?.id ?? null,
+    [kanjis, lockedKanjiIds],
+  );
+  const currentHiraganaProgressId = useMemo(
+    () =>
+      [...hiraganas]
+        .reverse()
+        .find((kana) => !lockedHiraganaIds.has(kana.id))?.id ?? null,
+    [hiraganas, lockedHiraganaIds],
+  );
+  const currentKatakanaProgressId = useMemo(
+    () =>
+      [...katakanas]
+        .reverse()
+        .find((kana) => !lockedKatakanaIds.has(kana.id))?.id ?? null,
+    [katakanas, lockedKatakanaIds],
+  );
   const handleKanjiClick = (kanji: Kanji) => {
     addRecentItem("kanji", kanji.id);
     setDrawerEntity({ id: kanji.id, kind: "kanji" });
   };
+
+  const handleLibraryKanjiSelect = useCallback((kanji: Kanji) => {
+    const isLocked = lockedKanjiIds.has(kanji.id);
+
+    if (isLocked) {
+      // Long-press handles unlock; click on locked kanji is a no-op.
+      return;
+    }
+
+    handleKanjiClick(kanji);
+  }, [lockedKanjiIds]);
 
   const handleDrawerQuizStart = useCallback(
     (
@@ -249,33 +282,51 @@ export default function LibraryPage() {
       const kanaType = drawerEntity.kanaType;
       setDrawerEntity(null);
       if (kind === "kanji") {
-        lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
+        const wasCompletedBefore = completedKanjiIds.has(entity.id);
+        const progressEligible =
+          quizType === undefined &&
+          !wasCompletedBefore &&
+          entity.id === currentKanjiProgressId;
         setQuizKanji({
           id: entity.id,
           symbol: entity.symbol,
           quizType: quizType as KanjiQuizType | undefined,
-          wasCompletedBefore: completedKanjiIds.has(entity.id),
-          isPracticeOnly: quizType !== undefined,
+          wasCompletedBefore,
+          isPracticeOnly:
+            quizType !== undefined || wasCompletedBefore || !progressEligible,
+          progressEligible,
         });
       } else {
         lockedHiraganaIdsBeforeQuizRef.current = new Set(lockedHiraganaIds);
         lockedKatakanaIdsBeforeQuizRef.current = new Set(lockedKatakanaIds);
+        const wasCompletedBefore = progressById.get(entity.id)?.completed === true;
+        const progressEligible =
+          quizType === undefined &&
+          !wasCompletedBefore &&
+          entity.id ===
+            (kanaType === "katakana"
+              ? currentKatakanaProgressId
+              : currentHiraganaProgressId);
         setQuizKana({
           id: entity.id,
           symbol: entity.symbol,
           kanaType: kanaType ?? "hiragana",
           quizType: quizType as KanaQuizType | undefined,
-          wasCompletedBefore: progressById.get(entity.id)?.completed === true,
-          isPracticeOnly: quizType !== undefined,
+          wasCompletedBefore,
+          isPracticeOnly:
+            quizType !== undefined || wasCompletedBefore || !progressEligible,
+          progressEligible,
         });
       }
     },
     [
-      completedKanjiIds,
+      currentHiraganaProgressId,
+      currentKanjiProgressId,
+      currentKatakanaProgressId,
       drawerEntity,
-      lockedKanjiIds,
       lockedHiraganaIds,
       lockedKatakanaIds,
+      completedKanjiIds,
       progressById,
     ],
   );
@@ -284,37 +335,14 @@ export default function LibraryPage() {
     const isPracticeOnly = quizKanji?.isPracticeOnly === true;
     setQuizKanji(null);
 
-    const lockedIdsBeforeQuiz = lockedKanjiIdsBeforeQuizRef.current;
-    lockedKanjiIdsBeforeQuizRef.current = null;
-
     if (isPracticeOnly) return;
 
-    const optimisticUserPoints = Math.max(
-      userPoints,
-      _result?.resultingModulePoints ?? 0,
-    );
-
     if (typeof _result?.resultingModulePoints === "number") {
-      dispatchMasteryProgressSync({ points: optimisticUserPoints });
+      dispatchMasteryProgressSync({ points: _result.resultingModulePoints });
     }
-
-    if (!lockedIdsBeforeQuiz) {
-      void reloadLockedStatus();
-      return;
-    }
-
-    const unlockedIds = kanjis
-      .filter(
-        (kanji) =>
-          lockedIdsBeforeQuiz.has(kanji.id) &&
-          optimisticUserPoints >= kanji.pointsToUnlock,
-      )
-      .map((kanji) => kanji.id);
-
-    startUnlockAnimation(unlockedIds, "kanji");
 
     void reloadLockedStatus();
-  }, [kanjis, quizKanji, reloadLockedStatus, startUnlockAnimation, userPoints]);
+  }, [quizKanji, reloadLockedStatus]);
 
   const handleKanaClick = (kana: Kana) => {
     setDrawerEntity({ id: kana.id, kind: "kana", kanaType: kana.kanaType });
@@ -410,18 +438,11 @@ export default function LibraryPage() {
   const isLibraryBootstrapping =
     !hasResolvedInitialContent ||
     !hasResolvedInitialKanjiStatus ||
-    !hasResolvedInitialKanaStatus ||
-    !hasResolvedInitialThemes ||
-    loadingFavorites ||
-    loadingRecentItems ||
-    masteryLoading;
+    !hasResolvedInitialKanaStatus;
 
   return (
     <DashboardShell>
-      {isLibraryBootstrapping ||
-      isGlobalLoading ||
-      loadingKanjiStatus ||
-      loadingKanaStatus ? (
+      {isLibraryBootstrapping ? (
         <div data-help-loading="true">
           <LibrarySkeleton />
         </div>
@@ -492,7 +513,7 @@ export default function LibraryPage() {
                     toggleFavoriteKatakana={(id) =>
                       void toggleFavorite(id, "katakana")
                     }
-                    onKanjiClick={handleKanjiClick}
+                    onKanjiClick={handleLibraryKanjiSelect}
                     onKanaClick={handleKanaClick}
                     className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
                   />
@@ -523,8 +544,9 @@ export default function LibraryPage() {
                   <LibraryRecentPanel
                     recentItems={recentItems}
                     kanjis={kanjis}
+                    loading={loadingRecentItems}
                     onOpenRecent={() => setSelectedCategory("recent")}
-                    onKanjiClick={handleKanjiClick}
+                    onKanjiClick={handleLibraryKanjiSelect}
                   />
                 </div>
               </AnimatedEntrance>
@@ -566,7 +588,7 @@ export default function LibraryPage() {
                         toggleFavoriteKatakana={(id) =>
                           void toggleFavorite(id, "katakana")
                         }
-                        onKanjiClick={handleKanjiClick}
+                        onKanjiClick={handleLibraryKanjiSelect}
                         onKanaClick={handleKanaClick}
                       />
                     ) : (
@@ -601,7 +623,15 @@ export default function LibraryPage() {
                   </span>
                 </div>
 
-                {favoriteKanjis.size > 0 && (
+                {loadingFavorites && (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                    {Array.from({ length: 12 }).map((_, index) => (
+                      <SkeletonCard key={index} />
+                    ))}
+                  </div>
+                )}
+
+                {!loadingFavorites && favoriteKanjis.size > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Kanjis
@@ -618,11 +648,7 @@ export default function LibraryPage() {
                               index={i}
                               locked={isLocked}
                               unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
-                              onClick={
-                                isLocked
-                                  ? undefined
-                                  : () => handleKanjiClick(kanji)
-                              }
+                              onClick={() => handleLibraryKanjiSelect(kanji)}
                               onFavoriteToggle={
                                 isLocked ? undefined : toggleFavoriteKanji
                               }
@@ -633,28 +659,22 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {favoriteData.grammar.length > 0 && (
+                {!loadingFavorites && favoriteData.grammar.length > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Gramática
                     </h3>
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {favoriteData.grammar.map((fav, i) => (
-                        <VocabularyCard
-                          key={fav.id}
-                          id={fav.id}
-                          title={fav.title || "Gramática"}
-                          subtitle={fav.description || undefined}
-                          thumbnail="文"
-                          variant="word"
-                          index={i}
-                        />
-                      ))}
-                    </div>
+                    <GrammarLibraryCollection
+                      favoriteIds={favoriteGrammar}
+                      filterIds={favoriteGrammar}
+                      onToggleFavorite={(id) => {
+                        void toggleFavorite(id, "grammar");
+                      }}
+                    />
                   </div>
                 )}
 
-                {favoriteData.hiragana.length > 0 && (
+                {!loadingFavorites && favoriteData.hiragana.length > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Hiragana
@@ -688,7 +708,7 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {favoriteData.katakana.length > 0 && (
+                {!loadingFavorites && favoriteData.katakana.length > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Katakana
@@ -722,7 +742,7 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {favoriteData.word.length > 0 && (
+                {!loadingFavorites && favoriteData.word.length > 0 && (
                   <div className="mb-8">
                     <h3 className="mb-4 text-lg font-semibold text-content-primary">
                       Vocabulario
@@ -743,7 +763,7 @@ export default function LibraryPage() {
                   </div>
                 )}
 
-                {getTotalFavorites() === 0 && (
+                {!loadingFavorites && getTotalFavorites() === 0 && (
                   <div className="flex flex-col items-center justify-center py-16">
                     <h3 className="mb-2 text-xl font-bold text-content-primary">
                       No tienes favoritos aún
@@ -785,9 +805,7 @@ export default function LibraryPage() {
                           index={i}
                           locked={isLocked}
                           unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
-                          onClick={
-                            isLocked ? undefined : () => handleKanjiClick(kanji)
-                          }
+                          onClick={() => handleLibraryKanjiSelect(kanji)}
                           onFavoriteToggle={
                             isLocked ? undefined : toggleFavoriteKanji
                           }
@@ -796,6 +814,28 @@ export default function LibraryPage() {
                     })}
                   </div>
                 )}
+              </LibraryCategorySection>
+            </AnimatedEntrance>
+          )}
+
+          {selectedCategory === "grammar" && (
+            <AnimatedEntrance
+              index={1}
+              disabled={!animationsEnabled}
+              mode={heavyAnimationsEnabled ? "default" : "light"}
+            >
+              <LibraryCategorySection
+                title="Colección de Grammar"
+                countLabel={`${GRAMMAR_BOARD_TOTAL} lecciones`}
+                emptyTitle="No hay lecciones de grammar disponibles"
+                emptyDescription="No encontramos lecciones para mostrar en esta sección."
+              >
+                <GrammarLibraryCollection
+                  favoriteIds={favoriteGrammar}
+                  onToggleFavorite={(id) => {
+                    void toggleFavorite(id, "grammar");
+                  }}
+                />
               </LibraryCategorySection>
             </AnimatedEntrance>
           )}
@@ -981,6 +1021,7 @@ export default function LibraryPage() {
               <LibraryCategorySection
                 title="Reciente"
                 countLabel={`${recentItems.length} elementos`}
+                loading={loadingRecentItems}
                 emptyTitle="No hay elementos recientes"
                 emptyDescription="Los elementos que visites aparecerán aquí."
               >
@@ -1002,11 +1043,7 @@ export default function LibraryPage() {
                             index={i}
                             locked={isLocked}
                             unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
-                            onClick={
-                              isLocked
-                                ? undefined
-                                : () => handleKanjiClick(kanji)
-                            }
+                            onClick={() => handleLibraryKanjiSelect(kanji)}
                             onFavoriteToggle={
                               isLocked ? undefined : toggleFavoriteKanji
                             }
@@ -1083,6 +1120,7 @@ export default function LibraryPage() {
               quizType={quizKanji.quizType}
               currentModulePoints={userPoints}
               wasCompletedBefore={quizKanji.wasCompletedBefore}
+              progressEligible={quizKanji.progressEligible}
               onClose={handleQuizClose}
             />
           )}
@@ -1095,6 +1133,7 @@ export default function LibraryPage() {
               quizType={quizKana.quizType}
               currentModulePoints={userKanaPoints}
               wasCompletedBefore={quizKana.wasCompletedBefore}
+              progressEligible={quizKana.progressEligible}
               onClose={handleKanaQuizClose}
             />
           )}

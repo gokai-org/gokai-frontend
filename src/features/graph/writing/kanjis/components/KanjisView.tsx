@@ -31,20 +31,27 @@ import { useMasteredModules } from "@/features/mastery/components/MasteredModule
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
+import { useToast } from "@/shared/ui/ToastProvider";
+import { PointsRewardFloat } from "@/shared/ui/PointsRewardFloat";
+import { useShakeFeedback } from "@/shared/hooks/useShakeFeedback";
 import {
   createLockedBoardAccessTour,
   createWritingBoardContextTour,
 } from "@/features/help/utils/contextualTours";
+import { unlockKanji } from "@/features/kanji";
+import { KanjiBoardInteractionProvider } from "../lib/KanjiBoardInteractionContext";
 
 type KanjiQuizCompletionResult = {
   newlyCompleted: boolean;
   newlyCompletedPoints: number;
+  resultingModulePoints: number;
   dominated: boolean;
   score: number;
   triggeredModuleMastery: boolean;
 };
 
 const GRAPH_USER_ID = "user123";
+const LOCKED_NODE_SHAKE_DURATION_MS = 640;
 
 function isKanjiQuizType(
   quizType?: KanaQuizType | KanjiQuizType,
@@ -58,11 +65,34 @@ function isKanjiQuizType(
   );
 }
 
+function getRequestErrorMessage(error: unknown, fallback: string) {
+  if (!(error instanceof Error)) {
+    return fallback;
+  }
+
+  const message = error.message.replace(/^HTTP\s+\d+:\s*/i, "").trim();
+
+  return message || fallback;
+}
+
 export default function KanjisView() {
-  const { items, summary, reload, loading, userPoints } = useKanjiBoard();
+  const {
+    items,
+    summary,
+    reload,
+    loading,
+    userPoints,
+    nextUnlockCandidate,
+    canUnlockNext,
+    unlockCost,
+    applyOptimisticUnlock,
+    recentlyUnlockedIds,
+  } = useKanjiBoard();
+  const autoUnlockedKanjiRef = useRef<Set<string>>(new Set());
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useKanjiBoardQuality(graphicsProfile);
   const { setHidden } = useSidebar();
+  const toast = useToast();
   const mastered = useMasteredModules();
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
@@ -73,6 +103,7 @@ export default function KanjisView() {
     quizType?: KanjiQuizType;
     wasCompletedBefore: boolean;
     isPracticeOnly: boolean;
+    progressEligible: boolean;
   } | null>(null);
   const [newlyUnlockedIds, setNewlyUnlockedIds] = useState<ReadonlySet<string>>(
     new Set(),
@@ -83,10 +114,11 @@ export default function KanjisView() {
   const [unlockFocusNodeId, setUnlockFocusNodeId] = useState<string | null>(
     null,
   );
-  const [shakingNodeId, setShakingNodeId] = useState<string | null>(null);
+  const [unlockPending, setUnlockPending] = useState(false);
+  const [unlockPendingNodeId, setUnlockPendingNodeId] = useState<string | null>(null);
+  const [kanjiPointsReward, setKanjiPointsReward] = useState<number | null>(null);
   const lockedIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const shouldResolveUnlocksRef = useRef(false);
-  const shakingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -101,6 +133,12 @@ export default function KanjisView() {
   // Always-current item/reload refs so event callbacks stay stable.
   const itemsRef = useRef(items);
   const reloadRef = useRef(reload);
+  const {
+    shakingKey: shakingNodeId,
+    triggerShake: triggerNodeShake,
+    clearShake: clearNodeShake,
+  } = useShakeFeedback<string>(LOCKED_NODE_SHAKE_DURATION_MS);
+
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
@@ -194,6 +232,11 @@ export default function KanjisView() {
     () => items.find((item) => item.status !== "locked")?.id ?? null,
     [items],
   );
+  const currentProgressKanjiId = useMemo(
+    () =>
+      [...items].reverse().find((item) => item.status !== "locked")?.id ?? null,
+    [items],
+  );
 
   const focusedNodeId = detailNodeId ?? helpSelectedNodeId ?? unlockFocusNodeId;
 
@@ -259,18 +302,78 @@ export default function KanjisView() {
     qualityProfile.background.zoomStrength,
   ]);
 
-  const handleSelect = useCallback((nodeId: string) => {
-    const item = itemsRef.current.find((i) => i.id === nodeId);
-    if (item?.status === "locked") {
-      // Locked node: quick shake feedback without opening drawer
-      if (shakingTimerRef.current) clearTimeout(shakingTimerRef.current);
-      setShakingNodeId(nodeId);
-      shakingTimerRef.current = setTimeout(() => setShakingNodeId(null), 640);
+  const handleUnlockNextKanji = useCallback(async (nodeId?: string) => {
+    if (!nextUnlockCandidate || unlockPending) {
       return;
     }
+
+    if (nodeId && nodeId !== nextUnlockCandidate.id) {
+      return;
+    }
+
+    setUnlockPending(true);
+    setUnlockPendingNodeId(nextUnlockCandidate.id);
+    lockedIdsBeforeQuizRef.current = new Set(
+      itemsRef.current
+        .filter((item) => item.status === "locked")
+        .map((item) => item.id),
+    );
+
+    try {
+      const response = await unlockKanji(nextUnlockCandidate.id);
+      shouldResolveUnlocksRef.current = true;
+      dispatchMasteryProgressSync({ points: response.userPoints });
+      applyOptimisticUnlock(nextUnlockCandidate.id);
+      void reloadRef.current();
+    } catch (error) {
+      lockedIdsBeforeQuizRef.current = null;
+      const message = getRequestErrorMessage(
+        error,
+        "No se pudo desbloquear el kanji.",
+      );
+
+      toast.error(message);
+    } finally {
+      setUnlockPending(false);
+      setUnlockPendingNodeId(null);
+    }
+  }, [nextUnlockCandidate, toast, unlockPending, applyOptimisticUnlock]);
+
+  // Auto-desbloqueo de kanjis gratuitos (cost = 0): el usuario no necesita
+  // mantener presionado para abrirlos. Se dispara una sola vez por id.
+  useEffect(() => {
+    if (loading) return;
+    if (unlockPending) return;
+    const candidate = nextUnlockCandidate;
+    if (!candidate || !canUnlockNext) return;
+    if ((unlockCost ?? 0) > 0) return;
+    if (autoUnlockedKanjiRef.current.has(candidate.id)) return;
+    autoUnlockedKanjiRef.current.add(candidate.id);
+    void handleUnlockNextKanji(candidate.id);
+  }, [canUnlockNext, handleUnlockNextKanji, loading, nextUnlockCandidate, unlockCost, unlockPending]);
+
+  const handlePressUnlockNode = useCallback(
+    (nodeId: string) => {
+      void handleUnlockNextKanji(nodeId);
+    },
+    [handleUnlockNextKanji],
+  );
+
+  const handleSelect = useCallback((nodeId: string) => {
+    const item = itemsRef.current.find((i) => i.id === nodeId);
+
+    if (!item) {
+      return;
+    }
+
+    if (item.status === "locked") {
+      triggerNodeShake(nodeId);
+      return;
+    }
+
     setManualSelectedId(nodeId);
     setDetailNodeId(nodeId);
-  }, []); // stable — reads itemsRef at call time
+  }, [triggerNodeShake]);
 
   const handleCloseDetail = useCallback(() => {
     setDetailNodeId(null);
@@ -355,19 +458,27 @@ export default function KanjisView() {
       wasMasteredBeforeQuizRef.current = mastered.has("kanji");
       const wasCompletedBefore =
         itemsRef.current.find((item) => item.id === kanji.id)?.status === "completed";
+      const progressEligible =
+        quizType === undefined &&
+        !wasCompletedBefore &&
+        kanji.id === currentProgressKanjiId;
       setQuizKanji({
         ...kanji,
         quizType,
         wasCompletedBefore,
-        isPracticeOnly: quizType !== undefined,
+        isPracticeOnly:
+          quizType !== undefined || wasCompletedBefore || !progressEligible,
+        progressEligible,
       });
     },
-    [mastered],
+    [currentProgressKanjiId, mastered],
   );
 
   const handleQuizEnd = useCallback((result?: KanjiQuizCompletionResult) => {
     const isPracticeOnly = quizKanji?.isPracticeOnly === true;
-    const resultingPoints = userPoints + (result?.newlyCompletedPoints ?? 0);
+    const resultingPoints =
+      result?.resultingModulePoints ??
+      userPoints + (result?.newlyCompletedPoints ?? 0);
     const becameMastered =
       !wasMasteredBeforeQuizRef.current &&
       resultingPoints >= MASTERY_THRESHOLDS.kanji;
@@ -390,8 +501,11 @@ export default function KanjisView() {
     }
     if (result?.newlyCompleted && result.newlyCompletedPoints > 0) {
       dispatchMasteryProgressSync({
-        points: userPoints + result.newlyCompletedPoints,
+        points:
+          result.resultingModulePoints ??
+          userPoints + result.newlyCompletedPoints,
       });
+      setKanjiPointsReward(result.newlyCompletedPoints);
     }
     if (result?.triggeredModuleMastery) {
       pendingMasteryCelebrationRef.current = false;
@@ -671,9 +785,7 @@ export default function KanjisView() {
       if (viewportFrame.current !== null) {
         window.cancelAnimationFrame(viewportFrame.current);
       }
-      if (shakingTimerRef.current !== null) {
-        clearTimeout(shakingTimerRef.current);
-      }
+      clearNodeShake();
       if (unlockAnimationTimerRef.current !== null) {
         clearTimeout(unlockAnimationTimerRef.current);
       }
@@ -685,7 +797,7 @@ export default function KanjisView() {
       }
       lastFrameTime.current = null;
     };
-  }, []);
+  }, [clearNodeShake]);
 
   if (loading) {
     return <WritingBoardLoading scriptType="kanji" />;
@@ -733,20 +845,28 @@ export default function KanjisView() {
         </div>
 
         <div data-help-target="board-canvas" className="absolute inset-0 z-10">
-          <KanjiBoardMap
-            nodes={graph.nodes}
-            edges={graph.edges}
-            layout={layout}
-            onSelect={handleSelect}
-            onViewportChange={syncViewportToScene}
-            initialNodeId={selectedId}
-            focusedNodeId={focusedNodeId}
-            drawerOpen={drawerOpen}
-            onInteractionChange={handleInteractionChange}
-            qualityProfile={qualityProfile}
-            translateExtent={translateExtent}
-            onSetCenterReady={handleSetCenterReady}
-          />
+          <KanjiBoardInteractionProvider
+            value={{
+              onPressUnlock: handlePressUnlockNode,
+              unlockPendingId: unlockPendingNodeId,
+              recentlyUnlockedIds,
+            }}
+          >
+            <KanjiBoardMap
+              nodes={graph.nodes}
+              edges={graph.edges}
+              layout={layout}
+              onSelect={handleSelect}
+              onViewportChange={syncViewportToScene}
+              initialNodeId={selectedId}
+              focusedNodeId={focusedNodeId}
+              drawerOpen={drawerOpen}
+              onInteractionChange={handleInteractionChange}
+              qualityProfile={qualityProfile}
+              translateExtent={translateExtent}
+              onSetCenterReady={handleSetCenterReady}
+            />
+          </KanjiBoardInteractionProvider>
         </div>
 
         <LessonDrawer
@@ -766,7 +886,9 @@ export default function KanjisView() {
           onQuizStart={handleQuizStart}
         />
 
-        {detailNodeId === null && <ContextualHelpButton getTour={buildHelpTour} />}
+        {detailNodeId === null && quizKanji === null && (
+          <ContextualHelpButton getTour={buildHelpTour} />
+        )}
 
         {quizKanji !== null && (
           <KanjiQuizModal
@@ -775,9 +897,16 @@ export default function KanjisView() {
             quizType={quizKanji.quizType}
             currentModulePoints={userPoints}
             wasCompletedBefore={quizKanji.wasCompletedBefore}
+            progressEligible={quizKanji.progressEligible}
             onClose={handleQuizEnd}
           />
         )}
+
+        <PointsRewardFloat
+          points={kanjiPointsReward}
+          caption="Kanji completado"
+          onComplete={() => setKanjiPointsReward(null)}
+        />
       </div>
     </MasteryBoardWrapper>
   );

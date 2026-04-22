@@ -25,6 +25,7 @@ import {
 type KanaQuizCompletionResult = {
   newlyCompleted: boolean;
   newlyCompletedPoints: number;
+  resultingModulePoints: number;
   dominated: boolean;
   score: number;
   triggeredModuleMastery: boolean;
@@ -58,6 +59,7 @@ export default function HiraganaView() {
     quizType?: KanaQuizType;
     wasCompletedBefore: boolean;
     isPracticeOnly: boolean;
+    progressEligible: boolean;
   } | null>(null);
   const wasMasteredBeforeQuizRef = useRef(false);
   const pendingMasteryCelebrationRef = useRef(false);
@@ -70,6 +72,11 @@ export default function HiraganaView() {
   );
 
   const helpNodeId = useMemo(() => items[0]?.id ?? null, [items]);
+  const currentProgressKanaId = useMemo(
+    () =>
+      [...items].reverse().find((item) => item.status !== "locked")?.id ?? null,
+    [items],
+  );
 
   const handleNodeAction = useCallback((item: WritingBoardProgress) => {
     setDetailNodeId(item.id);
@@ -158,16 +165,22 @@ export default function HiraganaView() {
       wasMasteredBeforeQuizRef.current = mastered.has("hiragana");
       const wasCompletedBefore =
         items.find((item) => item.id === entity.id)?.status === "completed";
+      const progressEligible =
+        quizType === undefined &&
+        !wasCompletedBefore &&
+        entity.id === currentProgressKanaId;
       setDetailNodeId(null);
       setQuizItem({
         id: entity.id,
         label: entity.symbol,
         quizType,
         wasCompletedBefore,
-        isPracticeOnly: quizType !== undefined,
+        isPracticeOnly:
+          quizType !== undefined || wasCompletedBefore || !progressEligible,
+        progressEligible,
       });
     },
-    [items, mastered],
+    [currentProgressKanaId, items, mastered],
   );
 
   useEffect(() => {
@@ -188,6 +201,7 @@ export default function HiraganaView() {
   const handleQuizEnd = useCallback((result?: KanaQuizCompletionResult) => {
     const isPracticeOnly = quizItem?.isPracticeOnly === true;
     const resultingKanaPoints =
+      result?.resultingModulePoints ??
       userPoints + (result?.newlyCompletedPoints ?? 0);
     const becameMastered =
       !wasMasteredBeforeQuizRef.current &&
@@ -205,7 +219,9 @@ export default function HiraganaView() {
     }
     if (result?.newlyCompleted && result.newlyCompletedPoints > 0) {
       dispatchMasteryProgressSync({
-        kanaPoints: userPoints + result.newlyCompletedPoints,
+        kanaPoints:
+          result.resultingModulePoints ??
+          userPoints + result.newlyCompletedPoints,
       });
     }
     if (result?.triggeredModuleMastery) {
@@ -286,7 +302,9 @@ export default function HiraganaView() {
         onQuizStart={handleQuizStart}
       />
 
-      {detailNodeId === null && <ContextualHelpButton getTour={buildHelpTour} />}
+      {detailNodeId === null && quizItem === null && (
+        <ContextualHelpButton getTour={buildHelpTour} />
+      )}
 
       {quizItem && (
         <KanaQuizModal
@@ -296,6 +314,7 @@ export default function HiraganaView() {
           quizType={quizItem.quizType}
           currentModulePoints={userPoints}
           wasCompletedBefore={quizItem.wasCompletedBefore}
+          progressEligible={quizItem.progressEligible}
           onClose={handleQuizEnd}
         />
       )}

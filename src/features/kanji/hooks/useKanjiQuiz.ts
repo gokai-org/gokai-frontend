@@ -10,11 +10,14 @@ import type {
   KanjiQuizRoundResult,
 } from "@/features/kanji/types/quiz";
 import { QUIZ_ROUND_ORDER, QUIZ_TOTAL_ROUNDS } from "@/features/kanji/types/quiz";
-import { getKanjiQuiz, submitKanjiQuiz } from "@/features/kanji/api/kanjiQuizApi";
+import {
+  getKanjiQuiz,
+  submitKanjiQuiz,
+  type KanjiQuizSubmitResponse,
+} from "@/features/kanji/api/kanjiQuizApi";
 import { getCurrentUser } from "@/features/auth/services/api";
 import { isValidWritingQuestion } from "@/features/kanji/utils/quizParser";
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
-import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 
 const INITIAL_STATE: KanjiQuizSessionState = {
   step: "loading",
@@ -48,7 +51,15 @@ export interface UseKanjiQuizReturn {
   totalRounds: number;
   sessionType: KanjiQuizType | "mixed";
 
-  startQuiz: (kanjiId: string, quizType?: KanjiQuizType) => Promise<void>;
+  startQuiz: (
+    kanjiId: string,
+    options?:
+      | KanjiQuizType
+      | {
+          quizType?: KanjiQuizType;
+          persistProgress?: boolean;
+        },
+  ) => Promise<void>;
   selectOption: (optionIndex: number) => void;
   confirmAnswer: () => void;
   nextStep: () => void;
@@ -86,6 +97,21 @@ function extractSubmitErrorMessage(error: unknown): string {
   return "No se pudo guardar el resultado";
 }
 
+function buildSubmitFailureMessage(message: string | null): string {
+  return message && message.trim().length > 0
+    ? message
+    : "No se pudo guardar el resultado del quiz";
+}
+
+function extractSubmittedKanjiPoints(
+  response: KanjiQuizSubmitResponse | null | undefined,
+): number | null {
+  if (!response) return null;
+  if (typeof response.userPoints === "number") return response.userPoints;
+  if (typeof response.points === "number") return response.points;
+  return null;
+}
+
 export function useKanjiQuiz(): UseKanjiQuizReturn {
   const [state, setState] = useState<KanjiQuizSessionState>(INITIAL_STATE);
   const [quizData, setQuizData] = useState<KanjiQuizResponse | null>(null);
@@ -107,6 +133,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   const startingPointsRef = useRef<number | null>(null);
   const submittingRef = useRef(false);
   const persistProgressRef = useRef(true);
+  const roundTransitionRef = useRef(false);
 
   const stateRef = useRef(state);
   stateRef.current = state;
@@ -180,21 +207,9 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     setError(null);
 
     try {
-      const expectedQuizType = preferredQuizType ?? fallbackQuizType;
-      let response = await getKanjiQuiz(kanjiIdRef.current, preferredQuizType, {
+      const response = await getKanjiQuiz(kanjiIdRef.current, preferredQuizType, {
         fallbackType: fallbackQuizType,
       });
-
-      if (
-        !preferredQuizType &&
-        expectedQuizType &&
-        response.type !== expectedQuizType
-      ) {
-        response = await getKanjiQuiz(kanjiIdRef.current, undefined, {
-          fallbackType: expectedQuizType,
-          forceFallback: true,
-        });
-      }
 
       if (response.questions.length === 0) {
         throw new Error("El backend devolvio un quiz de kanji vacio");
@@ -226,7 +241,22 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
 
   // ── Start quiz (resets full session) ──
   const startQuiz = useCallback(
-    async (kanjiId: string, quizType?: KanjiQuizType) => {
+    async (
+      kanjiId: string,
+      options?:
+        | KanjiQuizType
+        | {
+            quizType?: KanjiQuizType;
+            persistProgress?: boolean;
+          },
+    ) => {
+      const quizType =
+        typeof options === "string" ? options : options?.quizType;
+      const shouldPersistProgress =
+        typeof options === "string"
+          ? !options
+          : options?.persistProgress ?? !quizType;
+
       setState(INITIAL_STATE);
       setQuizData(null);
       setError(null);
@@ -237,10 +267,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       setReachedMasteryThisAttempt(false);
       setSessionType(quizType ?? "mixed");
       setTotalRounds(quizType ? 1 : QUIZ_TOTAL_ROUNDS);
-      persistProgressRef.current = !quizType;
-      if (quizType) {
-        console.warn(`[KANJI QUIZ] Practice mode detected (type=${quizType}) - will NOT submit to backend`);
-      }
+      persistProgressRef.current = shouldPersistProgress;
       roundResultsRef.current = [];
       setRoundResults([]);
       kanjiIdRef.current = kanjiId;
@@ -263,26 +290,36 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   );
 
   // ── Finalize quiz (all rounds done) ──
-  const refreshPointsAfterSubmit = useCallback(async () => {
-    const user = await getCurrentUser().catch(() => null);
-    if (!user || typeof user.points !== "number") {
-      return;
-    }
-
+  const applyResolvedPoints = useCallback((nextPoints: number) => {
     const nextPointsDelta =
       startingPointsRef.current !== null
-        ? Math.max(0, user.points - startingPointsRef.current)
+        ? Math.max(0, nextPoints - startingPointsRef.current)
         : 0;
 
-    setUpdatedPoints(user.points);
+    setUpdatedPoints(nextPoints);
     setPointsDelta(nextPointsDelta);
     setReachedMasteryThisAttempt(
       startingPointsRef.current !== null &&
         startingPointsRef.current < MASTERY_THRESHOLDS.kanji &&
-        user.points >= MASTERY_THRESHOLDS.kanji,
+        nextPoints >= MASTERY_THRESHOLDS.kanji,
     );
-    dispatchMasteryProgressSync({ points: user.points });
   }, []);
+
+  const refreshPointsAfterSubmit = useCallback(
+    (response?: KanjiQuizSubmitResponse | null) => {
+      if (!response) {
+        return;
+      }
+
+      const submittedPoints = extractSubmittedKanjiPoints(response);
+      if (submittedPoints === null) {
+        return;
+      }
+
+      applyResolvedPoints(submittedPoints);
+    },
+    [applyResolvedPoints],
+  );
 
   const finalizeQuiz = useCallback(async (_results: KanjiQuizRoundResult[]) => {
     if (submittingRef.current) return;
@@ -292,12 +329,10 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     setState((s) => ({ ...s, step: "submitting" as KanjiQuizStep }));
 
     const completedPerfectQuiz =
+      persistProgressRef.current &&
       _results.length >= totalRounds &&
       _results.every((result) => result.score === 100);
 
-    setPointsDelta(0);
-    setUpdatedPoints(null);
-    setReachedMasteryThisAttempt(false);
     setState((s) => ({
       ...s,
       step: completedPerfectQuiz
@@ -311,6 +346,11 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
   // ── Complete a single round (submit + advance) ──
   const completeRound = useCallback(
     async (quizType: KanjiQuizType, score: number) => {
+      if (roundTransitionRef.current) {
+        return;
+      }
+
+      roundTransitionRef.current = true;
       const elapsed = Math.round(
         (Date.now() - roundStartTimeRef.current) / 1000,
       );
@@ -324,40 +364,53 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
 
       // ── Practice mode: skip ALL backend submission ──
       if (!persistProgressRef.current) {
-        console.warn("[KANJI QUIZ] Practice mode – skipping submit & points refresh");
         setSubmitError(null);
         if (newRoundResults.length >= totalRounds) {
           await finalizeQuiz(newRoundResults);
+          roundTransitionRef.current = false;
           return;
         }
         await loadNextRound(undefined, getExpectedMixedRoundType(newRoundResults.length));
+        roundTransitionRef.current = false;
         return;
       }
 
       // ── Full quiz: submit to backend ──
-      const submitPromise = submitKanjiQuiz(kanjiIdRef.current, {
+      let submitFailureMessage: string | null = null;
+      const submitResponse = await submitKanjiQuiz(kanjiIdRef.current, {
         type: quizType,
         score,
         duration: elapsed,
       })
-        .then(() => {
+        .then((response) => {
           setSubmitError(null);
+          return response;
         })
         .catch((err) => {
-          console.error("[KANJI QUIZ] Failed to submit round:", err);
-          setSubmitError(extractSubmitErrorMessage(err));
+          submitFailureMessage = extractSubmitErrorMessage(err);
+          setSubmitError(submitFailureMessage);
+          return null;
         });
+
+      if (!submitResponse) {
+        setError(buildSubmitFailureMessage(submitFailureMessage));
+        setIsPointsError(false);
+        setState((s) => ({ ...s, step: "error" as KanjiQuizStep }));
+        roundTransitionRef.current = false;
+        return;
+      }
 
       // Check if all rounds are done
       if (newRoundResults.length >= totalRounds) {
-        await submitPromise;
-        await refreshPointsAfterSubmit();
+        refreshPointsAfterSubmit(submitResponse);
         await finalizeQuiz(newRoundResults);
+        roundTransitionRef.current = false;
         return;
       }
 
       // Load next round from backend
       await loadNextRound(undefined, getExpectedMixedRoundType(newRoundResults.length));
+      roundTransitionRef.current = false;
     },
     [finalizeQuiz, loadNextRound, refreshPointsAfterSubmit, totalRounds],
   );
@@ -546,6 +599,7 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
     roundStartTimeRef.current = 0;
     submittingRef.current = false;
     persistProgressRef.current = true;
+    roundTransitionRef.current = false;
   }, []);
 
   return {

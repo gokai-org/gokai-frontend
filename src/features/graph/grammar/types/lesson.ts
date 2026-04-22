@@ -10,6 +10,20 @@ export type GrammarLessonSummary = {
   symbol?: string | null;
 };
 
+export type GrammarStudyProgress = {
+  grammarId: string;
+  title: string;
+  pointsToUnlock: number;
+  completed: boolean;
+};
+
+export type GrammarUnlockResponse = {
+  success: boolean;
+  message: string;
+  userPoints: number;
+  points?: number | null;
+};
+
 export type GrammarLesson = {
   id: string;
   title: string;
@@ -100,4 +114,20 @@ export type OrderExam = {
 export type GrammarQuizSubmitBody = {
   score: number;
   duration: number;
+};
+
+export type GrammarQuizSubmitResponse = {
+  success: boolean;
+  message: string;
+  userPoints: number;
+  pointsAwarded: number;
+  isCorrect: boolean;
+};
+
+export type GrammarQuizCompletionResult = {
+  grammarId: string;
+  score: number;
+  isCorrect: boolean;
+  pointsAwarded: number;
+  userPoints: number;
 };
