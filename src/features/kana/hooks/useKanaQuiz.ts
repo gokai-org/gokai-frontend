@@ -147,6 +147,12 @@ function extractSubmitErrorMessage(error: unknown): string {
   return "No se pudo guardar el resultado";
 }
 
+function buildSubmitFailureMessage(message: string | null): string {
+  return message && message.trim().length > 0
+    ? message
+    : "No se pudo guardar el resultado del quiz";
+}
+
 function extractSubmittedKanaPoints(
   response: KanaQuizSubmitResponse | null | undefined,
 ): number | null {
@@ -417,7 +423,8 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       }
 
       // ── Full quiz: submit to backend ──
-      const submitPromise = submitKanaQuiz(kanaIdRef.current, {
+      let submitFailureMessage: string | null = null;
+      const submitResponse = await submitKanaQuiz(kanaIdRef.current, {
         type: quizType,
         score,
         duration: elapsed,
@@ -427,13 +434,20 @@ export function useKanaQuiz(): UseKanaQuizReturn {
           return response;
         })
         .catch((err) => {
-          setSubmitError(extractSubmitErrorMessage(err));
+          submitFailureMessage = extractSubmitErrorMessage(err);
+          setSubmitError(submitFailureMessage);
           return null;
         });
 
+      if (!submitResponse) {
+        setError(buildSubmitFailureMessage(submitFailureMessage));
+        setState((s) => ({ ...s, step: "error" as KanaQuizStep }));
+        roundTransitionRef.current = false;
+        return;
+      }
+
       // Check if all rounds are done
       if (newRoundResults.length >= totalRounds) {
-        const submitResponse = await submitPromise;
         refreshPointsAfterSubmit(submitResponse);
         await finalizeQuiz(newRoundResults);
         roundTransitionRef.current = false;

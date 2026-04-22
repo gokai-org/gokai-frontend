@@ -8,6 +8,9 @@ export type {
   KanjiMeanings,
   KanjiStrokeData,
   KanjiLessonResult,
+  KanjiExerciseType,
+  KanjiStudyProgress,
+  KanjiUnlockResponse,
 } from "./types";
 export {
   getPrimaryMeaning,
@@ -20,6 +23,8 @@ export {
   getKanji,
   getKanjiStrokes,
   getKanjiLessonResults,
+  getKanjiProgress,
+  unlockKanji,
 } from "./api/kanjiApi";
 
 /* ── Kanji Quiz (backend-driven quiz system) ── */

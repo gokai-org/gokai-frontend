@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { getCurrentUser } from "@/features/auth";
-import { getKanjiLessonResults, listKanjis } from "@/features/kanji";
+import { getKanjiLessonResults, getKanjiProgress, listKanjis } from "@/features/kanji";
 import { getKanaProgress, listHiraganas, listKatakanas } from "@/features/kana/api/kanaApi";
 import {
   subscribeMasteryProgressSync,
@@ -62,10 +62,11 @@ async function warmDashboardProgressCaches() {
   }
 
   progressBootstrapInFlight = (async () => {
-    const [user, kanaProgress, kanjiResultsResponse, kanjis, hiraganas, katakanas] =
+    const [user, kanaProgress, kanjiProgress, kanjiResultsResponse, kanjis, hiraganas, katakanas] =
       await Promise.all([
         getCurrentUser().catch(() => null),
         getKanaProgress().catch(() => null),
+        getKanjiProgress().catch(() => null),
         getKanjiLessonResults({ limit: 100 }).catch(() => null),
         listKanjis().catch(() => null),
         listHiraganas().catch(() => null),
@@ -89,6 +90,7 @@ async function warmDashboardProgressCaches() {
         userId,
         userPoints: typeof user?.points === "number" ? user.points : 0,
         results: kanjiResultsResponse?.results ?? [],
+        progress: kanjiProgress,
         loadedAt: Date.now(),
       });
     } else {

@@ -1661,6 +1661,19 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   transition: stroke 0.6s ease-out;
 }
 
+@keyframes grammar-board-unlock-artwork {
+  0%,
+  100% {
+    opacity: 0.16;
+    filter: saturate(1) brightness(1);
+  }
+
+  50% {
+    opacity: 0.38;
+    filter: saturate(1.18) brightness(1.05);
+  }
+}
+
 /* ── Mastery: golden points pill override ── */
 [data-mastery-golden="true"] .board-node-points-pill--kanji,
 [data-mastery-golden="true"] .board-node-points-pill--hiragana,

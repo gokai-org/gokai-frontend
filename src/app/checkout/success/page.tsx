@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Crown,
@@ -25,7 +26,14 @@ const UNLOCKED_FEATURES = [
   { icon: Zap, label: "Acceso anticipado" },
 ];
 
-type Phase = "unlocking" | "features" | "ready";
+const INTEREST_ONBOARDING_HINTS = [
+  "Anime y manga",
+  "Tecnología",
+  "Viajes",
+  "Vida diaria",
+];
+
+type Phase = "unlocking" | "features" | "interests" | "ready";
 
 function FloatingParticles() {
   const particles = useMemo(
@@ -102,21 +110,31 @@ function PremiumGlow() {
   );
 }
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessPageContent() {
+  const searchParams = useSearchParams();
   const [phase, setPhase] = useState<Phase>("unlocking");
+  const isPremiumOnboardingFlow =
+    searchParams.get("flow") === "premium-onboarding";
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("features"), 5200);
-    const t2 = setTimeout(() => setPhase("ready"), 11200);
+    const t2 = setTimeout(
+      () => setPhase(isPremiumOnboardingFlow ? "interests" : "ready"),
+      11200,
+    );
 
     return () => {
       clearTimeout(t1);
       clearTimeout(t2);
     };
-  }, []);
+  }, [isPremiumOnboardingFlow]);
 
   function handleContinue() {
-    window.location.replace("/dashboard/graph");
+    const destination = isPremiumOnboardingFlow
+      ? "/onboarding/interests"
+      : "/dashboard/graph";
+
+    window.location.replace(destination);
   }
 
   return (
@@ -546,8 +564,150 @@ export default function CheckoutSuccessPage() {
               </motion.p>
             </motion.div>
           )}
+
+          {phase === "interests" && (
+            <motion.div
+              key="interests"
+              className="flex w-full max-w-lg flex-col items-center text-center"
+              initial={{ opacity: 0, y: 34, filter: "blur(10px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 1.7, ease: "easeOut" }}
+            >
+              <motion.div
+                className="relative flex h-[180px] w-[180px] items-center justify-center"
+                initial={{ opacity: 0, scale: 0.7 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", damping: 16, stiffness: 110 }}
+              >
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-accent/12 blur-3xl"
+                  animate={{
+                    scale: [1, 1.18, 1],
+                    opacity: [0.2, 0.45, 0.2],
+                  }}
+                  transition={{
+                    duration: 5,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                />
+                <motion.div
+                  className="absolute h-[152px] w-[152px] rounded-full border border-accent/15"
+                  animate={{ rotate: 360 }}
+                  transition={{
+                    duration: 18,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                >
+                  <div className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-accent shadow-[0_0_16px_rgba(153,51,49,0.28)]" />
+                </motion.div>
+                <motion.div
+                  className="relative flex h-24 w-24 items-center justify-center rounded-[28px] bg-gradient-to-br from-accent via-[#A83F3A] to-accent-hover shadow-[0_20px_60px_rgba(153,51,49,0.26)]"
+                  animate={{
+                    y: [0, -5, 0],
+                    rotate: [0, 4, -4, 0],
+                  }}
+                  transition={{
+                    duration: 5.6,
+                    repeat: Infinity,
+                    ease: "easeInOut",
+                  }}
+                >
+                  <Sparkles size={40} className="text-content-inverted" />
+                </motion.div>
+              </motion.div>
+
+              <motion.span
+                className="mt-6 inline-flex items-center gap-2 rounded-full border border-accent/10 bg-surface-primary/80 px-4 py-2 text-xs font-bold text-accent shadow-sm backdrop-blur-md"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 1 }}
+              >
+                Personalizacion inicial
+              </motion.span>
+
+              <motion.h1
+                className="mt-5 text-3xl font-extrabold tracking-tight text-content-primary sm:text-4xl"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55, duration: 1.1 }}
+              >
+                Ahora vamos a elegir tus intereses principales
+              </motion.h1>
+
+              <motion.p
+                className="mt-3 max-w-md text-sm leading-relaxed text-content-tertiary sm:text-base"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.9, duration: 1.3 }}
+              >
+                Antes de entrar a GOKAI+, personalizaremos tu experiencia con
+                el mismo onboarding de intereses para adaptar mejor tu contenido
+                y tus recomendaciones.
+              </motion.p>
+
+              <motion.div
+                className="mt-8 flex flex-wrap items-center justify-center gap-3"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.15, duration: 1.1 }}
+              >
+                {INTEREST_ONBOARDING_HINTS.map((hint, index) => (
+                  <motion.span
+                    key={hint}
+                    className="rounded-full border border-border-default/70 bg-surface-primary/80 px-4 py-2 text-sm font-semibold text-content-secondary shadow-[var(--shadow-sm)] backdrop-blur-md"
+                    animate={{ y: [0, -4, 0] }}
+                    transition={{
+                      duration: 3.6,
+                      repeat: Infinity,
+                      ease: "easeInOut",
+                      delay: index * 0.18,
+                    }}
+                  >
+                    {hint}
+                  </motion.span>
+                ))}
+              </motion.div>
+
+              <motion.button
+                onClick={handleContinue}
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 1.45, duration: 1.2 }}
+                whileHover={{
+                  scale: 1.03,
+                  y: -2,
+                  boxShadow: "0 20px 45px rgba(153,51,49,0.28)",
+                }}
+                whileTap={{ scale: 0.985 }}
+                className="mt-10 w-full max-w-xs rounded-2xl bg-gradient-to-r from-accent via-[#A83F3A] to-accent-hover py-4 text-base font-bold text-content-inverted shadow-[0_18px_40px_rgba(153,51,49,0.22)] transition-all"
+              >
+                Elegir mis intereses
+              </motion.button>
+
+              <motion.p
+                className="mt-4 text-xs text-content-muted"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.8, duration: 1 }}
+              >
+                Continuaras con el onboarding antes de entrar al dashboard
+              </motion.p>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
     </main>
+  );
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={<main className="min-h-screen bg-surface-secondary" />}
+    >
+      <CheckoutSuccessPageContent />
+    </Suspense>
   );
 }

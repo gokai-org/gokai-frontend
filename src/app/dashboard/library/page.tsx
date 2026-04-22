@@ -3,6 +3,7 @@
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
+import { UnlockStateDialog, type UnlockStateDialogStatus, useToast } from "@/shared/ui";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
 import { Search } from "lucide-react";
@@ -23,6 +24,7 @@ import { useKanjiLockedStatus } from "@/features/library/hooks/useKanjiLockedSta
 import { useKanaLockedStatus } from "@/features/library/hooks/useKanaLockedStatus";
 import { useLibraryContent } from "@/features/library/hooks/useLibraryContent";
 import type { Kanji } from "@/features/kanji/types";
+import { unlockKanji } from "@/features/kanji";
 import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import type { Kana } from "@/features/kana/types";
 import type { KanaQuizType } from "@/features/kana/types/quiz";
@@ -47,6 +49,31 @@ type QuizCompletionResult = {
   newlyCompletedPoints?: number;
   resultingModulePoints?: number;
 };
+
+type LibraryUnlockDialogState = {
+  itemId: string;
+  status: UnlockStateDialogStatus;
+};
+
+function getRequestErrorMessage(error: unknown, fallback: string) {
+  if (!(error instanceof Error)) {
+    return fallback;
+  }
+
+  const message = error.message.replace(/^HTTP\s+\d+:\s*/i, "").trim();
+
+  return message || fallback;
+}
+
+function isForbiddenMessage(message: string) {
+  const normalized = message.trim().toLowerCase();
+
+  return (
+    normalized === "forbidden" ||
+    normalized.includes('"error":"forbidden"') ||
+    normalized.includes('"message":"forbidden"')
+  );
+}
 
 export default function LibraryPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -73,11 +100,14 @@ export default function LibraryPage() {
     isPracticeOnly: boolean;
     progressEligible: boolean;
   } | null>(null);
+  const [unlockDialogState, setUnlockDialogState] = useState<LibraryUnlockDialogState | null>(null);
+  const [unlockPending, setUnlockPending] = useState(false);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
 
   const { setBlurred } = useSidebar();
+  const toast = useToast();
   const mastered = useMasteredModules();
   useEffect(() => {
     setBlurred(drawerEntity !== null);
@@ -137,6 +167,10 @@ export default function LibraryPage() {
   const {
     lockedKanjiIds,
     completedKanjiIds,
+    nextUnlockCandidateId,
+    canUnlockNext,
+    unlockCost,
+    progress: kanjiProgress,
     userPoints,
     hasResolvedInitialStatus: hasResolvedInitialKanjiStatus,
     reload: reloadLockedStatus,
@@ -156,7 +190,6 @@ export default function LibraryPage() {
   const [newlyUnlockedKanaIds, setNewlyUnlockedKanaIds] = useState<
     ReadonlySet<string>
   >(new Set());
-  const lockedKanjiIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const lockedHiraganaIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const lockedKatakanaIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -248,11 +281,128 @@ export default function LibraryPage() {
         .find((kana) => !lockedKatakanaIds.has(kana.id))?.id ?? null,
     [katakanas, lockedKatakanaIds],
   );
+  const unlockDialogKanji = useMemo(
+    () =>
+      unlockDialogState
+        ? kanjis.find((kanji) => kanji.id === unlockDialogState.itemId) ?? null
+        : null,
+    [kanjis, unlockDialogState],
+  );
+
+  const unlockDialogCost = useMemo(
+    () => unlockDialogKanji?.pointsToUnlock ?? unlockCost,
+    [unlockDialogKanji, unlockCost],
+  );
+
+  const unlockDialogDescription = useMemo(() => {
+    if (!unlockDialogKanji) {
+      return "";
+    }
+
+    const nextUnlockCost = unlockDialogKanji.pointsToUnlock ?? unlockCost;
+
+    if (unlockDialogState?.status === "unlocked") {
+      if (completedKanjiIds.has(unlockDialogKanji.id)) {
+        return `${unlockDialogKanji.symbol} ya está completado. Puedes abrirlo para repasar o volver a practicar.`;
+      }
+
+      return `${unlockDialogKanji.symbol} ya está desbloqueado. Puedes abrir su ficha y seguir con la práctica.`;
+    }
+
+    if (unlockDialogState?.status === "unlockable") {
+      return `Puedes gastar ${unlockDialogCost} puntos para desbloquear ${unlockDialogKanji.symbol} desde la biblioteca.`;
+    }
+
+    if (nextUnlockCandidateId === unlockDialogKanji.id) {
+      if (kanjiProgress && !kanjiProgress.completed) {
+        return `Completa ${kanjiProgress.symbol} antes de desbloquear el siguiente kanji.`;
+      }
+
+      return `Necesitas ${Math.max(nextUnlockCost - userPoints, 0)} puntos más para desbloquear ${unlockDialogKanji.symbol}.`;
+    }
+
+    return "Primero debes avanzar hasta este kanji en el orden de desbloqueo.";
+  }, [completedKanjiIds, kanjiProgress, nextUnlockCandidateId, unlockCost, unlockDialogCost, unlockDialogKanji, unlockDialogState?.status, userPoints]);
+
+  const unlockDialogRequirement = useMemo(() => {
+    if (!unlockDialogKanji || unlockDialogState?.status !== "locked") {
+      return null;
+    }
+
+    if (nextUnlockCandidateId === unlockDialogKanji.id) {
+      const requiredPoints = unlockDialogKanji.pointsToUnlock ?? unlockCost;
+
+      if (kanjiProgress && !kanjiProgress.completed) {
+        return `Requisito actual: completar ${kanjiProgress.symbol}.`;
+      }
+
+      return `Requisito actual: reunir ${Math.max(requiredPoints - userPoints, 0)} puntos más.`;
+    }
+
+    return "Requisito actual: desbloquear antes los kanjis previos de la ruta.";
+  }, [kanjiProgress, nextUnlockCandidateId, unlockCost, unlockDialogKanji, unlockDialogState?.status, userPoints]);
 
   const handleKanjiClick = (kanji: Kanji) => {
     addRecentItem("kanji", kanji.id);
     setDrawerEntity({ id: kanji.id, kind: "kanji" });
   };
+
+  const handleLibraryKanjiSelect = useCallback((kanji: Kanji) => {
+    const isLocked = lockedKanjiIds.has(kanji.id);
+
+    if (isLocked) {
+      setUnlockDialogState({
+        itemId: kanji.id,
+        status:
+          nextUnlockCandidateId === kanji.id && canUnlockNext
+            ? "unlockable"
+            : "locked",
+      });
+      return;
+    }
+
+    setUnlockDialogState({ itemId: kanji.id, status: "unlocked" });
+  }, [canUnlockNext, lockedKanjiIds, nextUnlockCandidateId]);
+
+  const handleLibraryKanjiUnlock = useCallback(async () => {
+    if (!unlockDialogKanji || unlockDialogState?.status !== "unlockable" || unlockPending) {
+      return;
+    }
+
+    setUnlockPending(true);
+
+    try {
+      const response = await unlockKanji(unlockDialogKanji.id);
+      dispatchMasteryProgressSync({ points: response.userPoints });
+      startUnlockAnimation([unlockDialogKanji.id], "kanji");
+      setUnlockDialogState(null);
+      void reloadLockedStatus();
+    } catch (error) {
+      const message = getRequestErrorMessage(error, "No se pudo desbloquear el kanji.");
+
+      toast.error(
+        isForbiddenMessage(message)
+          ? "El backend actual no autoriza el desbloqueo manual de kanji. La ruta esta respondiendo forbidden."
+          : message,
+      );
+    } finally {
+      setUnlockPending(false);
+    }
+  }, [reloadLockedStatus, startUnlockAnimation, toast, unlockDialogKanji, unlockDialogState?.status, unlockPending]);
+
+  const handleLibraryUnlockDialogAction = useCallback(() => {
+    if (!unlockDialogKanji) {
+      return;
+    }
+
+    if (unlockDialogState?.status === "unlockable") {
+      void handleLibraryKanjiUnlock();
+      return;
+    }
+
+    setUnlockDialogState(null);
+    handleKanjiClick(unlockDialogKanji);
+  }, [handleLibraryKanjiUnlock, handleKanjiClick, unlockDialogKanji, unlockDialogState?.status]);
 
   const handleDrawerQuizStart = useCallback(
     (
@@ -264,7 +414,6 @@ export default function LibraryPage() {
       const kanaType = drawerEntity.kanaType;
       setDrawerEntity(null);
       if (kind === "kanji") {
-        lockedKanjiIdsBeforeQuizRef.current = new Set(lockedKanjiIds);
         const wasCompletedBefore = completedKanjiIds.has(entity.id);
         const progressEligible =
           quizType === undefined &&
@@ -307,7 +456,6 @@ export default function LibraryPage() {
       currentKanjiProgressId,
       currentKatakanaProgressId,
       drawerEntity,
-      lockedKanjiIds,
       lockedHiraganaIds,
       lockedKatakanaIds,
       completedKanjiIds,
@@ -319,37 +467,14 @@ export default function LibraryPage() {
     const isPracticeOnly = quizKanji?.isPracticeOnly === true;
     setQuizKanji(null);
 
-    const lockedIdsBeforeQuiz = lockedKanjiIdsBeforeQuizRef.current;
-    lockedKanjiIdsBeforeQuizRef.current = null;
-
     if (isPracticeOnly) return;
 
-    const optimisticUserPoints = Math.max(
-      userPoints,
-      _result?.resultingModulePoints ?? 0,
-    );
-
     if (typeof _result?.resultingModulePoints === "number") {
-      dispatchMasteryProgressSync({ points: optimisticUserPoints });
+      dispatchMasteryProgressSync({ points: _result.resultingModulePoints });
     }
-
-    if (!lockedIdsBeforeQuiz) {
-      void reloadLockedStatus();
-      return;
-    }
-
-    const unlockedIds = kanjis
-      .filter(
-        (kanji) =>
-          lockedIdsBeforeQuiz.has(kanji.id) &&
-          optimisticUserPoints >= kanji.pointsToUnlock,
-      )
-      .map((kanji) => kanji.id);
-
-    startUnlockAnimation(unlockedIds, "kanji");
 
     void reloadLockedStatus();
-  }, [kanjis, quizKanji, reloadLockedStatus, startUnlockAnimation, userPoints]);
+  }, [quizKanji, reloadLockedStatus]);
 
   const handleKanaClick = (kana: Kana) => {
     setDrawerEntity({ id: kana.id, kind: "kana", kanaType: kana.kanaType });
@@ -520,7 +645,7 @@ export default function LibraryPage() {
                     toggleFavoriteKatakana={(id) =>
                       void toggleFavorite(id, "katakana")
                     }
-                    onKanjiClick={handleKanjiClick}
+                    onKanjiClick={handleLibraryKanjiSelect}
                     onKanaClick={handleKanaClick}
                     className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
                   />
@@ -553,7 +678,7 @@ export default function LibraryPage() {
                     kanjis={kanjis}
                     loading={loadingRecentItems}
                     onOpenRecent={() => setSelectedCategory("recent")}
-                    onKanjiClick={handleKanjiClick}
+                    onKanjiClick={handleLibraryKanjiSelect}
                   />
                 </div>
               </AnimatedEntrance>
@@ -595,7 +720,7 @@ export default function LibraryPage() {
                         toggleFavoriteKatakana={(id) =>
                           void toggleFavorite(id, "katakana")
                         }
-                        onKanjiClick={handleKanjiClick}
+                        onKanjiClick={handleLibraryKanjiSelect}
                         onKanaClick={handleKanaClick}
                       />
                     ) : (
@@ -655,11 +780,7 @@ export default function LibraryPage() {
                               index={i}
                               locked={isLocked}
                               unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
-                              onClick={
-                                isLocked
-                                  ? undefined
-                                  : () => handleKanjiClick(kanji)
-                              }
+                              onClick={() => handleLibraryKanjiSelect(kanji)}
                               onFavoriteToggle={
                                 isLocked ? undefined : toggleFavoriteKanji
                               }
@@ -822,9 +943,7 @@ export default function LibraryPage() {
                           index={i}
                           locked={isLocked}
                           unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
-                          onClick={
-                            isLocked ? undefined : () => handleKanjiClick(kanji)
-                          }
+                          onClick={() => handleLibraryKanjiSelect(kanji)}
                           onFavoriteToggle={
                             isLocked ? undefined : toggleFavoriteKanji
                           }
@@ -1040,11 +1159,7 @@ export default function LibraryPage() {
                             index={i}
                             locked={isLocked}
                             unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
-                            onClick={
-                              isLocked
-                                ? undefined
-                                : () => handleKanjiClick(kanji)
-                            }
+                            onClick={() => handleLibraryKanjiSelect(kanji)}
                             onFavoriteToggle={
                               isLocked ? undefined : toggleFavoriteKanji
                             }
@@ -1091,6 +1206,40 @@ export default function LibraryPage() {
               </LibraryCategorySection>
             </AnimatedEntrance>
           )}
+
+          <UnlockStateDialog
+            open={unlockDialogState !== null && unlockDialogKanji !== null}
+            status={unlockDialogState?.status ?? "locked"}
+            moduleLabel="Kanji"
+            title={unlockDialogKanji?.symbol ?? "Kanji"}
+            symbol={unlockDialogKanji?.symbol ?? null}
+            description={unlockDialogDescription}
+            currentPoints={userPoints}
+            unlockCost={unlockCost}
+            requirementLabel={unlockDialogRequirement}
+            helperText={
+              unlockDialogState?.status === "unlocked"
+                ? "Desde aquí puedes abrir la ficha del kanji y entrar a la práctica desde library."
+                : unlockDialogState?.status === "unlockable"
+                  ? "El desbloqueo manual consume puntos del módulo y mantiene la misma secuencia del graph."
+                  : null
+            }
+            actionLabel={
+              unlockDialogState?.status === "unlockable"
+                ? "Desbloquear kanji"
+                : unlockDialogState?.status === "unlocked"
+                  ? "Abrir kanji"
+                  : undefined
+            }
+            actionPending={unlockPending}
+            actionDisabled={unlockDialogState?.status === "unlockable" && !canUnlockNext}
+            onAction={
+              unlockDialogState?.status === "locked"
+                ? undefined
+                : handleLibraryUnlockDialogAction
+            }
+            onClose={() => setUnlockDialogState(null)}
+          />
 
           <LessonDrawer
             open={drawerEntity !== null}

@@ -104,7 +104,12 @@ export function ScriptCard({
     "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] text-left",
     "min-h-[190px] select-none",
     effectiveLocked
-      ? "items-center justify-center bg-surface-tertiary dark:bg-[#1a181c] border border-border-default/70 dark:border-white/[0.05] cursor-default p-4"
+      ? [
+          "items-center justify-center bg-surface-tertiary dark:bg-[#1a181c] border border-border-default/70 dark:border-white/[0.05] p-4",
+          onClick
+            ? `cursor-pointer focus:outline-none focus-visible:ring-2 ${config.ring}`
+            : "cursor-default",
+        ].join(" ")
       : [
           "p-5",
           "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
@@ -286,7 +291,7 @@ export function ScriptCard({
     />
   ) : null;
 
-  const effectiveOnClick = effectiveLocked ? undefined : onClick;
+  const effectiveOnClick = onClick;
 
   const cardEl = effectiveOnClick ? (
     <div

@@ -419,7 +419,7 @@ export default function LoginPage() {
   }
 
   function getPostRegisterDestination(): string {
-    if (intent === "premium") return "/checkout";
+    if (intent === "premium") return "/checkout?flow=premium-onboarding";
     return "/onboarding/interests";
   }
 

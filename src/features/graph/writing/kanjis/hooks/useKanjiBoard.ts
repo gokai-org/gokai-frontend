@@ -3,10 +3,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   getKanjiLessonResults,
+  getKanjiProgress,
   getPrimaryMeaning,
   listKanjis,
   type Kanji,
   type KanjiLessonResult,
+  type KanjiStudyProgress,
 } from "@/features/kanji";
 import { getCurrentUser } from "@/features/auth";
 import {
@@ -14,6 +16,7 @@ import {
   type KanjiBoardProgress,
   type KanjiBoardSummary,
 } from "../types";
+import { resolveKanjiUnlockState } from "@/features/kanji/lib/kanjiUnlockState";
 import { subscribeMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import {
   clearCache,
@@ -33,12 +36,14 @@ import {
 } from "@/shared/lib/progressBootstrapCache";
 
 const KANJI_BOOTSTRAP_TTL_MS = 30_000;
+const KANJI_POINTS_SYNC_TTL_MS = 30_000;
 
 let kanjiBootstrapCache:
   | {
       userId: string;
       kanjis: Kanji[];
       results: KanjiLessonResult[];
+      progress: KanjiStudyProgress | null;
       userPoints: number;
       loadedAt: number;
     }
@@ -157,6 +162,7 @@ export function useKanjiBoard() {
             userId: sharedStatusCache.userId,
             kanjis: sharedContentCache.kanjis,
             results: sharedStatusCache.results,
+            progress: sharedStatusCache.progress ?? null,
             userPoints: sharedStatusCache.userPoints,
             loadedAt: Math.max(
               sharedStatusCache.loadedAt,
@@ -169,6 +175,9 @@ export function useKanjiBoard() {
 
   const [kanjis, setKanjis] = useState<Kanji[]>(() => initialBootstrap?.kanjis ?? []);
   const [results, setResults] = useState<KanjiLessonResult[]>(() => initialBootstrap?.results ?? []);
+  const [progress, setProgress] = useState<KanjiStudyProgress | null>(
+    () => initialBootstrap?.progress ?? null,
+  );
   const [userPoints, setUserPoints] = useState<number>(
     () => initialBootstrap?.userPoints ?? 0,
   );
@@ -176,8 +185,10 @@ export function useKanjiBoard() {
   const [error, setError] = useState<string | null>(null);
   const hasLoadedOnceRef = useRef(false);
   const hadInitialBootstrapRef = useRef(initialBootstrap !== null);
-  const optimisticUserPointsRef = useRef(initialBootstrap?.userPoints ?? 0);
+  const optimisticUserPointsRef = useRef<number | null>(null);
+  const optimisticUserPointsExpiryRef = useRef(0);
   const resultsRef = useRef<KanjiLessonResult[]>(initialBootstrap?.results ?? []);
+  const progressRef = useRef<KanjiStudyProgress | null>(initialBootstrap?.progress ?? null);
   const activeUserIdRef = useRef<string | null>(initialBootstrap?.userId ?? knownUserId);
 
   const persistSharedStatusCache = useCallback(
@@ -185,6 +196,7 @@ export function useKanjiBoard() {
       userId: string | null,
       nextUserPoints: number,
       nextResults: KanjiLessonResult[],
+      nextProgress: KanjiStudyProgress | null,
     ) => {
       if (!userId) {
         clearCache(LIBRARY_KANJI_STATUS_CACHE_KEY);
@@ -195,6 +207,7 @@ export function useKanjiBoard() {
         userId,
         userPoints: nextUserPoints,
         results: nextResults,
+        progress: nextProgress,
         loadedAt: Date.now(),
       });
     },
@@ -211,15 +224,30 @@ export function useKanjiBoard() {
   }, []);
 
   const applyUserPoints = useCallback(
-    (nextUserPoints: number, userId = activeUserIdRef.current) => {
-      const mergedUserPoints = Math.max(
-        nextUserPoints,
-        optimisticUserPointsRef.current,
-      );
+    (
+      nextUserPoints: number,
+      userId = activeUserIdRef.current,
+      options?: { optimistic?: boolean },
+    ) => {
+      let resolvedUserPoints = nextUserPoints;
 
-      optimisticUserPointsRef.current = mergedUserPoints;
+      if (options?.optimistic) {
+        optimisticUserPointsRef.current = nextUserPoints;
+        optimisticUserPointsExpiryRef.current =
+          Date.now() + KANJI_POINTS_SYNC_TTL_MS;
+      } else if (optimisticUserPointsRef.current !== null) {
+        const stillPinned = Date.now() < optimisticUserPointsExpiryRef.current;
+
+        if (!stillPinned || optimisticUserPointsRef.current === nextUserPoints) {
+          optimisticUserPointsRef.current = null;
+          optimisticUserPointsExpiryRef.current = 0;
+        } else {
+          resolvedUserPoints = optimisticUserPointsRef.current;
+        }
+      }
+
       setUserPoints((previous) =>
-        previous === mergedUserPoints ? previous : mergedUserPoints,
+        previous === resolvedUserPoints ? previous : resolvedUserPoints,
       );
 
       if (
@@ -229,14 +257,19 @@ export function useKanjiBoard() {
       ) {
         kanjiBootstrapCache = {
           ...kanjiBootstrapCache,
-          userPoints: mergedUserPoints,
+          userPoints: resolvedUserPoints,
           loadedAt: Date.now(),
         };
       }
 
-      persistSharedStatusCache(userId, mergedUserPoints, resultsRef.current);
+      persistSharedStatusCache(
+        userId,
+        resolvedUserPoints,
+        resultsRef.current,
+        progressRef.current,
+      );
 
-      return mergedUserPoints;
+      return resolvedUserPoints;
     },
     [persistSharedStatusCache],
   );
@@ -248,22 +281,26 @@ export function useKanjiBoard() {
     setError(null);
 
     try {
-      const [kanjiPayload, resultsPayload, user] = await Promise.all([
+      const [kanjiPayload, resultsPayload, progressPayload, user] = await Promise.all([
         listKanjis(),
         getKanjiLessonResults({ limit: 100 }).catch(() => []),
+        getKanjiProgress().catch(() => null),
         getCurrentUser().catch(() => null),
       ]);
 
       const nextKanjis = normalizeKanjis(kanjiPayload);
       const nextResults = normalizeResults(resultsPayload);
-    resultsRef.current = nextResults;
+      const nextProgress = progressPayload;
+      resultsRef.current = nextResults;
+      progressRef.current = nextProgress;
       const nextUserId = typeof user?.id === "string" ? user.id : null;
       const previousUserId = activeUserIdRef.current;
       const userChanged = previousUserId !== null && nextUserId !== previousUserId;
       const userIdentityChanged = previousUserId !== nextUserId;
 
       if (userIdentityChanged) {
-        optimisticUserPointsRef.current = 0;
+        optimisticUserPointsRef.current = null;
+        optimisticUserPointsExpiryRef.current = 0;
       }
 
       activeUserIdRef.current = nextUserId;
@@ -280,10 +317,16 @@ export function useKanjiBoard() {
           userId: nextUserId,
           kanjis: nextKanjis,
           results: nextResults,
+          progress: nextProgress,
           userPoints: nextUserPoints,
           loadedAt: Date.now(),
         };
-        persistSharedStatusCache(nextUserId, nextUserPoints, nextResults);
+        persistSharedStatusCache(
+          nextUserId,
+          nextUserPoints,
+          nextResults,
+          nextProgress,
+        );
       } else {
         kanjiBootstrapCache = null;
         clearCache(LIBRARY_KANJI_STATUS_CACHE_KEY);
@@ -291,6 +334,7 @@ export function useKanjiBoard() {
 
       setKanjis(nextKanjis);
       setResults(nextResults);
+      setProgress(nextProgress);
       persistSharedContentCache(nextKanjis);
       if (userChanged && nextResults.length === 0) {
         setResults([]);
@@ -320,7 +364,9 @@ export function useKanjiBoard() {
     () =>
       subscribeMasteryProgressSync((detail) => {
         if (typeof detail.points === "number") {
-          applyUserPoints(detail.points);
+          applyUserPoints(detail.points, activeUserIdRef.current, {
+            optimistic: true,
+          });
         }
       }),
     [applyUserPoints],
@@ -329,6 +375,10 @@ export function useKanjiBoard() {
   useEffect(() => {
     resultsRef.current = results;
   }, [results]);
+
+  useEffect(() => {
+    progressRef.current = progress;
+  }, [progress]);
 
   const resultsByKanji = useMemo(() => {
     const byKanji = new Map<
@@ -363,13 +413,25 @@ export function useKanjiBoard() {
     return byKanji;
   }, [results]);
 
+  const unlockState = useMemo(
+    () =>
+      resolveKanjiUnlockState({
+        kanjis,
+        results,
+        progress,
+        userPoints,
+        completionScore: KANJI_COMPLETION_SCORE,
+      }),
+    [kanjis, progress, results, userPoints],
+  );
+
   const items = useMemo(() => {
     return kanjis.map<KanjiBoardProgress>((kanji, index) => {
       const resultData = resultsByKanji.get(kanji.id);
       const bestScore = resultData?.bestScore ?? null;
-      const isCompleted =
-        bestScore !== null && bestScore >= KANJI_COMPLETION_SCORE;
-      const isUnlocked = userPoints >= kanji.pointsToUnlock;
+      const isCompleted = unlockState.completedIds.has(kanji.id);
+      const isUnlocked = unlockState.unlockedIds.has(kanji.id);
+      const canUnlock = unlockState.nextUnlockCandidateId === kanji.id;
       const status = isCompleted
         ? "completed"
         : isUnlocked
@@ -387,9 +449,13 @@ export function useKanjiBoard() {
         completionScore: KANJI_COMPLETION_SCORE,
         progressPercent: bestScore ?? 0,
         bestResult: resultData?.bestResult ?? null,
+        unlocked: isUnlocked,
+        canUnlock: canUnlock && unlockState.canUnlockNext,
+        unlockCost: kanji.pointsToUnlock,
+        isCurrent: progress?.kanjiId === kanji.id,
       };
     });
-  }, [kanjis, resultsByKanji, userPoints]);
+  }, [kanjis, progress, resultsByKanji, unlockState]);
 
   const summary = useMemo(() => buildSummary(items), [items]);
 
@@ -397,6 +463,11 @@ export function useKanjiBoard() {
     items,
     summary,
     userPoints,
+    progress,
+    nextUnlockCandidate: unlockState.nextUnlockCandidate,
+    canUnlockNext: unlockState.canUnlockNext,
+    unlockCost: unlockState.unlockCost,
+    latestUnlockedId: unlockState.latestUnlockedId,
     loading,
     error,
     reload,

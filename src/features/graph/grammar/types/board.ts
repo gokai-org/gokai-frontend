@@ -12,6 +12,10 @@ export interface GrammarBoardProgress {
   status: GrammarBoardStatus;
   isMock: boolean;
   isCurrent?: boolean;
+  unlocked?: boolean;
+  isNextUnlockCandidate?: boolean;
+  canUnlock?: boolean;
+  unlockCost?: number;
 }
 
 export interface GrammarBoardSlot {

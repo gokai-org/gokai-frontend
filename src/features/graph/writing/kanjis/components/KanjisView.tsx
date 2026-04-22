@@ -7,6 +7,7 @@ import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { UnlockStateDialog, type UnlockStateDialogStatus } from "@/shared/ui";
 import type { Viewport } from "reactflow";
 import {
   formatBackgroundViewportState,
@@ -31,10 +32,12 @@ import { useMasteredModules } from "@/features/mastery/components/MasteredModule
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
+import { useToast } from "@/shared/ui/ToastProvider";
 import {
   createLockedBoardAccessTour,
   createWritingBoardContextTour,
 } from "@/features/help/utils/contextualTours";
+import { unlockKanji } from "@/features/kanji";
 
 type KanjiQuizCompletionResult = {
   newlyCompleted: boolean;
@@ -59,11 +62,47 @@ function isKanjiQuizType(
   );
 }
 
+function getRequestErrorMessage(error: unknown, fallback: string) {
+  if (!(error instanceof Error)) {
+    return fallback;
+  }
+
+  const message = error.message.replace(/^HTTP\s+\d+:\s*/i, "").trim();
+
+  return message || fallback;
+}
+
+function isForbiddenMessage(message: string) {
+  const normalized = message.trim().toLowerCase();
+
+  return (
+    normalized === "forbidden" ||
+    normalized.includes('"error":"forbidden"') ||
+    normalized.includes('"message":"forbidden"')
+  );
+}
+
+type KanjiUnlockDialogState = {
+  nodeId: string;
+  status: UnlockStateDialogStatus;
+};
+
 export default function KanjisView() {
-  const { items, summary, reload, loading, userPoints } = useKanjiBoard();
+  const {
+    items,
+    summary,
+    reload,
+    loading,
+    userPoints,
+    nextUnlockCandidate,
+    canUnlockNext,
+    unlockCost,
+    progress,
+  } = useKanjiBoard();
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useKanjiBoardQuality(graphicsProfile);
   const { setHidden } = useSidebar();
+  const toast = useToast();
   const mastered = useMasteredModules();
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
@@ -85,7 +124,9 @@ export default function KanjisView() {
   const [unlockFocusNodeId, setUnlockFocusNodeId] = useState<string | null>(
     null,
   );
+  const [unlockDialogState, setUnlockDialogState] = useState<KanjiUnlockDialogState | null>(null);
   const [shakingNodeId, setShakingNodeId] = useState<string | null>(null);
+  const [unlockPending, setUnlockPending] = useState(false);
   const lockedIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const shouldResolveUnlocksRef = useRef(false);
   const shakingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -202,6 +243,71 @@ export default function KanjisView() {
     [items],
   );
 
+  const nextUnlockBlockedMessage = useMemo(() => {
+    if (!nextUnlockCandidate) {
+      return "Toda la ruta de kanji ya esta desbloqueada.";
+    }
+
+    const nextUnlockCost = nextUnlockCandidate.pointsToUnlock ?? unlockCost;
+
+    if (progress && !progress.completed) {
+      return `Completa ${progress.symbol} para habilitar el siguiente desbloqueo.`;
+    }
+
+    return `Necesitas ${Math.max(nextUnlockCost - userPoints, 0)} puntos mas para desbloquear ${nextUnlockCandidate.symbol}.`;
+  }, [nextUnlockCandidate, progress, unlockCost, userPoints]);
+
+  const unlockDialogItem = useMemo(
+    () =>
+      unlockDialogState
+        ? items.find((item) => item.id === unlockDialogState.nodeId) ?? null
+        : null,
+    [items, unlockDialogState],
+  );
+
+  const unlockDialogCost = useMemo(
+    () => unlockDialogItem?.kanji.pointsToUnlock ?? unlockCost,
+    [unlockDialogItem, unlockCost],
+  );
+
+  const unlockDialogDescription = useMemo(() => {
+    if (!unlockDialogItem) {
+      return "";
+    }
+
+    if (unlockDialogItem.status === "completed") {
+      return `${unlockDialogItem.kanji.symbol} ya esta desbloqueado y completado. Puedes abrir la práctica para repasar.`;
+    }
+
+    if (unlockDialogItem.status === "available") {
+      return `${unlockDialogItem.kanji.symbol} ya esta desbloqueado. Puedes abrir la práctica y seguir progresando.`;
+    }
+
+    if (unlockDialogItem.canUnlock) {
+      return `Puedes gastar ${unlockDialogCost} puntos para desbloquear ${unlockDialogItem.kanji.symbol} ahora mismo.`;
+    }
+
+    return nextUnlockBlockedMessage;
+  }, [nextUnlockBlockedMessage, unlockDialogCost, unlockDialogItem]);
+
+  const unlockDialogRequirement = useMemo(() => {
+    if (!unlockDialogItem || unlockDialogItem.status !== "locked" || unlockDialogItem.canUnlock) {
+      return null;
+    }
+
+    if (nextUnlockCandidate?.id === unlockDialogItem.id) {
+      const requiredPoints = unlockDialogItem.kanji.pointsToUnlock ?? unlockCost;
+
+      if (progress && !progress.completed) {
+        return `Requisito actual: completar ${progress.symbol}.`;
+      }
+
+      return `Requisito actual: reunir ${Math.max(requiredPoints - userPoints, 0)} puntos más.`;
+    }
+
+    return "Primero debes avanzar hasta este nodo en el orden del tablero.";
+  }, [nextUnlockCandidate?.id, progress, unlockCost, unlockDialogItem, userPoints]);
+
   const focusedNodeId = detailNodeId ?? helpSelectedNodeId ?? unlockFocusNodeId;
 
   // Phase 1 — structural graph: stable across interactions; rebuilds only when
@@ -266,18 +372,73 @@ export default function KanjisView() {
     qualityProfile.background.zoomStrength,
   ]);
 
-  const handleSelect = useCallback((nodeId: string) => {
-    const item = itemsRef.current.find((i) => i.id === nodeId);
-    if (item?.status === "locked") {
-      // Locked node: quick shake feedback without opening drawer
-      if (shakingTimerRef.current) clearTimeout(shakingTimerRef.current);
-      setShakingNodeId(nodeId);
-      shakingTimerRef.current = setTimeout(() => setShakingNodeId(null), 640);
+  const handleUnlockNextKanji = useCallback(async () => {
+    if (!nextUnlockCandidate || unlockPending) {
       return;
     }
-    setManualSelectedId(nodeId);
-    setDetailNodeId(nodeId);
-  }, []); // stable — reads itemsRef at call time
+
+    setUnlockPending(true);
+    lockedIdsBeforeQuizRef.current = new Set(
+      itemsRef.current
+        .filter((item) => item.status === "locked")
+        .map((item) => item.id),
+    );
+
+    try {
+      const response = await unlockKanji(nextUnlockCandidate.id);
+      shouldResolveUnlocksRef.current = true;
+      dispatchMasteryProgressSync({ points: response.userPoints });
+      setUnlockDialogState(null);
+      void reloadRef.current();
+    } catch (error) {
+      lockedIdsBeforeQuizRef.current = null;
+      const message = getRequestErrorMessage(
+        error,
+        "No se pudo desbloquear el kanji.",
+      );
+
+      toast.error(
+        isForbiddenMessage(message)
+          ? "El backend actual no autoriza el desbloqueo manual de kanji. La ruta esta respondiendo forbidden."
+          : message,
+      );
+    } finally {
+      setUnlockPending(false);
+    }
+  }, [nextUnlockCandidate, toast, unlockPending]);
+
+  const handleSelect = useCallback((nodeId: string) => {
+    const item = itemsRef.current.find((i) => i.id === nodeId);
+
+    if (!item) {
+      return;
+    }
+
+    if (item.status === "locked") {
+      setUnlockDialogState({
+        nodeId,
+        status: item.canUnlock ? "unlockable" : "locked",
+      });
+      return;
+    }
+
+    setUnlockDialogState({ nodeId, status: "unlocked" });
+  }, []);
+
+  const handleUnlockDialogAction = useCallback(() => {
+    if (!unlockDialogItem) {
+      return;
+    }
+
+    if (unlockDialogState?.status === "unlockable") {
+      void handleUnlockNextKanji();
+      return;
+    }
+
+    setUnlockDialogState(null);
+    setManualSelectedId(unlockDialogItem.id);
+    setDetailNodeId(unlockDialogItem.id);
+  }, [handleUnlockNextKanji, unlockDialogItem, unlockDialogState?.status]);
 
   const handleCloseDetail = useCallback(() => {
     setDetailNodeId(null);
@@ -786,6 +947,40 @@ export default function KanjisView() {
         {detailNodeId === null && quizKanji === null && (
           <ContextualHelpButton getTour={buildHelpTour} />
         )}
+
+        <UnlockStateDialog
+          open={unlockDialogState !== null && unlockDialogItem !== null}
+          status={unlockDialogState?.status ?? "locked"}
+          moduleLabel="Kanji"
+          title={unlockDialogItem?.primaryMeaning ?? "Kanji"}
+          symbol={unlockDialogItem?.kanji.symbol ?? null}
+          description={unlockDialogDescription}
+          currentPoints={userPoints}
+          unlockCost={unlockDialogCost}
+          requirementLabel={unlockDialogRequirement}
+          helperText={
+            unlockDialogState?.status === "unlocked"
+              ? "Desde aquí puedes abrir el detalle y entrar a la práctica del kanji."
+              : unlockDialogState?.status === "unlockable"
+                ? "El desbloqueo manual mantiene la misma secuencia visual del tablero."
+                : null
+          }
+          actionLabel={
+            unlockDialogState?.status === "unlockable"
+              ? "Desbloquear kanji"
+              : unlockDialogState?.status === "unlocked"
+                ? "Abrir kanji"
+                : undefined
+          }
+          actionPending={unlockPending}
+          actionDisabled={unlockDialogState?.status === "unlockable" && !canUnlockNext}
+          onAction={
+            unlockDialogState?.status === "locked"
+              ? undefined
+              : handleUnlockDialogAction
+          }
+          onClose={() => setUnlockDialogState(null)}
+        />
 
         {quizKanji !== null && (
           <KanjiQuizModal

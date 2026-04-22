@@ -6,7 +6,17 @@ import { getGrammarBoardActiveId } from "../lib/grammarBoardModel";
 import { useGrammarLessons } from "./useGrammarLessons";
 
 export function useGrammarBoard() {
-  const { boardItems, status, error, refetch } = useGrammarLessons();
+  const {
+    boardItems,
+    status,
+    error,
+    refetch,
+    userPoints,
+    progress,
+    nextUnlockCandidate,
+    canUnlockNext,
+    unlockCost,
+  } = useGrammarLessons();
 
   const activeId = useMemo(
     () => getGrammarBoardActiveId(boardItems),
@@ -24,5 +34,10 @@ export function useGrammarBoard() {
     status,
     error,
     refetch,
+    userPoints,
+    progress,
+    nextUnlockCandidate,
+    canUnlockNext,
+    unlockCost,
   };
 }

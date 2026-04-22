@@ -100,7 +100,10 @@ export function createGrammarBoardViewModel(
         progress,
         layout: cellLayout,
         visualState: resolveGrammarBoardVisualState(progress, activeId),
-        interactive: !progress.isMock && progress.status !== "locked",
+        interactive:
+          !progress.isMock &&
+          (progress.status !== "locked" ||
+            progress.isNextUnlockCandidate === true),
       },
     ];
   });

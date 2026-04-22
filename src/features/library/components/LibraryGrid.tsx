@@ -107,7 +107,7 @@ export function LibraryGrid({
               index={i}
               locked={isLocked}
               unlocking={newlyUnlockedKanjiIds?.has(item.data.id) ?? false}
-              onClick={isLocked ? undefined : () => onKanjiClick(item.data)}
+              onClick={() => onKanjiClick(item.data)}
               onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
             />
           );

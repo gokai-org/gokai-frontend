@@ -97,6 +97,12 @@ function extractSubmitErrorMessage(error: unknown): string {
   return "No se pudo guardar el resultado";
 }
 
+function buildSubmitFailureMessage(message: string | null): string {
+  return message && message.trim().length > 0
+    ? message
+    : "No se pudo guardar el resultado del quiz";
+}
+
 function extractSubmittedKanjiPoints(
   response: KanjiQuizSubmitResponse | null | undefined,
 ): number | null {
@@ -370,7 +376,8 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
       }
 
       // ── Full quiz: submit to backend ──
-      const submitPromise = submitKanjiQuiz(kanjiIdRef.current, {
+      let submitFailureMessage: string | null = null;
+      const submitResponse = await submitKanjiQuiz(kanjiIdRef.current, {
         type: quizType,
         score,
         duration: elapsed,
@@ -380,13 +387,21 @@ export function useKanjiQuiz(): UseKanjiQuizReturn {
           return response;
         })
         .catch((err) => {
-          setSubmitError(extractSubmitErrorMessage(err));
+          submitFailureMessage = extractSubmitErrorMessage(err);
+          setSubmitError(submitFailureMessage);
           return null;
         });
 
+      if (!submitResponse) {
+        setError(buildSubmitFailureMessage(submitFailureMessage));
+        setIsPointsError(false);
+        setState((s) => ({ ...s, step: "error" as KanjiQuizStep }));
+        roundTransitionRef.current = false;
+        return;
+      }
+
       // Check if all rounds are done
       if (newRoundResults.length >= totalRounds) {
-        const submitResponse = await submitPromise;
         refreshPointsAfterSubmit(submitResponse);
         await finalizeQuiz(newRoundResults);
         roundTransitionRef.current = false;

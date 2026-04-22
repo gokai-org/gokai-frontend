@@ -2,7 +2,13 @@
 export * from "./components";
 
 // API
-export { listGrammarLessons, getGrammarLesson, submitGrammarQuiz } from "./api/grammarApi";
+export {
+  listGrammarLessons,
+  getGrammarLesson,
+  submitGrammarQuiz,
+  getGrammarProgress,
+  unlockGrammar,
+} from "./api/grammarApi";
 
 // Hooks
 export { useGrammarLessons } from "./hooks/useGrammarLessons";
@@ -14,6 +20,8 @@ export { useGrammarTableLayout } from "./hooks/useGrammarTableLayout";
 export type {
   GrammarLessonSummary,
   GrammarLesson,
+  GrammarStudyProgress,
+  GrammarUnlockResponse,
   LessonContent,
   ImageStepperComponent,
   ImageStep,

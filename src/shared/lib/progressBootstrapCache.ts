@@ -1,4 +1,8 @@
-import type { Kanji, KanjiLessonResult } from "@/features/kanji/types";
+import type {
+  Kanji,
+  KanjiLessonResult,
+  KanjiStudyProgress,
+} from "@/features/kanji/types";
 import type {
   Kana,
   KanaType,
@@ -36,6 +40,7 @@ export type LibraryKanjiStatusCache = {
   userId: string;
   userPoints: number;
   results: KanjiLessonResult[];
+  progress?: KanjiStudyProgress | null;
   loadedAt: number;
 };
 

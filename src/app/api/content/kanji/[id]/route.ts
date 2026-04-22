@@ -31,6 +31,12 @@ type QuizOption = {
   value: string;
 };
 
+type KanjiProgressPayload = {
+  hasUnlocked?: boolean;
+  kanjiId?: string;
+  completed?: boolean;
+};
+
 function parseStrokeList(raw: unknown): string[] {
   if (Array.isArray(raw)) {
     return raw.filter(
@@ -104,6 +110,18 @@ function isKanjiQuizType(value: unknown): value is KanjiQuizType {
     value === "reading" ||
     value === "writing"
   );
+}
+
+function hasUsableKanjiQuizPayload(payload: unknown): payload is {
+  type?: KanjiQuizType;
+  questions: unknown[];
+} {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const questions = (payload as { questions?: unknown }).questions;
+  return Array.isArray(questions) && questions.length > 0;
 }
 
 function shuffleItems<T>(items: T[]): T[] {
@@ -208,6 +226,56 @@ async function fetchCurrentUserPoints(token: string): Promise<number> {
   }
 }
 
+async function fetchKanjiProgress(token: string): Promise<KanjiProgressPayload | null> {
+  try {
+    const upstream = await fetch(`${apiConfig.studyApiBase}/kanji/progress`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      cache: "no-store",
+      signal: AbortSignal.timeout(KANJI_QUIZ_GET_TIMEOUT_MS),
+    });
+
+    if (!upstream.ok) {
+      return null;
+    }
+
+    const payload = (await upstream.json().catch(() => null)) as
+      | KanjiProgressPayload
+      | null;
+
+    if (!payload || payload.hasUnlocked === false) {
+      return null;
+    }
+
+    return typeof payload.kanjiId === "string" ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+function resolveUnlockedKanjiIds(
+  kanjiCatalog: NormalizedKanji[],
+  progress: KanjiProgressPayload | null,
+) {
+  if (!progress?.kanjiId) {
+    return new Set<string>();
+  }
+
+  const latestUnlockedIndex = kanjiCatalog.findIndex(
+    (item) => item.id === progress.kanjiId,
+  );
+
+  if (latestUnlockedIndex < 0) {
+    return new Set<string>();
+  }
+
+  return new Set(
+    kanjiCatalog.slice(0, latestUnlockedIndex + 1).map((item) => item.id),
+  );
+}
+
 async function fetchKanjiDetailsMap(
   token: string,
   kanjiIds: string[],
@@ -285,7 +353,7 @@ function buildOptionSet(
 function buildFallbackKanjiQuiz(
   kanjiId: string,
   kanjiCatalog: NormalizedKanji[],
-  userPoints: number,
+  unlockedKanjiIds: ReadonlySet<string>,
   preferredQuizType: KanjiQuizType,
 ) {
   const mainKanji = kanjiCatalog.find((item) => item.id === kanjiId);
@@ -293,10 +361,7 @@ function buildFallbackKanjiQuiz(
     return null;
   }
 
-  const effectivePoints = Math.max(userPoints, mainKanji.pointsToUnlock);
-  const knownKanjis = kanjiCatalog.filter(
-    (item) => item.pointsToUnlock <= effectivePoints,
-  );
+  const knownKanjis = kanjiCatalog.filter((item) => unlockedKanjiIds.has(item.id));
   const questionPool = knownKanjis.length > 0 ? knownKanjis : [mainKanji];
   const questionCount = questionPool.length >= 5 ? 4 : 1;
   const questionKanjis = [
@@ -411,49 +476,51 @@ export async function GET(
               : undefined;
 
           if (
-            !preferredFallbackQuizType ||
-            upstreamQuizType === preferredFallbackQuizType
+            hasUsableKanjiQuizPayload(upstreamPayload) &&
+            (
+              !preferredFallbackQuizType ||
+              upstreamQuizType === preferredFallbackQuizType
+            )
           ) {
             return NextResponse.json(upstreamPayload, {
               status: upstream.status,
             });
           }
-        }
+        } else {
+          let data: Record<string, unknown> = {};
+          if (upstreamPayload && typeof upstreamPayload === "object") {
+            data = upstreamPayload as Record<string, unknown>;
+          } else if (typeof upstreamPayload === "string") {
+            data = { message: upstreamPayload };
+          }
 
-        let data: Record<string, unknown> = {};
-        if (upstreamPayload && typeof upstreamPayload === "object") {
-          data = upstreamPayload as Record<string, unknown>;
-        } else if (typeof upstreamPayload === "string") {
-          data = { message: upstreamPayload };
-        }
-
-        if (upstream.status < 500) {
-          return NextResponse.json(
-            {
-              message: data.message || "Error al obtener quiz",
-              success: false,
-            },
-            { status: upstream.status },
-          );
+          if (upstream.status < 500) {
+            return NextResponse.json(
+              {
+                message: data.message || "Error al obtener quiz",
+                success: false,
+              },
+              { status: upstream.status },
+            );
+          }
         }
       } catch {
         // Fall through to local fast fallback.
       }
     }
 
-    const [kanjiCatalog, userPoints] = await Promise.all([
+    const [kanjiCatalog, progress] = await Promise.all([
       fetchKanjiCatalog(token).catch(() => []),
-      fetchCurrentUserPoints(token),
+      fetchKanjiProgress(token),
     ]);
     const selectedKanji = kanjiCatalog.find((item) => item.id === id);
+    const unlockedKanjiIds = resolveUnlockedKanjiIds(kanjiCatalog, progress);
 
-    if (selectedKanji && userPoints < selectedKanji.pointsToUnlock) {
+    if (selectedKanji && !unlockedKanjiIds.has(selectedKanji.id)) {
       return NextResponse.json(
         {
-          message: "No se tienen los puntos necesarios para este ejercicio",
+          message: "No se ha desbloqueado el kanji",
           success: false,
-          points: selectedKanji.pointsToUnlock,
-          userPoints,
         },
         { status: 403 },
       );
@@ -462,7 +529,7 @@ export async function GET(
     const fallbackQuiz = buildFallbackKanjiQuiz(
       id,
       kanjiCatalog,
-      userPoints,
+      unlockedKanjiIds,
       preferredQuizType ?? preferredFallbackQuizType ?? "kanji",
     );
 
@@ -531,6 +598,51 @@ export async function POST(
   const { id } = await params;
   const resource = req.nextUrl.searchParams.get("resource");
 
+  if (resource === "unlock") {
+    try {
+      const upstream = await fetch(`${apiConfig.studyApiBase}/kanji/${id}`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        cache: "no-store",
+      });
+
+      const text = await upstream.text().catch(() => "");
+      let data: Record<string, unknown> = {};
+
+      try {
+        data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
+      } catch {
+        data = text ? { message: text } : {};
+      }
+
+      return NextResponse.json(
+        {
+          ...data,
+          message:
+            upstream.status === 403
+              ? "El backend actual no autoriza el desbloqueo manual de kanji para usuarios normales."
+              : typeof data.message === "string"
+              ? data.message
+              : typeof data.error === "string"
+                ? data.error
+                : upstream.ok
+                  ? "Kanji desbloqueado"
+                  : "No fue posible desbloquear el kanji",
+        },
+        { status: upstream.status },
+      );
+    } catch (error) {
+      console.error("[API] Error unlocking kanji:", error);
+      return NextResponse.json(
+        { message: "Error interno al desbloquear kanji", success: false },
+        { status: 500 },
+      );
+    }
+  }
+
   if (resource !== "quiz") {
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
@@ -594,18 +706,32 @@ export async function POST(
 
     return NextResponse.json(
       {
-        message: data.message || "Error al enviar resultado del quiz",
+        message:
+          (typeof data.message === "string" && data.message) ||
+          (typeof data.error === "string" && data.error) ||
+          "Error al enviar resultado del quiz",
         success: false,
       },
       { status: upstream.status },
     );
   }
 
+  let responseBody: Record<string, unknown> = { success: true };
+
   try {
-    return NextResponse.json(text ? JSON.parse(text) : { success: true }, {
-      status: upstream.status,
-    });
+    responseBody = text ? (JSON.parse(text) as Record<string, unknown>) : { success: true };
   } catch {
-    return NextResponse.json({ success: true }, { status: upstream.status });
+    responseBody = { success: true };
   }
+
+  const userPoints = await fetchCurrentUserPoints(token);
+
+  return NextResponse.json(
+    {
+      ...responseBody,
+      userPoints,
+      points: userPoints,
+    },
+    { status: upstream.status },
+  );
 }

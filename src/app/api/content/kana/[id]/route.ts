@@ -86,6 +86,18 @@ function isKanaQuizType(value: unknown): value is KanaQuizType {
   );
 }
 
+function hasUsableKanaQuizPayload(payload: unknown): payload is {
+  type?: KanaQuizType;
+  questions: unknown[];
+} {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+
+  const questions = (payload as { questions?: unknown }).questions;
+  return Array.isArray(questions) && questions.length > 0;
+}
+
 function normalizeProgressItem(raw: RawProgressItem) {
   return {
     kanaId: raw.kanaId ?? raw.kana_id ?? "",
@@ -513,37 +525,40 @@ export async function GET(
               : undefined;
 
           if (
-            !preferredFallbackQuizType ||
-            upstreamQuizType === preferredFallbackQuizType
+            hasUsableKanaQuizPayload(upstreamPayload) &&
+            (
+              !preferredFallbackQuizType ||
+              upstreamQuizType === preferredFallbackQuizType
+            )
           ) {
             return NextResponse.json(upstreamPayload, {
               status: upstream.status,
             });
           }
-        }
+        } else {
+          let data: Record<string, unknown> = {};
+          if (upstreamPayload && typeof upstreamPayload === "object") {
+            data = upstreamPayload as Record<string, unknown>;
+          } else if (typeof upstreamPayload === "string") {
+            data = { message: upstreamPayload };
+          }
 
-        let data: Record<string, unknown> = {};
-        if (upstreamPayload && typeof upstreamPayload === "object") {
-          data = upstreamPayload as Record<string, unknown>;
-        } else if (typeof upstreamPayload === "string") {
-          data = { message: upstreamPayload };
-        }
-
-        if (upstream.status < 500) {
-          return NextResponse.json(
-            {
-              message: data.message || "Error al obtener quiz de kana",
-              success: false,
-              reachable:
-                typeof data.reachable === "boolean"
-                  ? data.reachable
-                  : upstream.status !== 403,
-              points: typeof data.points === "number" ? data.points : undefined,
-              userPoints:
-                typeof data.userPoints === "number" ? data.userPoints : undefined,
-            },
-            { status: upstream.status },
-          );
+          if (upstream.status < 500) {
+            return NextResponse.json(
+              {
+                message: data.message || "Error al obtener quiz de kana",
+                success: false,
+                reachable:
+                  typeof data.reachable === "boolean"
+                    ? data.reachable
+                    : upstream.status !== 403,
+                points: typeof data.points === "number" ? data.points : undefined,
+                userPoints:
+                  typeof data.userPoints === "number" ? data.userPoints : undefined,
+              },
+              { status: upstream.status },
+            );
+          }
         }
       } catch {
         // Fall through to local fast fallback.
@@ -725,11 +740,22 @@ export async function POST(
     );
   }
 
+  let responseBody: Record<string, unknown> = { success: true };
+
   try {
-    return NextResponse.json(text ? JSON.parse(text) : { success: true }, {
-      status: upstream.status,
-    });
+    responseBody = text ? (JSON.parse(text) as Record<string, unknown>) : { success: true };
   } catch {
-    return NextResponse.json({ success: true }, { status: upstream.status });
+    responseBody = { success: true };
   }
+
+  const kanaPoints = await fetchCurrentUserKanaPoints(token);
+
+  return NextResponse.json(
+    {
+      ...responseBody,
+      kanaPoints,
+      userPoints: kanaPoints,
+    },
+    { status: upstream.status },
+  );
 }

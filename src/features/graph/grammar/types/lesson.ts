@@ -10,6 +10,20 @@ export type GrammarLessonSummary = {
   symbol?: string | null;
 };
 
+export type GrammarStudyProgress = {
+  grammarId: string;
+  title: string;
+  pointsToUnlock: number;
+  completed: boolean;
+};
+
+export type GrammarUnlockResponse = {
+  success: boolean;
+  message: string;
+  userPoints: number;
+  points?: number | null;
+};
+
 export type GrammarLesson = {
   id: string;
   title: string;
