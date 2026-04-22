@@ -607,33 +607,11 @@ export async function POST(
           "Content-Type": "application/json",
         },
         cache: "no-store",
+        signal: AbortSignal.timeout(KANJI_DETAIL_TIMEOUT_MS),
       });
 
-      const text = await upstream.text().catch(() => "");
-      let data: Record<string, unknown> = {};
-
-      try {
-        data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-      } catch {
-        data = text ? { message: text } : {};
-      }
-
-      return NextResponse.json(
-        {
-          ...data,
-          message:
-            upstream.status === 403
-              ? "El backend actual no autoriza el desbloqueo manual de kanji para usuarios normales."
-              : typeof data.message === "string"
-              ? data.message
-              : typeof data.error === "string"
-                ? data.error
-                : upstream.ok
-                  ? "Kanji desbloqueado"
-                  : "No fue posible desbloquear el kanji",
-        },
-        { status: upstream.status },
-      );
+      const data = await upstream.json().catch(() => ({}));
+      return NextResponse.json(data, { status: upstream.status });
     } catch (error) {
       console.error("[API] Error unlocking kanji:", error);
       return NextResponse.json(

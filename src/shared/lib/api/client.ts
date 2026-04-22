@@ -108,6 +108,26 @@ function writeCachedGetResponse(cacheKey: string, data: unknown) {
   }
 }
 
+/**
+ * Invalida una entrada del cache de apiFetch. El `cacheKey` debe coincidir
+ * con el `cacheKey` usado en la llamada original (sin el prefijo `api-cache:`).
+ * Útil tras mutaciones que invalidan datos cacheados (ej. unlock).
+ */
+export function invalidateApiCache(cacheKey: string) {
+  const fullKey = `api-cache:${cacheKey}`;
+  cachedGetResponses.delete(fullKey);
+
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.sessionStorage.removeItem(fullKey);
+  } catch {
+    // Ignore storage failures.
+  }
+}
+
 async function performApiFetch<T>(
   path: string,
   init: RequestInit = {},

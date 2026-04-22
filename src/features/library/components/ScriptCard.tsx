@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState, useCallback } from "react";
 import { LockKeyhole } from "lucide-react";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
 import {
   SCRIPT_CARD_CONFIG,
@@ -12,6 +13,9 @@ import {
 import { ScriptCardLayout } from "@/features/library/components/ScriptCardLayout";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import type { MasteryModuleId } from "@/features/mastery/types";
+import { useShakeFeedback } from "@/shared/hooks/useShakeFeedback";
+
+const LOCKED_SHAKE_DURATION_MS = 580;
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -50,6 +54,9 @@ export function ScriptCard({
   const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
     useCardAnimation(index);
   const effectiveLocked = locked && !unlocking;
+  const { shakingKey, triggerShake } = useShakeFeedback<string>(
+    LOCKED_SHAKE_DURATION_MS,
+  );
   const masteredModules = useMasteredModules();
   const isMastered = masteredModules.has(variant as MasteryModuleId);
   const baseConfig = SCRIPT_CARD_CONFIG[variant];
@@ -70,19 +77,19 @@ export function ScriptCard({
 
   // ── Long-press to toggle favourite on mobile ──────────────────────────────
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const longPressTriggered = useRef(false);
   const [longPressActive, setLongPressActive] = useState(false);
+  const [didLongPress, setDidLongPress] = useState(false);
 
   const handleTouchStart = useCallback(() => {
     if (!onFavoriteToggle) return;
-    longPressTriggered.current = false;
+    setDidLongPress(false);
     longPressTimer.current = setTimeout(() => {
-      longPressTriggered.current = true;
+      setDidLongPress(true);
       onFavoriteToggle(id);
       setLongPressActive(true);
       setTimeout(() => setLongPressActive(false), 700);
     }, 600);
-  }, [onFavoriteToggle, id]);
+  }, [id, onFavoriteToggle]);
 
   const cancelLongPress = useCallback(() => {
     if (longPressTimer.current) {
@@ -92,13 +99,34 @@ export function ScriptCard({
   }, []);
 
   const handleClick = useCallback(() => {
-    if (longPressTriggered.current) {
-      longPressTriggered.current = false;
+    if (didLongPress) {
+      setDidLongPress(false);
       return;
     }
+
+    if (effectiveLocked) {
+      triggerShake(id);
+      return;
+    }
+
     onClick?.();
-  }, [onClick]);
+  }, [didLongPress, effectiveLocked, id, onClick, triggerShake]);
+
+  const handleKeyDown = useCallback(
+    (event: ReactKeyboardEvent<HTMLDivElement>) => {
+      if (event.key !== "Enter" && event.key !== " ") {
+        return;
+      }
+
+      event.preventDefault();
+      handleClick();
+    },
+    [handleClick],
+  );
   // ─────────────────────────────────────────────────────────────────────────
+
+  const isLockedShakeActive = shakingKey === id;
+  const isInteractive = Boolean(onClick) || effectiveLocked;
 
   const cardClassName = [
     "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] text-left",
@@ -106,7 +134,7 @@ export function ScriptCard({
     effectiveLocked
       ? [
           "items-center justify-center bg-surface-tertiary dark:bg-[#1a181c] border border-border-default/70 dark:border-white/[0.05] p-4",
-          onClick
+          isInteractive
             ? `cursor-pointer focus:outline-none focus-visible:ring-2 ${config.ring}`
             : "cursor-default",
         ].join(" ")
@@ -123,6 +151,7 @@ export function ScriptCard({
           .join(" "),
     cardTransition,
     longPressActive ? `ring-2 ${config.ring} scale-[0.97]` : "",
+    isLockedShakeActive ? "grammar-board-cell-shaking" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -291,17 +320,17 @@ export function ScriptCard({
     />
   ) : null;
 
-  const effectiveOnClick = onClick;
+  const effectiveOnClick = isInteractive ? handleClick : undefined;
 
   const cardEl = effectiveOnClick ? (
     <div
       role="button"
       tabIndex={0}
-      onClick={handleClick}
-      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && handleClick()}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={cancelLongPress}
-      onTouchMove={cancelLongPress}
+      onClick={effectiveOnClick}
+      onKeyDown={handleKeyDown}
+      onTouchStart={effectiveLocked ? undefined : handleTouchStart}
+      onTouchEnd={effectiveLocked ? undefined : cancelLongPress}
+      onTouchMove={effectiveLocked ? undefined : cancelLongPress}
       onContextMenu={(e) => e.preventDefault()}
       style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
       className={cardClassName}
@@ -313,9 +342,9 @@ export function ScriptCard({
     </div>
   ) : (
     <div
-      onTouchStart={locked ? undefined : handleTouchStart}
-      onTouchEnd={locked ? undefined : cancelLongPress}
-      onTouchMove={locked ? undefined : cancelLongPress}
+      onTouchStart={effectiveLocked ? undefined : handleTouchStart}
+      onTouchEnd={effectiveLocked ? undefined : cancelLongPress}
+      onTouchMove={effectiveLocked ? undefined : cancelLongPress}
       onContextMenu={(e) => e.preventDefault()}
       style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
       className={cardClassName}

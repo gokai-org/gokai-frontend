@@ -10,6 +10,7 @@ import {
   type KanjiLessonResult,
   type KanjiStudyProgress,
 } from "@/features/kanji";
+import { invalidateApiCache } from "@/shared/lib/api/client";
 import { getCurrentUser } from "@/features/auth";
 import {
   KANJI_COMPLETION_SCORE,
@@ -183,6 +184,9 @@ export function useKanjiBoard() {
   );
   const [loading, setLoading] = useState(() => initialBootstrap === null);
   const [error, setError] = useState<string | null>(null);
+  const [recentlyUnlockedIds, setRecentlyUnlockedIds] = useState<ReadonlySet<string>>(
+    () => new Set<string>(),
+  );
   const hasLoadedOnceRef = useRef(false);
   const hadInitialBootstrapRef = useRef(initialBootstrap !== null);
   const optimisticUserPointsRef = useRef<number | null>(null);
@@ -459,6 +463,38 @@ export function useKanjiBoard() {
 
   const summary = useMemo(() => buildSummary(items), [items]);
 
+  const applyOptimisticUnlock = useCallback(
+    (kanjiId: string) => {
+      const kanji = kanjis.find((item) => item.id === kanjiId) ?? null;
+      const nextProgress: KanjiStudyProgress = {
+        kanjiId,
+        symbol: kanji?.symbol ?? "",
+        pointsToUnlock: kanji?.pointsToUnlock ?? 0,
+        exerciseType: progressRef.current?.exerciseType ?? "kanji",
+        completed: false,
+      };
+      progressRef.current = nextProgress;
+      setProgress(nextProgress);
+      invalidateApiCache("/api/content/kanji/progress");
+      invalidateApiCache("/api/content/kanji");
+
+      setRecentlyUnlockedIds((current) => {
+        const next = new Set(current);
+        next.add(kanjiId);
+        return next;
+      });
+      window.setTimeout(() => {
+        setRecentlyUnlockedIds((current) => {
+          if (!current.has(kanjiId)) return current;
+          const next = new Set(current);
+          next.delete(kanjiId);
+          return next;
+        });
+      }, 1500);
+    },
+    [kanjis],
+  );
+
   return {
     items,
     summary,
@@ -471,5 +507,7 @@ export function useKanjiBoard() {
     loading,
     error,
     reload,
+    applyOptimisticUnlock,
+    recentlyUnlockedIds,
   };
 }

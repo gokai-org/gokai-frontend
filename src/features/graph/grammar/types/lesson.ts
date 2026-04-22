@@ -115,3 +115,19 @@ export type GrammarQuizSubmitBody = {
   score: number;
   duration: number;
 };
+
+export type GrammarQuizSubmitResponse = {
+  success: boolean;
+  message: string;
+  userPoints: number;
+  pointsAwarded: number;
+  isCorrect: boolean;
+};
+
+export type GrammarQuizCompletionResult = {
+  grammarId: string;
+  score: number;
+  isCorrect: boolean;
+  pointsAwarded: number;
+  userPoints: number;
+};

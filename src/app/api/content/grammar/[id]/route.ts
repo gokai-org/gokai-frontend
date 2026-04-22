@@ -5,6 +5,8 @@ import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
+const GRAMMAR_UNLOCK_TIMEOUT_MS = 8000;
+
 /** GET /api/content/grammar/:id — get grammar lesson detail */
 export async function GET(
   req: NextRequest,
@@ -31,6 +33,12 @@ export async function GET(
   return NextResponse.json(data, { status: upstream.status });
 }
 
+/**
+ * POST /api/content/grammar/:id?resource=unlock
+ * Proxy directo al study-api `POST /grammar/:id` (UnlockGrammar).
+ * El backend persiste en `users_unlock_grammar`, valida puntos por
+ * lección (points_to_unlock) y descuenta puntos al usuario.
+ */
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
@@ -57,33 +65,11 @@ export async function POST(
         "Content-Type": "application/json",
       },
       cache: "no-store",
+      signal: AbortSignal.timeout(GRAMMAR_UNLOCK_TIMEOUT_MS),
     });
 
-    const text = await upstream.text().catch(() => "");
-    let data: Record<string, unknown> = {};
-
-    try {
-      data = text ? (JSON.parse(text) as Record<string, unknown>) : {};
-    } catch {
-      data = text ? { message: text } : {};
-    }
-
-    return NextResponse.json(
-      {
-        ...data,
-        message:
-          upstream.status === 403
-            ? "El backend actual no autoriza el desbloqueo manual de gramática para usuarios normales."
-            : typeof data.message === "string"
-            ? data.message
-            : typeof data.error === "string"
-              ? data.error
-              : upstream.ok
-                ? "Gramática desbloqueada"
-                : "No fue posible desbloquear la gramática",
-      },
-      { status: upstream.status },
-    );
+    const data = await upstream.json().catch(() => ({}));
+    return NextResponse.json(data, { status: upstream.status });
   } catch (error) {
     console.error("[API] Error unlocking grammar:", error);
     return NextResponse.json(

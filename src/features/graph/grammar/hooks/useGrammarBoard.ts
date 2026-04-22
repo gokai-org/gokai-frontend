@@ -16,6 +16,8 @@ export function useGrammarBoard() {
     nextUnlockCandidate,
     canUnlockNext,
     unlockCost,
+    applyOptimisticUnlock,
+    recentlyUnlockedIds,
   } = useGrammarLessons();
 
   const activeId = useMemo(
@@ -39,5 +41,7 @@ export function useGrammarBoard() {
     nextUnlockCandidate,
     canUnlockNext,
     unlockCost,
+    applyOptimisticUnlock,
+    recentlyUnlockedIds,
   };
 }

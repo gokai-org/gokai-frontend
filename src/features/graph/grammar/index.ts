@@ -41,7 +41,6 @@ export type {
   GrammarBoardCellSize,
   GrammarBoardRouteTier,
   GrammarBoardCellLayout,
-  GrammarBoardPathSegment,
   GrammarBoardCellViewModel,
   GrammarBoardStats,
   GrammarBoardViewModel,

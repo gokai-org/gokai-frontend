@@ -60,7 +60,7 @@ export async function getKanjiProgress() {
   return payload as KanjiStudyProgress;
 }
 
-export function unlockKanji(kanjiId: string) {
+export async function unlockKanji(kanjiId: string) {
   return apiFetch<KanjiUnlockResponse>(
     `/api/content/kanji/${kanjiId}?resource=unlock`,
     {

@@ -647,29 +647,6 @@ function CheckoutSuccessPageContent() {
                 y tus recomendaciones.
               </motion.p>
 
-              <motion.div
-                className="mt-8 flex flex-wrap items-center justify-center gap-3"
-                initial={{ opacity: 0, y: 18 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 1.15, duration: 1.1 }}
-              >
-                {INTEREST_ONBOARDING_HINTS.map((hint, index) => (
-                  <motion.span
-                    key={hint}
-                    className="rounded-full border border-border-default/70 bg-surface-primary/80 px-4 py-2 text-sm font-semibold text-content-secondary shadow-[var(--shadow-sm)] backdrop-blur-md"
-                    animate={{ y: [0, -4, 0] }}
-                    transition={{
-                      duration: 3.6,
-                      repeat: Infinity,
-                      ease: "easeInOut",
-                      delay: index * 0.18,
-                    }}
-                  >
-                    {hint}
-                  </motion.span>
-                ))}
-              </motion.div>
-
               <motion.button
                 onClick={handleContinue}
                 initial={{ opacity: 0, y: 24 }}

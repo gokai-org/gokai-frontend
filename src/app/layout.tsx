@@ -4,6 +4,8 @@ import "./globals.css";
 import { PlatformMotionProvider } from "@/shared/components/PlatformMotionProvider";
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
 
+const siteIcon = "/logos/gokai-logo-web.svg";
+
 const montserrat = Montserrat({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700", "800"],
@@ -21,6 +23,11 @@ const notoSansJP = Noto_Sans_JP({
 export const metadata: Metadata = {
   title: "GOKAI — Aprende japonés con IA",
   description: "Plataforma de aprendizaje de japonés con IA y rutas dinámicas.",
+  icons: {
+    icon: [{ url: siteIcon, type: "image/svg+xml" }],
+    shortcut: [siteIcon],
+    apple: [siteIcon],
+  },
 };
 
 /** Inline script that runs before React hydration to prevent flash of wrong theme/font */

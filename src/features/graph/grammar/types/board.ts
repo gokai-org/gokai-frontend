@@ -40,17 +40,6 @@ export interface GrammarBoardPoint {
   y: number;
 }
 
-export interface GrammarBoardPathSegment {
-  id: string;
-  fromId: string;
-  toId: string;
-  from: GrammarBoardPoint;
-  to: GrammarBoardPoint;
-  status: GrammarBoardStatus;
-  curveDirection: -1 | 0 | 1;
-  routeTier: GrammarBoardRouteTier;
-}
-
 export interface GrammarBoardCellViewModel {
   progress: GrammarBoardProgress;
   layout: GrammarBoardCellLayout;
@@ -67,7 +56,6 @@ export interface GrammarBoardStats {
 
 export interface GrammarBoardViewModel {
   cells: GrammarBoardCellViewModel[];
-  path: GrammarBoardPathSegment[];
   activeId: string | null;
   stats: GrammarBoardStats;
   canvas: {

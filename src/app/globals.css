@@ -585,6 +585,104 @@ html[data-jp-font="meiryo"] {
   animation: kanji-node-available-breathe 2.6s ease-in-out infinite;
 }
 
+/* Unlock burst — celebración instantánea cuando se desbloquea una lección de
+   grammar o un nodo de kanji. Aplicado vía clase `gokai-unlock-burst` por
+   ~1.2s tras el unlock optimista. */
+@keyframes gokai-unlock-burst {
+  0% {
+    transform: scale(0.92);
+    filter: drop-shadow(0 0 0 rgba(186, 72, 69, 0));
+  }
+  35% {
+    transform: scale(1.08);
+    filter: drop-shadow(0 0 24px rgba(153, 51, 49, 0.42))
+      drop-shadow(0 0 12px rgba(186, 81, 73, 0.6));
+  }
+  70% {
+    transform: scale(1.02);
+    filter: drop-shadow(0 0 14px rgba(153, 51, 49, 0.24))
+      drop-shadow(0 0 6px rgba(186, 81, 73, 0.3));
+  }
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 0 rgba(186, 72, 69, 0));
+  }
+}
+
+@keyframes gokai-unlock-burst-ring {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+    box-shadow: 0 0 0 0 rgba(153, 51, 49, 0.55);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1.05);
+    box-shadow: 0 0 0 18px rgba(153, 51, 49, 0.16),
+      0 0 32px 8px rgba(186, 81, 73, 0.32);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.18);
+    box-shadow: 0 0 0 36px rgba(153, 51, 49, 0);
+  }
+}
+
+.gokai-unlock-burst {
+  animation: gokai-unlock-burst 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+  position: relative;
+  z-index: 5;
+}
+
+.gokai-unlock-burst::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: gokai-unlock-burst-ring 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gokai-unlock-burst,
+  .gokai-unlock-burst::after {
+    animation: none;
+  }
+}
+
+/* ── Kanji nodo "puede desbloquearse" — esfera roja palpitante ── */
+@keyframes kanji-node-unlock-ready-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(186, 72, 69, 0),
+      0 4px 16px rgba(153, 51, 49, 0.32),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.16);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(186, 72, 69, 0.18),
+      0 6px 22px rgba(153, 51, 49, 0.55),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+    transform: scale(1.04);
+  }
+}
+
+.kanji-node-unlock-ready {
+  background: linear-gradient(135deg, #C5544D 0%, #993331 100%);
+  border-color: rgba(255, 255, 255, 0.18) !important;
+  color: #fff;
+  animation: kanji-node-unlock-ready-pulse 2.2s ease-in-out infinite;
+}
+
+.kanji-node-unlock-ready.kanji-node-hold-active {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kanji-node-unlock-ready {
+    animation: none;
+  }
+}
+
 /* Sphere entrance — plays when status changes or on mount */
 @keyframes kanji-node-enter {
   from {
@@ -660,6 +758,11 @@ html[data-jp-font="meiryo"] {
   }
 }
 .kanji-node-shaking {
+  animation: kanji-node-shake 0.58s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+  will-change: transform;
+}
+
+.grammar-board-cell-shaking {
   animation: kanji-node-shake 0.58s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
   will-change: transform;
 }

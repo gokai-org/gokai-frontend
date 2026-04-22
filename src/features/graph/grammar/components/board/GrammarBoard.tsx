@@ -29,6 +29,8 @@ interface GrammarBoardProps {
   focusLessonId?: string | null;
   helpTargetLessonId?: string | null;
   transitionState?: GrammarBoardTransitionState;
+  recentlyUnlockedIds?: ReadonlySet<string>;
+  embedded?: boolean;
 }
 
 export function GrammarBoard({
@@ -40,6 +42,8 @@ export function GrammarBoard({
   focusLessonId = null,
   helpTargetLessonId = null,
   transitionState = "idle",
+  recentlyUnlockedIds,
+  embedded = false,
 }: GrammarBoardProps) {
   const showLoading = status === "idle" || status === "loading";
   const platformMotion = usePlatformMotion();
@@ -259,11 +263,19 @@ export function GrammarBoard({
 
   const boardFrameClassName = isPortrait
     ? isTinyPortrait
-      ? "h-full w-full px-4 pb-2.5"
+      ? embedded
+        ? "h-full w-full px-2.5 pb-2.5 pt-2"
+        : "h-full w-full px-4 pb-2.5"
       : isCompactPortrait
-        ? "h-full w-full px-4 pb-3"
-        : "h-full w-full px-3 pb-3 sm:px-6 sm:pb-4"
-    : "h-full w-full p-6 sm:p-8 lg:p-10";
+        ? embedded
+          ? "h-full w-full px-3 pb-3 pt-2.5"
+          : "h-full w-full px-4 pb-3"
+        : embedded
+          ? "h-full w-full px-3 pb-3 pt-3 sm:px-4 sm:pb-4"
+          : "h-full w-full px-3 pb-3 sm:px-6 sm:pb-4"
+    : embedded
+      ? "h-full w-full p-3 sm:p-5 lg:p-6"
+      : "h-full w-full p-6 sm:p-8 lg:p-10";
 
   const boardCanvasClassName = isPortrait
     ? isTinyPortrait
@@ -274,7 +286,16 @@ export function GrammarBoard({
     : "relative h-full w-full rounded-[24px]";
 
   const boardFrameStyle = isPortrait
-    ? {
+    ? embedded
+      ? {
+          paddingTop: isTinyPortrait
+            ? "0.35rem"
+            : isCompactPortrait
+              ? "0.5rem"
+              : "0.75rem",
+          paddingBottom: isTinyPortrait ? "0.35rem" : "0.5rem",
+        }
+      : {
         // Keep enough clearance for the fixed nav while preserving more room on tiny phones.
         paddingTop: isTinyPortrait
           ? "calc(env(safe-area-inset-top, 0px) + 3.35rem)"
@@ -366,6 +387,7 @@ export function GrammarBoard({
                       isPortrait={isPortrait}
                       isCompactPortrait={isCompactPortrait}
                       isTinyPortrait={isTinyPortrait}
+                      justUnlocked={recentlyUnlockedIds?.has(cell.progress.id) ?? false}
                     />
                   ))}
 

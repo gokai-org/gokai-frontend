@@ -4,6 +4,32 @@ import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
+function pickAvatar(input: Record<string, unknown> | null | undefined) {
+  if (!input) {
+    return null;
+  }
+
+  const avatarCandidates = [
+    input.avatar,
+    input.avatar_url,
+    input.avatarUrl,
+    input.picture,
+    input.photo_url,
+    input.photoUrl,
+    input.profile_picture,
+    input.profilePicture,
+    input.image,
+    input.image_url,
+    input.imageUrl,
+  ];
+
+  const avatar = avatarCandidates.find(
+    (candidate) => typeof candidate === "string" && candidate.trim().length > 0,
+  );
+
+  return typeof avatar === "string" ? avatar.trim() : null;
+}
+
 function buildInvalidUserResponse() {
   const response = NextResponse.json(
     { user: null, error: "USER_NOT_FOUND" },
@@ -106,6 +132,7 @@ export async function GET(req: NextRequest) {
                   lastName: rln,
                   name: rfn && rln ? `${rfn} ${rln}` : rfn || retryData.email || "Usuario",
                   profile: retryData.profile,
+                  avatar: pickAvatar(retryData),
                   plan: "free",
                   createdAt: retryData.created_at,
                   twoFactorEnabled: false,
@@ -187,7 +214,7 @@ export async function GET(req: NextRequest) {
               : firstName || userData.email,
           birthdate: userData.birthdate,
           profile: userData.profile,
-          avatar: null,
+          avatar: pickAvatar(userData),
           plan,
           createdAt: userData.created_at,
           subscribed,
@@ -314,7 +341,7 @@ export async function PATCH(request: NextRequest) {
           : firstName || userData.email,
       birthdate: userData.birthdate,
       profile: userData.profile,
-      avatar: null,
+      avatar: pickAvatar(userData),
       plan: "free",
       createdAt: userData.createdAt || userData.created_at,
       twoFactorEnabled: false,

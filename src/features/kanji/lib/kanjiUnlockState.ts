@@ -62,34 +62,55 @@ export function resolveKanjiUnlockState({
   completionScore?: number;
 }): KanjiUnlockState {
   const completedIds = buildCompletedIds(results, progress, completionScore);
-  const latestUnlockedIndex = progress
+
+  const backendLatestUnlockedIndex = progress
     ? kanjis.findIndex((kanji) => kanji.id === progress.kanjiId)
     : -1;
 
   const unlockedIds = new Set<string>();
-  if (latestUnlockedIndex >= 0) {
-    for (const kanji of kanjis.slice(0, latestUnlockedIndex + 1)) {
+  if (backendLatestUnlockedIndex >= 0) {
+    for (const kanji of kanjis.slice(0, backendLatestUnlockedIndex + 1)) {
       unlockedIds.add(kanji.id);
     }
   }
+  for (const id of completedIds) {
+    unlockedIds.add(id);
+  }
 
-  const nextUnlockCandidate =
-    latestUnlockedIndex + 1 < kanjis.length
-      ? kanjis[latestUnlockedIndex + 1]
-      : null;
+  let latestUnlockedIndex = backendLatestUnlockedIndex;
+  for (let index = 0; index < kanjis.length; index += 1) {
+    if (unlockedIds.has(kanjis[index].id)) {
+      latestUnlockedIndex = index;
+    }
+  }
+
+  let nextUnlockCandidate: Kanji | null = null;
+  for (let index = 0; index < kanjis.length; index += 1) {
+    const kanji = kanjis[index];
+    if (!unlockedIds.has(kanji.id)) {
+      nextUnlockCandidate = kanji;
+      break;
+    }
+  }
+
   const previousStepCompleted =
     latestUnlockedIndex < 0 ||
-    (progress !== null && completedIds.has(progress.kanjiId));
+    completedIds.has(kanjis[latestUnlockedIndex].id);
   const nextUnlockCost = nextUnlockCandidate?.pointsToUnlock ?? unlockCost;
   const canUnlockNext =
     nextUnlockCandidate !== null &&
     previousStepCompleted &&
     userPoints >= nextUnlockCost;
 
+  const latestUnlockedId =
+    latestUnlockedIndex >= 0
+      ? kanjis[latestUnlockedIndex].id
+      : progress?.kanjiId ?? null;
+
   return {
     completedIds,
     unlockedIds,
-    latestUnlockedId: progress?.kanjiId ?? null,
+    latestUnlockedId,
     latestUnlockedIndex,
     nextUnlockCandidate,
     nextUnlockCandidateId: nextUnlockCandidate?.id ?? null,

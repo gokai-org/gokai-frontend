@@ -4,39 +4,14 @@ import {
 } from "../constants/grammarBoard";
 import type {
   GrammarBoardCellLayout,
-  GrammarBoardPathSegment,
-  GrammarBoardPoint,
   GrammarBoardProgress,
   GrammarBoardSlot,
-  GrammarBoardStatus,
   GrammarBoardViewModel,
 } from "../types";
 import {
   createGrammarBoardStats,
   resolveGrammarBoardVisualState,
 } from "./grammarBoardModel";
-
-function getCellCenter(cell: GrammarBoardCellLayout): GrammarBoardPoint {
-  return {
-    x: cell.x + cell.width / 2,
-    y: cell.y + cell.height / 2,
-  };
-}
-
-function getPathStatus(
-  source: GrammarBoardProgress,
-  target: GrammarBoardProgress,
-): GrammarBoardStatus {
-  if (source.status === "completed" && target.status === "completed") {
-    return "completed";
-  }
-
-  if (target.status === "locked") {
-    return "locked";
-  }
-
-  return "available";
-}
 
 export function buildGrammarBoardLayout(
   ids: readonly string[],
@@ -46,38 +21,6 @@ export function buildGrammarBoardLayout(
     ...(slots[index] as GrammarBoardSlot),
     id,
   }));
-}
-
-export function buildGrammarBoardPath(
-  items: readonly GrammarBoardProgress[],
-  layout: readonly GrammarBoardCellLayout[],
-): GrammarBoardPathSegment[] {
-  const itemsById = new Map(items.map((item) => [item.id, item]));
-  const segments: GrammarBoardPathSegment[] = [];
-
-  for (let index = 0; index < layout.length - 1; index += 1) {
-    const source = layout[index];
-    const target = layout[index + 1];
-    const sourceItem = itemsById.get(source.id);
-    const targetItem = itemsById.get(target.id);
-
-    if (!sourceItem || !targetItem) {
-      continue;
-    }
-
-    segments.push({
-      id: `${source.id}-${target.id}`,
-      fromId: source.id,
-      toId: target.id,
-      from: getCellCenter(source),
-      to: getCellCenter(target),
-      status: getPathStatus(sourceItem, targetItem),
-      curveDirection: source.curveDirection ?? 0,
-      routeTier: target.routeTier,
-    });
-  }
-
-  return segments;
 }
 
 export function createGrammarBoardViewModel(
@@ -110,7 +53,6 @@ export function createGrammarBoardViewModel(
 
   return {
     cells,
-    path: buildGrammarBoardPath(items, layout),
     activeId,
     stats: createGrammarBoardStats(items),
     canvas: GRAMMAR_BOARD_CANVAS,

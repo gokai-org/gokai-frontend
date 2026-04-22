@@ -24,39 +24,60 @@ export function resolveGrammarUnlockState({
   userPoints: number;
   unlockCost?: number;
 }): GrammarUnlockState {
-  const latestUnlockedIndex = progress
+  const backendLatestUnlockedIndex = progress
     ? lessons.findIndex((lesson) => lesson.id === progress.grammarId)
     : -1;
   const completedIds = new Set<string>();
   const unlockedIds = new Set<string>();
 
-  if (latestUnlockedIndex >= 0) {
-    for (const lesson of lessons.slice(0, latestUnlockedIndex + 1)) {
+  if (backendLatestUnlockedIndex >= 0) {
+    for (const lesson of lessons.slice(0, backendLatestUnlockedIndex + 1)) {
       unlockedIds.add(lesson.id);
     }
-
-    for (const lesson of lessons.slice(0, latestUnlockedIndex)) {
+    for (const lesson of lessons.slice(0, backendLatestUnlockedIndex)) {
       completedIds.add(lesson.id);
     }
-
     if (progress?.completed) {
       completedIds.add(progress.grammarId);
     }
   }
 
-  const nextUnlockCandidate =
-    latestUnlockedIndex + 1 < lessons.length
-      ? lessons[latestUnlockedIndex + 1]
-      : null;
-  const previousStepCompleted = latestUnlockedIndex < 0 || progress?.completed === true;
+  for (const id of completedIds) {
+    unlockedIds.add(id);
+  }
+
+  let latestUnlockedIndex = backendLatestUnlockedIndex;
+  for (let index = 0; index < lessons.length; index += 1) {
+    if (unlockedIds.has(lessons[index].id)) {
+      latestUnlockedIndex = index;
+    }
+  }
+
+  let nextUnlockCandidate: GrammarLessonSummary | null = null;
+  for (let index = 0; index < lessons.length; index += 1) {
+    const lesson = lessons[index];
+    if (!unlockedIds.has(lesson.id)) {
+      nextUnlockCandidate = lesson;
+      break;
+    }
+  }
+
+  const previousStepCompleted =
+    latestUnlockedIndex < 0 ||
+    completedIds.has(lessons[latestUnlockedIndex].id);
   const nextUnlockCost = nextUnlockCandidate?.pointsToUnlock ?? unlockCost;
   const canUnlockNext =
     nextUnlockCandidate !== null &&
     previousStepCompleted &&
     userPoints >= nextUnlockCost;
 
+  const latestUnlockedId =
+    latestUnlockedIndex >= 0
+      ? lessons[latestUnlockedIndex].id
+      : progress?.grammarId ?? null;
+
   return {
-    latestUnlockedId: progress?.grammarId ?? null,
+    latestUnlockedId,
     latestUnlockedIndex,
     completedIds,
     unlockedIds,

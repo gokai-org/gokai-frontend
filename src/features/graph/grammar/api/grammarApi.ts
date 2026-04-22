@@ -3,6 +3,7 @@ import type {
   GrammarLessonSummary,
   GrammarLesson,
   GrammarQuizSubmitBody,
+  GrammarQuizSubmitResponse,
   GrammarStudyProgress,
   GrammarUnlockResponse,
 } from "../types";
@@ -40,11 +41,11 @@ export async function getGrammarLesson(id: string) {
 }
 
 /** Submits the grammar quiz result. */
-export function submitGrammarQuiz(
+export async function submitGrammarQuiz(
   grammarId: string,
   body: GrammarQuizSubmitBody,
 ) {
-  return apiFetch<{ success: boolean; message: string }>(
+  return apiFetch<GrammarQuizSubmitResponse>(
     `/api/content/grammar/quiz/${grammarId}`,
     {
       method: "POST",
@@ -84,7 +85,7 @@ export async function getGrammarProgress() {
   return payload as GrammarStudyProgress;
 }
 
-export function unlockGrammar(grammarId: string) {
+export async function unlockGrammar(grammarId: string) {
   return apiFetch<GrammarUnlockResponse>(
     `/api/content/grammar/${grammarId}?resource=unlock`,
     {

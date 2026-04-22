@@ -5,6 +5,13 @@ import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * GET /api/content/grammar/progress
+ * Proxy directo al study-api `GET /grammar/progress` (GetUserGrammarProgress).
+ * Retorna `{ hasUnlocked: false }` si el usuario aún no ha desbloqueado
+ * ninguna lección, o `{ grammarId, title, pointsToUnlock, completed }`
+ * con la lección desbloqueada más avanzada.
+ */
 export async function GET(req: NextRequest) {
   const raw = getTokenFromRequest(req);
 
@@ -23,17 +30,5 @@ export async function GET(req: NextRequest) {
   });
 
   const data = await upstream.json().catch(() => ({}));
-
-  if (upstream.status === 403) {
-    return NextResponse.json(
-      {
-        hasUnlocked: false,
-        message:
-          "El backend actual no autoriza consultar grammar progress para usuarios normales.",
-      },
-      { status: 200 },
-    );
-  }
-
   return NextResponse.json(data, { status: upstream.status });
 }

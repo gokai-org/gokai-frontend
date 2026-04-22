@@ -26,7 +26,7 @@ export function DashboardShell({
   useContainer = true,
 }: DashboardShellProps) {
   return (
-    <div className="flex flex-col h-screen bg-surface-primary">
+    <div className="flex min-h-0 h-full flex-col bg-surface-primary">
       {header}
       <div className={joinClassNames(baseContentClassName, contentClassName)}>
         {useContainer ? (
