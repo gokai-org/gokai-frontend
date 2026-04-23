@@ -368,7 +368,7 @@ export function GrammarLibraryCard({
               className={[
                 "pointer-events-none absolute inset-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
                 hoverTransition,
-                "from-accent/88 via-[#A83F3A]/78 to-accent-hover/72",
+                "from-[#8F2F2D]/90 via-[#A63B38]/82 to-[#C24D45]/74",
               ].join(" ")}
             />
           ) : null}

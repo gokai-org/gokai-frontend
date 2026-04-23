@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { usePathname, useSearchParams } from "next/navigation";
-import { MiniUserProfileDock } from "@/features/dashboard/components/MiniUserProfileDock";
+import { MiniGokaDock } from "@/features/dashboard/components/MiniGokaDock";
+import { subscribeLibraryDockVisibility } from "@/features/library/utils/libraryDockVisibility";
 
 export default function ContentShell({
   children,
@@ -10,6 +13,7 @@ export default function ContentShell({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [showLibraryMiniDock, setShowLibraryMiniDock] = useState(false);
 
   const isChatbot = pathname === "/dashboard/chatbot";
   const isLibrary = pathname === "/dashboard/library";
@@ -25,7 +29,23 @@ export default function ContentShell({
   const isNotices = pathname === "/dashboard/notices";
   const isConfiguration = pathname === "/dashboard/configuration";
   const shouldShowMiniProfile =
-    isChatbot || isLibrary || isReviews || isGrammarBoard || isKanjiBoard;
+    isChatbot ||
+    isReviews ||
+    isGrammarBoard ||
+    isKanjiBoard ||
+    (isLibrary && showLibraryMiniDock);
+
+  useEffect(() => {
+    if (!isLibrary) {
+      return;
+    }
+
+    return subscribeLibraryDockVisibility(({ categoryId }) => {
+      setShowLibraryMiniDock(
+        categoryId === "kanji" || categoryId === "grammar",
+      );
+    });
+  }, [isLibrary]);
 
   const padDesktop = "lg:pl-[140px]";
   const padMd = "md:pl-[120px]";
@@ -49,13 +69,19 @@ export default function ContentShell({
           padDesktop,
         ].join(" ")}
       >
-        {shouldShowMiniProfile && (
-          <div className="pointer-events-none fixed right-2 top-2 z-[70] md:right-3 md:top-3 lg:right-8 lg:top-4">
-            <div className="pointer-events-auto">
-              <MiniUserProfileDock />
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {shouldShowMiniProfile && (
+            <motion.div
+              className="pointer-events-none fixed right-2 top-2 z-[70] md:right-3 md:top-3 lg:right-8 lg:top-4"
+              initial={false}
+              exit={{ opacity: 1 }}
+            >
+              <div className="pointer-events-auto">
+                <MiniGokaDock />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {children}
       </main>

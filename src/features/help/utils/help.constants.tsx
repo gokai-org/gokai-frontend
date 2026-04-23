@@ -116,7 +116,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
   },
   {
     icon: <BookText className="w-6 h-6" />,
-    title: "Tablero de Grammar",
+    title: "Tablero de Gramática",
     description:
       "Recorre el tablero de gramática y abre una lección visual paso a paso.",
     color: "text-orange-600 dark:text-orange-400",

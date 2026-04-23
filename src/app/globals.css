@@ -677,8 +677,34 @@ html[data-jp-font="meiryo"] {
   animation-play-state: paused;
 }
 
+@keyframes kanji-library-unlock-ready-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(186, 72, 69, 0),
+      0 8px 24px -18px rgba(153, 51, 49, 0.55);
+    border-color: rgba(186, 72, 69, 0.28);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(186, 72, 69, 0.08),
+      0 18px 38px -18px rgba(153, 51, 49, 0.72);
+    border-color: rgba(186, 72, 69, 0.52);
+  }
+}
+
+.kanji-library-unlock-ready {
+  animation: kanji-library-unlock-ready-pulse 2.2s ease-in-out infinite;
+}
+
+.kanji-library-unlock-hold {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .kanji-node-unlock-ready {
+    animation: none;
+  }
+
+  .kanji-library-unlock-ready {
     animation: none;
   }
 }
@@ -1065,6 +1091,80 @@ html[data-jp-font="meiryo"] {
   animation: kanji-bg-pulse 18s ease-in-out infinite;
 }
 
+@keyframes kanji-bg-unlock-alert {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.38;
+    transform: scale(1.03);
+  }
+}
+
+@keyframes kanji-bg-unlock-sweep {
+  0% {
+    opacity: 0;
+    transform: translate3d(-12%, -2%, 0) rotate(-12deg);
+  }
+  18% {
+    opacity: 0.16;
+  }
+  52% {
+    opacity: 0.26;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(14%, 4%, 0) rotate(10deg);
+  }
+}
+
+.kanji-bg-unlock-alert {
+  background:
+    radial-gradient(
+      ellipse 62% 48% at 50% 44%,
+      rgba(186, 72, 69, 0.12) 0%,
+      rgba(153, 51, 49, 0.06) 42%,
+      transparent 74%
+    ),
+    radial-gradient(
+      ellipse 30% 22% at 16% 20%,
+      rgba(186, 72, 69, 0.09) 0%,
+      transparent 66%
+    ),
+    radial-gradient(
+      ellipse 26% 20% at 84% 74%,
+      rgba(186, 72, 69, 0.08) 0%,
+      transparent 64%
+    );
+  animation: kanji-bg-unlock-alert 3.4s ease-in-out infinite;
+}
+
+.kanji-bg-unlock-alert-pending {
+  animation-duration: 1.2s;
+  opacity: 0.44;
+}
+
+.kanji-bg-unlock-sweep {
+  background:
+    linear-gradient(
+      115deg,
+      transparent 8%,
+      rgba(186, 72, 69, 0.02) 28%,
+      rgba(186, 72, 69, 0.18) 48%,
+      rgba(255, 235, 235, 0.05) 58%,
+      transparent 78%
+    );
+  mix-blend-mode: screen;
+  animation: kanji-bg-unlock-sweep 4.2s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+}
+
+.kanji-bg-unlock-sweep-pending {
+  animation-duration: 1s;
+  opacity: 0.85;
+}
+
 /* ── Edge vignette — static paint, no compositor promotion ── */
 .kanji-bg-vignette {
   contain: layout paint style;
@@ -1088,6 +1188,8 @@ html[data-jp-font="meiryo"] {
 /* ── Pause all board animations during pan/zoom interactions ── */
 [data-kanji-interacting="true"] .kanji-bg-animate,
 [data-kanji-interacting="true"] .kanji-bg-breathe,
+[data-kanji-interacting="true"] .kanji-bg-unlock-alert,
+[data-kanji-interacting="true"] .kanji-bg-unlock-sweep,
 [data-kanji-interacting="true"] .kanji-edge-available,
 [data-kanji-interacting="true"] .kanji-node-available-breathe,
 [data-kanji-interacting="true"] .kanji-selected-pulse {
@@ -1106,6 +1208,8 @@ html[data-jp-font="meiryo"] {
 }
 [data-kanji-quiz-active="true"] .kanji-bg-animate,
 [data-kanji-quiz-active="true"] .kanji-bg-breathe,
+[data-kanji-quiz-active="true"] .kanji-bg-unlock-alert,
+[data-kanji-quiz-active="true"] .kanji-bg-unlock-sweep,
 [data-kanji-quiz-active="true"] .kanji-edge-available,
 [data-kanji-quiz-active="true"] .kanji-node-available-breathe,
 [data-kanji-quiz-active="true"] .kanji-selected-pulse {

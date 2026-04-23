@@ -3,7 +3,6 @@
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
-import { useToast } from "@/shared/ui";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
 import { Search } from "lucide-react";
@@ -31,6 +30,7 @@ import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import { KanaQuizModal } from "@/features/kana/components/quiz";
 import { GrammarLibraryCollection } from "@/features/graph/grammar/components/library/GrammarLibraryCollection";
 import { GRAMMAR_BOARD_TOTAL } from "@/features/graph/grammar/constants/grammarBoard";
+import { dispatchLibraryDockVisibility } from "@/features/library/utils/libraryDockVisibility";
 import {
   buildLibraryCategories,
   kanjiToScriptCard,
@@ -43,6 +43,8 @@ import {
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { HELP_GUIDE_LIBRARY_RESET_EVENT } from "@/features/help/utils/guideEvents";
+import { useToast } from "@/shared/ui/ToastProvider";
+import { unlockKanji } from "@/features/kanji";
 // import { getPrimaryMeaning } from "@/features/kanji";
 
 type QuizCompletionResult = {
@@ -81,8 +83,9 @@ export default function LibraryPage() {
     useAnimationPreferences();
 
   const { setBlurred } = useSidebar();
-  const toast = useToast();
   const mastered = useMasteredModules();
+  const toast = useToast();
+  const autoUnlockedKanjiRef = useRef<Set<string>>(new Set());
   useEffect(() => {
     setBlurred(drawerEntity !== null);
     return () => setBlurred(false);
@@ -144,6 +147,9 @@ export default function LibraryPage() {
   const {
     lockedKanjiIds,
     completedKanjiIds,
+    nextUnlockCandidateId,
+    canUnlockNext,
+    unlockCost,
     userPoints,
     hasResolvedInitialStatus: hasResolvedInitialKanjiStatus,
     reload: reloadLockedStatus,
@@ -160,6 +166,9 @@ export default function LibraryPage() {
   const [newlyUnlockedKanjiIds, setNewlyUnlockedKanjiIds] = useState<
     ReadonlySet<string>
   >(new Set());
+  const [unlockPendingKanjiId, setUnlockPendingKanjiId] = useState<string | null>(
+    null,
+  );
   const [newlyUnlockedKanaIds, setNewlyUnlockedKanaIds] = useState<
     ReadonlySet<string>
   >(new Set());
@@ -256,10 +265,10 @@ export default function LibraryPage() {
         .find((kana) => !lockedKatakanaIds.has(kana.id))?.id ?? null,
     [katakanas, lockedKatakanaIds],
   );
-  const handleKanjiClick = (kanji: Kanji) => {
+  const handleKanjiClick = useCallback((kanji: Kanji) => {
     addRecentItem("kanji", kanji.id);
     setDrawerEntity({ id: kanji.id, kind: "kanji" });
-  };
+  }, [addRecentItem]);
 
   const handleLibraryKanjiSelect = useCallback((kanji: Kanji) => {
     const isLocked = lockedKanjiIds.has(kanji.id);
@@ -270,7 +279,75 @@ export default function LibraryPage() {
     }
 
     handleKanjiClick(kanji);
-  }, [lockedKanjiIds]);
+  }, [handleKanjiClick, lockedKanjiIds]);
+
+  const handlePressUnlockKanji = useCallback(
+    async (kanjiId: string) => {
+      if (unlockPendingKanjiId !== null) {
+        return;
+      }
+
+      if (!canUnlockNext || nextUnlockCandidateId !== kanjiId) {
+        return;
+      }
+
+      setUnlockPendingKanjiId(kanjiId);
+
+      try {
+        const response = await unlockKanji(kanjiId);
+        dispatchMasteryProgressSync({ points: response.userPoints });
+        startUnlockAnimation([kanjiId], "kanji");
+        void reloadLockedStatus();
+      } catch (error) {
+        const fallbackMessage = "No se pudo desbloquear el kanji.";
+        if (error instanceof Error) {
+          toast.error(
+            error.message.replace(/^HTTP\s+\d+:\s*/i, "").trim() ||
+              fallbackMessage,
+          );
+        } else {
+          toast.error(fallbackMessage);
+        }
+      } finally {
+        setUnlockPendingKanjiId(null);
+      }
+    },
+    [
+      canUnlockNext,
+      nextUnlockCandidateId,
+      reloadLockedStatus,
+      startUnlockAnimation,
+      toast,
+      unlockPendingKanjiId,
+    ],
+  );
+
+  useEffect(() => {
+    if (!canUnlockNext || !nextUnlockCandidateId) {
+      return;
+    }
+
+    if (unlockPendingKanjiId !== null) {
+      return;
+    }
+
+    if ((unlockCost ?? 0) > 0) {
+      return;
+    }
+
+    if (autoUnlockedKanjiRef.current.has(nextUnlockCandidateId)) {
+      return;
+    }
+
+    autoUnlockedKanjiRef.current.add(nextUnlockCandidateId);
+    void handlePressUnlockKanji(nextUnlockCandidateId);
+  }, [
+    canUnlockNext,
+    handlePressUnlockKanji,
+    nextUnlockCandidateId,
+    unlockCost,
+    unlockPendingKanjiId,
+  ]);
 
   const handleDrawerQuizStart = useCallback(
     (
@@ -403,6 +480,14 @@ export default function LibraryPage() {
     };
   }, []);
 
+  useEffect(() => {
+    dispatchLibraryDockVisibility(selectedCategory);
+
+    return () => {
+      dispatchLibraryDockVisibility(null);
+    };
+  }, [selectedCategory]);
+
   const handleCategoryChange = (cat: string | null) => {
     setSelectedCategory(cat);
     setSearchQuery("");
@@ -502,6 +587,11 @@ export default function LibraryPage() {
                     favoriteHiraganas={favoriteHiraganas}
                     favoriteKatakanas={favoriteKatakanas}
                     lockedKanjiIds={lockedKanjiIds}
+                    nextUnlockReadyKanjiId={
+                      canUnlockNext ? nextUnlockCandidateId : null
+                    }
+                    unlockPendingKanjiId={unlockPendingKanjiId}
+                    currentKanjiPoints={userPoints}
                     lockedHiraganaIds={lockedHiraganaIds}
                     lockedKatakanaIds={lockedKatakanaIds}
                     newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
@@ -514,6 +604,7 @@ export default function LibraryPage() {
                       void toggleFavorite(id, "katakana")
                     }
                     onKanjiClick={handleLibraryKanjiSelect}
+                    onKanjiPressUnlock={handlePressUnlockKanji}
                     onKanaClick={handleKanaClick}
                     className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
                   />
@@ -577,6 +668,11 @@ export default function LibraryPage() {
                         favoriteHiraganas={favoriteHiraganas}
                         favoriteKatakanas={favoriteKatakanas}
                         lockedKanjiIds={lockedKanjiIds}
+                        nextUnlockReadyKanjiId={
+                          canUnlockNext ? nextUnlockCandidateId : null
+                        }
+                        unlockPendingKanjiId={unlockPendingKanjiId}
+                        currentKanjiPoints={userPoints}
                         lockedHiraganaIds={lockedHiraganaIds}
                         lockedKatakanaIds={lockedKatakanaIds}
                         newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
@@ -589,6 +685,7 @@ export default function LibraryPage() {
                           void toggleFavorite(id, "katakana")
                         }
                         onKanjiClick={handleLibraryKanjiSelect}
+                        onKanjiPressUnlock={handlePressUnlockKanji}
                         onKanaClick={handleKanaClick}
                       />
                     ) : (
@@ -647,8 +744,16 @@ export default function LibraryPage() {
                               {...kanjiToScriptCard(kanji, true)}
                               index={i}
                               locked={isLocked}
+                              unlockReady={
+                                isLocked &&
+                                canUnlockNext &&
+                                nextUnlockCandidateId === kanji.id
+                              }
+                              unlockPending={unlockPendingKanjiId === kanji.id}
                               unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
+                              currentPoints={userPoints}
                               onClick={() => handleLibraryKanjiSelect(kanji)}
+                              onPressUnlock={handlePressUnlockKanji}
                               onFavoriteToggle={
                                 isLocked ? undefined : toggleFavoriteKanji
                               }
@@ -804,8 +909,16 @@ export default function LibraryPage() {
                           )}
                           index={i}
                           locked={isLocked}
+                          unlockReady={
+                            isLocked &&
+                            canUnlockNext &&
+                            nextUnlockCandidateId === kanji.id
+                          }
+                          unlockPending={unlockPendingKanjiId === kanji.id}
                           unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
+                          currentPoints={userPoints}
                           onClick={() => handleLibraryKanjiSelect(kanji)}
+                          onPressUnlock={handlePressUnlockKanji}
                           onFavoriteToggle={
                             isLocked ? undefined : toggleFavoriteKanji
                           }
@@ -825,9 +938,9 @@ export default function LibraryPage() {
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
               <LibraryCategorySection
-                title="Colección de Grammar"
+                title="Colección de Gramática"
                 countLabel={`${GRAMMAR_BOARD_TOTAL} lecciones`}
-                emptyTitle="No hay lecciones de grammar disponibles"
+                emptyTitle="No hay lecciones de gramática disponibles"
                 emptyDescription="No encontramos lecciones para mostrar en esta sección."
               >
                 <GrammarLibraryCollection
@@ -1042,8 +1155,16 @@ export default function LibraryPage() {
                             )}
                             index={i}
                             locked={isLocked}
+                            unlockReady={
+                              isLocked &&
+                              canUnlockNext &&
+                              nextUnlockCandidateId === kanji.id
+                            }
+                            unlockPending={unlockPendingKanjiId === kanji.id}
                             unlocking={newlyUnlockedKanjiIds.has(kanji.id)}
+                            currentPoints={userPoints}
                             onClick={() => handleLibraryKanjiSelect(kanji)}
+                            onPressUnlock={handlePressUnlockKanji}
                             onFavoriteToggle={
                               isLocked ? undefined : toggleFavoriteKanji
                             }

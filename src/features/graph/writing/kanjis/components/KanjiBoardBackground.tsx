@@ -7,6 +7,8 @@ import type { KanjiBoardQualityProfile } from "../types";
 interface KanjiBoardBackgroundProps {
   qualityProfile: KanjiBoardQualityProfile;
   graphicsProfile: GraphicsProfile;
+  unlockReady?: boolean;
+  unlockPending?: boolean;
 }
 
 function cn(...values: Array<string | false | null | undefined>) {
@@ -17,6 +19,8 @@ export const KanjiBoardBackground = memo(
   function KanjiBoardBackground({
     qualityProfile,
     graphicsProfile,
+    unlockReady = false,
+    unlockPending = false,
   }: KanjiBoardBackgroundProps) {
     const showStars = graphicsProfile.maxBackgroundEffects >= 2;
     const showAtmosphere = graphicsProfile.maxBackgroundEffects >= 3;
@@ -55,6 +59,24 @@ export const KanjiBoardBackground = memo(
           />
         ) : null}
 
+        {unlockReady ? (
+          <div
+            className={cn(
+              "absolute inset-0 kanji-bg-unlock-alert",
+              unlockPending && "kanji-bg-unlock-alert-pending",
+            )}
+          />
+        ) : null}
+
+        {unlockReady && qualityProfile.allowMotion ? (
+          <div
+            className={cn(
+              "absolute inset-[-8%] kanji-bg-unlock-sweep",
+              unlockPending && "kanji-bg-unlock-sweep-pending",
+            )}
+          />
+        ) : null}
+
         {/* Edge vignette */}
         <div className="absolute inset-0 kanji-bg-vignette" />
       </div>
@@ -66,6 +88,8 @@ export const KanjiBoardBackground = memo(
       next.qualityProfile.background.animateTwinkle &&
     prev.qualityProfile.background.animateBreathe ===
       next.qualityProfile.background.animateBreathe &&
+    prev.unlockReady === next.unlockReady &&
+    prev.unlockPending === next.unlockPending &&
     prev.graphicsProfile.shouldAnimateBackground ===
       next.graphicsProfile.shouldAnimateBackground &&
     prev.graphicsProfile.maxBackgroundEffects ===

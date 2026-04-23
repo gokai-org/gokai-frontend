@@ -208,9 +208,9 @@ export function GrammarLibraryCollection({
   if (status === "error") {
     return (
       <LibraryCategorySection
-        title="Colección de Grammar"
+        title="Colección de Gramática"
         countLabel={`${GRAMMAR_BOARD_TOTAL} lecciones`}
-        emptyTitle="No se pudo cargar grammar"
+        emptyTitle="No se pudo cargar gramática"
         emptyDescription={error || "Ocurrió un error al cargar las lecciones."}
       >
         <div className="flex flex-col items-center justify-center py-16 text-center">

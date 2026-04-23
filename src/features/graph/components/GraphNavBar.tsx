@@ -51,6 +51,7 @@ export default function GraphNavBar() {
   const navRef = useRef<HTMLDivElement | null>(null);
   const [writingMenuOpen, setWritingMenuOpen] = useState(false);
   const [pendingWritingTab, setPendingWritingTab] = useState<WritingTab | null>(null);
+  const [useBottomDockedLayout, setUseBottomDockedLayout] = useState(false);
 
   const activeWritingTab = useMemo(() => {
     if (!pathname.startsWith("/dashboard/graph/writing")) {
@@ -92,16 +93,43 @@ export default function GraphNavBar() {
     return () => window.removeEventListener("pointerdown", handlePointerDown);
   }, [writingMenuOpen]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+      return;
+    }
+
+    const mediaQuery = window.matchMedia("(orientation: portrait) and (max-width: 1024px)");
+    const updateLayout = (event?: MediaQueryListEvent) => {
+      setUseBottomDockedLayout(event?.matches ?? mediaQuery.matches);
+    };
+
+    updateLayout();
+    mediaQuery.addEventListener("change", updateLayout);
+
+    return () => mediaQuery.removeEventListener("change", updateLayout);
+  }, []);
+
   return (
     <div
       ref={navRef}
       data-help-target="graph-nav"
       data-zoom-exclude="true"
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 pointer-events-none"
+      className={`fixed left-1/2 -translate-x-1/2 z-50 pointer-events-none ${
+        useBottomDockedLayout ? "bottom-0" : "top-4"
+      }`}
+      style={
+        useBottomDockedLayout
+          ? { bottom: "calc(env(safe-area-inset-bottom, 0px) + 0.85rem)" }
+          : undefined
+      }
     >
       <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={hidden ? { y: -20, opacity: 0 } : { y: 0, opacity: 1 }}
+        initial={{ y: useBottomDockedLayout ? 20 : -20, opacity: 0 }}
+        animate={
+          hidden
+            ? { y: useBottomDockedLayout ? 20 : -20, opacity: 0 }
+            : { y: 0, opacity: 1 }
+        }
         transition={hidden ? { duration: 0.2 } : { delay: 0.2 }}
         className={`flex gap-1 sm:gap-1.5 md:gap-2 bg-surface-primary/90 backdrop-blur-md rounded-xl p-1 sm:p-1.5 shadow-lg border border-border-subtle max-w-[calc(100vw-2rem)] ${
           hidden ? "pointer-events-none" : "pointer-events-auto"
@@ -160,6 +188,7 @@ export default function GraphNavBar() {
         <WritingSubMenu
           activeTab={displayedWritingTab}
           onTabChange={handleWritingSelection}
+          anchorBottom={useBottomDockedLayout}
         />
       )}
     </div>

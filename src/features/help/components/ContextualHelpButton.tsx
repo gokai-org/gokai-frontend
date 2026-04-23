@@ -130,13 +130,15 @@ export function ContextualHelpButton({
       <motion.button
         type="button"
         onClick={() => setOpen((current) => !current)}
-        whileHover={{ scale: 1.04 }}
-        whileTap={{ scale: 0.96 }}
-        className="pointer-events-auto relative flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-gradient-to-br from-accent to-accent-hover text-[20px] font-black text-white shadow-[0_14px_28px_-16px_rgba(153,51,49,0.8)] md:h-12 md:w-12 md:text-[22px] lg:h-16 lg:w-16 lg:text-[28px] lg:shadow-[0_18px_36px_-18px_rgba(153,51,49,0.85)]"
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.97 }}
+        className="pointer-events-auto relative flex h-9 w-9 items-center justify-center rounded-full border border-black/8 bg-white/88 text-slate-600 shadow-[0_12px_24px_-20px_rgba(15,23,42,0.45)] backdrop-blur-md transition-colors duration-200 hover:border-black/12 hover:bg-white/96 hover:text-slate-800 dark:border-white/10 dark:bg-white/10 dark:text-white/80 dark:hover:bg-white/14 dark:hover:text-white md:h-10 md:w-10 lg:h-10 lg:w-10"
         aria-label="Abrir ayuda contextual"
       >
-        <span className="absolute inset-0 rounded-full bg-white/0 transition-opacity duration-200 hover:bg-white/5" />
-        <span className="relative z-10 leading-none">?</span>
+        <span className="absolute inset-0 rounded-full bg-black/0 transition-colors duration-200 hover:bg-black/[0.03] dark:hover:bg-white/[0.03]" />
+        <span className="relative z-10 text-[16px] font-semibold leading-none md:text-[17px]">
+          ?
+        </span>
       </motion.button>
     </div>
   );

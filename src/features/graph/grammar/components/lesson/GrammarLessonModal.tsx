@@ -104,7 +104,7 @@ export default function GrammarLessonModal({
                   No se pudo abrir la lección
                 </p>
                 <p className="text-sm leading-6 text-content-secondary">
-                  {error || "Ocurrió un error al cargar el contenido de grammar."}
+                  {error || "Ocurrió un error al cargar el contenido de gramática."}
                 </p>
               </div>
 

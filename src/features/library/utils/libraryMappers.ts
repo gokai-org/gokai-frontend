@@ -411,7 +411,7 @@ export function buildLibraryCategories(params: {
     },
     {
       id: "grammar",
-      name: "Grammar",
+      name: "Gramática",
       icon: "",
       count: params.grammarCount,
       color: "bg-[#BA5149]",

@@ -841,6 +841,8 @@ export default function KanjisView() {
         <KanjiBoardBackground
           qualityProfile={qualityProfile}
           graphicsProfile={graphicsProfile}
+          unlockReady={Boolean(nextUnlockCandidate && canUnlockNext)}
+          unlockPending={unlockPending}
         />
         </div>
 

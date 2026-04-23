@@ -282,7 +282,7 @@ export function GrammarExperience({
     () =>
       createGrammarBoardContextTour({
         id: "grammar-context-tour",
-        title: "Guia de Grammar",
+        title: "Guía de Gramática",
         route: "/dashboard/graph/grammar",
         scopeSelector: '[data-help-surface="grammar-board"]',
         focusLesson: () => {
