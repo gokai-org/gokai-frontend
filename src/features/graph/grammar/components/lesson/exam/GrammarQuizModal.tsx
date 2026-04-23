@@ -511,7 +511,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
             <div className="kanji-detail-scroll h-full min-h-0 overflow-y-auto pr-1">
               {shouldShowUnlockedCompletion ? (
                 <UnlockedMasterySequence
-                  title="Dominaste esta lección de grammar"
+                  title="Dominaste esta lección de gramática"
                   subtitle={`${lesson.title} quedo completada con un resultado perfecto y desbloqueo ${displayedAwardedPoints} puntos nuevos.`}
                   score={finalScore}
                   symbol="文"

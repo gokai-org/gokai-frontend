@@ -22,6 +22,9 @@ interface LibraryGridProps {
   favoriteHiraganas: Set<string>;
   favoriteKatakanas: Set<string>;
   lockedKanjiIds?: Set<string>;
+  nextUnlockReadyKanjiId?: string | null;
+  unlockPendingKanjiId?: string | null;
+  currentKanjiPoints?: number;
   lockedHiraganaIds?: Set<string>;
   lockedKatakanaIds?: Set<string>;
   newlyUnlockedKanjiIds?: ReadonlySet<string>;
@@ -30,6 +33,7 @@ interface LibraryGridProps {
   toggleFavoriteHiragana: (id: string) => void;
   toggleFavoriteKatakana: (id: string) => void;
   onKanjiClick: (kanji: Kanji) => void;
+  onKanjiPressUnlock?: (kanjiId: string) => void;
   onKanaClick: (kana: Kana) => void;
   className?: string;
 }
@@ -40,6 +44,9 @@ export function LibraryGrid({
   favoriteHiraganas,
   favoriteKatakanas,
   lockedKanjiIds,
+  nextUnlockReadyKanjiId,
+  unlockPendingKanjiId,
+  currentKanjiPoints,
   lockedHiraganaIds,
   lockedKatakanaIds,
   newlyUnlockedKanjiIds,
@@ -48,6 +55,7 @@ export function LibraryGrid({
   toggleFavoriteHiragana,
   toggleFavoriteKatakana,
   onKanjiClick,
+  onKanjiPressUnlock,
   onKanaClick,
   className = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:gap-4 2xl:grid-cols-5",
 }: LibraryGridProps) {
@@ -106,8 +114,14 @@ export function LibraryGrid({
               )}
               index={i}
               locked={isLocked}
+              unlockReady={
+                isLocked && nextUnlockReadyKanjiId === item.data.id
+              }
+              unlockPending={unlockPendingKanjiId === item.data.id}
               unlocking={newlyUnlockedKanjiIds?.has(item.data.id) ?? false}
+              currentPoints={currentKanjiPoints}
               onClick={() => onKanjiClick(item.data)}
+              onPressUnlock={onKanjiPressUnlock}
               onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
             />
           );

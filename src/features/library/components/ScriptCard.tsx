@@ -3,7 +3,11 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useRef, useState, useCallback } from "react";
 import { LockKeyhole } from "lucide-react";
-import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import type {
+  KeyboardEvent as ReactKeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+  PointerEvent as ReactPointerEvent,
+} from "react";
 import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
 import {
   SCRIPT_CARD_CONFIG,
@@ -16,6 +20,7 @@ import type { MasteryModuleId } from "@/features/mastery/types";
 import { useShakeFeedback } from "@/shared/hooks/useShakeFeedback";
 
 const LOCKED_SHAKE_DURATION_MS = 580;
+const UNLOCK_HOLD_DURATION_MS = 720;
 
 // ─── Public API ───────────────────────────────────────────────────────────────
 
@@ -26,12 +31,16 @@ export interface ScriptCardProps {
   subtitle?: string;
   pointsBadge?: string;
   unlockPoints?: number;
+  currentPoints?: number;
   variant: ScriptVariant;
   index?: number;
   isFavorite?: boolean;
   locked?: boolean;
+  unlockReady?: boolean;
+  unlockPending?: boolean;
   unlocking?: boolean;
   onClick?: () => void;
+  onPressUnlock?: (id: string) => void;
   onFavoriteToggle?: (id: string) => void;
 }
 
@@ -47,8 +56,11 @@ export function ScriptCard({
   index = 0,
   isFavorite = false,
   locked = false,
+  unlockReady = false,
+  unlockPending = false,
   unlocking = false,
   onClick,
+  onPressUnlock,
   onFavoriteToggle,
 }: ScriptCardProps) {
   const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
@@ -74,11 +86,17 @@ export function ScriptCard({
       } as const)[variant];
   const unlockBadgeText = variant === "kanji" ? "+30" : "+5";
   const unlockSequenceDelay = animationsEnabled ? Math.min(index, 8) * 0.12 : 0;
+  const pressUnlockEnabled =
+    effectiveLocked && unlockReady && typeof onPressUnlock === "function";
+  const showLockedShakeFeedback = effectiveLocked && !pressUnlockEnabled;
 
   // ── Long-press to toggle favourite on mobile ──────────────────────────────
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const unlockHoldTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [longPressActive, setLongPressActive] = useState(false);
   const [didLongPress, setDidLongPress] = useState(false);
+  const [isHoldingUnlock, setIsHoldingUnlock] = useState(false);
+  const [didTriggerUnlockHold, setDidTriggerUnlockHold] = useState(false);
 
   const handleTouchStart = useCallback(() => {
     if (!onFavoriteToggle) return;
@@ -98,19 +116,80 @@ export function ScriptCard({
     }
   }, []);
 
-  const handleClick = useCallback(() => {
+  const clearUnlockHold = useCallback(() => {
+    if (unlockHoldTimer.current) {
+      clearTimeout(unlockHoldTimer.current);
+      unlockHoldTimer.current = null;
+    }
+  }, []);
+
+  const stopUnlockHold = useCallback(() => {
+    clearUnlockHold();
+    setIsHoldingUnlock(false);
+  }, [clearUnlockHold]);
+
+  const handleUnlockPointerDown = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (!pressUnlockEnabled || unlockPending) {
+        return;
+      }
+
+      setDidTriggerUnlockHold(false);
+      setIsHoldingUnlock(true);
+      clearUnlockHold();
+
+      unlockHoldTimer.current = setTimeout(() => {
+        setDidTriggerUnlockHold(true);
+        setIsHoldingUnlock(false);
+        onPressUnlock?.(id);
+        unlockHoldTimer.current = null;
+      }, UNLOCK_HOLD_DURATION_MS);
+
+      if (event.currentTarget.hasPointerCapture?.(event.pointerId) === false) {
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+      }
+    },
+    [clearUnlockHold, id, onPressUnlock, pressUnlockEnabled, unlockPending],
+  );
+
+  const handleUnlockPointerUp = useCallback(() => {
+    if (!pressUnlockEnabled) {
+      return;
+    }
+
+    stopUnlockHold();
+  }, [pressUnlockEnabled, stopUnlockHold]);
+
+  const handleUnlockPointerCancel = useCallback(() => {
+    if (!pressUnlockEnabled) {
+      return;
+    }
+
+    stopUnlockHold();
+  }, [pressUnlockEnabled, stopUnlockHold]);
+
+  const handleClick = useCallback((event?: ReactMouseEvent<HTMLDivElement>) => {
+    if (didTriggerUnlockHold) {
+      setDidTriggerUnlockHold(false);
+      event?.preventDefault();
+      event?.stopPropagation();
+      return;
+    }
+
     if (didLongPress) {
       setDidLongPress(false);
       return;
     }
 
     if (effectiveLocked) {
-      triggerShake(id);
+      if (showLockedShakeFeedback) {
+        triggerShake(id);
+      }
       return;
     }
 
     onClick?.();
-  }, [didLongPress, effectiveLocked, id, onClick, triggerShake]);
+  }, [didLongPress, didTriggerUnlockHold, effectiveLocked, id, onClick, showLockedShakeFeedback, triggerShake]);
 
   const handleKeyDown = useCallback(
     (event: ReactKeyboardEvent<HTMLDivElement>) => {
@@ -119,21 +198,30 @@ export function ScriptCard({
       }
 
       event.preventDefault();
+      if (pressUnlockEnabled) {
+        onPressUnlock?.(id);
+        return;
+      }
+
       handleClick();
     },
-    [handleClick],
+    [handleClick, id, onPressUnlock, pressUnlockEnabled],
   );
   // ─────────────────────────────────────────────────────────────────────────
 
   const isLockedShakeActive = shakingKey === id;
   const isInteractive = Boolean(onClick) || effectiveLocked;
+  const unlockHoldVisualActive = isHoldingUnlock || unlockPending;
 
   const cardClassName = [
     "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] text-left",
     "min-h-[190px] select-none",
     effectiveLocked
       ? [
-          "items-center justify-center bg-surface-tertiary dark:bg-[#1a181c] border border-border-default/70 dark:border-white/[0.05] p-4",
+          "items-center justify-center border border-border-default/70 bg-surface-tertiary p-4 dark:border-white/[0.05] dark:bg-[#1a181c]",
+          pressUnlockEnabled
+            ? "shadow-[0_0_0_1px_rgba(186,72,69,0.14),0_10px_28px_-14px_rgba(186,72,69,0.62)]"
+            : "",
           isInteractive
             ? `cursor-pointer focus:outline-none focus-visible:ring-2 ${config.ring}`
             : "cursor-default",
@@ -151,6 +239,9 @@ export function ScriptCard({
           .join(" "),
     cardTransition,
     longPressActive ? `ring-2 ${config.ring} scale-[0.97]` : "",
+        pressUnlockEnabled && !unlockPending ? "kanji-library-unlock-ready" : "",
+        unlockHoldVisualActive ? "kanji-library-unlock-hold" : "",
+        unlocking ? "gokai-unlock-burst" : "",
     isLockedShakeActive ? "grammar-board-cell-shaking" : "",
   ]
     .filter(Boolean)
@@ -195,21 +286,21 @@ export function ScriptCard({
 
   // ── Minimal locked layout (board-node style) ─────────────────────────────
   const lockedContent = effectiveLocked ? (
-    <div className="flex flex-col items-center gap-3">
+    <div className="relative z-10 flex flex-col items-center gap-3">
       {/* Dimmed symbol shape */}
       {config.symbolShape === "circle" && (
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-tertiary/80 dark:bg-white/[0.06] text-[26px] font-black text-content-muted/60 dark:text-white/25 select-none">
+        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-tertiary/80 text-[26px] font-black text-content-muted/60 select-none dark:bg-white/[0.06] dark:text-white/25">
           {symbol}
         </div>
       )}
       {config.symbolShape === "mahjong" && (
-        <div className="flex h-[56px] w-[44px] items-center justify-center rounded-xl bg-surface-tertiary/80 dark:bg-white/[0.06] text-[24px] font-black text-content-muted/60 dark:text-white/25 select-none">
+        <div className="flex h-[56px] w-[44px] items-center justify-center rounded-xl bg-surface-tertiary/80 text-[24px] font-black text-content-muted/60 select-none dark:bg-white/[0.06] dark:text-white/25">
           {symbol}
         </div>
       )}
       {config.symbolShape === "shogi" && (
         <div
-          className="relative flex h-[56px] w-[44px] items-center justify-center bg-surface-tertiary/80 dark:bg-white/[0.06] text-[24px] font-black text-content-muted/60 dark:text-white/25 select-none"
+          className="relative flex h-[56px] w-[44px] items-center justify-center bg-surface-tertiary/80 text-[24px] font-black text-content-muted/60 select-none dark:bg-white/[0.06] dark:text-white/25"
           style={{
             clipPath: "path('M 18 3 Q 22 0 26 3 L 40 15 Q 44 18 44 23 L 44 50 Q 44 56 38 56 L 6 56 Q 0 56 0 50 L 0 23 Q 0 18 4 15 Z')",
           }}
@@ -328,13 +419,37 @@ export function ScriptCard({
       tabIndex={0}
       onClick={effectiveOnClick}
       onKeyDown={handleKeyDown}
+      onPointerDown={pressUnlockEnabled ? handleUnlockPointerDown : undefined}
+      onPointerUp={pressUnlockEnabled ? handleUnlockPointerUp : undefined}
+      onPointerCancel={pressUnlockEnabled ? handleUnlockPointerCancel : undefined}
+      onPointerLeave={pressUnlockEnabled ? handleUnlockPointerCancel : undefined}
       onTouchStart={effectiveLocked ? undefined : handleTouchStart}
       onTouchEnd={effectiveLocked ? undefined : cancelLongPress}
       onTouchMove={effectiveLocked ? undefined : cancelLongPress}
       onContextMenu={(e) => e.preventDefault()}
-      style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
+      style={{ WebkitTouchCallout: "none", touchAction: pressUnlockEnabled ? "none" : undefined } as React.CSSProperties}
       className={cardClassName}
     >
+      {pressUnlockEnabled ? (
+        <>
+          <div
+            className={`pointer-events-none absolute inset-0 z-[1] rounded-[24px] bg-[linear-gradient(135deg,rgba(153,51,49,0.08),rgba(186,81,73,0.18),rgba(255,255,255,0.04))] transition-opacity duration-200 ${unlockHoldVisualActive ? "opacity-100" : "opacity-0"}`}
+          />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1.5 overflow-hidden rounded-b-[24px] bg-black/6 dark:bg-white/8">
+            <div
+              className={`h-full origin-left rounded-full bg-gradient-to-r from-[#993331] via-[#C5544D] to-[#BA4845] shadow-[0_0_16px_rgba(153,51,49,0.28)] ${unlockPending ? "animate-pulse" : ""}`}
+              style={{
+                transform: `scaleX(${unlockPending ? 1 : unlockHoldVisualActive ? 1 : 0})`,
+                transition: unlockPending
+                  ? "transform 120ms ease-out"
+                  : isHoldingUnlock
+                    ? `transform ${UNLOCK_HOLD_DURATION_MS}ms linear`
+                    : "transform 140ms ease-out",
+              }}
+            />
+          </div>
+        </>
+      ) : null}
       {favoriteOverlay}
       {unlockingOverlay}
       {lockedContent}
@@ -342,13 +457,37 @@ export function ScriptCard({
     </div>
   ) : (
     <div
+      onPointerDown={pressUnlockEnabled ? handleUnlockPointerDown : undefined}
+      onPointerUp={pressUnlockEnabled ? handleUnlockPointerUp : undefined}
+      onPointerCancel={pressUnlockEnabled ? handleUnlockPointerCancel : undefined}
+      onPointerLeave={pressUnlockEnabled ? handleUnlockPointerCancel : undefined}
       onTouchStart={effectiveLocked ? undefined : handleTouchStart}
       onTouchEnd={effectiveLocked ? undefined : cancelLongPress}
       onTouchMove={effectiveLocked ? undefined : cancelLongPress}
       onContextMenu={(e) => e.preventDefault()}
-      style={{ WebkitTouchCallout: "none" } as React.CSSProperties}
+      style={{ WebkitTouchCallout: "none", touchAction: pressUnlockEnabled ? "none" : undefined } as React.CSSProperties}
       className={cardClassName}
     >
+      {pressUnlockEnabled ? (
+        <>
+          <div
+            className={`pointer-events-none absolute inset-0 z-[1] rounded-[24px] bg-[linear-gradient(135deg,rgba(153,51,49,0.08),rgba(186,81,73,0.18),rgba(255,255,255,0.04))] transition-opacity duration-200 ${unlockHoldVisualActive ? "opacity-100" : "opacity-0"}`}
+          />
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1.5 overflow-hidden rounded-b-[24px] bg-black/6 dark:bg-white/8">
+            <div
+              className={`h-full origin-left rounded-full bg-gradient-to-r from-[#993331] via-[#C5544D] to-[#BA4845] shadow-[0_0_16px_rgba(153,51,49,0.28)] ${unlockPending ? "animate-pulse" : ""}`}
+              style={{
+                transform: `scaleX(${unlockPending ? 1 : unlockHoldVisualActive ? 1 : 0})`,
+                transition: unlockPending
+                  ? "transform 120ms ease-out"
+                  : isHoldingUnlock
+                    ? `transform ${UNLOCK_HOLD_DURATION_MS}ms linear`
+                    : "transform 140ms ease-out",
+              }}
+            />
+          </div>
+        </>
+      ) : null}
       {favoriteOverlay}
       {unlockingOverlay}
       {lockedContent}

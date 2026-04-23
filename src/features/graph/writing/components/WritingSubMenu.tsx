@@ -116,23 +116,33 @@ function WritingTabIcon({
 interface WritingSubMenuProps {
   activeTab: WritingTab | null;
   onTabChange: (tab: WritingTab) => void;
+  anchorBottom?: boolean;
 }
 
 export default function WritingSubMenu({
   activeTab,
   onTabChange,
+  anchorBottom = false,
 }: WritingSubMenuProps) {
   const mastered = useMasteredModules();
+  const verticalOffset = anchorBottom ? 8 : -8;
 
   return (
     <div
       data-help-target="writing-script-tabs"
-      className="fixed top-[68px] sm:top-[80px] md:top-[84px] left-1/2 -translate-x-1/2 z-40 pointer-events-none"
+      className={`fixed left-1/2 -translate-x-1/2 z-40 pointer-events-none ${
+        anchorBottom ? "bottom-0" : "top-[68px] sm:top-[80px] md:top-[84px]"
+      }`}
+      style={
+        anchorBottom
+          ? { bottom: "calc(env(safe-area-inset-bottom, 0px) + 5.85rem)" }
+          : undefined
+      }
     >
       <motion.div
-        initial={{ y: -8, opacity: 0 }}
+        initial={{ y: verticalOffset, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: -8, opacity: 0, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } }}
+        exit={{ y: verticalOffset, opacity: 0, transition: { duration: 0.16, ease: [0.4, 0, 1, 1] } }}
         transition={{ delay: 0.12, duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
         className="pointer-events-auto flex items-center gap-4 sm:gap-5 md:gap-6 rounded-2xl bg-surface-primary/60 backdrop-blur-xl px-4 py-3 sm:px-5 sm:py-3 md:px-6 md:py-3.5 shadow-[0_2px_16px_rgba(0,0,0,0.08)]"
       >

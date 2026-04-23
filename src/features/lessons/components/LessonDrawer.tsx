@@ -180,7 +180,7 @@ export default function LessonDrawer({
       return {
         title: "Gramática",
         subtitle: "Mejora tu japonés paso a paso",
-        pill: "Grammar",
+        pill: "Gramática",
       };
     }
 

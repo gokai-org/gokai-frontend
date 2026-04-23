@@ -56,10 +56,10 @@ export function resolveGrammarBoardZoomTransform(
   options?: GrammarBoardZoomOptions,
 ): GrammarBoardZoomTransform {
   const portrait = options?.portrait ?? false;
-  // On portrait the board has extra top padding (navbar clearance).
-  // Shift the zoom focal point slightly below the geometric center so the
-  // zoomed cell sits in the visual centre of the board area.
-  const vertCenterRatio = portrait ? 0.53 : 0.5;
+  // On portrait the board now reserves more space near the bottom docked nav.
+  // Shift the zoom focal point slightly above the geometric center so the
+  // zoomed cell sits in the visible centre of the board area.
+  const vertCenterRatio = portrait ? 0.49 : 0.5;
   if (viewport.width <= 0 || viewport.height <= 0) {
     return {
       x: 0,

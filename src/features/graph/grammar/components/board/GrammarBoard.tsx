@@ -296,15 +296,18 @@ export function GrammarBoard({
           paddingBottom: isTinyPortrait ? "0.35rem" : "0.5rem",
         }
       : {
-        // Keep enough clearance for the fixed nav while preserving more room on tiny phones.
+        // Portrait now docks graph navigation at the bottom, so the board needs
+        // less top clearance and a moderate bottom safe area.
         paddingTop: isTinyPortrait
-          ? "calc(env(safe-area-inset-top, 0px) + 3.35rem)"
+          ? "calc(env(safe-area-inset-top, 0px) + 1rem)"
           : isCompactPortrait
-            ? "calc(env(safe-area-inset-top, 0px) + 3.5rem)"
-            : "calc(env(safe-area-inset-top, 0px) + 3.75rem)",
+            ? "calc(env(safe-area-inset-top, 0px) + 1.15rem)"
+            : "calc(env(safe-area-inset-top, 0px) + 1.35rem)",
         paddingBottom: isTinyPortrait
-          ? "max(0.5rem, env(safe-area-inset-bottom, 0px))"
-          : "max(0.75rem, env(safe-area-inset-bottom, 0px))",
+          ? "calc(env(safe-area-inset-bottom, 0px) + 3.85rem)"
+          : isCompactPortrait
+            ? "calc(env(safe-area-inset-bottom, 0px) + 4.1rem)"
+            : "calc(env(safe-area-inset-bottom, 0px) + 4.35rem)",
       }
     : undefined;
 

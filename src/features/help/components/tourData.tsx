@@ -358,7 +358,7 @@ export const tourDefinitions: TourDefinition[] = [
   },
   createGrammarBoardContextTour({
     id: "grammar-board-guide",
-    title: "Guia de Grammar",
+    title: "Guía de Gramática",
     route: "/dashboard/graph/grammar",
     scopeSelector: '[data-help-surface="grammar-board"]',
     focusLesson: () => {

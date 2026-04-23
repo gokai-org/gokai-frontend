@@ -232,7 +232,7 @@ export function createGrammarBoardContextTour({
     {
       title: "Acciones de práctica",
       description:
-        "Desde aquí puedes lanzar el examen de grammar cuando la lección tenga ejercicios disponibles.",
+        "Desde aquí puedes lanzar el examen de gramática cuando la lección tenga ejercicios disponibles.",
       icon: <Sparkles className="h-6 w-6" />,
       selector:
         `${scopeSelector} [data-help-target="grammar-lesson-exam"], ` +
