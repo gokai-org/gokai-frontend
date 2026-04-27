@@ -3,8 +3,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { listKanjis } from "@/features/kanji/api/kanjiApi";
 import type { Kanji } from "@/features/kanji/types";
 
-import { getStatsOverview } from "@/features/stats/services/api";
-import type { OverviewStatsResponse } from "@/features/stats/types";
+import {
+  getStatsOverview,
+  getStatsRecentActivity,
+} from "@/features/stats/services/api";
+import type {
+  OverviewStatsResponse,
+  RecentActivityEntry,
+} from "@/features/stats/types";
 import type { ReviewItem } from "../types";
 import { buildReviewItems } from "../utils/reviewMappers";
 
@@ -13,6 +19,9 @@ export function useReviewPageData() {
   const [reviewStats, setReviewStats] = useState<OverviewStatsResponse | null>(
     null,
   );
+  const [recentActivity, setRecentActivity] = useState<RecentActivityEntry[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [practiceKanji, setPracticeKanji] = useState<Kanji | null>(null);
@@ -20,8 +29,12 @@ export function useReviewPageData() {
   useEffect(() => {
     let cancelled = false;
 
-    Promise.allSettled([listKanjis(), getStatsOverview()]).then(
-      ([kanjisResult, statsResult]) => {
+    Promise.allSettled([
+      listKanjis(),
+      getStatsOverview(),
+      getStatsRecentActivity(),
+    ]).then(
+      ([kanjisResult, statsResult, recentActivityResult]) => {
         if (cancelled) return;
 
         if (kanjisResult.status === "fulfilled") {
@@ -34,6 +47,10 @@ export function useReviewPageData() {
 
         if (statsResult.status === "fulfilled") {
           setReviewStats(statsResult.value);
+        }
+
+        if (recentActivityResult.status === "fulfilled") {
+          setRecentActivity(recentActivityResult.value.activities ?? []);
         }
 
         setLoading(false);
@@ -63,6 +80,7 @@ export function useReviewPageData() {
     error,
     reviewItems,
     reviewStats,
+    recentActivity,
     practiceKanji,
     setPracticeKanji,
     handleStartReview,
