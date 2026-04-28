@@ -613,6 +613,7 @@ function GrammarBoardCellComponent({
   const isUnlockReadyCell =
     isLockedCell && progress.canUnlock;
   const pressUnlockEnabled = isUnlockReadyCell && typeof onPressUnlock === "function";
+  const unlockCost = Math.max(0, progress.pointsToUnlock ?? progress.unlockCost ?? 0);
   const panelKind = getPanelKind(layout);
   const variant = getCardVariant(cell);
   const shellClass = getShellClass(cell);
@@ -849,8 +850,13 @@ function GrammarBoardCellComponent({
           className={`relative z-10 flex h-full ${isLockedCell ? "items-center justify-center p-4" : `items-end justify-start ${getContentPaddingClass(panelKind, isCompactPortrait, isTinyPortrait)}`}`}
         >
           {isLockedCell ? (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white/72 text-content-muted/70 shadow-[0_10px_24px_rgba(0,0,0,0.12)] backdrop-blur-[2px] dark:border-white/10 dark:bg-white/[0.06] dark:text-white/30">
-              <LockKeyhole className="h-4.5 w-4.5" strokeWidth={2.1} />
+            <div className="flex flex-col items-center justify-center gap-1.5">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white/72 text-content-muted/70 shadow-[0_10px_24px_rgba(0,0,0,0.12)] backdrop-blur-[2px] dark:border-white/10 dark:bg-white/[0.06] dark:text-white/30">
+                <LockKeyhole className="h-4.5 w-4.5" strokeWidth={2.1} />
+              </div>
+              <span className="rounded-full border border-black/8 bg-white/72 px-2 py-[2px] text-[9px] font-black leading-none text-content-muted/70 shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-white/35">
+                {unlockCost} pts
+              </span>
             </div>
           ) : (
             <div className={`min-w-0 ${getContentWidthClass(panelKind)}`}>

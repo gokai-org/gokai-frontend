@@ -9,7 +9,7 @@ import type {
   UserKanaProgressDetailedResponse,
 } from "@/features/kana/types";
 
-export const LIBRARY_CONTENT_CACHE_KEY = "gokai.library.content-cache";
+export const LIBRARY_CONTENT_CACHE_KEY = "gokai.library.content-cache:v3-fixed-cost";
 export const LIBRARY_KANA_STATUS_CACHE_KEY = "gokai.library.kana-status";
 export const LIBRARY_KANJI_STATUS_CACHE_KEY = "gokai.library.kanji-status";
 export const KANA_USER_CACHE_KEY = "gokai.writing.kana.user-id";

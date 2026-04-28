@@ -10,11 +10,12 @@ import type {
 const KANJI_CONTENT_CACHE_TTL_MS = 1000 * 60 * 10;
 const KANJI_RESULTS_CACHE_TTL_MS = 30_000;
 const KANJI_PROGRESS_CACHE_TTL_MS = 15_000;
+export const KANJI_CONTENT_API_CACHE_KEY = "/api/content/kanji:v3-fixed-cost";
 
 export function listKanjis() {
   return apiFetch<Kanji[]>("/api/content/kanji", { cache: "no-store" }, {
-    dedupeKey: "/api/content/kanji",
-    cacheKey: "/api/content/kanji",
+    dedupeKey: KANJI_CONTENT_API_CACHE_KEY,
+    cacheKey: KANJI_CONTENT_API_CACHE_KEY,
     cacheTtlMs: KANJI_CONTENT_CACHE_TTL_MS,
   });
 }

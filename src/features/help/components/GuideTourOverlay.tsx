@@ -52,7 +52,8 @@ export function GuideTourOverlay() {
   const isFirst = currentStep === 0;
   const isLast = currentStep === totalSteps - 1;
   const progress = totalSteps > 0 ? ((currentStep + 1) / totalSteps) * 100 : 0;
-  const canAdvance = !!activeTour && !!step && stepReady;
+  const stepHasTarget = Boolean(step?.selector);
+  const canAdvance = !!activeTour && !!step && (!stepHasTarget || stepReady);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -116,6 +117,10 @@ export function GuideTourOverlay() {
       return;
     }
 
+    if (!step.selector) {
+      return;
+    }
+
     let frameId: number | null = null;
 
     const updateStepReady = () => {
@@ -171,7 +176,7 @@ export function GuideTourOverlay() {
     const timeoutIds: Array<ReturnType<typeof setTimeout>> = [];
 
     const measure = () => {
-      const target = resolveGuideTarget(selector);
+      const target = resolveGuideTarget(selector, { includeOffscreen: true });
 
       if (!target) {
         setTargetRect(null);
@@ -219,7 +224,7 @@ export function GuideTourOverlay() {
         return;
       }
 
-      const target = resolveGuideTarget(selector);
+      const target = resolveGuideTarget(selector, { includeOffscreen: true });
 
       target?.scrollIntoView({
         block: "center",

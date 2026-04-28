@@ -12,6 +12,7 @@ import { LoginForm } from "@/features/auth/components/forms/LoginForm";
 import { RegisterForm } from "@/features/auth/components/forms/RegisterForm";
 import { RegisterVerifyForm } from "@/features/auth/components/forms/RegisterVerifyForm";
 import { ForgotPasswordFlow } from "@/features/auth/components/forms/ForgotPasswordFlow";
+import { markFirstRunOnboardingPending } from "@/features/help/utils/firstRunOnboardingState";
 
 const HERO_MESSAGES = [
   {
@@ -281,6 +282,7 @@ export default function LoginPage() {
         }
 
         toast.success("¡Cuenta creada exitosamente!");
+        markFirstRunOnboardingPending();
         window.location.replace(getPostRegisterDestination());
         return;
       }
@@ -409,6 +411,7 @@ export default function LoginPage() {
         return;
       }
 
+      markFirstRunOnboardingPending();
       window.location.replace(getPostRegisterDestination());
     } catch (err) {
       const error = err instanceof Error ? err : new Error("Error desconocido");

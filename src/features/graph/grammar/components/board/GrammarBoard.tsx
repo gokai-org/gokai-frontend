@@ -16,7 +16,7 @@ import { createGrammarBoardViewModel } from "../../lib/grammarBoardLayout";
 import { GRAMMAR_SUGOROKU_SLOTS_VERTICAL } from "../../constants/grammarBoard";
 
 const BOARD_EASE = [0.22, 1, 0.36, 1] as const;
-type GrammarBoardTransitionState = "idle" | "zooming-in" | "hidden" | "zooming-out";
+type GrammarBoardTransitionState = "idle" | "tour-focus" | "zooming-in" | "hidden" | "zooming-out";
 
 type GrammarBoardLoadStatus = "idle" | "loading" | "error" | "success";
 
@@ -110,10 +110,13 @@ export function GrammarBoard({
       resolveGrammarBoardZoomTransform(
         focusCell,
         viewportSize,
-        focusLessonId ? focusTargetRect : null,
+        focusLessonId &&
+          (transitionState === "zooming-in" || transitionState === "hidden")
+          ? focusTargetRect
+          : null,
         { portrait: isPortrait },
       ),
-    [focusCell, focusLessonId, focusTargetRect, viewportSize, isPortrait],
+    [focusCell, focusLessonId, focusTargetRect, isPortrait, transitionState, viewportSize],
   );
 
   const entranceMode = platformMotion.entranceMode;
@@ -205,6 +208,37 @@ export function GrammarBoard({
       };
     }
 
+    if (
+      transitionState === "tour-focus" &&
+      viewportSize.width > 0 &&
+      viewportSize.height > 0 &&
+      focusCell
+    ) {
+      const tourScale = Math.min(
+        effectiveZoomScale,
+        isPortrait ? 2.15 : 2.35,
+      );
+      const scaleRatio =
+        zoomTransform.scale > 1
+          ? (tourScale - 1) / Math.max(zoomTransform.scale - 1, 0.001)
+          : 0;
+
+      return {
+        x: zoomTransform.x * scaleRatio,
+        y: zoomTransform.y * scaleRatio,
+        scale: tourScale,
+        opacity: 1,
+        filter: "blur(0px) saturate(1)",
+        transition: {
+          x: { duration: Math.max(0.42, boardZoomDuration * 1.1), ease: BOARD_EASE },
+          y: { duration: Math.max(0.42, boardZoomDuration * 1.1), ease: BOARD_EASE },
+          scale: { duration: Math.max(0.42, boardZoomDuration * 1.1), ease: BOARD_EASE },
+          opacity: { duration: 0.18, ease: "easeOut" },
+          filter: { duration: 0.18, ease: "easeOut" },
+        },
+      };
+    }
+
     // Tablero invisible y congelado en posición zoom mientras la lección está abierta
     if (transitionState === "hidden") {
       return {
@@ -254,9 +288,12 @@ export function GrammarBoard({
     boardZoomDuration,
     boardZoomOutDuration,
     effectiveZoomScale,
+    focusCell,
+    isPortrait,
     transitionState,
     viewportSize.height,
     viewportSize.width,
+    zoomTransform.scale,
     zoomTransform.x,
     zoomTransform.y,
   ]);
@@ -354,7 +391,8 @@ export function GrammarBoard({
               : false
           }
           animate={
-            shouldAnimateBoardReveal && transitionState === "idle"
+            shouldAnimateBoardReveal &&
+            (transitionState === "idle" || transitionState === "tour-focus")
               ? {
                   opacity: 1,
                   y: 0,

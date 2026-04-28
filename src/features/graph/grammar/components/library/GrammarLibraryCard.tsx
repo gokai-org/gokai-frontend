@@ -196,6 +196,7 @@ export function GrammarLibraryCard({
   const isLockedCard = lesson.status === "locked" && !isComingSoon;
   const pressUnlockEnabled = isLockedCard && lesson.canUnlock && typeof onPressUnlock === "function";
   const showLockedIndicator = isLockedCard && !lesson.canUnlock;
+  const unlockCost = Math.max(0, lesson.pointsToUnlock ?? lesson.unlockCost ?? 0);
   const variant = getCardVariant(lesson);
   const artworkPalette = ARTWORK_PALETTE_CLASSES[variant.artTone];
   const primaryArtworkStyle = getArtworkLayerStyle(lesson, "primary");
@@ -419,11 +420,11 @@ export function GrammarLibraryCard({
 
           <div className="relative z-10 flex h-full flex-col justify-end">
             {showLockedIndicator ? (
-              <div className="flex h-full items-center justify-center">
-                <LockKeyhole
-                  className="h-5 w-5 text-content-muted/60 dark:text-white/30"
-                  strokeWidth={2.1}
-                />
+              <div className="flex h-full flex-col items-center justify-center gap-2">
+                <LockKeyhole className="h-5 w-5 text-content-muted/60 dark:text-white/30" strokeWidth={2.1} />
+                <span className="rounded-full border border-border-subtle bg-surface-primary/70 px-2 py-[3px] text-[10px] font-black leading-none text-content-muted shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-white/35">
+                  {unlockCost} pts
+                </span>
               </div>
             ) : (
               <div className="max-w-[78%]">

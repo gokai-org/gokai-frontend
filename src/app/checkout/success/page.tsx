@@ -26,13 +26,6 @@ const UNLOCKED_FEATURES = [
   { icon: Zap, label: "Acceso anticipado" },
 ];
 
-const INTEREST_ONBOARDING_HINTS = [
-  "Anime y manga",
-  "Tecnología",
-  "Viajes",
-  "Vida diaria",
-];
-
 type Phase = "unlocking" | "features" | "interests" | "ready";
 
 function FloatingParticles() {
@@ -131,7 +124,7 @@ function CheckoutSuccessPageContent() {
 
   function handleContinue() {
     const destination = isPremiumOnboardingFlow
-      ? "/onboarding/interests"
+      ? "/onboarding/interests?plan=premium"
       : "/dashboard/graph";
 
     window.location.replace(destination);
@@ -624,7 +617,7 @@ function CheckoutSuccessPageContent() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.35, duration: 1 }}
               >
-                Personalizacion inicial
+                Personalización inicial
               </motion.span>
 
               <motion.h1
@@ -633,7 +626,7 @@ function CheckoutSuccessPageContent() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.55, duration: 1.1 }}
               >
-                Ahora vamos a elegir tus intereses principales
+                Elige tus intereses principales
               </motion.h1>
 
               <motion.p
@@ -642,9 +635,9 @@ function CheckoutSuccessPageContent() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.9, duration: 1.3 }}
               >
-                Antes de entrar a GOKAI+, personalizaremos tu experiencia con
-                el mismo onboarding de intereses para adaptar mejor tu contenido
-                y tus recomendaciones.
+                Personalizaremos tu experiencia en GOKAI según los temas que
+                más te interesan. Podrás explorar muchos más contenidos dentro
+                de la plataforma.
               </motion.p>
 
               <motion.button
@@ -669,7 +662,7 @@ function CheckoutSuccessPageContent() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.8, duration: 1 }}
               >
-                Continuaras con el onboarding antes de entrar al dashboard
+                Continuarás con la configuración antes de entrar al dashboard
               </motion.p>
             </motion.div>
           )}

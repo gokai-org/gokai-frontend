@@ -1,5 +1,6 @@
 import { GRAMMAR_BOARD_TOTAL } from "../constants/grammarBoard";
 import { MOCK_GRAMMAR_LESSONS } from "../data/mockLessons";
+import { FIXED_GRAMMAR_UNLOCK_COST } from "@/shared/config/unlockCosts";
 import type {
   GrammarBoardProgress,
   GrammarBoardStats,
@@ -95,7 +96,7 @@ export function buildGrammarBoardItems(
         index,
         symbol: extractLessonSymbol(lesson, index),
         title: lesson.title,
-        pointsToUnlock: lesson.pointsToUnlock ?? 0,
+        pointsToUnlock: FIXED_GRAMMAR_UNLOCK_COST,
         status: hasUnlockContext
           ? unlockState.completedIds.has(lesson.id)
             ? "completed"
@@ -110,7 +111,7 @@ export function buildGrammarBoardItems(
         canUnlock:
           unlockState.nextUnlockCandidateId === lesson.id &&
           unlockState.canUnlockNext,
-        unlockCost: lesson.pointsToUnlock ?? 0,
+        unlockCost: FIXED_GRAMMAR_UNLOCK_COST,
       });
       continue;
     }
@@ -124,7 +125,7 @@ export function buildGrammarBoardItems(
       index,
       symbol: extractLessonSymbol(fallbackLesson, index),
       title: fallbackLesson.title,
-      pointsToUnlock: fallbackLesson.pointsToUnlock ?? index * 30,
+      pointsToUnlock: FIXED_GRAMMAR_UNLOCK_COST,
       status: "locked",
       isMock: true,
       isCurrent: false,

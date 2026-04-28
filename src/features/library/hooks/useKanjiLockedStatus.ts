@@ -3,8 +3,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Kanji } from "@/features/kanji/types";
 import type { KanjiLessonResult, KanjiStudyProgress } from "@/features/kanji/types";
-import { getKanjiLessonResults, getKanjiProgress } from "@/features/kanji/api/kanjiApi";
+import {
+  getKanjiLessonResults,
+  getKanjiProgress,
+  KANJI_CONTENT_API_CACHE_KEY,
+} from "@/features/kanji/api/kanjiApi";
 import { getCurrentUser } from "@/features/auth";
+import { invalidateApiCache } from "@/shared/lib/api/client";
 import { resolveKanjiUnlockState } from "@/features/kanji/lib/kanjiUnlockState";
 import { subscribeMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import {
@@ -217,6 +222,40 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
     [unlockState.completedIds],
   );
 
+  const applyOptimisticUnlock = useCallback(
+    (kanjiId: string, nextUserPoints?: number) => {
+      const kanji = kanjis.find((item) => item.id === kanjiId) ?? null;
+      const nextProgress: KanjiStudyProgress = {
+        kanjiId,
+        symbol: kanji?.symbol ?? "",
+        pointsToUnlock: kanji?.pointsToUnlock ?? 0,
+        exerciseType: progressRef.current?.exerciseType ?? "kanji",
+        completed: false,
+      };
+
+      progressRef.current = nextProgress;
+      setProgress(nextProgress);
+      invalidateApiCache("/api/content/kanji/progress");
+      invalidateApiCache(KANJI_CONTENT_API_CACHE_KEY);
+      invalidateApiCache("/api/content/kanji");
+
+      const resolvedUserPoints =
+        typeof nextUserPoints === "number"
+          ? applyUserPoints(nextUserPoints, activeUserIdRef.current, {
+              optimistic: true,
+            })
+          : userPoints;
+
+      persistStatusCache(
+        activeUserIdRef.current,
+        resolvedUserPoints,
+        resultsRef.current,
+        nextProgress,
+      );
+    },
+    [applyUserPoints, kanjis, persistStatusCache, userPoints],
+  );
+
   return {
     lockedKanjiIds,
     completedKanjiIds,
@@ -228,5 +267,6 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
     loading,
     hasResolvedInitialStatus,
     reload: fetchPoints,
+    applyOptimisticUnlock,
   };
 }

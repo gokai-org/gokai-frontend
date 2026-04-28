@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 import { apiConfig } from "@/shared/config";
+import { normalizeKanjiCatalogUnlockCosts } from "./kanjiUnlockCosts";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +21,10 @@ export async function GET(req: NextRequest) {
   });
 
   const data = await upstream.json().catch(() => ({}));
-  return NextResponse.json(data, { status: upstream.status });
+  const normalizedData = Array.isArray(data)
+    ? normalizeKanjiCatalogUnlockCosts(data)
+    : data;
+  return NextResponse.json(normalizedData, { status: upstream.status });
 }
 
 export async function POST(req: NextRequest) {

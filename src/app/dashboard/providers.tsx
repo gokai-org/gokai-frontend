@@ -5,6 +5,7 @@ import { SidebarProvider } from "@/shared/components/SidebarContext";
 import { ToastProvider } from "@/shared/ui/ToastProvider";
 import { GuideTourProvider } from "@/features/help/components/GuideTourProvider";
 import { GuideTourOverlay } from "@/features/help/components/GuideTourOverlay";
+import { FirstRunOnboarding } from "@/features/help/utils/firstRunOnboarding";
 import { SettingsBootstrap } from "@/features/configuration/components/SettingsBootstrap";
 import { TypographyProvider } from "@/shared/components/TypographyProvider";
 import { MasteredModulesProvider } from "@/features/mastery/components/MasteredModulesProvider";
@@ -21,6 +22,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
               <MasteredModulesProvider>
                 <SettingsBootstrap />
                 <ProgressBootstrap />
+                <FirstRunOnboarding />
                 {children}
                 <GuideTourOverlay />
               </MasteredModulesProvider>

@@ -65,11 +65,13 @@ export default function Page() {
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
-          <NoticesBanner
-            totalCount={notices.length}
-            unreadCount={unreadCount}
-            pinnedCount={pinnedCount}
-          />
+          <div data-help-target="notices-banner">
+            <NoticesBanner
+              totalCount={notices.length}
+              unreadCount={unreadCount}
+              pinnedCount={pinnedCount}
+            />
+          </div>
         </AnimatedEntrance>
 
         <AnimatedEntrance
@@ -77,7 +79,10 @@ export default function Page() {
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
+          <div
+            data-help-target="notices-tools"
+            className="flex flex-col items-start gap-4 sm:flex-row sm:items-center"
+          >
             <NoticeSearchBar value={searchQuery} onChange={setSearchQuery} />
             <NoticeToolbar
               showUnreadOnly={showUnreadOnly}
@@ -93,11 +98,13 @@ export default function Page() {
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
-          <NoticeCategoryFilter
-            categories={categories}
-            selectedCategory={selectedCategory}
-            onSelectCategory={setSelectedCategory}
-          />
+          <div data-help-target="notices-categories">
+            <NoticeCategoryFilter
+              categories={categories}
+              selectedCategory={selectedCategory}
+              onSelectCategory={setSelectedCategory}
+            />
+          </div>
         </AnimatedEntrance>
 
         <AnimatedEntrance
@@ -105,17 +112,19 @@ export default function Page() {
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
-          <NoticeList
-            notices={filteredNotices}
-            searchQuery={searchQuery}
-            showUnreadOnly={showUnreadOnly}
-            onReset={resetFilters}
-            onToggleRead={toggleRead}
-            onTogglePin={togglePin}
-            onDelete={deleteNotice}
-            animationsEnabled={animationsEnabled}
-            heavyAnimationsEnabled={heavyAnimationsEnabled}
-          />
+          <div data-help-target="notices-list">
+            <NoticeList
+              notices={filteredNotices}
+              searchQuery={searchQuery}
+              showUnreadOnly={showUnreadOnly}
+              onReset={resetFilters}
+              onToggleRead={toggleRead}
+              onTogglePin={togglePin}
+              onDelete={deleteNotice}
+              animationsEnabled={animationsEnabled}
+              heavyAnimationsEnabled={heavyAnimationsEnabled}
+            />
+          </div>
         </AnimatedEntrance>
 
         <AnimatedEntrance
@@ -123,7 +132,9 @@ export default function Page() {
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
-          <NoticeFooterCTA />
+          <div data-help-target="notices-footer">
+            <NoticeFooterCTA />
+          </div>
         </AnimatedEntrance>
       </div>
     </DashboardShell>

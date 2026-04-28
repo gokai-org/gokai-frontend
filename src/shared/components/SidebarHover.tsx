@@ -5,6 +5,8 @@ import { motion, AnimatePresence, MotionConfig, animate, useMotionValue } from "
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { FIRST_RUN_SIDEBAR_PREVIEW_EVENT } from "@/features/help/utils/guideEvents";
+import { clearFirstRunOnboardingSession } from "@/features/help/utils/firstRunOnboardingState";
 
 type ItemKey =
   | "mapa"
@@ -55,6 +57,7 @@ export default function SidebarOnly() {
   const { setExpanded, hidden: sidebarHidden, blurred: sidebarBlurred } = useSidebar();
   const [hovered, setHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [guideExpanded, setGuideExpanded] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 16, y: 16 });
   const [isDragging, setIsDragging] = useState(false);
   const [wasDragged, setWasDragged] = useState(false);
@@ -155,6 +158,7 @@ export default function SidebarOnly() {
 
       try {
         await fetch("/api/auth/logout", { method: "POST" });
+        clearFirstRunOnboardingSession();
         // Usar window.location.replace para limpiar el historial y evitar volver atrás
         window.location.replace("/auth/login");
       } catch (error) {
@@ -167,12 +171,28 @@ export default function SidebarOnly() {
     if (pathname !== item.href) router.push(item.href);
   };
 
-  const expanded = hovered;
+  const expanded = hovered || guideExpanded;
   const sidebarReducedMotion = platformMotion.shouldAnimate ? "never" : "always";
 
   useEffect(() => {
     setExpanded(expanded);
   }, [expanded, setExpanded]);
+
+  useEffect(() => {
+    const handleGuidePreview = (event: Event) => {
+      const customEvent = event as CustomEvent<{ expanded?: boolean }>;
+      setGuideExpanded(Boolean(customEvent.detail?.expanded));
+    };
+
+    window.addEventListener(FIRST_RUN_SIDEBAR_PREVIEW_EVENT, handleGuidePreview);
+
+    return () => {
+      window.removeEventListener(
+        FIRST_RUN_SIDEBAR_PREVIEW_EVENT,
+        handleGuidePreview,
+      );
+    };
+  }, []);
 
   useEffect(() => {
     if (!mobileOpen) return;
@@ -277,6 +297,7 @@ export default function SidebarOnly() {
         >
           <motion.button
             type="button"
+            data-help-target="dashboard-menu-button"
             onMouseDown={handleDragStart}
             onTouchStart={handleDragStart}
             onClick={() => {
@@ -318,6 +339,7 @@ export default function SidebarOnly() {
       {/* Desktop sidebar */}
       {!sidebarHidden && (
         <div
+          data-help-target="dashboard-sidebar"
           className={[
             "hidden md:block fixed left-4 top-4 z-50 h-[calc(100dvh-32px)]",
             "transition-[filter,opacity] duration-300",

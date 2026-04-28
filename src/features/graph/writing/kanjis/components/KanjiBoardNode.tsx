@@ -207,6 +207,8 @@ function KanjiBoardNode({ id, data }: NodeProps<KanjiBoardNodeData>) {
     !data.suppressUnlockPoints &&
     phase === "idle" &&
     !isGolden;
+  const unlockCost = Math.max(0, progress.unlockCost);
+  const unlockPointsText = unlockCost > 0 ? `-${unlockCost}` : "0";
 
   // ── Long-press to unlock ────────────────────────────────────────────────
   const pressUnlockEnabled =
@@ -439,11 +441,11 @@ function KanjiBoardNode({ id, data }: NodeProps<KanjiBoardNodeData>) {
             ) : null}
           </div>
 
-          {/* +30 points float — always shown when unlocking */}
+          {/* Unlock cost float */}
           {shouldShowUnlockPoints && (
             <div className="pointer-events-none absolute top-0 right-0 z-30">
               <span className={pointsFloatClass}>
-                +30
+                {unlockPointsText}
               </span>
             </div>
           )}

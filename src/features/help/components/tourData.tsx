@@ -20,11 +20,18 @@ import {
   Palette,
   Lock,
   Eye,
+  HelpCircle,
+  Inbox,
+  LifeBuoy,
+  ListFilter,
+  PanelsTopLeft,
 } from "lucide-react";
 import type { TourDefinition } from "./GuideTourProvider";
 import {
   createGrammarBoardContextTour,
+  createGrammarBoardWelcomeTour,
   createWritingBoardContextTour,
+  createWritingBoardWelcomeTour,
 } from "@/features/help/utils/contextualTours";
 import {
   dispatchHelpGuideGrammar,
@@ -47,7 +54,7 @@ export const tourDefinitions: TourDefinition[] = [
     route: "/dashboard/graph",
     steps: [
       {
-        title: "¡Bienvenido a Gokai!",
+        title: "Tu mapa para empezar",
         description:
           "Esta es tu vista de exploración. Desde aquí ves tu mapa de progreso general y decides a qué ruta de aprendizaje entrar.",
         icon: <GraduationCap className="w-6 h-6" />,
@@ -60,9 +67,7 @@ export const tourDefinitions: TourDefinition[] = [
         description:
           "Esta barra te deja cambiar rápidamente entre explorar, gramática y escritura sin perder el contexto del dashboard.",
         icon: <BookOpen className="w-6 h-6" />,
-        selector: '[data-help-target="graph-nav"]',
-        spotlightPadding: 16,
-        position: "bottom",
+        position: "center",
       },
       {
         title: "Nodos del progreso",
@@ -71,10 +76,10 @@ export const tourDefinitions: TourDefinition[] = [
         icon: <TrendingUp className="w-6 h-6" />,
         selector: '[data-help-target="graph-canvas"] .react-flow__node',
         spotlightPadding: 14,
-        position: "bottom-right",
+        position: "center",
       },
       {
-        title: "Consejos para empezar",
+        title: "Qué hacer después",
         description:
           "Usa esta pantalla como punto de orientación: explora primero, luego entra a gramática o escritura según tu siguiente objetivo.",
         icon: <Star className="w-6 h-6" />,
@@ -96,12 +101,12 @@ export const tourDefinitions: TourDefinition[] = [
       {
         title: "Biblioteca de contenido",
         description:
-          "Bienvenido a tu biblioteca personal. Aquí se organizan todos los kanji, vocabulario y contenido que has explorado o guardado.",
+          "Aquí se organiza tu contenido personal: kanji, vocabulario y recursos que has explorado o guardado para volver a ellos rápido.",
         icon: <Library className="w-6 h-6" />,
         selector: '[data-help-target="library-page"]',
         autoScroll: false,
-        spotlightPadding: 18,
-        position: "right",
+        spotlightPadding: 20,
+        position: "bottom-right",
         onEnter: () => {
           dispatchHelpGuideLibraryReset();
         },
@@ -154,40 +159,39 @@ export const tourDefinitions: TourDefinition[] = [
     route: "/dashboard/reviews",
     steps: [
       {
-        title: "Panel de revisiones",
+        title: "Kazu y tus repasos",
         description:
-          "Este es tu centro de revisiones. El sistema de repetición espaciada (SRS) programa automáticamente qué contenido necesitas repasar hoy.",
+          "Kazu muestra el estado de tu constancia. Si dejas pasar los repasos, sus colores se van apagando para avisarte que toca practicar.",
         icon: <Target className="w-6 h-6" />,
-        selector: '[data-help-target="reviews-banner"]',
-        spotlightPadding: 20,
-        position: "bottom-right",
+        position: "center",
       },
       {
-        title: "Estadísticas de revisión",
+        title: "Mantener sus colores",
         description:
-          "En la parte superior verás tus métricas: items pendientes, precisión y racha actual. Estos números te ayudan a medir tu rendimiento.",
+          "Al realizar repasos, Kazu recupera color y refleja que tu conocimiento sigue activo. La racha y el estado te ayudan a leer ese progreso rápido.",
         icon: <BarChart3 className="w-6 h-6" />,
-        selector: '[data-help-target="reviews-banner"]',
-        spotlightPadding: 20,
-        position: "left",
+        position: "center",
       },
       {
-        title: "Lista de ítems por repasar",
+        title: "Sesión recomendada",
         description:
-          "Los ítems se muestran ordenados por urgencia. Los rojos necesitan atención inmediata, los amarillos pronto, y los verdes están bien.",
-        icon: <RefreshCw className="w-6 h-6" />,
-        selector: '[data-help-target="reviews-pending"]',
-        spotlightPadding: 18,
-        position: "right",
-      },
-      {
-        title: "Práctica de escritura",
-        description:
-          "Puedes practicar la escritura de kanji directamente desde las revisiones. Traza los caracteres y recibe feedback en tiempo real.",
+          "Este panel resume cuántas lecciones están listas y te da el botón principal para empezar el repaso del día.",
         icon: <Award className="w-6 h-6" />,
-        selector: '[data-help-target="reviews-cta"]',
-        spotlightPadding: 18,
-        position: "top-right",
+        position: "center",
+      },
+      {
+        title: "Tipos de repaso",
+        description:
+          "Estas categorías separan lo urgente, lo recomendado y lo estable para que sepas qué necesita atención primero.",
+        icon: <RefreshCw className="w-6 h-6" />,
+        position: "center",
+      },
+      {
+        title: "Repasos pendientes",
+        description:
+          "Aquí aparecen los ítems listos para practicar. Completar esta lista mantiene activo tu progreso y ayuda a que Kazu conserve sus colores.",
+        icon: <BookOpen className="w-6 h-6" />,
+        position: "center",
       },
     ],
   },
@@ -250,7 +254,7 @@ export const tourDefinitions: TourDefinition[] = [
       {
         title: "Panel de estadísticas",
         description:
-          "Bienvenido a tu centro de métricas. Aquí puedes visualizar todo tu progreso de aprendizaje con gráficos detallados e intuitivos.",
+          "Aquí lees tu progreso con métricas claras: actividad, precisión, racha y señales para decidir qué reforzar después.",
         icon: <BarChart3 className="w-6 h-6" />,
         selector: '[data-help-target="stats-banner"]',
         spotlightPadding: 18,
@@ -281,7 +285,7 @@ export const tourDefinitions: TourDefinition[] = [
         icon: <Calendar className="w-6 h-6" />,
         selector: '[data-help-target="stats-streak"]',
         spotlightPadding: 18,
-        position: "right",
+        position: "top-right",
       },
     ],
   },
@@ -356,11 +360,100 @@ export const tourDefinitions: TourDefinition[] = [
       },
     ],
   },
+  {
+    id: "notices-guide",
+    title: "Centro de avisos",
+    route: "/dashboard/notices",
+    steps: [
+      {
+        title: "Centro de notificaciones",
+        description:
+          "Aquí ves avisos importantes sobre lecciones, repasos, logros y cambios de la plataforma.",
+        icon: <Inbox className="w-6 h-6" />,
+        selector: '[data-help-target="notices-banner"]',
+        spotlightPadding: 18,
+        position: "bottom-right",
+      },
+      {
+        title: "Búsqueda y filtros rápidos",
+        description:
+          "Usa el buscador y el filtro de no leídas para encontrar mensajes importantes sin revisar todo el historial.",
+        icon: <ListFilter className="w-6 h-6" />,
+        selector: '[data-help-target="notices-tools"]',
+        spotlightPadding: 14,
+        position: "bottom",
+      },
+      {
+        title: "Categorías de avisos",
+        description:
+          "Cambia entre tipos de aviso para separar actualizaciones, logros, repasos y recordatorios de estudio.",
+        icon: <PanelsTopLeft className="w-6 h-6" />,
+        selector: '[data-help-target="notices-categories"]',
+        spotlightPadding: 14,
+        position: "bottom",
+      },
+      {
+        title: "Lista de notificaciones",
+        description:
+          "Cada tarjeta puede marcarse como leída, fijarse o eliminarse. Las no leídas quedan resaltadas para que no se pierdan.",
+        icon: <Bell className="w-6 h-6" />,
+        selector: '[data-help-target="notices-list"]',
+        spotlightPadding: 16,
+        position: "right",
+      },
+    ],
+  },
+  {
+    id: "help-center-guide",
+    title: "Centro de ayuda",
+    route: "/dashboard/help",
+    steps: [
+      {
+        title: "Buscar ayuda",
+        description:
+          "Usa este encabezado para buscar respuestas y saltar rápidamente a las preguntas frecuentes.",
+        icon: <Search className="w-6 h-6" />,
+        selector: '[data-help-target="help-banner"]',
+        spotlightPadding: 18,
+        position: "bottom-right",
+      },
+      {
+        title: "Pestañas del centro",
+        description:
+          "Cambia entre guías, preguntas frecuentes y consejos según el tipo de apoyo que necesites.",
+        icon: <PanelsTopLeft className="w-6 h-6" />,
+        selector: '[data-help-target="help-tabs"]',
+        spotlightPadding: 14,
+        position: "bottom",
+      },
+      {
+        title: "Guías por página",
+        description:
+          "Estas tarjetas abren recorridos visuales de cada sección del dashboard con los mismos controles de esta guía.",
+        icon: <HelpCircle className="w-6 h-6" />,
+        selector: '[data-help-target="help-guides"]',
+        spotlightPadding: 16,
+        position: "right",
+      },
+      {
+        title: "Contactar soporte",
+        description:
+          "Si necesitas ayuda directa, desde aquí puedes abrir el formulario de soporte sin salir del centro de ayuda.",
+        icon: <LifeBuoy className="w-6 h-6" />,
+        selector: '[data-help-target="help-support"]',
+        spotlightPadding: 16,
+        position: "top-right",
+      },
+    ],
+  },
   createGrammarBoardContextTour({
     id: "grammar-board-guide",
     title: "Guía de Gramática",
     route: "/dashboard/graph/grammar",
     scopeSelector: '[data-help-surface="grammar-board"]',
+    boardGameLabel: "Sugoroku",
+    unlockFlowDescription:
+      "El recorrido se desbloquea como una espiral: en escritorio comienza en la esquina inferior izquierda y avanza hacia el centro; en celular empieza arriba a la izquierda para que el camino sea más legible.",
     focusLesson: () => {
       dispatchHelpGuideGrammar("focus");
     },
@@ -373,12 +466,17 @@ export const tourDefinitions: TourDefinition[] = [
   }),
   createWritingBoardContextTour({
     id: "hiragana-writing-guide",
-    title: "Guia de Hiragana",
+    title: "Guía de Escritura",
     route: "/dashboard/graph/writing?tab=hiragana",
     scopeSelector: '[data-help-surface="hiragana-board"]',
     scriptLabel: "hiragana",
     unitLabel: "kana",
     lessonSummary: "significado, lectura y trazado",
+    boardGameLabel: "shōgi",
+    welcomeDescription:
+      "Bienvenido al tablero de shōgi. Hiragana es el primer tablero disponible y desde aquí empiezas a aprender cada kana.",
+    unlockFlowDescription:
+      "Hiragana está disponible desde el inicio. Completa sus kanas para avanzar con seguridad y abrir el camino hacia Katakana.",
     focusNode: () => {
       dispatchHelpGuideWriting("hiragana", "focus");
     },
@@ -389,6 +487,123 @@ export const tourDefinitions: TourDefinition[] = [
       dispatchHelpGuideWriting("hiragana", "reset");
     },
     includeScriptTabs: true,
+  }),
+  createWritingBoardContextTour({
+    id: "katakana-writing-guide",
+    title: "Guía de Katakana",
+    route: "/dashboard/graph/writing?tab=katakana",
+    scopeSelector: '[data-help-surface="katakana-board"]',
+    scriptLabel: "katakana",
+    unitLabel: "kana",
+    lessonSummary: "significado, lectura y trazado",
+    boardGameLabel: "mahjong",
+    welcomeDescription:
+      "Bienvenido al tablero de mahjong. Aquí aprenderás katakana cuando hayas pasado Hiragana y el tablero quede desbloqueado.",
+    unlockFlowDescription:
+      "Katakana permanece bloqueado hasta que avances lo suficiente en Hiragana. Cuando se desbloquee, cada kana abrirá su lección y práctica.",
+    focusNode: () => {
+      dispatchHelpGuideWriting("katakana", "focus");
+    },
+    openLesson: () => {
+      dispatchHelpGuideWriting("katakana", "open");
+    },
+    resetTourState: () => {
+      dispatchHelpGuideWriting("katakana", "reset");
+    },
+    includeScriptTabs: true,
+  }),
+  createWritingBoardContextTour({
+    id: "kanji-writing-guide",
+    title: "Guía de Kanjis",
+    route: "/dashboard/graph/writing?tab=kanji",
+    scopeSelector: '[data-help-surface="kanji-board"]',
+    scriptLabel: "kanjis",
+    unitLabel: "kanji",
+    lessonSummary: "símbolo, lecturas, significados y escritura",
+    boardGameLabel: "go",
+    welcomeDescription:
+      "Bienvenido al tablero de go. Aquí aprenderás kanjis cuando consigas los puntos necesarios para desbloquearlos.",
+    unlockFlowDescription:
+      "Los kanjis permanecen bloqueados hasta que consigas los puntos necesarios. Cuando un kanji esté disponible, la guía te mostrará su lección y práctica.",
+    focusNode: () => {
+      dispatchHelpGuideWriting("kanji", "focus");
+    },
+    openLesson: () => {
+      dispatchHelpGuideWriting("kanji", "open");
+    },
+    resetTourState: () => {
+      dispatchHelpGuideWriting("kanji", "reset");
+    },
+    includeScriptTabs: true,
+  }),
+  createGrammarBoardWelcomeTour({
+    id: "grammar-first-run-guide",
+    title: "Bienvenida a Gramática",
+    route: "/dashboard/graph/grammar",
+    scopeSelector: '[data-help-surface="grammar-board"]',
+    focusLesson: (target) => {
+      dispatchHelpGuideGrammar("focus", target);
+    },
+    resetTourState: () => {
+      dispatchHelpGuideGrammar("reset");
+    },
+  }),
+  createWritingBoardWelcomeTour({
+    id: "hiragana-first-run-guide",
+    title: "Bienvenida a Hiragana",
+    route: "/dashboard/graph/writing?tab=hiragana",
+    scopeSelector: '[data-help-surface="hiragana-board"]',
+    boardGameLabel: "shōgi",
+    introDescription:
+      "Este tablero de shōgi es tu primera ruta de escritura. Aquí empiezas con hiragana y ves cómo cada kana abre el siguiente paso.",
+    unlockDescription:
+      "Hiragana está disponible desde el inicio. Al completar sus prácticas, el avance queda preparado para desbloquear Katakana con más contexto.",
+    pathDescription:
+      "La cámara recorre el orden real del tablero para que ubiques de un vistazo por dónde empieza tu camino y cómo progresa.",
+    focusNode: (target) => {
+      dispatchHelpGuideWriting("hiragana", "focus", target);
+    },
+    resetTourState: () => {
+      dispatchHelpGuideWriting("hiragana", "reset");
+    },
+  }),
+  createWritingBoardWelcomeTour({
+    id: "katakana-first-run-guide",
+    title: "Bienvenida a Katakana",
+    route: "/dashboard/graph/writing?tab=katakana",
+    scopeSelector: '[data-help-surface="katakana-board"]',
+    boardGameLabel: "mahjong",
+    introDescription:
+      "Este tablero de mahjong organiza katakana. Al entrar por primera vez, la guía te muestra el tablero sin abrir lecciones todavía.",
+    unlockDescription:
+      "Katakana se desbloquea después de avanzar en Hiragana. Si todavía está cerrado, la ayuda contextual te dirá exactamente qué falta.",
+    pathDescription:
+      "Cuando haya kanas disponibles, la cámara seguirá el camino real de estudio para que entiendas cómo se conecta cada ficha.",
+    focusNode: (target) => {
+      dispatchHelpGuideWriting("katakana", "focus", target);
+    },
+    resetTourState: () => {
+      dispatchHelpGuideWriting("katakana", "reset");
+    },
+  }),
+  createWritingBoardWelcomeTour({
+    id: "kanji-first-run-guide",
+    title: "Bienvenida a Kanjis",
+    route: "/dashboard/graph/writing?tab=kanji",
+    scopeSelector: '[data-help-surface="kanji-board"]',
+    boardGameLabel: "go",
+    introDescription:
+      "Este tablero de go reúne los kanjis. La primera visita se queda en el mapa para que entiendas el flujo antes de entrar a una lección.",
+    unlockDescription:
+      "Los kanjis dependen de puntos y desbloqueos. Si aún no hay uno disponible, la ayuda contextual mostrará el requisito en lugar de forzar pasos internos.",
+    pathDescription:
+      "Cuando el tablero tenga kanjis abiertos, la cámara recorre el orden real para que veas cómo avanzar entre posiciones.",
+    focusNode: (target) => {
+      dispatchHelpGuideWriting("kanji", "focus", target);
+    },
+    resetTourState: () => {
+      dispatchHelpGuideWriting("kanji", "reset");
+    },
   }),
 ];
 
