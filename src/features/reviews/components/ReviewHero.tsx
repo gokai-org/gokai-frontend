@@ -39,7 +39,11 @@ export function ReviewHero({
 
   return (
     <section className="flex min-h-[calc(100vh-8rem)] flex-col gap-5 xl:h-full xl:min-h-0">
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-[32px] border border-border-subtle bg-surface-primary p-5 shadow-sm dark:bg-[#161616] sm:p-6 lg:p-8 xl:flex xl:flex-col">
+      <div
+        data-help-target="reviews-kazu-card"
+        data-help-target-priority="2"
+        className="relative min-h-0 flex-1 overflow-hidden rounded-[32px] border border-border-subtle bg-surface-primary p-5 shadow-sm dark:bg-[#161616] sm:p-6 lg:p-8 xl:flex xl:flex-col"
+      >
         <div className="relative flex min-h-full flex-1 flex-col">
           <div>
             <h1 className="text-4xl font-extrabold leading-none tracking-[0.09em] text-accent sm:text-5xl lg:text-6xl">
@@ -53,7 +57,10 @@ export function ReviewHero({
             </p>
           </div>
 
-          <div className="mt-2 flex min-h-0 flex-1 items-center">
+          <div
+            data-help-target="reviews-kazu-mascot"
+            className="mt-2 flex min-h-0 flex-1 items-center"
+          >
             <KazuProgress
               zones={zones}
               pendingReviewCount={loading ? 0 : activeCount}
@@ -65,8 +72,15 @@ export function ReviewHero({
         </div>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:gap-5">
-        <div className="rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm ring-1 ring-black/[0.02] dark:bg-[#161616] dark:ring-white/[0.04]">
+      <div
+        data-help-target="reviews-kazu-stats"
+        data-help-target-priority="2"
+        className="grid gap-4 sm:grid-cols-2 xl:gap-5"
+      >
+        <div
+          data-help-target="reviews-streak"
+          className="rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm ring-1 ring-black/[0.02] dark:bg-[#161616] dark:ring-white/[0.04]"
+        >
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-accent">
@@ -105,7 +119,10 @@ export function ReviewHero({
           </div>
         </div>
 
-        <div className="rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm ring-1 ring-black/[0.02] dark:bg-[#161616] dark:ring-white/[0.04]">
+        <div
+          data-help-target="reviews-constancy"
+          className="rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm ring-1 ring-black/[0.02] dark:bg-[#161616] dark:ring-white/[0.04]"
+        >
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-accent">

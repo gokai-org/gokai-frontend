@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 import { apiConfig } from "@/shared/config";
+import { normalizeGrammarDetailUnlockCost } from "../grammarUnlockCosts";
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +31,11 @@ export async function GET(
   );
 
   const data = await upstream.json().catch(() => ({}));
-  return NextResponse.json(data, { status: upstream.status });
+  const normalizedData =
+    upstream.ok && data && typeof data === "object" && !Array.isArray(data)
+      ? normalizeGrammarDetailUnlockCost(data as Record<string, unknown>)
+      : data;
+  return NextResponse.json(normalizedData, { status: upstream.status });
 }
 
 /**

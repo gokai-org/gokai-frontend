@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 import { apiConfig } from "@/shared/config";
+import {
+  normalizeKanjiCatalogUnlockCosts,
+  normalizeKanjiDetailUnlockCost,
+} from "../kanjiUnlockCosts";
 
 export const dynamic = "force-dynamic";
 
@@ -193,7 +197,7 @@ async function fetchKanjiCatalog(token: string): Promise<NormalizedKanji[]> {
     return [];
   }
 
-  return payload.map(normalizeKanji);
+  return normalizeKanjiCatalogUnlockCosts(payload).map(normalizeKanji);
 }
 
 async function fetchCurrentUserPoints(token: string): Promise<number> {
@@ -581,6 +585,17 @@ export async function GET(
   );
 
   const data = await upstream.json().catch(() => ({}));
+
+  if (upstream.ok && data && typeof data === "object" && !Array.isArray(data)) {
+    const catalog = await fetchKanjiCatalog(token).catch(() => []);
+    const normalizedData = normalizeKanjiDetailUnlockCost(
+      data as RawKanji,
+      catalog,
+    );
+
+    return NextResponse.json(normalizedData, { status: upstream.status });
+  }
+
   return NextResponse.json(data, { status: upstream.status });
 }
 

@@ -52,6 +52,7 @@ export function ScriptCard({
   title,
   subtitle,
   pointsBadge,
+  unlockPoints,
   variant,
   index = 0,
   isFavorite = false,
@@ -84,7 +85,8 @@ export function ScriptCard({
         hiragana: { hex: "#7B3F8A", rgba: "123,63,138" },
         katakana: { hex: "#1B5078", rgba: "27,80,120" },
       } as const)[variant];
-  const unlockBadgeText = variant === "kanji" ? "+30" : "+5";
+  const unlockCost = Math.max(0, unlockPoints ?? 0);
+  const unlockBadgeText = variant === "kanji" ? (unlockCost > 0 ? `-${unlockCost}` : "0") : "+5";
   const unlockSequenceDelay = animationsEnabled ? Math.min(index, 8) * 0.12 : 0;
   const pressUnlockEnabled =
     effectiveLocked && unlockReady && typeof onPressUnlock === "function";
@@ -313,6 +315,11 @@ export function ScriptCard({
         className="h-4 w-4 text-content-muted/50 dark:text-white/30"
         strokeWidth={2}
       />
+      {typeof unlockPoints === "number" ? (
+        <span className="rounded-full border border-border-subtle bg-surface-primary/70 px-2 py-[3px] text-[10px] font-black leading-none text-content-muted shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-white/35">
+          {unlockCost} pts
+        </span>
+      ) : null}
     </div>
   ) : null;
 

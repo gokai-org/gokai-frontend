@@ -24,6 +24,7 @@ export {
   getKanjiStrokes,
   getKanjiLessonResults,
   getKanjiProgress,
+  KANJI_CONTENT_API_CACHE_KEY,
   unlockKanji,
 } from "./api/kanjiApi";
 

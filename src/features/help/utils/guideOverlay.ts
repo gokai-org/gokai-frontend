@@ -74,10 +74,13 @@ export function getGuideCardMetrics(
   };
 }
 
-export function resolveGuideTarget(selector: string) {
+export function resolveGuideTarget(
+  selector: string,
+  options?: { includeOffscreen?: boolean },
+) {
   const candidates = Array.from(document.querySelectorAll(selector)) as HTMLElement[];
 
-  const visibleCandidates = candidates
+  const guideCandidates = candidates
     .map((element) => {
       const rect = element.getBoundingClientRect();
       const styles = window.getComputedStyle(element);
@@ -93,6 +96,13 @@ export function resolveGuideTarget(selector: string) {
         visibilityRatio,
         priority,
         centerDistance: getViewportCenterDistance(rect),
+        rawArea,
+        isRenderable:
+          rect.width > 0 &&
+          rect.height > 0 &&
+          styles.display !== "none" &&
+          styles.visibility !== "hidden" &&
+          styles.opacity !== "0",
         isVisible:
           rect.width > 0 &&
           rect.height > 0 &&
@@ -101,11 +111,34 @@ export function resolveGuideTarget(selector: string) {
           styles.visibility !== "hidden" &&
           styles.opacity !== "0",
       };
-    })
-    .filter((candidate) => candidate.isVisible);
+    });
+
+  const visibleCandidates = guideCandidates.filter((candidate) => candidate.isVisible);
 
   if (visibleCandidates.length === 0) {
-    return null;
+    if (!options?.includeOffscreen) {
+      return null;
+    }
+
+    const renderableCandidates = guideCandidates.filter(
+      (candidate) => candidate.isRenderable,
+    );
+
+    if (renderableCandidates.length === 0) {
+      return null;
+    }
+
+    return renderableCandidates.reduce((best, candidate) => {
+      if (candidate.priority !== best.priority) {
+        return candidate.priority > best.priority ? candidate : best;
+      }
+
+      if (candidate.rawArea !== best.rawArea) {
+        return candidate.rawArea > best.rawArea ? candidate : best;
+      }
+
+      return candidate.centerDistance < best.centerDistance ? candidate : best;
+    }).element;
   }
 
   return visibleCandidates.reduce((best, candidate) => {
@@ -149,15 +182,11 @@ export function hasVisibleGuideLoading() {
 }
 
 export function isGuideStepReady(selector?: string) {
-  if (hasVisibleGuideLoading()) {
-    return false;
-  }
-
   if (!selector) {
     return true;
   }
 
-  return resolveGuideTarget(selector) !== null;
+  return resolveGuideTarget(selector, { includeOffscreen: true }) !== null;
 }
 
 export function resolveSpotlightRect(

@@ -10,7 +10,7 @@ import type {
 } from "../types";
 import { getGrammarProgress, listGrammarLessons } from "../api/grammarApi";
 import { buildGrammarBoardItems } from "../lib/grammarBoardModel";
-import { GRAMMAR_UNLOCK_COST } from "../lib/grammarUnlockState";
+import { FIXED_GRAMMAR_UNLOCK_COST } from "@/shared/config/unlockCosts";
 
 type Status = "idle" | "loading" | "error" | "success";
 const GRAMMAR_POINTS_SYNC_TTL_MS = 30_000;
@@ -152,7 +152,7 @@ export function useGrammarLessons() {
     progress,
     nextUnlockCandidate,
     canUnlockNext,
-    unlockCost: nextUnlockCandidate?.pointsToUnlock ?? GRAMMAR_UNLOCK_COST,
+    unlockCost: FIXED_GRAMMAR_UNLOCK_COST,
     applyOptimisticUnlock,
     recentlyUnlockedIds,
   };

@@ -1,6 +1,7 @@
 import type { GrammarLessonSummary, GrammarStudyProgress } from "../types";
+import { FIXED_GRAMMAR_UNLOCK_COST } from "@/shared/config/unlockCosts";
 
-export const GRAMMAR_UNLOCK_COST = 35;
+export const GRAMMAR_UNLOCK_COST = FIXED_GRAMMAR_UNLOCK_COST;
 
 export type GrammarUnlockState = {
   latestUnlockedId: string | null;
@@ -65,7 +66,7 @@ export function resolveGrammarUnlockState({
   const previousStepCompleted =
     latestUnlockedIndex < 0 ||
     completedIds.has(lessons[latestUnlockedIndex].id);
-  const nextUnlockCost = nextUnlockCandidate?.pointsToUnlock ?? unlockCost;
+  const nextUnlockCost = unlockCost;
   const canUnlockNext =
     nextUnlockCandidate !== null &&
     previousStepCompleted &&

@@ -16,7 +16,10 @@ import { useMasteredModules } from "@/features/mastery/components/MasteredModule
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
-import { createWritingBoardContextTour } from "@/features/help/utils/contextualTours";
+import {
+  createLockedBoardAccessTour,
+  createWritingBoardContextTour,
+} from "@/features/help/utils/contextualTours";
 import {
   HELP_GUIDE_WRITING_EVENT,
   type HelpGuideWritingDetail,
@@ -64,6 +67,7 @@ export default function HiraganaView() {
   const wasMasteredBeforeQuizRef = useRef(false);
   const pendingMasteryCelebrationRef = useRef(false);
   const celebrationFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pathPreviewTimeoutsRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const [suppressUnlockPointsDuringUnlock, setSuppressUnlockPointsDuringUnlock] = useState(false);
 
   const selectedProgress = useMemo(
@@ -71,7 +75,10 @@ export default function HiraganaView() {
     [detailNodeId, items],
   );
 
-  const helpNodeId = useMemo(() => items[0]?.id ?? null, [items]);
+  const helpNodeId = useMemo(
+    () => items.find((item) => item.status !== "locked")?.id ?? null,
+    [items],
+  );
   const currentProgressKanaId = useMemo(
     () =>
       [...items].reverse().find((item) => item.status !== "locked")?.id ?? null,
@@ -86,46 +93,99 @@ export default function HiraganaView() {
     setDetailNodeId(null);
   }, []);
 
-  const focusHelpNode = useCallback(() => {
+  const clearPathPreview = useCallback(() => {
+    pathPreviewTimeoutsRef.current.forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+    pathPreviewTimeoutsRef.current = [];
+  }, []);
+
+  const playHelpPathPreview = useCallback(() => {
+    clearPathPreview();
+
+    const orderedItems = [...items].sort((a, b) => a.index - b.index);
+
+    if (orderedItems.length === 0) {
+      setHelpFocusedNodeId(null);
+      return;
+    }
+
+    orderedItems.slice(0, 8).forEach((item, index) => {
+      const timeoutId = setTimeout(() => {
+        setHelpFocusedNodeId(item.id);
+      }, index * 520);
+      pathPreviewTimeoutsRef.current.push(timeoutId);
+    });
+  }, [clearPathPreview, items]);
+
+  const focusHelpNode = useCallback((target?: HelpGuideWritingDetail["target"]) => {
+    if (target === "path") {
+      setDetailNodeId(null);
+      playHelpPathPreview();
+      return;
+    }
+
+    clearPathPreview();
     if (!helpNodeId) {
+      setHelpFocusedNodeId(null);
       return;
     }
 
     setDetailNodeId(null);
     setHelpFocusedNodeId(helpNodeId);
-  }, [helpNodeId]);
+  }, [clearPathPreview, helpNodeId, playHelpPathPreview]);
 
   const openHelpLesson = useCallback(() => {
+    clearPathPreview();
     if (!helpNodeId) {
       return;
     }
 
     setHelpFocusedNodeId(null);
     setDetailNodeId(helpNodeId);
-  }, [helpNodeId]);
+  }, [clearPathPreview, helpNodeId]);
 
   const resetHelpTourState = useCallback(() => {
+    clearPathPreview();
     setHelpFocusedNodeId(null);
     setDetailNodeId(null);
-  }, []);
+  }, [clearPathPreview]);
+
+  useEffect(() => clearPathPreview, [clearPathPreview]);
 
   const buildHelpTour = useCallback(
-    () =>
-      createWritingBoardContextTour({
+    () => {
+      if (!helpNodeId) {
+        return createLockedBoardAccessTour({
+          id: "hiragana-writing-locked-guide",
+          title: "Cómo desbloquear Hiragana",
+          scopeSelector: '[data-help-surface="hiragana-board"]',
+          boardLabel: "Tablero de shōgi",
+          requirementLabel: "la primera lección disponible",
+        });
+      }
+
+      return createWritingBoardContextTour({
         id: "hiragana-context-tour",
-        title: "Guia de Hiragana",
+        title: "Guía de Hiragana",
         scopeSelector: '[data-help-surface="hiragana-board"]',
         scriptLabel: "hiragana",
         unitLabel: "kana",
         lessonSummary: "significado, lectura y trazado",
+        boardGameLabel: "shōgi",
+        welcomeDescription:
+          "Bienvenido al tablero de shōgi. Hiragana es el primer tablero disponible y desde aquí empiezas a aprender cada kana.",
+        unlockFlowDescription:
+          "Hiragana está disponible desde el inicio. Completa sus kanas para avanzar con seguridad y abrir el camino hacia Katakana.",
         focusNode: focusHelpNode,
         openLesson: openHelpLesson,
         resetTourState: resetHelpTourState,
         includeScriptTabs:
           typeof document !== "undefined" &&
           document.querySelector('[data-help-target="writing-script-tabs"]') !== null,
-      }),
-    [focusHelpNode, openHelpLesson, resetHelpTourState],
+      });
+    },
+    [focusHelpNode, helpNodeId, openHelpLesson, resetHelpTourState],
   );
 
   useEffect(() => {
@@ -138,7 +198,7 @@ export default function HiraganaView() {
       }
 
       if (detail.action === "focus") {
-        focusHelpNode();
+        focusHelpNode(detail.target);
       } else if (detail.action === "open") {
         openHelpLesson();
       } else if (detail.action === "reset") {

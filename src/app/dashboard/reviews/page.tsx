@@ -118,10 +118,7 @@ export default function Page() {
             disabled={!animationsEnabled}
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >
-            <div
-              data-help-target="reviews-pending"
-              data-help-loading={loading ? "true" : undefined}
-            >
+            <div data-help-target="reviews-pending">
               <ReviewList
                 loading={loading}
                 error={error}

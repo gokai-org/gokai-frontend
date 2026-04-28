@@ -14,6 +14,7 @@ import {
   Target,
   Zap,
   Languages,
+  Bell,
 } from "lucide-react";
 import type { FaqItem, GuideCardItem, TipItem } from "@/features/help/types";
 import type { HelpTabKey } from "@/features/help/types";
@@ -121,15 +122,33 @@ export const HELP_GUIDES: GuideCardItem[] = [
       "Recorre el tablero de gramática y abre una lección visual paso a paso.",
     color: "text-orange-600 dark:text-orange-400",
     bgColor: "bg-orange-50 dark:bg-orange-950/40",
-    tourIndex: 6,
+    tourIndex: 8,
   },
   {
     icon: <Languages className="w-6 h-6" />,
-    title: "Escritura de Hiragana",
+    title: "Escritura",
     description:
-      "Explora el tablero de hiragana, sus nodos y la lección lateral con guía visual.",
+      "Explora el tablero de escritura, sus nodos y la lección lateral con guía visual.",
     color: "text-fuchsia-600 dark:text-fuchsia-400",
     bgColor: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
+    tourIndex: 9,
+  },
+  {
+    icon: <Bell className="w-6 h-6" />,
+    title: "Centro de avisos",
+    description:
+      "Aprende a filtrar, fijar y gestionar tus notificaciones importantes.",
+    color: "text-cyan-600 dark:text-cyan-400",
+    bgColor: "bg-cyan-50 dark:bg-cyan-950/40",
+    tourIndex: 6,
+  },
+  {
+    icon: <HelpCircle className="w-6 h-6" />,
+    title: "Centro de ayuda",
+    description:
+      "Encuentra guías, preguntas frecuentes y soporte desde una sola pantalla.",
+    color: "text-sky-600 dark:text-sky-400",
+    bgColor: "bg-sky-50 dark:bg-sky-950/40",
     tourIndex: 7,
   },
 ];

@@ -5,6 +5,7 @@ import {
   getKanjiLessonResults,
   getKanjiProgress,
   getPrimaryMeaning,
+  KANJI_CONTENT_API_CACHE_KEY,
   listKanjis,
   type Kanji,
   type KanjiLessonResult,
@@ -476,6 +477,7 @@ export function useKanjiBoard() {
       progressRef.current = nextProgress;
       setProgress(nextProgress);
       invalidateApiCache("/api/content/kanji/progress");
+      invalidateApiCache(KANJI_CONTENT_API_CACHE_KEY);
       invalidateApiCache("/api/content/kanji");
 
       setRecentlyUnlockedIds((current) => {

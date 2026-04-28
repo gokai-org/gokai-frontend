@@ -5,7 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
-import { createGrammarBoardContextTour } from "@/features/help/utils/contextualTours";
+import {
+  createGrammarBoardContextTour,
+  createLockedBoardAccessTour,
+} from "@/features/help/utils/contextualTours";
 import {
   HELP_GUIDE_GRAMMAR_EVENT,
   dispatchHelpGuideGrammar,
@@ -21,6 +24,7 @@ import { useGrammarLesson } from "../hooks/useGrammarLesson";
 import { unlockGrammar } from "../api/grammarApi";
 import { invalidateApiCache } from "@/shared/lib/api/client";
 import type { GrammarQuizCompletionResult } from "../types";
+import type { GrammarBoardCellViewModel } from "../types";
 
 type GrammarViewStage =
   | "board"
@@ -28,6 +32,11 @@ type GrammarViewStage =
   | "lesson"
   | "quiz"
   | "zooming-out";
+
+type GrammarFocusTarget = Exclude<
+  HelpGuideGrammarDetail["target"],
+  undefined | "path"
+>;
 
 export interface GrammarExperienceProps {
   embedded?: boolean;
@@ -67,6 +76,7 @@ export function GrammarExperience({
   const [stage, setStage] = useState<GrammarViewStage>("board");
   const [unlockPending, setUnlockPending] = useState(false);
   const [unlockPendingLessonId, setUnlockPendingLessonId] = useState<string | null>(null);
+  const pathPreviewTimeoutsRef = useRef<number[]>([]);
 
   const { lesson, status: lessonStatus, error, refetch } = useGrammarLesson(selectedLessonId);
 
@@ -88,6 +98,54 @@ export function GrammarExperience({
       null,
     [board.cells],
   );
+
+  const findHelpFocusLessonId = useCallback(
+    (target: GrammarFocusTarget = "available") => {
+      const cells = board.cells.filter((cell) => !cell.progress.isMock);
+      if (cells.length === 0) return null;
+
+      const byTarget: Record<GrammarFocusTarget, () => GrammarBoardCellViewModel | undefined> = {
+        available: () => cells.find((cell) => cell.progress.id === helpLessonId) ?? cells[0],
+        start: () => cells[0],
+        outer: () => cells.find((cell) => cell.layout.routeTier === "outer" && cell.layout.order >= 6) ?? cells[0],
+        inner: () => cells.find((cell) => cell.layout.routeTier === "inner") ?? cells[Math.floor(cells.length / 2)],
+        goal: () => cells.find((cell) => cell.layout.routeTier === "goal") ?? cells[cells.length - 1],
+        next: () =>
+          cells.find((cell) => cell.progress.isNextUnlockCandidate) ??
+          cells.find((cell) => cell.progress.status === "locked") ??
+          cells[0],
+      };
+
+      return byTarget[target]?.()?.progress.id ?? null;
+    },
+    [board.cells, helpLessonId],
+  );
+
+  const clearPathPreview = useCallback(() => {
+    pathPreviewTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    pathPreviewTimeoutsRef.current = [];
+  }, []);
+
+  const playHelpPathPreview = useCallback(() => {
+    const cells = board.cells
+      .filter((cell) => !cell.progress.isMock)
+      .sort((left, right) => left.layout.order - right.layout.order);
+
+    if (cells.length === 0) {
+      return;
+    }
+
+    clearPathPreview();
+    setSelectedLessonId(null);
+    setStage("board");
+    setHelpFocusedLessonId(cells[0].progress.id);
+
+    pathPreviewTimeoutsRef.current = cells.slice(1).map((cell, index) =>
+      window.setTimeout(() => {
+        setHelpFocusedLessonId(cell.progress.id);
+      }, (index + 1) * 520),
+    );
+  }, [board.cells, clearPathPreview]);
 
   useEffect(() => {
     if (!boardQuality.shouldAnimateBoardZoom) {
@@ -245,17 +303,27 @@ export function GrammarExperience({
     [refetchBoard],
   );
 
-  const focusHelpLesson = useCallback(() => {
-    if (!helpLessonId) {
+  const focusHelpLesson = useCallback((target?: HelpGuideGrammarDetail["target"]) => {
+    if (target === "path") {
+      playHelpPathPreview();
+      return;
+    }
+
+    clearPathPreview();
+    const targetLessonId = findHelpFocusLessonId(target);
+
+    if (!targetLessonId) {
       return;
     }
 
     setSelectedLessonId(null);
     setStage("board");
-    setHelpFocusedLessonId(helpLessonId);
-  }, [helpLessonId]);
+    setHelpFocusedLessonId(targetLessonId);
+  }, [clearPathPreview, findHelpFocusLessonId, playHelpPathPreview]);
 
   const openHelpLesson = useCallback(() => {
+    clearPathPreview();
+
     if (!helpLessonId) {
       return;
     }
@@ -270,23 +338,38 @@ export function GrammarExperience({
     setHelpFocusedLessonId(null);
     setSelectedLessonId(helpLessonId);
     setStage(boardQuality.shouldAnimateBoardZoom ? "zooming-in" : "lesson");
-  }, [boardQuality.shouldAnimateBoardZoom, helpLessonId, selectedLessonId, stage]);
+  }, [boardQuality.shouldAnimateBoardZoom, clearPathPreview, helpLessonId, selectedLessonId, stage]);
 
   const resetHelpTourState = useCallback(() => {
+    clearPathPreview();
     setHelpFocusedLessonId(null);
     setSelectedLessonId(null);
     setStage("board");
-  }, []);
+  }, [clearPathPreview]);
 
   const buildHelpTour = useCallback(
-    () =>
-      createGrammarBoardContextTour({
+    () => {
+      if (!helpLessonId) {
+        return createLockedBoardAccessTour({
+          id: "grammar-context-tour-locked",
+          title: "Guía de Gramática",
+          scopeSelector: '[data-help-surface="grammar-board"]',
+          boardLabel: "Tablero de gramática",
+          requirementLabel: "25 puntos",
+          targetName: "grammar-board-canvas",
+        });
+      }
+
+      return createGrammarBoardContextTour({
         id: "grammar-context-tour",
         title: "Guía de Gramática",
         route: "/dashboard/graph/grammar",
         scopeSelector: '[data-help-surface="grammar-board"]',
-        focusLesson: () => {
-          dispatchHelpGuideGrammar("focus");
+        boardGameLabel: "Sugoroku",
+        unlockFlowDescription:
+          "El recorrido se desbloquea como una espiral: en escritorio comienza en la esquina inferior izquierda y avanza hacia el centro; en celular empieza arriba a la izquierda para que el camino sea más legible.",
+        focusLesson: (target) => {
+          dispatchHelpGuideGrammar("focus", target);
         },
         openLesson: () => {
           dispatchHelpGuideGrammar("open");
@@ -294,9 +377,12 @@ export function GrammarExperience({
         resetTourState: () => {
           dispatchHelpGuideGrammar("reset");
         },
-      }),
-    [],
+      });
+    },
+    [helpLessonId],
   );
+
+  useEffect(() => clearPathPreview, [clearPathPreview]);
 
   useEffect(() => {
     if (!showHelpButton) {
@@ -308,9 +394,10 @@ export function GrammarExperience({
     ) => {
       const customEvent = event as CustomEvent<HelpGuideGrammarDetail>;
       const action = customEvent.detail?.action;
+      const target = customEvent.detail?.target;
 
       if (action === "focus") {
-        focusHelpLesson();
+        focusHelpLesson(target);
       } else if (action === "open") {
         openHelpLesson();
       } else if (action === "reset") {
@@ -331,12 +418,18 @@ export function GrammarExperience({
   const boardTransitionState = !boardQuality.shouldAnimateBoardZoom
     ? "idle"
     : stage === "board"
-      ? "idle"
+      ? helpFocusedLessonId
+        ? "tour-focus"
+        : "idle"
       : stage === "zooming-in"
         ? "zooming-in"
         : stage === "zooming-out"
           ? "zooming-out"
           : "hidden";
+
+  const boardFocusLessonId = stage === "board"
+    ? helpFocusedLessonId
+    : selectedLessonId;
 
   const rootClassName = embedded
     ? [
@@ -361,7 +454,7 @@ export function GrammarExperience({
         onSelectLesson={handleSelectLesson}
         onPressUnlockLesson={handlePressUnlockLesson}
         unlockingLessonId={unlockPendingLessonId}
-        focusLessonId={selectedLessonId}
+        focusLessonId={boardFocusLessonId}
         helpTargetLessonId={helpFocusedLessonId}
         transitionState={boardTransitionState}
         recentlyUnlockedIds={recentlyUnlockedIds}

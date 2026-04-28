@@ -153,6 +153,7 @@ export default function LibraryPage() {
     userPoints,
     hasResolvedInitialStatus: hasResolvedInitialKanjiStatus,
     reload: reloadLockedStatus,
+    applyOptimisticUnlock: applyOptimisticKanjiUnlock,
   } =
     useKanjiLockedStatus(kanjis);
   const {
@@ -296,6 +297,7 @@ export default function LibraryPage() {
       try {
         const response = await unlockKanji(kanjiId);
         dispatchMasteryProgressSync({ points: response.userPoints });
+        applyOptimisticKanjiUnlock(kanjiId, response.userPoints);
         startUnlockAnimation([kanjiId], "kanji");
         void reloadLockedStatus();
       } catch (error) {
@@ -314,6 +316,7 @@ export default function LibraryPage() {
     },
     [
       canUnlockNext,
+      applyOptimisticKanjiUnlock,
       nextUnlockCandidateId,
       reloadLockedStatus,
       startUnlockAnimation,

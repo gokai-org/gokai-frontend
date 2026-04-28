@@ -9,7 +9,7 @@ import React, {
   useRef,
 } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { hasVisibleGuideLoading, resolveGuideTarget } from "@/features/help/utils/guideOverlay";
+import { resolveGuideTarget } from "@/features/help/utils/guideOverlay";
 
 function getRoutePath(route?: string) {
   return route?.split("?")[0]?.split("#")[0];
@@ -148,10 +148,10 @@ export function GuideTourProvider({ children }: { children: React.ReactNode }) {
 
     const firstTargetReady = () => {
       if (!firstStep?.selector) {
-        return !hasVisibleGuideLoading();
+        return true;
       }
 
-      return !hasVisibleGuideLoading() && resolveGuideTarget(firstStep.selector) !== null;
+      return resolveGuideTarget(firstStep.selector, { includeOffscreen: true }) !== null;
     };
 
     const pageReady = () => {

@@ -3,6 +3,7 @@ import {
   Compass,
   LayoutPanelLeft,
   Layers3,
+  MapPinned,
   MousePointerClick,
   PanelRightOpen,
   Sparkles,
@@ -11,6 +12,10 @@ import type {
   TourDefinition,
   TourStep,
 } from "@/features/help/components/GuideTourProvider";
+import type {
+  HelpGuideGrammarDetail,
+  HelpGuideWritingDetail,
+} from "@/features/help/utils/guideEvents";
 
 type GuideSpotlightInsets = Partial<
   Record<"top" | "right" | "bottom" | "left", number>
@@ -24,7 +29,10 @@ interface WritingBoardTourOptions {
   scriptLabel: string;
   unitLabel: string;
   lessonSummary: string;
-  focusNode: () => void;
+  boardGameLabel?: string;
+  welcomeDescription?: string;
+  unlockFlowDescription?: string;
+  focusNode: (target?: HelpGuideWritingDetail["target"]) => void;
   openLesson: () => void;
   resetTourState: () => void;
   includeScriptTabs?: boolean;
@@ -37,8 +45,32 @@ interface GrammarBoardTourOptions {
   title: string;
   route?: string;
   scopeSelector: string;
-  focusLesson: () => void;
+  boardGameLabel?: string;
+  unlockFlowDescription?: string;
+  focusLesson: (target?: HelpGuideGrammarDetail["target"]) => void;
   openLesson: () => void;
+  resetTourState: () => void;
+}
+
+interface GrammarBoardWelcomeTourOptions {
+  id: string;
+  title: string;
+  route?: string;
+  scopeSelector: string;
+  focusLesson: (target?: HelpGuideGrammarDetail["target"]) => void;
+  resetTourState: () => void;
+}
+
+interface WritingBoardWelcomeTourOptions {
+  id: string;
+  title: string;
+  route?: string;
+  scopeSelector: string;
+  boardGameLabel: string;
+  introDescription: string;
+  unlockDescription: string;
+  pathDescription: string;
+  focusNode: (target?: HelpGuideWritingDetail["target"]) => void;
   resetTourState: () => void;
 }
 
@@ -48,6 +80,7 @@ interface LockedBoardTourOptions {
   scopeSelector: string;
   boardLabel: string;
   requirementLabel: string;
+  targetName?: string;
 }
 
 export function createWritingBoardContextTour({
@@ -58,6 +91,8 @@ export function createWritingBoardContextTour({
   scriptLabel,
   unitLabel,
   lessonSummary,
+  boardGameLabel,
+  unlockFlowDescription,
   focusNode,
   openLesson,
   resetTourState,
@@ -65,6 +100,10 @@ export function createWritingBoardContextTour({
   lessonOverviewSelector,
   lessonOverviewSpotlightInsets,
 }: WritingBoardTourOptions): TourDefinition {
+  const boardLabel = boardGameLabel
+    ? `tablero de ${boardGameLabel}`
+    : `tablero de ${scriptLabel}`;
+
   const rawSteps: Array<TourStep | null> = [
     includeScriptTabs
       ? {
@@ -80,22 +119,32 @@ export function createWritingBoardContextTour({
     {
       title: `Tablero de ${scriptLabel}`,
       description:
-        "Este es el mapa principal. Puedes moverlo, hacer zoom y explorar tu progreso visualmente.",
+        `Este es el ${boardLabel}. Puedes moverlo, hacer zoom y revisar qué ${unitLabel} está disponible ahora.`,
       icon: <Layers3 className="h-6 w-6" />,
       selector: `${scopeSelector} [data-help-target="board-canvas"]`,
       spotlightPadding: 18,
       position: "top-right",
     },
     {
-      title: `Nodos de ${unitLabel}`,
+      title: "Desbloqueo del tablero",
       description:
-        `Cada nodo representa un ${unitLabel}. Aquí solo te mostramos cómo identificarlo dentro del tablero; la lección se abre en el siguiente paso.`,
+        unlockFlowDescription ??
+        "Los tableros de escritura se abren por progreso. Hiragana está disponible al comienzo; Katakana y Kanjis aparecen cuando cumples sus requisitos de avance o puntos.",
+      icon: <MapPinned className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="board-canvas"]`,
+      spotlightPadding: 18,
+      position: "top-right",
+    },
+    {
+      title: `Tu siguiente ${unitLabel}`,
+      description:
+        `La cámara se acerca al ${unitLabel} disponible para que veas exactamente qué estudiar ahora. Al completarlo, el tablero habilita el siguiente paso cuando cumplas el requisito.`,
       icon: <MousePointerClick className="h-6 w-6" />,
       selector: `${scopeSelector} [data-help-target="writing-focus-node"]`,
       spotlightPadding: 12,
       position: "right",
       onEnter: () => {
-        focusNode();
+        focusNode("available");
       },
     },
     {
@@ -162,11 +211,70 @@ export function createWritingBoardContextTour({
   };
 }
 
+export function createWritingBoardWelcomeTour({
+  id,
+  title,
+  route,
+  scopeSelector,
+  boardGameLabel,
+  introDescription,
+  unlockDescription,
+  pathDescription,
+  focusNode,
+  resetTourState,
+}: WritingBoardWelcomeTourOptions): TourDefinition {
+  const steps: TourStep[] = [
+    {
+      title: `Recorrido del tablero de ${boardGameLabel}`,
+      description: introDescription,
+      icon: <Sparkles className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="board-canvas"]`,
+      spotlightPadding: 18,
+      position: "top-right",
+      onEnter: () => {
+        focusNode("path");
+      },
+    },
+    {
+      title: "Cómo se abre el camino",
+      description: unlockDescription,
+      icon: <MapPinned className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="board-canvas"]`,
+      spotlightPadding: 18,
+      position: "top-right",
+      onEnter: () => {
+        focusNode("available");
+      },
+    },
+    {
+      title: "Orden de estudio",
+      description: pathDescription,
+      icon: <Layers3 className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="board-canvas"]`,
+      spotlightPadding: 18,
+      position: "top-right",
+      onEnter: () => {
+        focusNode("path");
+      },
+    },
+  ];
+
+  return {
+    id,
+    title,
+    route,
+    steps,
+    onClose: resetTourState,
+  };
+}
+
 export function createGrammarBoardContextTour({
   id,
   title,
   route,
   scopeSelector,
+  boardGameLabel = "Sugoroku",
+  unlockFlowDescription,
   focusLesson,
   openLesson,
   resetTourState,
@@ -175,8 +283,18 @@ export function createGrammarBoardContextTour({
     {
       title: "Tablero de gramática",
       description:
-        "Aquí ves todo el recorrido de gramática. Cada casilla representa una lección dentro de la ruta de estudio.",
+        `Este es el tablero de ${boardGameLabel}. Cada casilla representa una lección y el recorrido se desbloquea con puntos y progreso.`,
       icon: <Layers3 className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="grammar-board-canvas"]`,
+      spotlightPadding: 18,
+      position: "top-right",
+    },
+    {
+      title: "Flujo de desbloqueo",
+      description:
+        unlockFlowDescription ??
+        "El recorrido avanza en espiral hacia el centro: en escritorio comienza en la esquina inferior izquierda y en celular desde la esquina superior izquierda. Cada casilla disponible marca el siguiente paso natural.",
+      icon: <MapPinned className="h-6 w-6" />,
       selector: `${scopeSelector} [data-help-target="grammar-board-canvas"]`,
       spotlightPadding: 18,
       position: "top-right",
@@ -184,13 +302,13 @@ export function createGrammarBoardContextTour({
     {
       title: "Casilla seleccionada",
       description:
-        "Esta casilla activa es un acceso directo a una lección disponible. Desde aquí entras al contenido detallado.",
+        "La cámara destaca una casilla disponible para que identifiques qué estudiar ahora. Al abrirla entras al contenido detallado de esa lección.",
       icon: <MousePointerClick className="h-6 w-6" />,
       selector: `${scopeSelector} [data-help-target="grammar-focus-cell"]`,
       spotlightPadding: 12,
       position: "right",
       onEnter: () => {
-        focusLesson();
+        focusLesson("available");
       },
     },
     {
@@ -260,6 +378,7 @@ export function createLockedBoardAccessTour({
   scopeSelector,
   boardLabel,
   requirementLabel,
+  targetName = "board-canvas",
 }: LockedBoardTourOptions): TourDefinition {
   return {
     id,
@@ -270,10 +389,90 @@ export function createLockedBoardAccessTour({
         description:
           `Todavía no tienes acceso a este tablero. Necesitas ${requirementLabel} para desbloquear sus primeros elementos y usar la guía completa.`,
         icon: <PanelRightOpen className="h-6 w-6" />,
-        selector: `${scopeSelector} [data-help-target="board-canvas"]`,
+        selector: `${scopeSelector} [data-help-target="${targetName}"]`,
         spotlightPadding: 18,
         position: "right",
       },
     ],
+  };
+}
+
+export function createGrammarBoardWelcomeTour({
+  id,
+  title,
+  route,
+  scopeSelector,
+  focusLesson,
+  resetTourState,
+}: GrammarBoardWelcomeTourOptions): TourDefinition {
+  const steps: TourStep[] = [
+    {
+      title: "Recorrido del Sugoroku",
+      description:
+        "La cámara recorre el tablero en el orden en que se desbloquean las casillas, desde el inicio del camino hasta la meta.",
+      icon: <Sparkles className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="grammar-board-canvas"]`,
+      spotlightPadding: 18,
+      position: "top-right",
+      onEnter: () => {
+        focusLesson("path");
+      },
+    },
+    {
+      title: "Primera lección bloqueada",
+      description:
+        "Para desbloquear la primera lección de gramática necesitas 35 puntos. Cuando tengas los puntos, mantén presionada la casilla disponible para abrirla.",
+      icon: <MapPinned className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="grammar-focus-cell"]`,
+      spotlightPadding: 12,
+      position: "right",
+      onEnter: () => {
+        focusLesson("next");
+      },
+    },
+    {
+      title: "El recorrido se va abriendo",
+      description:
+        "La cámara recorre el tablero para mostrar cómo el camino avanza por casillas. Cada nueva lección pide puntos o completar lo anterior.",
+      icon: <Layers3 className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="grammar-focus-cell"]`,
+      spotlightPadding: 12,
+      position: "right",
+      onEnter: () => {
+        focusLesson("outer");
+      },
+    },
+    {
+      title: "Del borde al centro",
+      description:
+        "En escritorio el Sugoroku rodea el tablero desde la esquina inferior izquierda hasta el centro. En celular se adapta desde arriba para que el camino sea legible.",
+      icon: <MousePointerClick className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="grammar-focus-cell"]`,
+      spotlightPadding: 12,
+      position: "right",
+      onEnter: () => {
+        focusLesson("inner");
+      },
+    },
+    {
+      title: "Meta del tablero",
+      description:
+        "El centro representa el final de esta ruta. Esta bienvenida no abre lecciones; cuando tengas una casilla desbloqueada, la guía de ayuda normal te mostrará qué hay dentro.",
+      icon: <Sparkles className="h-6 w-6" />,
+      selector: `${scopeSelector} [data-help-target="grammar-focus-cell"]`,
+      spotlightPadding: 12,
+      position: "left",
+      onEnter: () => {
+        focusLesson("goal");
+      },
+    },
+  ];
+
+  return {
+    id,
+    title,
+    route,
+    steps,
+    onClose: resetTourState,
   };
 }

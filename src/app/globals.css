@@ -894,7 +894,7 @@ html[data-jp-font="meiryo"] {
   animation: kanji-node-unlock-ring 0.92s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-/* ── Points float: +30 badge rises and fades from completed node ── */
+/* ── Points float: unlock cost badge rises and fades from completed node ── */
 @keyframes kanji-points-float {
   0% {
     opacity: 0;

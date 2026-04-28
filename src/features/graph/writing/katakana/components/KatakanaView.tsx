@@ -20,6 +20,10 @@ import {
   createLockedBoardAccessTour,
   createWritingBoardContextTour,
 } from "@/features/help/utils/contextualTours";
+import {
+  HELP_GUIDE_WRITING_EVENT,
+  type HelpGuideWritingDetail,
+} from "@/features/help/utils/guideEvents";
 
 type KanaQuizCompletionResult = {
   newlyCompleted: boolean;
@@ -67,6 +71,7 @@ export default function KatakanaView() {
   const wasMasteredBeforeQuizRef = useRef(false);
   const pendingMasteryCelebrationRef = useRef(false);
   const celebrationFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pathPreviewTimeoutsRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const [suppressUnlockPointsDuringUnlock, setSuppressUnlockPointsDuringUnlock] = useState(false);
 
   const selectedId = useMemo(() => {
@@ -119,16 +124,50 @@ export default function KatakanaView() {
     setDetailNodeId(null);
   }, []);
 
-  const focusHelpNode = useCallback(() => {
+  const clearPathPreview = useCallback(() => {
+    pathPreviewTimeoutsRef.current.forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+    pathPreviewTimeoutsRef.current = [];
+  }, []);
+
+  const playHelpPathPreview = useCallback(() => {
+    clearPathPreview();
+
+    const orderedItems = [...items].sort((a, b) => a.index - b.index);
+
+    if (orderedItems.length === 0) {
+      setHelpSelectedNodeId(null);
+      return;
+    }
+
+    orderedItems.slice(0, 8).forEach((item, index) => {
+      const timeoutId = setTimeout(() => {
+        setHelpSelectedNodeId(item.id);
+      }, index * 520);
+      pathPreviewTimeoutsRef.current.push(timeoutId);
+    });
+  }, [clearPathPreview, items]);
+
+  const focusHelpNode = useCallback((target?: HelpGuideWritingDetail["target"]) => {
+    if (target === "path") {
+      setDetailNodeId(null);
+      playHelpPathPreview();
+      return;
+    }
+
+    clearPathPreview();
     if (!helpNodeId) {
+      setHelpSelectedNodeId(null);
       return;
     }
 
     setDetailNodeId(null);
     setHelpSelectedNodeId(helpNodeId);
-  }, [helpNodeId]);
+  }, [clearPathPreview, helpNodeId, playHelpPathPreview]);
 
   const openHelpLesson = useCallback(() => {
+    clearPathPreview();
     if (!helpNodeId) {
       return;
     }
@@ -136,32 +175,40 @@ export default function KatakanaView() {
     setHelpSelectedNodeId(null);
     setManualSelectedId(helpNodeId);
     setDetailNodeId(helpNodeId);
-  }, [helpNodeId]);
+  }, [clearPathPreview, helpNodeId]);
 
   const resetHelpTourState = useCallback(() => {
+    clearPathPreview();
     setHelpSelectedNodeId(null);
     setDetailNodeId(null);
-  }, []);
+  }, [clearPathPreview]);
+
+  useEffect(() => clearPathPreview, [clearPathPreview]);
 
   const buildHelpTour = useCallback(
     () => {
       if (!helpNodeId) {
         return createLockedBoardAccessTour({
           id: "katakana-context-tour-locked",
-          title: "Guia de Katakana",
+          title: "Guía de Katakana",
           scopeSelector: '[data-help-surface="katakana-board"]',
           boardLabel: "Tablero de katakana",
-          requirementLabel: "puntos suficientes",
+          requirementLabel: "pasar Hiragana",
         });
       }
 
       return createWritingBoardContextTour({
         id: "katakana-context-tour",
-        title: "Guia de Katakana",
+        title: "Guía de Katakana",
         scopeSelector: '[data-help-surface="katakana-board"]',
         scriptLabel: "katakana",
         unitLabel: "kana",
         lessonSummary: "significado, lectura y trazado",
+        boardGameLabel: "mahjong",
+        welcomeDescription:
+          "Bienvenido al tablero de mahjong. Aquí aprenderás katakana cuando hayas pasado Hiragana y el tablero quede desbloqueado.",
+        unlockFlowDescription:
+          "Katakana permanece bloqueado hasta que avances lo suficiente en Hiragana. Cuando se desbloquee, cada kana abrirá su lección y práctica.",
         focusNode: focusHelpNode,
         openLesson: openHelpLesson,
         resetTourState: resetHelpTourState,
@@ -172,6 +219,34 @@ export default function KatakanaView() {
     },
     [focusHelpNode, helpNodeId, openHelpLesson, resetHelpTourState],
   );
+
+  useEffect(() => {
+    const handleWritingGuideEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<HelpGuideWritingDetail>;
+      const detail = customEvent.detail;
+
+      if (detail?.script !== "katakana") {
+        return;
+      }
+
+      if (detail.action === "focus") {
+        focusHelpNode(detail.target);
+      } else if (detail.action === "open") {
+        openHelpLesson();
+      } else if (detail.action === "reset") {
+        resetHelpTourState();
+      }
+    };
+
+    window.addEventListener(HELP_GUIDE_WRITING_EVENT, handleWritingGuideEvent);
+
+    return () => {
+      window.removeEventListener(
+        HELP_GUIDE_WRITING_EVENT,
+        handleWritingGuideEvent,
+      );
+    };
+  }, [focusHelpNode, openHelpLesson, resetHelpTourState]);
 
   const handleQuizStart = useCallback(
     (

@@ -38,6 +38,10 @@ import {
   createLockedBoardAccessTour,
   createWritingBoardContextTour,
 } from "@/features/help/utils/contextualTours";
+import {
+  HELP_GUIDE_WRITING_EVENT,
+  type HelpGuideWritingDetail,
+} from "@/features/help/utils/guideEvents";
 import { unlockKanji } from "@/features/kanji";
 import { KanjiBoardInteractionProvider } from "../lib/KanjiBoardInteractionContext";
 
@@ -128,6 +132,7 @@ export default function KanjisView() {
   const wasMasteredBeforeQuizRef = useRef(false);
   const pendingMasteryCelebrationRef = useRef(false);
   const celebrationFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pathPreviewTimeoutsRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   // Pause parallax rAF loop while the quiz modal is on top.
   const quizActiveRef = useRef(false);
   // Always-current item/reload refs so event callbacks stay stable.
@@ -303,7 +308,7 @@ export default function KanjisView() {
   ]);
 
   const handleUnlockNextKanji = useCallback(async (nodeId?: string) => {
-    if (!nextUnlockCandidate || unlockPending) {
+    if (!nextUnlockCandidate || !canUnlockNext || unlockPending) {
       return;
     }
 
@@ -337,7 +342,7 @@ export default function KanjisView() {
       setUnlockPending(false);
       setUnlockPendingNodeId(null);
     }
-  }, [nextUnlockCandidate, toast, unlockPending, applyOptimisticUnlock]);
+  }, [canUnlockNext, nextUnlockCandidate, toast, unlockPending, applyOptimisticUnlock]);
 
   // Auto-desbloqueo de kanjis gratuitos (cost = 0): el usuario no necesita
   // mantener presionado para abrirlos. Se dispara una sola vez por id.
@@ -379,16 +384,50 @@ export default function KanjisView() {
     setDetailNodeId(null);
   }, []);
 
-  const focusHelpNode = useCallback(() => {
+  const clearPathPreview = useCallback(() => {
+    pathPreviewTimeoutsRef.current.forEach((timeoutId) => {
+      clearTimeout(timeoutId);
+    });
+    pathPreviewTimeoutsRef.current = [];
+  }, []);
+
+  const playHelpPathPreview = useCallback(() => {
+    clearPathPreview();
+
+    const orderedItems = [...items].sort((a, b) => a.index - b.index);
+
+    if (orderedItems.length === 0) {
+      setHelpSelectedNodeId(null);
+      return;
+    }
+
+    orderedItems.slice(0, 8).forEach((item, index) => {
+      const timeoutId = setTimeout(() => {
+        setHelpSelectedNodeId(item.id);
+      }, index * 520);
+      pathPreviewTimeoutsRef.current.push(timeoutId);
+    });
+  }, [clearPathPreview, items]);
+
+  const focusHelpNode = useCallback((target?: HelpGuideWritingDetail["target"]) => {
+    if (target === "path") {
+      setDetailNodeId(null);
+      playHelpPathPreview();
+      return;
+    }
+
+    clearPathPreview();
     if (!helpNodeId) {
+      setHelpSelectedNodeId(null);
       return;
     }
 
     setDetailNodeId(null);
     setHelpSelectedNodeId(helpNodeId);
-  }, [helpNodeId]);
+  }, [clearPathPreview, helpNodeId, playHelpPathPreview]);
 
   const openHelpLesson = useCallback(() => {
+    clearPathPreview();
     if (!helpNodeId) {
       return;
     }
@@ -396,32 +435,40 @@ export default function KanjisView() {
     setHelpSelectedNodeId(null);
     setManualSelectedId(helpNodeId);
     setDetailNodeId(helpNodeId);
-  }, [helpNodeId]);
+  }, [clearPathPreview, helpNodeId]);
 
   const resetHelpTourState = useCallback(() => {
+    clearPathPreview();
     setHelpSelectedNodeId(null);
     setDetailNodeId(null);
-  }, []);
+  }, [clearPathPreview]);
+
+  useEffect(() => clearPathPreview, [clearPathPreview]);
 
   const buildHelpTour = useCallback(
     () => {
       if (!helpNodeId) {
         return createLockedBoardAccessTour({
           id: "kanji-context-tour-locked",
-          title: "Guia de Kanji",
+          title: "Guía de Kanjis",
           scopeSelector: '[data-help-surface="kanji-board"]',
           boardLabel: "Tablero de kanji",
-          requirementLabel: "puntos suficientes",
+          requirementLabel: "los puntos necesarios",
         });
       }
 
       return createWritingBoardContextTour({
         id: "kanji-context-tour",
-        title: "Guia de Kanji",
+        title: "Guía de Kanjis",
         scopeSelector: '[data-help-surface="kanji-board"]',
-        scriptLabel: "kanji",
+        scriptLabel: "kanjis",
         unitLabel: "kanji",
-        lessonSummary: "simbolo, lecturas, significados y escritura",
+        lessonSummary: "símbolo, lecturas, significados y escritura",
+        boardGameLabel: "go",
+        welcomeDescription:
+          "Bienvenido al tablero de go. Aquí aprenderás kanjis cuando consigas los puntos necesarios para desbloquearlos.",
+        unlockFlowDescription:
+          "Los kanjis permanecen bloqueados hasta que consigas los puntos necesarios. Cuando un kanji esté disponible, la guía te mostrará su lección y práctica.",
         focusNode: focusHelpNode,
         openLesson: openHelpLesson,
         resetTourState: resetHelpTourState,
@@ -432,6 +479,34 @@ export default function KanjisView() {
     },
     [focusHelpNode, helpNodeId, openHelpLesson, resetHelpTourState],
   );
+
+  useEffect(() => {
+    const handleWritingGuideEvent = (event: Event) => {
+      const customEvent = event as CustomEvent<HelpGuideWritingDetail>;
+      const detail = customEvent.detail;
+
+      if (detail?.script !== "kanji") {
+        return;
+      }
+
+      if (detail.action === "focus") {
+        focusHelpNode(detail.target);
+      } else if (detail.action === "open") {
+        openHelpLesson();
+      } else if (detail.action === "reset") {
+        resetHelpTourState();
+      }
+    };
+
+    window.addEventListener(HELP_GUIDE_WRITING_EVENT, handleWritingGuideEvent);
+
+    return () => {
+      window.removeEventListener(
+        HELP_GUIDE_WRITING_EVENT,
+        handleWritingGuideEvent,
+      );
+    };
+  }, [focusHelpNode, openHelpLesson, resetHelpTourState]);
 
   const handleQuizStart = useCallback(
     (

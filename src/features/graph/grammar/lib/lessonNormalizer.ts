@@ -428,7 +428,9 @@ export function normalizeGrammarLessonSummary(value: unknown): GrammarLessonSumm
   return {
     id,
     title,
-    pointsToUnlock: toNumberOrNull(record.pointsToUnlock),
+    pointsToUnlock:
+      toNumberOrNull(record.pointsToUnlock) ??
+      toNumberOrNull(record.points_to_unlock),
     status:
       toStringValue(record.status) ||
       toStringValue(record.lessonStatus) ||
@@ -456,7 +458,9 @@ export function normalizeGrammarLesson(value: unknown): GrammarLesson {
     id: toStringValue(record?.id),
     title: toStringValue(record?.title, "Lección de gramática"),
     description: toNullableString(record?.description),
-    pointsToUnlock: toNumberOrNull(record?.pointsToUnlock),
+    pointsToUnlock:
+      toNumberOrNull(record?.pointsToUnlock) ??
+      toNumberOrNull(record?.points_to_unlock),
     content: normalizeLessonContent(record?.content),
   };
 }

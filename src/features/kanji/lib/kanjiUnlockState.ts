@@ -3,8 +3,9 @@ import type {
   KanjiLessonResult,
   KanjiStudyProgress,
 } from "@/features/kanji/types";
+import { FIXED_KANJI_UNLOCK_COST } from "@/shared/config/unlockCosts";
 
-export const KANJI_UNLOCK_COST = 30;
+export const KANJI_UNLOCK_COST = FIXED_KANJI_UNLOCK_COST;
 const DEFAULT_COMPLETION_SCORE = 70;
 
 export type KanjiUnlockState = {
@@ -96,7 +97,7 @@ export function resolveKanjiUnlockState({
   const previousStepCompleted =
     latestUnlockedIndex < 0 ||
     completedIds.has(kanjis[latestUnlockedIndex].id);
-  const nextUnlockCost = nextUnlockCandidate?.pointsToUnlock ?? unlockCost;
+  const nextUnlockCost = unlockCost;
   const canUnlockNext =
     nextUnlockCandidate !== null &&
     previousStepCompleted &&

@@ -49,13 +49,15 @@ export default function HelpPageRoute() {
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
-          <HelpBanner
-            searchQuery={searchQuery}
-            onSearchChange={setSearchQuery}
-            onSearchFocusFaq={() => setActiveTab("faq")}
-            animationsEnabled={animationsEnabled}
-            heavyAnimationsEnabled={heavyAnimationsEnabled}
-          />
+          <div data-help-target="help-banner">
+            <HelpBanner
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              onSearchFocusFaq={() => setActiveTab("faq")}
+              animationsEnabled={animationsEnabled}
+              heavyAnimationsEnabled={heavyAnimationsEnabled}
+            />
+          </div>
         </AnimatedEntrance>
 
         <AnimatedEntrance
@@ -63,7 +65,9 @@ export default function HelpPageRoute() {
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
-          <HelpTabs activeTab={activeTab} onChange={setActiveTab} />
+          <div data-help-target="help-tabs">
+            <HelpTabs activeTab={activeTab} onChange={setActiveTab} />
+          </div>
         </AnimatedEntrance>
 
         <div className="space-y-10">
@@ -73,11 +77,13 @@ export default function HelpPageRoute() {
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >
             {activeTab === "guides" && (
-              <HelpGuidesSection
-                onStartGuide={handleStartGuide}
-                animationsEnabled={animationsEnabled}
-                heavyAnimationsEnabled={heavyAnimationsEnabled}
-              />
+              <div data-help-target="help-guides">
+                <HelpGuidesSection
+                  onStartGuide={handleStartGuide}
+                  animationsEnabled={animationsEnabled}
+                  heavyAnimationsEnabled={heavyAnimationsEnabled}
+                />
+              </div>
             )}
 
             {activeTab === "faq" && (
@@ -102,11 +108,13 @@ export default function HelpPageRoute() {
             disabled={!animationsEnabled}
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >
-            <HelpSupportCTA
-              onContactSupport={() => setSupportOpen(true)}
-              animationsEnabled={animationsEnabled}
-              heavyAnimationsEnabled={heavyAnimationsEnabled}
-            />
+            <div data-help-target="help-support">
+              <HelpSupportCTA
+                onContactSupport={() => setSupportOpen(true)}
+                animationsEnabled={animationsEnabled}
+                heavyAnimationsEnabled={heavyAnimationsEnabled}
+              />
+            </div>
           </AnimatedEntrance>
         </div>
       </div>
