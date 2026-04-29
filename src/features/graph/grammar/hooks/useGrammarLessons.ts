@@ -53,7 +53,7 @@ export function useGrammarLessons() {
       setProgress({
         grammarId: lessonId,
         title: lesson?.title ?? "",
-        pointsToUnlock: lesson?.pointsToUnlock ?? 0,
+        pointsToUnlock: FIXED_GRAMMAR_UNLOCK_COST,
         completed: false,
       });
       invalidateApiCache("/api/content/grammar/progress");
@@ -152,7 +152,7 @@ export function useGrammarLessons() {
     progress,
     nextUnlockCandidate,
     canUnlockNext,
-    unlockCost: nextUnlockCandidate?.pointsToUnlock ?? FIXED_GRAMMAR_UNLOCK_COST,
+    unlockCost: FIXED_GRAMMAR_UNLOCK_COST,
     applyOptimisticUnlock,
     recentlyUnlockedIds,
   };

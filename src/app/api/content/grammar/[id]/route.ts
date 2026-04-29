@@ -41,8 +41,8 @@ export async function GET(
 /**
  * POST /api/content/grammar/:id?resource=unlock
  * Proxy directo al study-api `POST /grammar/:id` (UnlockGrammar).
- * El backend persiste en `users_unlock_grammar`, valida puntos por
- * lección (points_to_unlock) y descuenta puntos al usuario.
+ * El backend persiste en `users_unlock_grammar` y descuenta el costo fijo
+ * de desbloqueo manual.
  */
 export async function POST(
   req: NextRequest,

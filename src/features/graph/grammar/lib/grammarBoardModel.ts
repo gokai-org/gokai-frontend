@@ -91,10 +91,7 @@ export function buildGrammarBoardItems(
     const lesson = lessons[index];
 
     if (lesson) {
-      const lessonUnlockCost = Math.max(
-        0,
-        lesson.pointsToUnlock ?? FIXED_GRAMMAR_UNLOCK_COST,
-      );
+      const lessonUnlockCost = FIXED_GRAMMAR_UNLOCK_COST;
 
       items.push({
         id: lesson.id,

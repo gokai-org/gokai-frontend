@@ -12,6 +12,7 @@ import {
 } from "@/features/kanji/utils/kanjiText";
 import type { Theme, Subtheme, Word } from "@/features/library/types";
 import type { ScriptCardProps } from "@/features/library/components/ScriptCard";
+import { FIXED_KANJI_UNLOCK_COST } from "@/shared/config/unlockCosts";
 
 const RED_THEME = {
   primary: "#993331",
@@ -77,7 +78,7 @@ export function kanjiToCard(kanji: Kanji) {
     thumbnail: kanji.symbol,
     thumbnailClassName:
       "w-[72px] h-[72px] text-[40px] rounded-2xl " + RED_THEME.thumbStrong,
-    topRightBadge: `${kanji.pointsToUnlock} pts`,
+    topRightBadge: `${FIXED_KANJI_UNLOCK_COST} pts`,
     topRightBadgeClassName:
       "border border-[#993331]/20 bg-[#993331]/10 text-[#993331] backdrop-blur-sm",
     favoriteButtonThemeClassName: "border-[#993331]/25 bg-[#993331]/10",
@@ -139,7 +140,7 @@ export function kanjiToScriptCard(
     subtitle: reading ? `Lectura: ${reading}` : undefined,
     variant: "kanji",
     isFavorite,
-    unlockPoints: kanji.pointsToUnlock,
+    unlockPoints: FIXED_KANJI_UNLOCK_COST,
   };
 }
 

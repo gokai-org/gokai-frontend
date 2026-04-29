@@ -456,7 +456,7 @@ export function useKanjiBoard() {
         bestResult: resultData?.bestResult ?? null,
         unlocked: isUnlocked,
         canUnlock: canUnlock && unlockState.canUnlockNext,
-        unlockCost: kanji.pointsToUnlock,
+        unlockCost: unlockState.unlockCost,
         isCurrent: progress?.kanjiId === kanji.id,
       };
     });
@@ -470,7 +470,7 @@ export function useKanjiBoard() {
       const nextProgress: KanjiStudyProgress = {
         kanjiId,
         symbol: kanji?.symbol ?? "",
-        pointsToUnlock: kanji?.pointsToUnlock ?? 0,
+        pointsToUnlock: unlockState.unlockCost,
         exerciseType: progressRef.current?.exerciseType ?? "kanji",
         completed: false,
       };

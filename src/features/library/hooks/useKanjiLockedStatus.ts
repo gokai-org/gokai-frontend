@@ -228,7 +228,7 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
       const nextProgress: KanjiStudyProgress = {
         kanjiId,
         symbol: kanji?.symbol ?? "",
-        pointsToUnlock: kanji?.pointsToUnlock ?? 0,
+        pointsToUnlock: unlockState.unlockCost,
         exerciseType: progressRef.current?.exerciseType ?? "kanji",
         completed: false,
       };

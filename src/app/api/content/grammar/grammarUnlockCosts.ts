@@ -7,14 +7,8 @@ type GrammarCostRecord = {
 };
 
 function resolveUnlockCost(item: GrammarCostRecord) {
-  const explicitUnlockCost =
-    typeof item.pointsToUnlock === "number"
-      ? item.pointsToUnlock
-      : typeof item.points_to_unlock === "number"
-        ? item.points_to_unlock
-        : FIXED_GRAMMAR_UNLOCK_COST;
-
-  return Math.max(0, explicitUnlockCost);
+  void item;
+  return FIXED_GRAMMAR_UNLOCK_COST;
 }
 
 function normalizeUnlockCost<T extends GrammarCostRecord>(item: T): T {
@@ -28,8 +22,8 @@ function normalizeUnlockCost<T extends GrammarCostRecord>(item: T): T {
 }
 
 /**
- * Conserva el costo real enviado por catálogo y solo usa el valor
- * fijo como fallback cuando el backend legacy no lo expone.
+ * Fuerza el costo manual fijo aunque el catálogo exponga points_to_unlock
+ * progresivo para orden/ruta.
  */
 export function normalizeGrammarCatalogUnlockCosts<T extends GrammarCostRecord>(
   items: T[],

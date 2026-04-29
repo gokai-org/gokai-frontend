@@ -14,6 +14,7 @@ import {
   type BoardLayoutEdge,
   type BoardPoint,
 } from "../../shared/lib/boardLayoutCore";
+import { FIXED_KANJI_UNLOCK_COST } from "@/shared/config/unlockCosts";
 
 const NODE_WIDTH = 168;
 const NODE_HEIGHT = 196;
@@ -152,7 +153,7 @@ export function createKanjiBoardGraph(
           opacityScale: qualityProfile.edge.opacityScale,
           showLockedDash: qualityProfile.edge.showLockedDash,
           unlocking,
-          requiredPoints: target.kanji.pointsToUnlock,
+          requiredPoints: FIXED_KANJI_UNLOCK_COST,
         },
       },
     ];
@@ -229,7 +230,7 @@ export function createBaseKanjiBoardGraph(
           opacityScale: qualityProfile.edge.opacityScale,
           showLockedDash: qualityProfile.edge.showLockedDash,
           unlocking: false,
-          requiredPoints: target.kanji.pointsToUnlock,
+          requiredPoints: FIXED_KANJI_UNLOCK_COST,
         },
       },
     ];
