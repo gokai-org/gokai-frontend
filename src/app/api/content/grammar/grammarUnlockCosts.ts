@@ -6,27 +6,39 @@ type GrammarCostRecord = {
   points_to_unlock?: number;
 };
 
-function withFixedUnlockCost<T extends GrammarCostRecord>(item: T): T {
+function resolveUnlockCost(item: GrammarCostRecord) {
+  const explicitUnlockCost =
+    typeof item.pointsToUnlock === "number"
+      ? item.pointsToUnlock
+      : typeof item.points_to_unlock === "number"
+        ? item.points_to_unlock
+        : FIXED_GRAMMAR_UNLOCK_COST;
+
+  return Math.max(0, explicitUnlockCost);
+}
+
+function normalizeUnlockCost<T extends GrammarCostRecord>(item: T): T {
+  const unlockCost = resolveUnlockCost(item);
+
   return {
     ...item,
-    pointsToUnlock: FIXED_GRAMMAR_UNLOCK_COST,
-    points_to_unlock: FIXED_GRAMMAR_UNLOCK_COST,
+    pointsToUnlock: unlockCost,
+    points_to_unlock: unlockCost,
   };
 }
 
 /**
- * Backend: costo fijo de GRAMMAR_POINTS=35 por lección
- * (gokaiauth/constants). Forzamos el valor fijo en BFF para que la
- * UI muestre y valide siempre contra 35.
+ * Conserva el costo real enviado por catálogo y solo usa el valor
+ * fijo como fallback cuando el backend legacy no lo expone.
  */
 export function normalizeGrammarCatalogUnlockCosts<T extends GrammarCostRecord>(
   items: T[],
 ) {
-  return items.map(withFixedUnlockCost);
+  return items.map(normalizeUnlockCost);
 }
 
 export function normalizeGrammarDetailUnlockCost<T extends GrammarCostRecord>(
   detail: T,
 ) {
-  return withFixedUnlockCost(detail);
+  return normalizeUnlockCost(detail);
 }

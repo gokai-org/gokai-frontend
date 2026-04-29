@@ -66,7 +66,7 @@ export function resolveGrammarUnlockState({
   const previousStepCompleted =
     latestUnlockedIndex < 0 ||
     completedIds.has(lessons[latestUnlockedIndex].id);
-  const nextUnlockCost = unlockCost;
+  const nextUnlockCost = nextUnlockCandidate?.pointsToUnlock ?? unlockCost;
   const canUnlockNext =
     nextUnlockCandidate !== null &&
     previousStepCompleted &&

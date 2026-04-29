@@ -87,7 +87,7 @@ export async function getGrammarProgress() {
 
 export async function unlockGrammar(grammarId: string) {
   return apiFetch<GrammarUnlockResponse>(
-    `/api/content/grammar/${grammarId}?resource=unlock`,
+    `/api/study/grammar/${grammarId}`,
     {
       method: "POST",
     },

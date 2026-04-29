@@ -97,7 +97,7 @@ export function resolveKanjiUnlockState({
   const previousStepCompleted =
     latestUnlockedIndex < 0 ||
     completedIds.has(kanjis[latestUnlockedIndex].id);
-  const nextUnlockCost = unlockCost;
+  const nextUnlockCost = nextUnlockCandidate?.pointsToUnlock ?? unlockCost;
   const canUnlockNext =
     nextUnlockCandidate !== null &&
     previousStepCompleted &&

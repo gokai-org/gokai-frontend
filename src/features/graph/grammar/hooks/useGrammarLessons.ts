@@ -152,7 +152,7 @@ export function useGrammarLessons() {
     progress,
     nextUnlockCandidate,
     canUnlockNext,
-    unlockCost: FIXED_GRAMMAR_UNLOCK_COST,
+    unlockCost: nextUnlockCandidate?.pointsToUnlock ?? FIXED_GRAMMAR_UNLOCK_COST,
     applyOptimisticUnlock,
     recentlyUnlockedIds,
   };

@@ -315,11 +315,6 @@ export function ScriptCard({
         className="h-4 w-4 text-content-muted/50 dark:text-white/30"
         strokeWidth={2}
       />
-      {typeof unlockPoints === "number" ? (
-        <span className="rounded-full border border-border-subtle bg-surface-primary/70 px-2 py-[3px] text-[10px] font-black leading-none text-content-muted shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-white/35">
-          {unlockCost} pts
-        </span>
-      ) : null}
     </div>
   ) : null;
 
