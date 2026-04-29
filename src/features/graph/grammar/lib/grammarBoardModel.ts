@@ -91,12 +91,14 @@ export function buildGrammarBoardItems(
     const lesson = lessons[index];
 
     if (lesson) {
+      const lessonUnlockCost = FIXED_GRAMMAR_UNLOCK_COST;
+
       items.push({
         id: lesson.id,
         index,
         symbol: extractLessonSymbol(lesson, index),
         title: lesson.title,
-        pointsToUnlock: FIXED_GRAMMAR_UNLOCK_COST,
+        pointsToUnlock: lessonUnlockCost,
         status: hasUnlockContext
           ? unlockState.completedIds.has(lesson.id)
             ? "completed"
@@ -111,7 +113,7 @@ export function buildGrammarBoardItems(
         canUnlock:
           unlockState.nextUnlockCandidateId === lesson.id &&
           unlockState.canUnlockNext,
-        unlockCost: FIXED_GRAMMAR_UNLOCK_COST,
+        unlockCost: lessonUnlockCost,
       });
       continue;
     }

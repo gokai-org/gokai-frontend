@@ -14,6 +14,7 @@ import {
 import LessonShell from "./LessonShell";
 import { SkeletonDrawerContent } from "@/shared/ui/Skeleton";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { FIXED_KANJI_UNLOCK_COST } from "@/shared/config/unlockCosts";
 
 const modeTitle: Record<LessonMode, string> = {
   writing: "Escritura",
@@ -202,7 +203,7 @@ export default function LessonDrawer({
   }, [active]);
 
   const headerPoints = useMemo(() => {
-    if (active?.kind === "kanji") return active.kanji.pointsToUnlock ?? 0;
+    if (active?.kind === "kanji") return FIXED_KANJI_UNLOCK_COST;
     if (active?.kind === "kana") return active.kana.pointsToUnlock ?? 0;
     return 0;
   }, [active]);

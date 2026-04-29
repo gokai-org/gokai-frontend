@@ -2,6 +2,7 @@
 
 import type { LessonMode, LessonResolved } from "../../types";
 import LessonCTA from "../LessonCTA";
+import { FIXED_GRAMMAR_UNLOCK_COST } from "@/shared/config/unlockCosts";
 
 export default function GrammarLesson({
   data,
@@ -22,7 +23,7 @@ export default function GrammarLesson({
           <div className="text-xs text-content-tertiary">
             Puntos:{" "}
             <span className="font-semibold text-content-primary">
-              {g.pointsToUnlock ?? 0}
+              {FIXED_GRAMMAR_UNLOCK_COST}
             </span>
           </div>
         </div>

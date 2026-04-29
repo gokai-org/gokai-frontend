@@ -6,29 +6,34 @@ type KanjiCostRecord = {
   points_to_unlock?: number;
 };
 
-function withFixedUnlockCost<T extends KanjiCostRecord>(item: T): T {
+function resolveUnlockCost(item: KanjiCostRecord) {
+  void item;
+  return FIXED_KANJI_UNLOCK_COST;
+}
+
+function normalizeUnlockCost<T extends KanjiCostRecord>(item: T): T {
+  const unlockCost = resolveUnlockCost(item);
+
   return {
     ...item,
-    pointsToUnlock: FIXED_KANJI_UNLOCK_COST,
-    points_to_unlock: FIXED_KANJI_UNLOCK_COST,
+    pointsToUnlock: unlockCost,
+    points_to_unlock: unlockCost,
   };
 }
 
 /**
- * Modelo del backend: costo fijo de KANJI_POINTS=30 por kanji
- * (gokaiauth/constants). Algunos catálogos legacy podrían exponer
- * valores variables; forzamos siempre el costo fijo aquí para que la
- * UI quede alineada con la lógica real de validación.
+ * Fuerza el costo manual fijo aunque el catálogo exponga points_to_unlock
+ * progresivo para orden/ruta.
  */
 export function normalizeKanjiCatalogUnlockCosts<T extends KanjiCostRecord>(
   items: T[],
 ) {
-  return items.map(withFixedUnlockCost);
+  return items.map(normalizeUnlockCost);
 }
 
 export function normalizeKanjiDetailUnlockCost<T extends KanjiCostRecord>(
   detail: T,
   _catalog: KanjiCostRecord[] = [],
 ) {
-  return withFixedUnlockCost(detail);
+  return normalizeUnlockCost(detail);
 }

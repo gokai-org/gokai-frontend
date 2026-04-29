@@ -13,6 +13,7 @@ import GrammarExamplesSection from "./sections/GrammarExamplesSection";
 import GrammarMeaningSection from "./sections/GrammarMeaningSection";
 import GrammarLessonTable from "./GrammarLessonTable";
 import type { GrammarLesson } from "../../types";
+import { FIXED_GRAMMAR_UNLOCK_COST } from "@/shared/config/unlockCosts";
 
 type LessonPaneId = "conceptos" | "estructura" | "ejemplos";
 
@@ -266,7 +267,7 @@ export default function GrammarLessonContent({ lesson, onClose, onStartExam }: G
     {
       icon: Sparkles,
       title: "Puntos",
-      value: formatCompactNumber(lesson.pointsToUnlock ?? 0),
+      value: formatCompactNumber(FIXED_GRAMMAR_UNLOCK_COST),
     },
     {
       icon: LayoutPanelLeft,

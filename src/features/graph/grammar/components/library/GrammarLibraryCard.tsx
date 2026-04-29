@@ -422,9 +422,6 @@ export function GrammarLibraryCard({
             {showLockedIndicator ? (
               <div className="flex h-full flex-col items-center justify-center gap-2">
                 <LockKeyhole className="h-5 w-5 text-content-muted/60 dark:text-white/30" strokeWidth={2.1} />
-                <span className="rounded-full border border-border-subtle bg-surface-primary/70 px-2 py-[3px] text-[10px] font-black leading-none text-content-muted shadow-sm dark:border-white/10 dark:bg-white/[0.06] dark:text-white/35">
-                  {unlockCost} pts
-                </span>
               </div>
             ) : (
               <div className="max-w-[78%]">
