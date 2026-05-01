@@ -7,6 +7,8 @@ import {
   JP_FONT_ATTR_MAP,
   FONT_SIZE_STORAGE_KEY,
   JP_FONT_STORAGE_KEY,
+  normalizeFontSize,
+  normalizeJapaneseFont,
   type FontSize,
   type JapaneseFont,
 } from "@/shared/hooks/useTypography";
@@ -17,7 +19,11 @@ function getInitialFontSize(): FontSize {
   if (typeof window === "undefined") return "Mediano";
   try {
     const stored = localStorage.getItem(FONT_SIZE_STORAGE_KEY);
-    if (stored && stored in FONT_SIZE_ATTR_MAP) return stored as FontSize;
+    const normalized = normalizeFontSize(stored);
+    if (stored && stored !== normalized) {
+      localStorage.setItem(FONT_SIZE_STORAGE_KEY, normalized);
+    }
+    return normalized;
   } catch {}
   return "Mediano";
 }
@@ -26,7 +32,11 @@ function getInitialJapaneseFont(): JapaneseFont {
   if (typeof window === "undefined") return "Noto Sans JP";
   try {
     const stored = localStorage.getItem(JP_FONT_STORAGE_KEY);
-    if (stored && stored in JP_FONT_ATTR_MAP) return stored as JapaneseFont;
+    const normalized = normalizeJapaneseFont(stored);
+    if (stored && stored !== normalized) {
+      localStorage.setItem(JP_FONT_STORAGE_KEY, normalized);
+    }
+    return normalized;
   } catch {}
   return "Noto Sans JP";
 }

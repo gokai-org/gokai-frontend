@@ -4,8 +4,22 @@ import { createContext, useContext } from "react";
 
 // ─── Types ───────────────────────────────────────────────────────
 
-export type FontSize = "Pequeño" | "Mediano" | "Grande" | "Muy grande";
-export type JapaneseFont = "Noto Sans JP" | "Hiragino" | "Yu Gothic" | "Meiryo";
+export const FONT_SIZE_OPTIONS = [
+  "Pequeño",
+  "Mediano",
+  "Grande",
+  "Muy grande",
+] as const;
+
+export const JAPANESE_FONT_OPTIONS = [
+  "Noto Sans JP",
+  "Noto Serif JP",
+  "Sawarabi Mincho",
+  "Meiryo",
+] as const;
+
+export type FontSize = (typeof FONT_SIZE_OPTIONS)[number];
+export type JapaneseFont = (typeof JAPANESE_FONT_OPTIONS)[number];
 
 export interface TypographyContextValue {
   fontSize: FontSize;
@@ -25,10 +39,33 @@ export const FONT_SIZE_ATTR_MAP: Record<FontSize, string> = {
 
 export const JP_FONT_ATTR_MAP: Record<JapaneseFont, string> = {
   "Noto Sans JP": "noto",
-  Hiragino: "hiragino",
-  "Yu Gothic": "yugothic",
+  "Noto Serif JP": "noto-serif",
+  "Sawarabi Mincho": "sawarabi",
   Meiryo: "meiryo",
 };
+
+const LEGACY_JP_FONT_MAP: Record<string, JapaneseFont> = {
+  Hiragino: "Noto Serif JP",
+  "Yu Gothic": "Sawarabi Mincho",
+};
+
+export function normalizeFontSize(value: unknown): FontSize {
+  return FONT_SIZE_OPTIONS.includes(value as FontSize)
+    ? (value as FontSize)
+    : "Mediano";
+}
+
+export function normalizeJapaneseFont(value: unknown): JapaneseFont {
+  if (JAPANESE_FONT_OPTIONS.includes(value as JapaneseFont)) {
+    return value as JapaneseFont;
+  }
+
+  if (typeof value === "string" && value in LEGACY_JP_FONT_MAP) {
+    return LEGACY_JP_FONT_MAP[value];
+  }
+
+  return "Noto Sans JP";
+}
 
 // ─── Storage keys ────────────────────────────────────────────────
 

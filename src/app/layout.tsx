@@ -1,5 +1,10 @@
 import type { Metadata } from "next";
-import { Montserrat, Noto_Sans_JP } from "next/font/google";
+import {
+  Montserrat,
+  Noto_Sans_JP,
+  Noto_Serif_JP,
+  Sawarabi_Mincho,
+} from "next/font/google";
 import "./globals.css";
 import { PlatformMotionProvider } from "@/shared/components/PlatformMotionProvider";
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
@@ -18,6 +23,20 @@ const notoSansJP = Noto_Sans_JP({
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-noto-sans-jp",
   display: "swap",
+});
+
+const notoSerifJP = Noto_Serif_JP({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-noto-serif-jp",
+  display: "swap",
+});
+
+const sawarabiMincho = Sawarabi_Mincho({
+  weight: "400",
+  variable: "--font-sawarabi-mincho",
+  display: "swap",
+  preload: false,
 });
 
 export const metadata: Metadata = {
@@ -40,9 +59,13 @@ const themeInitScript = `
     var fsMap = {"Pequeño":"small","Mediano":"medium","Grande":"large","Muy grande":"x-large"};
     var fs = localStorage.getItem('gokai-font-size');
     if (fs && fsMap[fs]) d.setAttribute('data-font-size', fsMap[fs]);
-    var jpMap = {"Noto Sans JP":"noto","Hiragino":"hiragino","Yu Gothic":"yugothic","Meiryo":"meiryo"};
+    var jpMap = {"Noto Sans JP":"noto","Noto Serif JP":"noto-serif","Hiragino":"noto-serif","Sawarabi Mincho":"sawarabi","Yu Gothic":"sawarabi","Meiryo":"meiryo"};
     var jp = localStorage.getItem('gokai-jp-font');
-    if (jp && jpMap[jp]) d.setAttribute('data-jp-font', jpMap[jp]);
+    if (jp && jpMap[jp]) {
+      d.setAttribute('data-jp-font', jpMap[jp]);
+      if (jp === 'Hiragino') localStorage.setItem('gokai-jp-font', 'Noto Serif JP');
+      if (jp === 'Yu Gothic') localStorage.setItem('gokai-jp-font', 'Sawarabi Mincho');
+    }
   } catch(e) {}
 })();
 `;
@@ -55,7 +78,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${montserrat.variable} ${notoSansJP.variable}`}
+      className={`${montserrat.variable} ${notoSansJP.variable} ${notoSerifJP.variable} ${sawarabiMincho.variable}`}
       suppressHydrationWarning
     >
       <head>

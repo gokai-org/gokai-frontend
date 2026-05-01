@@ -6,16 +6,17 @@ import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
-  Crown,
   RotateCcw,
-  Sparkles,
 } from "lucide-react";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
 import {
   MAX_ONBOARDING_SELECTIONS,
 } from "@/features/onboarding/data/interestSections";
 import { useOnboardingInterests } from "@/features/onboarding/hooks/useOnboardingInterests";
-import { InitialExperienceSettings } from "./InitialExperienceSettings";
+import {
+  InitialExperienceSettings,
+  type SettingStep,
+} from "./InitialExperienceSettings";
 import {
   DesktopInterestRow,
   MobileInterestCarousel,
@@ -31,6 +32,8 @@ export function OnboardingInterestsExperience() {
   const router = useRouter();
   const [showIntro, setShowIntro] = useState(true);
   const [step, setStep] = useState<OnboardingStep>("interests");
+  const [currentSettingsStep, setCurrentSettingsStep] =
+    useState<SettingStep>("appearance");
   const [planVariant, setPlanVariant] = useState<PlanVariant>(() => {
     if (typeof window === "undefined") return "free";
     return new URLSearchParams(window.location.search).get("plan") === "premium"
@@ -71,6 +74,8 @@ export function OnboardingInterestsExperience() {
   const currentSectionHasSelection = !!selectedInterests[currentSection.id];
   const themesLoading = status === "idle" || status === "loading";
   const canFinish = !saving && selectedCount > 0 && status === "success";
+  const showThemeModeToggle =
+    !(step === "settings" && currentSettingsStep === "appearance");
 
   const handleInterestToggle = (interest: OnboardingInterest) => {
     toggleInterest(currentSection.id, interest.themeId);
@@ -105,7 +110,9 @@ export function OnboardingInterestsExperience() {
 
   return (
     <main className="relative min-h-screen bg-surface-secondary overflow-hidden">
-      <ThemeModeToggle className="fixed right-4 top-4 z-50 md:right-6 md:top-6" />
+      {showThemeModeToggle ? (
+        <ThemeModeToggle className="fixed right-4 top-4 z-50 md:right-6 md:top-6" />
+      ) : null}
 
       <AnimatedGraphBackground
         variant="dimmed"
@@ -192,6 +199,7 @@ export function OnboardingInterestsExperience() {
             <InitialExperienceSettings
               onBack={() => setStep("interests")}
               onComplete={handleCompleteSettings}
+              onStepChange={setCurrentSettingsStep}
             />
           </div>
         ) : (
@@ -290,7 +298,10 @@ export function OnboardingInterestsExperience() {
                       {currentSection.title}
                     </h1>
                     <p className="text-lg text-content-secondary mt-1">
-                      {currentSection.description}. Elige tu tema principal ahora; podrás explorar más contenido después.
+                      {currentSection.description}
+                      {planVariant === "premium"
+                        ? ". Elige tu tema principal ahora; podrás explorar más contenido después."
+                        : ""}
                     </p>
                   </motion.div>
                 </div>

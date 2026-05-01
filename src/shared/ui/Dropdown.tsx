@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 
 interface DropdownProps {
   value: string;
-  options: string[];
+  options: readonly string[];
   onChange?: (value: string) => void;
   className?: string;
 }

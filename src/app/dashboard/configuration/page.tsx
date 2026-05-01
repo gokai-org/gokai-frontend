@@ -18,7 +18,12 @@ import { HELP_GUIDE_SECTION_EVENT } from "@/features/help/utils/guideEvents";
 import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
-import type { FontSize, JapaneseFont } from "@/shared/hooks/useTypography";
+import {
+  FONT_SIZE_OPTIONS,
+  JAPANESE_FONT_OPTIONS,
+  normalizeFontSize,
+  normalizeJapaneseFont,
+} from "@/shared/hooks/useTypography";
 
 const sectionTitles: Record<string, string> = {
   general: "Configuración General",
@@ -348,10 +353,11 @@ function AppearanceSettings({
           label="Tamaño de fuente"
           description="Tamaño del texto en la interfaz"
           value={a.fontSize}
-          options={["Pequeño", "Mediano", "Grande", "Muy grande"]}
+          options={FONT_SIZE_OPTIONS}
           onChange={(v) => {
-            updateSection("appearance", { fontSize: v });
-            setFontSize(v as FontSize);
+            const fontSize = normalizeFontSize(v);
+            updateSection("appearance", { fontSize });
+            setFontSize(fontSize);
           }}
         />
 
@@ -359,10 +365,11 @@ function AppearanceSettings({
           label="Fuente para japonés"
           description="Tipografía para caracteres japoneses"
           value={a.japaneseFont}
-          options={["Noto Sans JP", "Hiragino", "Yu Gothic", "Meiryo"]}
+          options={JAPANESE_FONT_OPTIONS}
           onChange={(v) => {
-            updateSection("appearance", { japaneseFont: v });
-            setJapaneseFont(v as JapaneseFont);
+            const japaneseFont = normalizeJapaneseFont(v);
+            updateSection("appearance", { japaneseFont });
+            setJapaneseFont(japaneseFont);
           }}
         />
       </SettingsSection>

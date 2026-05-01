@@ -18,10 +18,9 @@ import { useEffect, useRef } from "react";
 import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
-import type { FontSize, JapaneseFont } from "@/shared/hooks/useTypography";
 import {
-  FONT_SIZE_ATTR_MAP,
-  JP_FONT_ATTR_MAP,
+  normalizeFontSize,
+  normalizeJapaneseFont,
 } from "@/shared/hooks/useTypography";
 import { getUserSettings } from "@/features/configuration/services/api";
 
@@ -45,11 +44,8 @@ export function SettingsBootstrap() {
         setTheme(settings.appearance.darkMode ? "dark" : "light");
 
         // ── Tipografía ─────────────────────────────────────────
-        const fs = settings.appearance.fontSize as FontSize;
-        if (fs in FONT_SIZE_ATTR_MAP) setFontSize(fs);
-
-        const jp = settings.appearance.japaneseFont as JapaneseFont;
-        if (jp in JP_FONT_ATTR_MAP) setJapaneseFont(jp);
+        setFontSize(normalizeFontSize(settings.appearance.fontSize));
+        setJapaneseFont(normalizeJapaneseFont(settings.appearance.japaneseFont));
 
         // ── Animaciones ────────────────────────────────────────
         const noAnim = settings.accessibility.reduceAnimations;

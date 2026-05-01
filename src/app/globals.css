@@ -433,11 +433,13 @@ html[data-font-size="x-large"] {
 html[data-jp-font="noto"] {
   --jp-font-family: var(--font-noto-sans-jp, "Noto Sans JP"), sans-serif;
 }
-html[data-jp-font="hiragino"] {
-  --jp-font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+html[data-jp-font="noto-serif"] {
+  --jp-font-family: var(--font-noto-serif-jp, "Noto Serif JP"), "Yu Mincho",
+    serif;
 }
-html[data-jp-font="yugothic"] {
-  --jp-font-family: "Yu Gothic", "YuGothic", sans-serif;
+html[data-jp-font="sawarabi"] {
+  --jp-font-family: var(--font-sawarabi-mincho, "Sawarabi Mincho"), "Yu Mincho",
+    serif;
 }
 html[data-jp-font="meiryo"] {
   --jp-font-family: "Meiryo", "メイリオ", sans-serif;
@@ -447,6 +449,24 @@ html[data-jp-font="meiryo"] {
 .jp-text,
 [lang="ja"] {
   font-family: var(--jp-font-family, "Noto Sans JP", sans-serif);
+}
+
+.jp-font-sample[data-jp-font="noto"] {
+  font-family: var(--font-noto-sans-jp, "Noto Sans JP"), sans-serif;
+}
+
+.jp-font-sample[data-jp-font="noto-serif"] {
+  font-family: var(--font-noto-serif-jp, "Noto Serif JP"), "Yu Mincho",
+    serif;
+}
+
+.jp-font-sample[data-jp-font="sawarabi"] {
+  font-family: var(--font-sawarabi-mincho, "Sawarabi Mincho"), "Yu Mincho",
+    serif;
+}
+
+.jp-font-sample[data-jp-font="meiryo"] {
+  font-family: "Meiryo", "メイリオ", sans-serif;
 }
 
 /* ── Custom scrollbar for KanjiDetailModal ── */

@@ -4,6 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import type { UserSettings } from "@/features/configuration/types";
 import { DEFAULT_SETTINGS } from "@/features/configuration/types";
 import {
+  normalizeFontSize,
+  normalizeJapaneseFont,
+} from "@/shared/hooks/useTypography";
+import {
   getUserSettings,
   updateSettingsSection,
 } from "@/features/configuration/services/api";
@@ -129,13 +133,19 @@ export function useSettings(): UseSettingsReturn {
 
 /** Fusiona settings remotos con defaults para rellenar campos faltantes. */
 function mergeWithDefaults(remote: UserSettings): UserSettings {
+  const appearance = { ...DEFAULT_SETTINGS.appearance, ...remote.appearance };
+
   return {
     general: { ...DEFAULT_SETTINGS.general, ...remote.general },
     notifications: {
       ...DEFAULT_SETTINGS.notifications,
       ...remote.notifications,
     },
-    appearance: { ...DEFAULT_SETTINGS.appearance, ...remote.appearance },
+    appearance: {
+      ...appearance,
+      fontSize: normalizeFontSize(appearance.fontSize),
+      japaneseFont: normalizeJapaneseFont(appearance.japaneseFont),
+    },
     learning: { ...DEFAULT_SETTINGS.learning, ...remote.learning },
     accessibility: {
       ...DEFAULT_SETTINGS.accessibility,

@@ -355,7 +355,7 @@ export function GrammarExperience({
           title: "Guía de Gramática",
           scopeSelector: '[data-help-surface="grammar-board"]',
           boardLabel: "Tablero de gramática",
-          requirementLabel: "25 puntos",
+          requirementLabel: "35 puntos",
           targetName: "grammar-board-canvas",
         });
       }

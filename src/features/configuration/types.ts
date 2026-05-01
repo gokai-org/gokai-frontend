@@ -1,3 +1,5 @@
+import type { FontSize, JapaneseFont } from "@/shared/hooks/useTypography";
+
 // ─── User Settings Types ─────────────────────────────────────────
 
 /** General settings */
@@ -20,8 +22,8 @@ export interface NotificationSettings {
 /** Appearance settings */
 export interface AppearanceSettings {
   darkMode: boolean;
-  fontSize: string; // "Pequeño" | "Mediano" | "Grande" | "Muy grande"
-  japaneseFont: string; // "Noto Sans JP" | "Hiragino" | "Yu Gothic" | "Meiryo"
+  fontSize: FontSize;
+  japaneseFont: JapaneseFont;
 }
 
 /** Learning preferences */
