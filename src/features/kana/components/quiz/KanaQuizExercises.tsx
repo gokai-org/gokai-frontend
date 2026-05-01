@@ -104,7 +104,6 @@ interface KanaFromKanaExerciseProps {
   selectedIndex: number | null;
   revealed: boolean;
   onSelect: (index: number) => void;
-  onConfirm: () => void;
 }
 
 /**
@@ -115,7 +114,6 @@ export function KanaFromKanaExercise({
   selectedIndex,
   revealed,
   onSelect,
-  onConfirm,
 }: KanaFromKanaExerciseProps) {
   return (
     <motion.div
@@ -164,20 +162,6 @@ export function KanaFromKanaExercise({
           />
         ))}
       </div>
-
-      {!revealed && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: selectedIndex !== null ? 1 : 0.4 }}
-          whileHover={selectedIndex !== null ? { scale: 1.02 } : undefined}
-          whileTap={selectedIndex !== null ? { scale: 0.98 } : undefined}
-          onClick={onConfirm}
-          disabled={selectedIndex === null}
-          className="w-full max-w-sm py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold shadow-lg shadow-accent/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          Confirmar
-        </motion.button>
-      )}
     </motion.div>
   );
 }
@@ -189,7 +173,6 @@ interface KanaFromRomajiExerciseProps {
   selectedIndex: number | null;
   revealed: boolean;
   onSelect: (index: number) => void;
-  onConfirm: () => void;
 }
 
 /**
@@ -200,7 +183,6 @@ export function KanaFromRomajiExercise({
   selectedIndex,
   revealed,
   onSelect,
-  onConfirm,
 }: KanaFromRomajiExerciseProps) {
   return (
     <motion.div
@@ -245,20 +227,6 @@ export function KanaFromRomajiExercise({
           />
         ))}
       </div>
-
-      {!revealed && (
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: selectedIndex !== null ? 1 : 0.4 }}
-          whileHover={selectedIndex !== null ? { scale: 1.02 } : undefined}
-          whileTap={selectedIndex !== null ? { scale: 0.98 } : undefined}
-          onClick={onConfirm}
-          disabled={selectedIndex === null}
-          className="w-full max-w-md py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold shadow-lg shadow-accent/15 transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
-        >
-          Confirmar
-        </motion.button>
-      )}
     </motion.div>
   );
 }

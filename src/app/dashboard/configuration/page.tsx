@@ -16,6 +16,7 @@ import type { UserSettings } from "@/features/configuration/types";
 import { AccountSettings } from "@/features/configuration/components/AccountSettings";
 import { HELP_GUIDE_SECTION_EVENT } from "@/features/help/utils/guideEvents";
 import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
+import { setStoredAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
 import {
@@ -207,7 +208,10 @@ function GeneralSettings({
           label="Confirmación de respuestas"
           description="Requiere confirmación antes de enviar respuestas"
           enabled={g.confirmAnswers}
-          onChange={(v) => updateSection("general", { confirmAnswers: v })}
+          onChange={(v) => {
+            updateSection("general", { confirmAnswers: v });
+            setStoredAnswerConfirmationPreference(v);
+          }}
         />
       </SettingsSection>
 

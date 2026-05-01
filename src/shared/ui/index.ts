@@ -1,4 +1,5 @@
 export { Checkbox } from "./Checkbox";
+export { AnswerConfirmationPanel } from "./AnswerConfirmationPanel";
 export { DatePicker } from "./DatePicker";
 export { Dropdown } from "./Dropdown";
 export { LoadingButton } from "./LoadingButton";

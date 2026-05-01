@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, FlaskConical } from "lucide-react";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
+import { AnswerConfirmationPanel } from "@/shared/ui";
 import {
   ReaffirmedMasteryResult,
   UnlockedMasterySequence,
@@ -192,6 +194,7 @@ export interface GrammarQuizModalProps {
 
 export default function GrammarQuizModal({ lesson, onClose, onComplete }: GrammarQuizModalProps) {
   const platformMotion = usePlatformMotion();
+  const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
   const exam = lesson.content?.exam ?? [];
   const [step, setStep] = useState<GrammarQuizStep>("exercise");
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -205,6 +208,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
   const [awardedPoints, setAwardedPoints] = useState(0);
   const [completedSuccessfully, setCompletedSuccessfully] = useState(false);
   const [exerciseFooterState, setExerciseFooterState] = useState<GrammarQuizFooterState | null>(null);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const startRef = useRef(Date.now());
 
   const overlayVariants = useMemo(
@@ -296,6 +300,50 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
   const handleExerciseFooterStateChange = useCallback((state: GrammarQuizFooterState | null) => {
     setExerciseFooterState(state);
   }, []);
+
+  const handleExerciseAdvance = useCallback(() => {
+    if (answered || step !== "exercise" || !current) return;
+
+    if (current.type === "question") {
+      if (selectedIdx === null) return;
+
+      if (confirmAnswersEnabled) {
+        setIsConfirmDialogOpen(true);
+        return;
+      }
+
+      handleQuestionConfirm();
+      return;
+    }
+
+    if (!exerciseFooterState?.canConfirm) return;
+
+    if (confirmAnswersEnabled) {
+      setIsConfirmDialogOpen(true);
+      return;
+    }
+
+    exerciseFooterState.onConfirm();
+  }, [
+    answered,
+    confirmAnswersEnabled,
+    current,
+    exerciseFooterState,
+    handleQuestionConfirm,
+    selectedIdx,
+    step,
+  ]);
+
+  const handleConfirmCurrentAnswer = useCallback(() => {
+    setIsConfirmDialogOpen(false);
+
+    if (current?.type === "question") {
+      handleQuestionConfirm();
+      return;
+    }
+
+    exerciseFooterState?.onConfirm();
+  }, [current?.type, exerciseFooterState, handleQuestionConfirm]);
 
   const finalizeExam = useCallback(async () => {
     const score = total > 0
@@ -399,13 +447,22 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
     }
   }, [answered, current, step]);
 
+  useEffect(() => {
+    if (step !== "exercise" || answered) {
+      setIsConfirmDialogOpen(false);
+    }
+  }, [answered, currentIdx, step]);
+
   const shouldShowUnlockedCompletion = completedSuccessfully && awardedPoints > 0;
   const shouldShowReaffirmedCompletion = completedSuccessfully && awardedPoints === 0;
   const displayedAwardedPoints = Math.max(awardedPoints, GRAMMAR_COMPLETION_REWARD);
 
-  const footerActionVisible = step === "exercise" && current && (
-    answered || current.type === "question" || exerciseFooterState !== null
-  );
+  const footerActionVisible =
+    step === "exercise" &&
+    current &&
+    (answered ||
+      (current.type === "question" && selectedIdx !== null) ||
+      exerciseFooterState !== null);
 
   return (
     <motion.div
@@ -423,7 +480,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
         animate="visible"
         exit="exit"
         className={[
-          "bg-surface-primary w-full overflow-hidden shadow-2xl ring-1 ring-border-subtle flex flex-col rounded-3xl max-h-[95dvh]",
+          "relative bg-surface-primary w-full overflow-hidden shadow-2xl ring-1 ring-border-subtle flex flex-col rounded-3xl max-h-[95dvh]",
           step === "summary" ? "max-w-2xl" : "max-w-6xl",
           "max-sm:max-w-none max-sm:mx-auto max-sm:w-[calc(100vw-1rem)] max-sm:max-h-[92dvh]",
         ].join(" ")}
@@ -599,10 +656,11 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
               <button
                 type="button"
                 disabled={selectedIdx === null}
-                onClick={handleQuestionConfirm}
-                className="w-full rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-35 sm:py-3"
+                onClick={handleExerciseAdvance}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-35 sm:py-3"
               >
-                Confirmar respuesta
+                <CheckCircle2 className="h-4 w-4" />
+                Siguiente
               </button>
             ) : !answered && exerciseFooterState ? (
               <div className="flex gap-3">
@@ -619,10 +677,11 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
                 <button
                   type="button"
                   disabled={!exerciseFooterState.canConfirm}
-                  onClick={exerciseFooterState.onConfirm}
-                  className="flex-1 rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-35 sm:py-3"
+                  onClick={handleExerciseAdvance}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-2.5 text-sm font-bold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-35 sm:py-3"
                 >
-                  Confirmar respuesta
+                  <CheckCircle2 className="h-4 w-4" />
+                  Siguiente
                 </button>
               </div>
             ) : (
@@ -638,6 +697,36 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
               </button>
             )}
           </div>
+        ) : null}
+        {isConfirmDialogOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm"
+            onClick={() => setIsConfirmDialogOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.18 }}
+              className="w-full max-w-md"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <AnswerConfirmationPanel
+                title="Confirmar respuesta"
+                description="Si ya revisaste tu respuesta, confirma para mostrar el resultado de esta pregunta."
+                confirmLabel="Mostrar resultado"
+                onConfirm={handleConfirmCurrentAnswer}
+                tone="grammar"
+                secondaryAction={{
+                  label: "Seguir revisando",
+                  onAction: () => setIsConfirmDialogOpen(false),
+                }}
+              />
+            </motion.div>
+          </motion.div>
         ) : null}
 
         {step === "summary" && !(shouldShowUnlockedCompletion || shouldShowReaffirmedCompletion) ? (

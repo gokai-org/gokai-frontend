@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback, useMemo, useRef } from "react";
+import { useEffect, useCallback, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKanaQuiz } from "@/features/kana/hooks/useKanaQuiz";
 import { isValidCanvasQuestion } from "@/features/kana/utils/quizParser";
@@ -18,11 +18,13 @@ import {
 } from "./KanaQuizExercises";
 import { KanaQuizCanvasExercise } from "./KanaQuizCanvasExercise";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import {
   ReaffirmedMasteryResult,
   UnlockedMasterySequence,
 } from "@/shared/ui/ReaffirmedMasteryResult";
+import { AnswerConfirmationPanel } from "@/shared/ui";
 
 const KANA_COMPLETION_REWARD = 5;
 
@@ -61,6 +63,8 @@ export function KanaQuizModal({
   const quiz = useKanaQuiz();
   const platformMotion = usePlatformMotion();
   const autoClosedForMasteryRef = useRef(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
   const shouldPersistProgress =
     progressEligible && !wasCompletedBefore && quizType === undefined;
 
@@ -277,6 +281,32 @@ export function KanaQuizModal({
     state.selectedOptionIndex !== null
       ? (currentQuestion?.options?.[state.selectedOptionIndex]?.correct ?? false)
       : false;
+  const showExerciseAdvance =
+    state.step === "exercise" &&
+    !state.isAnswered &&
+    !isCurrentCanvasQuestion &&
+    state.selectedOptionIndex !== null;
+  const handleExerciseAdvance = useCallback(() => {
+    if (!showExerciseAdvance) return;
+
+    if (confirmAnswersEnabled) {
+      setIsConfirmDialogOpen(true);
+      return;
+    }
+
+    quiz.confirmAnswer();
+  }, [confirmAnswersEnabled, quiz, showExerciseAdvance]);
+
+  const handleConfirmCurrentAnswer = useCallback(() => {
+    setIsConfirmDialogOpen(false);
+    quiz.confirmAnswer();
+  }, [quiz]);
+
+  useEffect(() => {
+    if (state.step !== "exercise" || state.isAnswered) {
+      setIsConfirmDialogOpen(false);
+    }
+  }, [state.currentQuestionIndex, state.isAnswered, state.step]);
 
   if (shouldAutoCloseForMastery) {
     return null;
@@ -299,7 +329,7 @@ export function KanaQuizModal({
           animate="visible"
           exit="exit"
           className={[
-            "bg-surface-primary w-full shadow-2xl ring-1 ring-border-subtle flex flex-col",
+            "relative bg-surface-primary w-full shadow-2xl ring-1 ring-border-subtle flex flex-col",
             state.step === "summary" || state.step === "celebration"
               ? "max-w-2xl"
               : "max-w-lg",
@@ -461,7 +491,6 @@ export function KanaQuizModal({
                         selectedIndex={state.selectedOptionIndex}
                         revealed={state.isAnswered}
                         onSelect={quiz.selectOption}
-                        onConfirm={quiz.confirmAnswer}
                       />
                     )}
 
@@ -471,7 +500,6 @@ export function KanaQuizModal({
                         selectedIndex={state.selectedOptionIndex}
                         revealed={state.isAnswered}
                         onSelect={quiz.selectOption}
-                        onConfirm={quiz.confirmAnswer}
                       />
                     )}
 
@@ -514,6 +542,23 @@ export function KanaQuizModal({
                   </div>
                 </AnimatePresence>
               )}
+
+            {showExerciseAdvance ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center mt-4"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleExerciseAdvance}
+                  className="w-full max-w-sm py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold shadow-lg shadow-accent/15 transition-all"
+                >
+                  Siguiente
+                </motion.button>
+              </motion.div>
+            ) : null}
 
             {state.step === "exercise-feedback" &&
               quizData &&
@@ -631,6 +676,40 @@ export function KanaQuizModal({
               />
               ))}
           </div>
+
+          <AnimatePresence>
+            {isConfirmDialogOpen ? (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm"
+                onClick={() => setIsConfirmDialogOpen(false)}
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                  transition={{ duration: 0.18 }}
+                  className="w-full max-w-md"
+                  onClick={(event) => event.stopPropagation()}
+                >
+                  <AnswerConfirmationPanel
+                    title="Confirmar respuesta"
+                    description="Si ya revisaste tu respuesta, confirma para mostrar el resultado de esta pregunta."
+                    confirmLabel="Mostrar resultado"
+                    onConfirm={handleConfirmCurrentAnswer}
+                    tone={kanaType === "katakana" ? "katakana" : "hiragana"}
+                    mastered={isMastered}
+                    secondaryAction={{
+                      label: "Seguir revisando",
+                      onAction: () => setIsConfirmDialogOpen(false),
+                    }}
+                  />
+                </motion.div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
         </motion.div>
       </motion.div>
     </AnimatePresence>
