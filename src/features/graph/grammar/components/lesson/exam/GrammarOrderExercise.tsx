@@ -192,7 +192,7 @@ export default function GrammarOrderExercise({
         </div>
 
         <div>
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.16em] text-content-muted sm:text-xs sm:tracking-[0.18em]">
+          <p className="mb-2 text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-content-muted sm:text-xs sm:tracking-[0.18em]">
             Tu respuesta
           </p>
           <div
@@ -222,7 +222,7 @@ export default function GrammarOrderExercise({
                     type="button"
                     disabled={answered}
                     onClick={() => remove(word)}
-                    className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors duration-150 sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-[15px] ${
+                    className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors duration-150 sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-[0.9375rem] ${
                       answered
                         ? isCorrect
                           ? "border-emerald-400/60 bg-emerald-100/60 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
@@ -248,7 +248,7 @@ export default function GrammarOrderExercise({
                 onDragEnd={handleDragEnd}
                 type="button"
                 onClick={() => take(word)}
-                className="cursor-pointer rounded-xl border border-black/[0.05] bg-surface-elevated px-3 py-1.5 text-xs font-semibold text-content-primary shadow-sm transition-colors duration-150 hover:border-accent/50 hover:bg-accent/8 hover:text-accent dark:border-white/[0.08] sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-[15px]"
+                className="cursor-pointer rounded-xl border border-black/[0.05] bg-surface-elevated px-3 py-1.5 text-xs font-semibold text-content-primary shadow-sm transition-colors duration-150 hover:border-accent/50 hover:bg-accent/8 hover:text-accent dark:border-white/[0.08] sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-[0.9375rem]"
               >
                 {word}
               </button>
@@ -259,7 +259,7 @@ export default function GrammarOrderExercise({
         {answered && !isCorrect ? (
           <div className="flex items-start gap-3 rounded-[18px] border border-emerald-400/50 bg-emerald-50/50 p-3 dark:bg-emerald-950/20 sm:rounded-[20px] sm:p-4">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 sm:h-5 sm:w-5" />
-            <div className="text-xs leading-5 sm:text-[15px] sm:leading-6">
+            <div className="text-xs leading-5 sm:text-[0.9375rem] sm:leading-6">
               <p className="font-semibold text-emerald-700 dark:text-emerald-300">Respuesta correcta:</p>
               <p className="text-emerald-600 dark:text-emerald-400">{correctAnswer}</p>
             </div>
@@ -269,7 +269,7 @@ export default function GrammarOrderExercise({
         {answered && isCorrect ? (
           <div className="flex items-center gap-3 rounded-[18px] border border-emerald-400/50 bg-emerald-50/50 p-3 dark:bg-emerald-950/20 sm:rounded-[20px] sm:p-4">
             <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-500 sm:h-5 sm:w-5" />
-            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 sm:text-[15px]">¡Orden correcto!</p>
+            <p className="text-xs font-semibold text-emerald-700 dark:text-emerald-300 sm:text-[0.9375rem]">¡Orden correcto!</p>
           </div>
         ) : null}
       </div>

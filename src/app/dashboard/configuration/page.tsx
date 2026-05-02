@@ -126,7 +126,7 @@ export default function ConfigurationPage() {
           ) : (
             <div className="space-y-6 md:space-y-8">
               {activeSection === "general" && (
-                <div data-help-target="settings-general">
+                <div data-help-target="settings-general" className="space-y-6">
                   <GeneralSettings
                     settings={settings}
                     updateSection={updateSection}
@@ -134,7 +134,7 @@ export default function ConfigurationPage() {
                 </div>
               )}
               {activeSection === "notifications" && (
-                <div data-help-target="settings-notifications">
+                <div data-help-target="settings-notifications" className="space-y-6">
                   <NotificationSettings
                     settings={settings}
                     updateSection={updateSection}
@@ -142,7 +142,7 @@ export default function ConfigurationPage() {
                 </div>
               )}
               {activeSection === "appearance" && (
-                <div data-help-target="settings-appearance">
+                <div data-help-target="settings-appearance" className="space-y-6">
                   <AppearanceSettings
                     settings={settings}
                     updateSection={updateSection}
@@ -150,7 +150,7 @@ export default function ConfigurationPage() {
                 </div>
               )}
               {activeSection === "learning" && (
-                <div data-help-target="settings-learning">
+                <div data-help-target="settings-learning" className="space-y-6">
                   <LearningSettings
                     settings={settings}
                     updateSection={updateSection}
@@ -158,7 +158,7 @@ export default function ConfigurationPage() {
                 </div>
               )}
               {activeSection === "accessibility" && (
-                <div data-help-target="settings-accessibility">
+                <div data-help-target="settings-accessibility" className="space-y-6">
                   <AccessibilitySettings
                     settings={settings}
                     updateSection={updateSection}
@@ -166,7 +166,7 @@ export default function ConfigurationPage() {
                 </div>
               )}
               {activeSection === "privacy" && (
-                <div data-help-target="settings-privacy">
+                <div data-help-target="settings-privacy" className="space-y-6">
                   <PrivacySettings
                     settings={settings}
                     updateSection={updateSection}
@@ -174,7 +174,7 @@ export default function ConfigurationPage() {
                 </div>
               )}
               {activeSection === "account" && (
-                <div data-help-target="settings-account">
+                <div data-help-target="settings-account" className="space-y-6">
                   <AccountSettings
                     user={user}
                     setUser={setUser}

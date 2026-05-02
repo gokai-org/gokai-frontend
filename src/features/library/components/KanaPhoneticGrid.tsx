@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Fragment, useMemo } from "react";
 import { LockKeyhole } from "lucide-react";
+import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
 import type { Kana } from "@/features/kana/types";
 import { ScriptCard } from "@/features/library/components/ScriptCard";
 import {
@@ -23,15 +24,15 @@ import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 const VARIANT_COLORS = {
   hiragana: {
     accent:        "#7B3F8A",
-    accentLight:   "rgba(123,63,138,0.09)",
-    accentBorder:  "rgba(123,63,138,0.22)",
+    accentLight:   "rgba(123,63,138,0.14)",
+    accentBorder:  "rgba(123,63,138,0.34)",
     accentCellBg:  "rgba(123,63,138,0.025)",
     unlockRgba:    "123,63,138",
   },
   katakana: {
     accent:        "#1B5078",
-    accentLight:   "rgba(27,80,120,0.09)",
-    accentBorder:  "rgba(27,80,120,0.22)",
+    accentLight:   "rgba(27,80,120,0.14)",
+    accentBorder:  "rgba(27,80,120,0.34)",
     accentCellBg:  "rgba(27,80,120,0.025)",
     unlockRgba:    "27,80,120",
   },
@@ -39,8 +40,8 @@ const VARIANT_COLORS = {
 
 const GOLD_COLORS = {
   accent:        "#D4A843",
-  accentLight:   "rgba(212,168,67,0.09)",
-  accentBorder:  "rgba(212,168,67,0.22)",
+  accentLight:   "rgba(212,168,67,0.16)",
+  accentBorder:  "rgba(212,168,67,0.36)",
   accentCellBg:  "rgba(212,168,67,0.025)",
   unlockRgba:    "212,168,67",
 } as const;
@@ -78,12 +79,12 @@ export interface KanaPhoneticGridProps {
 function DColHeader({ label, c }: { label: string; c: VariantColors }) {
   return (
     <div
-      className="flex items-center justify-center rounded-xl border px-2 py-2"
+      className="flex items-center justify-center rounded-xl border px-2 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.32)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
       style={{ background: c.accentLight, borderColor: c.accentBorder }}
     >
       <span
         className="text-[11px] font-black uppercase tracking-[0.2em]"
-        style={{ color: c.accent }}
+        style={{ color: c.accent, textShadow: "0 1px 0 rgba(255,255,255,0.18)" }}
       >
          {label}
       </span>
@@ -94,23 +95,27 @@ function DColHeader({ label, c }: { label: string; c: VariantColors }) {
 function DRowLabel({
   label,
   isDakuten,
+  isMastered,
   c,
 }: {
   label: string;
   isDakuten: boolean;
+  isMastered: boolean;
   c: VariantColors;
 }) {
+  const useAccentStyle = !isDakuten || isMastered;
+
   return (
     <div
       className={[
         "flex w-20 shrink-0 items-center justify-center rounded-xl border px-1 py-2",
-        isDakuten ? "border-border-subtle bg-surface-secondary" : "",
+        !useAccentStyle ? "border-border-subtle bg-surface-secondary" : "",
       ].join(" ")}
-      style={!isDakuten ? { background: c.accentLight, borderColor: c.accentBorder } : undefined}
+      style={useAccentStyle ? { background: c.accentLight, borderColor: c.accentBorder } : undefined}
     >
       <span
         className="text-center text-[10px] font-black uppercase leading-tight tracking-[0.15em] text-content-secondary"
-        style={!isDakuten ? { color: c.accent } : undefined}
+        style={useAccentStyle ? { color: c.accent } : undefined}
       >
         {label}
       </span>
@@ -141,12 +146,12 @@ function DDakutenDivider() {
 function MColHeader({ label, c }: { label: string; c: VariantColors }) {
   return (
     <div
-      className="flex items-center justify-center rounded-lg border py-1.5"
+      className="flex items-center justify-center rounded-lg border py-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.28)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]"
       style={{ background: c.accentLight, borderColor: c.accentBorder }}
     >
       <span
         className="text-[9px] font-black uppercase tracking-wide"
-        style={{ color: c.accent }}
+        style={{ color: c.accent, textShadow: "0 1px 0 rgba(255,255,255,0.16)" }}
       >
         {label}
       </span>
@@ -157,23 +162,27 @@ function MColHeader({ label, c }: { label: string; c: VariantColors }) {
 function MRowLabel({
   label,
   isDakuten,
+  isMastered,
   c,
 }: {
   label: string;
   isDakuten: boolean;
+  isMastered: boolean;
   c: VariantColors;
 }) {
+  const useAccentStyle = !isDakuten || isMastered;
+
   return (
     <div
       className={[
         "flex items-center justify-center rounded-lg border",
-        isDakuten ? "border-border-subtle bg-surface-secondary" : "",
+        !useAccentStyle ? "border-border-subtle bg-surface-secondary" : "",
       ].join(" ")}
-      style={!isDakuten ? { background: c.accentLight, borderColor: c.accentBorder } : undefined}
+      style={useAccentStyle ? { background: c.accentLight, borderColor: c.accentBorder } : undefined}
     >
       <span
         className="text-center text-[8px] font-black uppercase leading-tight text-content-secondary"
-        style={!isDakuten ? { color: c.accent } : undefined}
+        style={useAccentStyle ? { color: c.accent } : undefined}
       >
         {label}
       </span>
@@ -199,9 +208,7 @@ function MiniCell({
   onClick?: () => void;
 }) {
   const effectiveLocked = isLocked && !unlocking;
-  const unlockSequenceDelay = animationsEnabled
-    ? Math.min(sequenceIndex, 8) * 0.1
-    : 0;
+  const unlockSequenceDelay = 0;
   const unlockingOverlay = unlocking ? (
     <motion.div
       key="unlock-burst"
@@ -288,7 +295,7 @@ function MiniCell({
     >
       {unlockingOverlay}
       {effectiveLocked ? (
-        <LockKeyhole size={13} className="text-content-muted" />
+        <LockedStateBadge size="xs" />
       ) : (
         <motion.div
           initial={false}
@@ -367,7 +374,8 @@ export function KanaPhoneticGrid({
   const toScriptCard = variant === "hiragana" ? hiraganaToScriptCard : katakanaToScriptCard;
   const mastered = useMasteredModules();
   const platformMotion = usePlatformMotion();
-  const c = mastered.has(variant) ? GOLD_COLORS : VARIANT_COLORS[variant];
+  const isMastered = mastered.has(variant);
+  const c = isMastered ? GOLD_COLORS : VARIANT_COLORS[variant];
 
   const presentRows = useMemo(
     () => PHONETIC_ROWS.filter((row) => table.has(row.key)),
@@ -407,7 +415,7 @@ export function KanaPhoneticGrid({
                   </div>
                 )}
 
-                <DRowLabel label={row.label} isDakuten={isDakuten} c={c} />
+                <DRowLabel label={row.label} isDakuten={isDakuten} isMastered={isMastered} c={c} />
 
                 {([0, 1, 2, 3, 4] as const).map((colIndex) => {
                   const kana = table.get(row.key)?.get(colIndex);
@@ -457,7 +465,7 @@ export function KanaPhoneticGrid({
               <Fragment key={row.key}>
                 {showDivider && <MDakutenDivider />}
 
-                <MRowLabel label={shortLabel} isDakuten={isDakuten} c={c} />
+                <MRowLabel label={shortLabel} isDakuten={isDakuten} isMastered={isMastered} c={c} />
 
                 {([0, 1, 2, 3, 4] as const).map((colIndex) => {
                   const kana = table.get(row.key)?.get(colIndex);

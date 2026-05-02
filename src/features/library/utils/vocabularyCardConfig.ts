@@ -25,8 +25,8 @@ export const VARIANT_CONFIG: Record<VocabularyVariant, VariantConfig> = {
     thumbGradient: "from-[#993331] to-[#BA5149]",
     glassBadge: "bg-white/15 text-white border-white/20",
     coloredBadge: "bg-[#993331]/10 text-[#993331] border-[#993331]/15",
-    shadowCard: "shadow-[0_4px_24px_-6px_rgba(153,51,49,0.10)]",
-    shadowHover: "hover:shadow-[0_20px_40px_-8px_rgba(153,51,49,0.45)]",
+    shadowCard: "shadow-none",
+    shadowHover: "",
     ring: "focus-visible:ring-[#993331]/30",
   },
 
@@ -36,8 +36,8 @@ export const VARIANT_CONFIG: Record<VocabularyVariant, VariantConfig> = {
     thumbGradient: "from-[#A63B38] to-[#C85B52]",
     glassBadge: "bg-white/15 text-white border-white/20",
     coloredBadge: "bg-[#A63B38]/10 text-[#A63B38] border-[#A63B38]/15",
-    shadowCard: "shadow-[0_4px_24px_-6px_rgba(166,59,56,0.10)]",
-    shadowHover: "hover:shadow-[0_20px_40px_-8px_rgba(166,59,56,0.45)]",
+    shadowCard: "shadow-none",
+    shadowHover: "",
     ring: "focus-visible:ring-[#A63B38]/30",
   },
 
@@ -47,8 +47,8 @@ export const VARIANT_CONFIG: Record<VocabularyVariant, VariantConfig> = {
     thumbGradient: "from-[#B84C45] to-[#D06A61]",
     glassBadge: "bg-white/15 text-white border-white/20",
     coloredBadge: "bg-[#B84C45]/10 text-[#B84C45] border-[#B84C45]/15",
-    shadowCard: "shadow-[0_2px_14px_-6px_rgba(0,0,0,0.06)]",
-    shadowHover: "hover:shadow-[0_8px_24px_-8px_rgba(153,51,49,0.15)]",
+    shadowCard: "shadow-none",
+    shadowHover: "",
     ring: "focus-visible:ring-[#993331]/20",
   },
 };

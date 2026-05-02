@@ -5,7 +5,10 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
-import { SkeletonCard } from "@/shared/ui/Skeleton";
+import {
+  GrammarLibraryCardSkeleton,
+  LibraryCardsSkeletonGrid,
+} from "@/shared/ui/Skeleton";
 import { useToast } from "@/shared/ui/ToastProvider";
 import { invalidateApiCache } from "@/shared/lib/api/client";
 import { unlockGrammar } from "../../api/grammarApi";
@@ -197,11 +200,11 @@ export function GrammarLibraryCollection({
 
   if (status === "loading") {
     return (
-      <div className={className}>
-        {Array.from({ length: 12 }).map((_, index) => (
-          <SkeletonCard key={`grammar-library-skeleton-${index}`} />
-        ))}
-      </div>
+      <LibraryCardsSkeletonGrid
+        cards={12}
+        className={className}
+        variant="grammar"
+      />
     );
   }
 
@@ -236,9 +239,9 @@ export function GrammarLibraryCollection({
       <div className={className}>
         {lessons.map((item, index) => (
           item.isMock ? (
-            <SkeletonCard
+            <GrammarLibraryCardSkeleton
               key={`grammar-library-skeleton-${item.id}-${index}`}
-              className="min-h-[190px]"
+              className="h-full"
             />
           ) : (
             <GrammarLibraryCard

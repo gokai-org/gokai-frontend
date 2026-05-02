@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { BookText, RefreshCw } from "lucide-react";
+import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 import type { GrammarLesson } from "../../types";
 import GrammarLessonContent from "./GrammarLessonContent";
 
@@ -60,6 +61,7 @@ export default function GrammarLessonModal({
   onStartExam,
   isClosing = false,
 }: GrammarLessonModalProps) {
+  useMiniDockBlocker(true);
 
   return (
     <motion.div

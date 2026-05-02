@@ -15,7 +15,10 @@ import { LibraryRecentPanel } from "@/features/library/components/LibraryRecentP
 import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
 import { KanaPhoneticGrid } from "@/features/library/components/KanaPhoneticGrid";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
-import { LibrarySkeleton, SkeletonCard } from "@/shared/ui/Skeleton";
+import {
+  LibraryCardsSkeletonGrid,
+  LibrarySkeleton,
+} from "@/shared/ui/Skeleton";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
 import { useVocabularyContent } from "@/features/library/hooks/useVocabularyContent";
@@ -724,11 +727,7 @@ export default function LibraryPage() {
                 </div>
 
                 {loadingFavorites && (
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                    {Array.from({ length: 12 }).map((_, index) => (
-                      <SkeletonCard key={index} />
-                    ))}
-                  </div>
+                  <LibraryCardsSkeletonGrid variant="script" />
                 )}
 
                 {!loadingFavorites && favoriteKanjis.size > 0 && (
@@ -896,6 +895,7 @@ export default function LibraryPage() {
                 title="Colección de Kanjis"
                 countLabel={`${kanjis.length} kanjis`}
                 loading={loadingKanjis}
+                skeletonVariant="script"
                 emptyTitle="No hay kanjis disponibles"
                 emptyDescription="No encontramos kanjis para mostrar."
               >
@@ -943,6 +943,8 @@ export default function LibraryPage() {
               <LibraryCategorySection
                 title="Colección de Gramática"
                 countLabel={`${GRAMMAR_BOARD_TOTAL} lecciones`}
+                loading={false}
+                skeletonVariant="grammar"
                 emptyTitle="No hay lecciones de gramática disponibles"
                 emptyDescription="No encontramos lecciones para mostrar en esta sección."
               >
@@ -966,6 +968,7 @@ export default function LibraryPage() {
                 title="Tabla fonética de Katakana"
                 countLabel={`${katakanas.length} katakana`}
                 loading={loadingKatakanas}
+                skeletonVariant="script"
                 emptyTitle="No hay katakana disponibles"
                 emptyDescription="No encontramos katakana para mostrar."
               >
@@ -994,6 +997,7 @@ export default function LibraryPage() {
                 title="Tabla fonética de Hiragana"
                 countLabel={`${hiraganas.length} hiragana`}
                 loading={loadingHiraganas}
+                skeletonVariant="script"
                 emptyTitle="No hay hiragana disponibles"
                 emptyDescription="No encontramos hiragana para mostrar."
               >
@@ -1028,6 +1032,12 @@ export default function LibraryPage() {
                 }
                 countLabel={`${vocabularyCurrentCount} elementos`}
                 loading={loadingThemes || loadingSubthemes || loadingWords}
+                skeletonVariant={selectedSubtheme ? "word" : "vocabulary"}
+                skeletonGridClassName={
+                  selectedSubtheme
+                    ? "grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6"
+                    : "grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5"
+                }
                 emptyTitle="No hay contenido disponible"
                 emptyDescription="No encontramos elementos para mostrar en esta sección."
               >
@@ -1138,6 +1148,7 @@ export default function LibraryPage() {
                 title="Reciente"
                 countLabel={`${recentItems.length} elementos`}
                 loading={loadingRecentItems}
+                skeletonVariant="script"
                 emptyTitle="No hay elementos recientes"
                 emptyDescription="Los elementos que visites aparecerán aquí."
               >

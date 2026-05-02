@@ -8,6 +8,7 @@ import {
 import "./globals.css";
 import { PlatformMotionProvider } from "@/shared/components/PlatformMotionProvider";
 import { ThemeProvider } from "@/shared/components/ThemeProvider";
+import { TypographyProvider } from "@/shared/components/TypographyProvider";
 
 const siteIcon = "/logos/gokai-logo-web.svg";
 
@@ -86,7 +87,9 @@ export default function RootLayout({
       </head>
       <body className="min-h-dvh overflow-x-hidden bg-surface-primary text-content-primary">
         <ThemeProvider>
-          <PlatformMotionProvider>{children}</PlatformMotionProvider>
+          <TypographyProvider>
+            <PlatformMotionProvider>{children}</PlatformMotionProvider>
+          </TypographyProvider>
         </ThemeProvider>
       </body>
     </html>

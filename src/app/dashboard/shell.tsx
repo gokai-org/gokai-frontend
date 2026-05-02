@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { usePathname, useSearchParams } from "next/navigation";
 import { MiniGokaDock } from "@/features/dashboard/components/MiniGokaDock";
+import { subscribeMiniDockBlockers } from "@/features/dashboard/utils/miniDockBlockers";
 import { subscribeLibraryDockVisibility } from "@/features/library/utils/libraryDockVisibility";
 
 export default function ContentShell({
@@ -14,11 +15,13 @@ export default function ContentShell({
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [showLibraryMiniDock, setShowLibraryMiniDock] = useState(false);
+  const [isMiniDockBlocked, setIsMiniDockBlocked] = useState(false);
 
   const isChatbot = pathname === "/dashboard/chatbot";
   const isLibrary = pathname === "/dashboard/library";
   const isReviews = pathname === "/dashboard/reviews";
   const isGraph = pathname.startsWith("/dashboard/graph");
+  const isGraphExplore = pathname === "/dashboard/graph";
   const isGrammarBoard = pathname === "/dashboard/graph/grammar";
   const isKanjiBoard =
     pathname === "/dashboard/graph/kanjis" ||
@@ -31,6 +34,7 @@ export default function ContentShell({
   const shouldShowMiniProfile =
     isChatbot ||
     isReviews ||
+    isGraphExplore ||
     isGrammarBoard ||
     isKanjiBoard ||
     (isLibrary && showLibraryMiniDock);
@@ -46,6 +50,12 @@ export default function ContentShell({
       );
     });
   }, [isLibrary]);
+
+  useEffect(() => {
+    return subscribeMiniDockBlockers((blocked) => {
+      setIsMiniDockBlocked(blocked);
+    });
+  }, []);
 
   const padDesktop = "lg:pl-[140px]";
   const padMd = "md:pl-[120px]";
@@ -70,7 +80,7 @@ export default function ContentShell({
         ].join(" ")}
       >
         <AnimatePresence>
-          {shouldShowMiniProfile && (
+          {shouldShowMiniProfile && !isMiniDockBlocked && (
             <motion.div
               className="pointer-events-none fixed right-2 top-2 z-[70] md:right-3 md:top-3 lg:right-8 lg:top-4"
               initial={false}

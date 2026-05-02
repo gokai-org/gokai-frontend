@@ -1,11 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import type { MouseEvent as ReactMouseEvent } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, FlaskConical } from "lucide-react";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { AnswerConfirmationPanel } from "@/shared/ui";
+import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 import {
   ReaffirmedMasteryResult,
   UnlockedMasterySequence,
@@ -118,7 +120,7 @@ function GrammarQuizSummary({
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center sm:text-left">
-        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-accent/80">
+        <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-accent/80">
           Resumen del intento
         </p>
         <h3 className="text-2xl font-bold tracking-tight text-content-primary">
@@ -131,7 +133,7 @@ function GrammarQuizSummary({
 
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
         <div className="rounded-[28px] bg-[linear-gradient(135deg,rgba(183,71,66,0.12),rgba(183,71,66,0.03))] p-5 ring-1 ring-accent/15">
-          <p className="text-[11px] font-black uppercase tracking-[0.22em] text-content-muted">
+          <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-content-muted">
             Resultado
           </p>
           <p className="mt-3 text-[clamp(3.2rem,8vw,5.2rem)] font-black leading-none tracking-tight text-content-primary" style={scoreStyle}>
@@ -145,7 +147,7 @@ function GrammarQuizSummary({
 
         <div className="grid gap-3 sm:grid-rows-3">
           <div className="rounded-[22px] bg-surface-secondary/65 p-4 ring-1 ring-border-subtle">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-content-muted">
+            <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-content-muted">
               Correctas
             </p>
             <p className="mt-2 text-2xl font-bold text-content-primary">
@@ -154,7 +156,7 @@ function GrammarQuizSummary({
           </div>
 
           <div className="rounded-[22px] bg-surface-secondary/65 p-4 ring-1 ring-border-subtle">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-content-muted">
+            <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-content-muted">
               Total
             </p>
             <p className="mt-2 text-2xl font-bold text-content-primary">
@@ -163,7 +165,7 @@ function GrammarQuizSummary({
           </div>
 
           <div className="rounded-[22px] bg-surface-secondary/65 p-4 ring-1 ring-border-subtle">
-            <p className="text-[11px] font-black uppercase tracking-[0.18em] text-content-muted">
+            <p className="text-[0.6875rem] font-black uppercase tracking-[0.18em] text-content-muted">
               Precision
             </p>
             <p className="mt-2 text-2xl font-bold text-content-primary">
@@ -193,6 +195,8 @@ export interface GrammarQuizModalProps {
 }
 
 export default function GrammarQuizModal({ lesson, onClose, onComplete }: GrammarQuizModalProps) {
+  useMiniDockBlocker(true);
+
   const platformMotion = usePlatformMotion();
   const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
   const exam = lesson.content?.exam ?? [];
@@ -209,6 +213,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
   const [completedSuccessfully, setCompletedSuccessfully] = useState(false);
   const [exerciseFooterState, setExerciseFooterState] = useState<GrammarQuizFooterState | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
   const startRef = useRef(Date.now());
 
   const overlayVariants = useMemo(
@@ -345,6 +350,41 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
     exerciseFooterState?.onConfirm();
   }, [current?.type, exerciseFooterState, handleQuestionConfirm]);
 
+  const handleDismissAnswerConfirmation = useCallback(
+    (event?: ReactMouseEvent<HTMLDivElement>) => {
+      event?.stopPropagation();
+      setIsConfirmDialogOpen(false);
+    },
+    [],
+  );
+
+  const handleStayInExam = useCallback(
+    (event?: ReactMouseEvent<HTMLDivElement> | ReactMouseEvent<HTMLButtonElement>) => {
+      event?.stopPropagation();
+      setIsExitDialogOpen(false);
+    },
+    [],
+  );
+
+  const handleConfirmExit = useCallback(() => {
+    setIsExitDialogOpen(false);
+    onClose();
+  }, [onClose]);
+
+  const handleRequestClose = useCallback(
+    (event?: ReactMouseEvent<HTMLElement>) => {
+      event?.stopPropagation();
+
+      if (isConfirmDialogOpen) {
+        setIsConfirmDialogOpen(false);
+        return;
+      }
+
+      setIsExitDialogOpen(true);
+    },
+    [isConfirmDialogOpen],
+  );
+
   const finalizeExam = useCallback(async () => {
     const score = total > 0
       ? Math.round((results.filter(Boolean).length / total) * 100)
@@ -453,6 +493,12 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
     }
   }, [answered, currentIdx, step]);
 
+  useEffect(() => {
+    if (isConfirmDialogOpen) {
+      setIsExitDialogOpen(false);
+    }
+  }, [isConfirmDialogOpen]);
+
   const shouldShowUnlockedCompletion = completedSuccessfully && awardedPoints > 0;
   const shouldShowReaffirmedCompletion = completedSuccessfully && awardedPoints === 0;
   const displayedAwardedPoints = Math.max(awardedPoints, GRAMMAR_COMPLETION_REWARD);
@@ -472,7 +518,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
       animate="visible"
       exit="exit"
       className="fixed inset-0 z-[75] flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-4"
-      onClick={onClose}
+      onClick={handleRequestClose}
     >
       <motion.div
         variants={panelVariants}
@@ -504,7 +550,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
             </div>
 
             <button
-              onClick={onClose}
+              onClick={handleRequestClose}
               className="flex h-8 w-8 items-center justify-center rounded-xl bg-surface-primary/15 text-content-inverted transition hover:bg-surface-primary/25"
               aria-label="Cerrar examen"
             >
@@ -698,37 +744,6 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
             )}
           </div>
         ) : null}
-        {isConfirmDialogOpen ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm"
-            onClick={() => setIsConfirmDialogOpen(false)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96, y: 12 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 8 }}
-              transition={{ duration: 0.18 }}
-              className="w-full max-w-md"
-              onClick={(event) => event.stopPropagation()}
-            >
-              <AnswerConfirmationPanel
-                title="Confirmar respuesta"
-                description="Si ya revisaste tu respuesta, confirma para mostrar el resultado de esta pregunta."
-                confirmLabel="Mostrar resultado"
-                onConfirm={handleConfirmCurrentAnswer}
-                tone="grammar"
-                secondaryAction={{
-                  label: "Seguir revisando",
-                  onAction: () => setIsConfirmDialogOpen(false),
-                }}
-              />
-            </motion.div>
-          </motion.div>
-        ) : null}
-
         {step === "summary" && !(shouldShowUnlockedCompletion || shouldShowReaffirmedCompletion) ? (
           <div className="shrink-0 rounded-b-3xl border-t border-border-subtle bg-surface-primary px-5 py-4 sm:px-6">
             <div className="flex flex-col gap-3 sm:flex-row">
@@ -750,6 +765,70 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
           </div>
         ) : null}
       </motion.div>
+
+      <AnimatePresence>
+        {isConfirmDialogOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={handleDismissAnswerConfirmation}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.18 }}
+              className="relative z-10 w-full max-w-md"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <AnswerConfirmationPanel
+                title="Confirmar respuesta"
+                description="Si ya revisaste tu respuesta, confirma para mostrar el resultado de esta pregunta."
+                confirmLabel="Mostrar resultado"
+                onConfirm={handleConfirmCurrentAnswer}
+                tone="grammar"
+                secondaryAction={{
+                  label: "Seguir revisando",
+                  onAction: () => setIsConfirmDialogOpen(false),
+                }}
+              />
+            </motion.div>
+          </motion.div>
+        ) : null}
+
+        {isExitDialogOpen ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+            onClick={handleStayInExam}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.18 }}
+              className="relative z-10 w-full max-w-md"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <AnswerConfirmationPanel
+                title="Salir del examen"
+                description="Si sales ahora, cerrarás esta sesión y volverás a la pantalla anterior."
+                confirmLabel="Salir"
+                onConfirm={handleConfirmExit}
+                tone="grammar"
+                secondaryAction={{
+                  label: "Seguir en el examen",
+                  onAction: () => setIsExitDialogOpen(false),
+                }}
+              />
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.div>
   );
 }

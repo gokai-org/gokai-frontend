@@ -169,7 +169,7 @@ export default function GrammarCompleteExercise({
                   onDrop={(event) => handleBlankDrop(event, seg.value)}
                   onDragOver={handleBlankDragOver}
                   className={[
-                    "mx-1 my-1 inline-flex min-h-[34px] min-w-[68px] items-center justify-center rounded-lg px-2.5 py-1 text-[13px] font-bold leading-none transition-all duration-200 sm:min-h-[42px] sm:min-w-[104px] sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-base",
+                    "mx-1 my-1 inline-flex min-h-[34px] min-w-[68px] items-center justify-center rounded-lg px-2.5 py-1 text-[0.8125rem] font-bold leading-none transition-all duration-200 sm:min-h-[42px] sm:min-w-[104px] sm:rounded-xl sm:px-3 sm:py-1.5 sm:text-base",
                     answered
                       ? isOk
                         ? "border border-emerald-400/60 bg-emerald-50/60 text-emerald-700 dark:bg-emerald-950/25 dark:text-emerald-300"
@@ -188,7 +188,7 @@ export default function GrammarCompleteExercise({
                   {filled ? (
                     <span>{filled}</span>
                   ) : (
-                    <span className="text-[13px] tracking-[0.22em] opacity-50 sm:text-base sm:tracking-[0.28em]">___</span>
+                    <span className="text-[0.8125rem] tracking-[0.22em] opacity-50 sm:text-base sm:tracking-[0.28em]">___</span>
                   )}
                 </button>
               );
@@ -210,7 +210,7 @@ export default function GrammarCompleteExercise({
                     onDragEnd={handleOptionDragEnd}
                     onClick={() => !isUsed && selectOption(opt.text)}
                     disabled={isUsed}
-                    className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors duration-150 sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-[15px] ${
+                    className={`rounded-xl border px-3 py-1.5 text-xs font-semibold transition-colors duration-150 sm:rounded-2xl sm:px-5 sm:py-2.5 sm:text-[0.9375rem] ${
                       isUsed
                         ? "cursor-default border-black/[0.05] bg-surface-tertiary text-content-tertiary opacity-50 dark:border-white/[0.08]"
                         : "cursor-pointer border-black/[0.05] bg-surface-elevated text-content-primary shadow-sm hover:border-accent/50 hover:bg-accent/8 hover:text-accent dark:border-white/[0.08]"
@@ -233,7 +233,7 @@ export default function GrammarCompleteExercise({
               return (
                 <div
                   key={id}
-                  className={`flex items-center gap-3 rounded-[18px] border p-3 text-xs font-medium leading-5 sm:rounded-[20px] sm:p-4 sm:text-[15px] sm:leading-6 ${
+                  className={`flex items-center gap-3 rounded-[18px] border p-3 text-xs font-medium leading-5 sm:rounded-[20px] sm:p-4 sm:text-[0.9375rem] sm:leading-6 ${
                     isOk
                       ? "border-emerald-400/50 bg-emerald-50/50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-300"
                       : "border-red-400/50 bg-red-50/50 text-red-600 dark:bg-red-950/20 dark:text-red-400"

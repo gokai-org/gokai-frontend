@@ -45,11 +45,11 @@ export function VocabularyCard({
         "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] p-5 text-left",
         "min-h-[210px]",
         "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
-        "shadow-[0_2px_14px_-6px_rgba(0,0,0,0.06)]",
+        "shadow-none",
         config.shadowHover,
         cardTransition,
         onClick
-          ? `cursor-pointer hover:-translate-y-1 hover:border-transparent focus:outline-none focus-visible:ring-2 ${config.ring}`
+          ? `cursor-pointer hover:-translate-y-[1px] hover:border-accent/20 focus:outline-none focus-visible:ring-2 ${config.ring}`
           : "",
       ]
         .filter(Boolean)
@@ -58,11 +58,11 @@ export function VocabularyCard({
         "group relative flex h-full w-full flex-col overflow-hidden rounded-[24px] p-5 text-left",
         "min-h-[190px]",
         "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
-        "shadow-[0_2px_14px_-6px_rgba(0,0,0,0.06)]",
+        "shadow-none",
         config.shadowHover,
         cardTransition,
         onClick
-          ? `cursor-pointer hover:-translate-y-1 hover:border-transparent focus:outline-none focus-visible:ring-2 ${config.ring}`
+          ? `cursor-pointer hover:-translate-y-[1px] hover:border-accent/20 focus:outline-none focus-visible:ring-2 ${config.ring}`
           : "",
       ]
         .filter(Boolean)

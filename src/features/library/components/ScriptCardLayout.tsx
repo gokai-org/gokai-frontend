@@ -50,9 +50,7 @@ export function ScriptSymbolBox({
     <div
       className={[
         "inline-flex h-14 w-14 items-center justify-center overflow-hidden",
-        "rounded-2xl bg-gradient-to-br font-black text-content-inverted shadow-lg",
-        "ring-2 ring-transparent",
-        "group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
+        "rounded-2xl bg-gradient-to-br font-black text-content-inverted",
         "text-[30px] leading-none",
         hoverTransition,
         gradient,
@@ -75,10 +73,8 @@ export function MahjongSymbolBox({
     <div
       className={[
         "inline-flex h-[56px] w-[44px] items-center justify-center overflow-hidden",
-        "rounded-xl bg-gradient-to-br font-black shadow-lg",
+        "rounded-xl bg-gradient-to-br font-black",
         textOverride ?? "text-content-inverted",
-        "ring-2 ring-transparent",
-        "group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
         "text-[28px] leading-none",
         hoverTransition,
         gradient,
@@ -106,16 +102,7 @@ export function ShogiSymbolBox({
         "relative inline-flex h-[56px] w-[44px]",
         hoverTransition,
       ].join(" ")}
-      style={{ filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.30))" }}
     >
-      {/* Ring border — scales slightly outward on hover, follows shogi shape */}
-      <div
-        className={[
-          "absolute inset-0 opacity-0 group-hover:opacity-100 scale-[1.09] bg-white/25",
-          hoverTransition,
-        ].join(" ")}
-        style={{ clipPath: shogiPath }}
-      />
       {/* Gradient fill */}
       <div
         className={[
@@ -158,6 +145,7 @@ export function ScriptCardLayout({
   subtitle,
   pointsBadge,
   isFavorite,
+  hasOnClick,
   hasFavoriteToggle,
   config,
   hoverTransition,
@@ -166,12 +154,11 @@ export function ScriptCardLayout({
 }: ScriptCardLayoutProps) {
   return (
     <>
-      {/* ── Gradient overlay ─────────────────────────────────── */}
-      {!locked && (
-        <div
+      {hasOnClick && !locked && (
+        <span
           aria-hidden
           className={[
-            "pointer-events-none absolute inset-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
+            "pointer-events-none absolute inset-0 z-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
             hoverTransition,
             config.hoverGradient,
           ].join(" ")}
@@ -188,7 +175,7 @@ export function ScriptCardLayout({
             "-translate-y-1 translate-x-8 text-[96px] font-black leading-none",
             locked
               ? "opacity-[0.04]"
-              : "opacity-[0.03] group-hover:opacity-[0.06]",
+              : [config.decorOpacity, "group-hover:text-white/10"].join(" "),
             locked ? "" : hoverTransition,
           ]
             .filter(Boolean)
@@ -197,18 +184,6 @@ export function ScriptCardLayout({
           {symbol}
         </span>
       </span>
-
-      {/* ── Bottom vignette ─────────────────────────────────── */}
-      {!locked && (
-        <div
-          className={[
-            "pointer-events-none absolute inset-x-0 bottom-0 h-28 rounded-b-[24px]",
-            "bg-gradient-to-t from-black/30 to-transparent",
-            "opacity-0 group-hover:opacity-100",
-            hoverTransition,
-          ].join(" ")}
-        />
-      )}
 
       {/* ── Top row: symbol box + points badge ─────────────────── */}
       <div className="relative z-10 mb-4 flex items-start justify-between gap-2">
@@ -223,7 +198,6 @@ export function ScriptCardLayout({
                 ? "bg-gradient-to-br from-[#F5F3F9] to-[#EDEBF3] dark:from-[#4a464c] dark:to-[#2e2a30] text-[#C4BDD2] dark:text-white/40"
                 : [
                     "bg-gradient-to-br text-content-inverted",
-                    "group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
                     hoverTransition,
                     config.thumbGradient,
                   ].join(" "),
@@ -282,7 +256,7 @@ export function ScriptCardLayout({
             "line-clamp-2 text-[17px] font-black leading-tight",
             locked
               ? "text-content-muted dark:text-white/40"
-              : "text-content-primary group-hover:text-content-inverted",
+                : "text-content-primary group-hover:text-white",
             locked ? "" : hoverTransition,
           ]
             .filter(Boolean)
@@ -297,7 +271,7 @@ export function ScriptCardLayout({
               "mt-1 line-clamp-1 text-[12px] font-medium",
               locked
                 ? "text-content-muted/70 dark:text-white/25"
-                : "text-content-muted group-hover:text-white/60",
+                : "text-content-muted group-hover:text-white/72",
               locked ? "" : hoverTransition,
             ]
               .filter(Boolean)

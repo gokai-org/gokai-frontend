@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LockKeyhole } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -12,6 +11,8 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
+import { getUnlockVisualVars } from "@/shared/lib/unlockVisuals";
+import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
 import { getGrammarBoardArtworkPreset } from "../../constants/grammarBoardBackgrounds";
 import type { GrammarBoardProgress } from "../../types";
 
@@ -65,41 +66,35 @@ const UNLOCKED_CARD_VARIANTS: readonly CardVariant[] = [
 ] as const;
 
 const LOCKED_CARD_VARIANT: CardVariant = {
-  bg: "bg-surface-secondary/90 dark:bg-surface-secondary",
+  bg: "bg-surface-tertiary dark:bg-[#1a181c]",
   text: "text-content-primary dark:text-white",
-  border: "border-content-primary/10 dark:border-white/10",
+  border: "border-border-default/70 dark:border-white/[0.05]",
   accent: "from-[#6E5E5B] via-[#8B7B76] to-[#A99B95]",
   badge: "bg-black/5 dark:bg-white/10",
   artTone: "locked",
 };
 
 const CARD_STATE_ACCENTS = {
-  available: "shadow-[0_16px_34px_rgba(0,0,0,0.1)]",
-  completed: "shadow-[0_18px_36px_rgba(0,0,0,0.11)]",
-  locked: "shadow-[0_10px_22px_rgba(0,0,0,0.06)]",
+  available: "shadow-none",
+  completed: "shadow-none",
+  locked: "shadow-none",
 } as const;
 
 const ARTWORK_PALETTE_CLASSES: Record<
   ArtworkTone,
-  { primary: string; secondary: string; glow: string }
+  { primary: string; secondary: string }
 > = {
   paper: {
     primary: "bg-[#5f575225] dark:bg-[#f2eae214]",
     secondary: "bg-[#8b827b16] dark:bg-[#d8cec50c]",
-    glow:
-      "bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.34),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(96,88,82,0.11),transparent_56%)] dark:bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.04),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(244,237,230,0.04),transparent_56%)]",
   },
   accent: {
     primary: "bg-[#675a541f] dark:bg-[#d45d551f]",
     secondary: "bg-[#95898314] dark:bg-[#f3a29312]",
-    glow:
-      "bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.3),transparent_40%),radial-gradient(circle_at_78%_16%,rgba(104,93,86,0.12),transparent_56%)] dark:bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.04),transparent_40%),radial-gradient(circle_at_78%_16%,rgba(212,82,79,0.08),transparent_56%)]",
   },
   locked: {
     primary: "bg-[#6259531b] dark:bg-[#d8d0c912]",
     secondary: "bg-[#90867f12] dark:bg-[#ece5df0b]",
-    glow:
-      "bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.3),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(98,89,83,0.09),transparent_56%)] dark:bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.03),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(214,206,198,0.03),transparent_56%)]",
   },
 };
 
@@ -203,15 +198,16 @@ export function GrammarLibraryCard({
   const echoArtworkStyle = getArtworkLayerStyle(lesson, "echo");
   const hoverEnabled = !isLockedCard && !isComingSoon;
   const hoverClass = hoverEnabled
-    ? "hover:-translate-y-1 hover:shadow-[0_20px_40px_rgba(153,51,49,0.22)]"
+    ? "hover:-translate-y-[1px]"
     : "";
   const artworkHoverClass = hoverEnabled
     ? "transition-[transform,filter] duration-300 ease-out [transform:var(--grammar-library-artwork-transform)] group-hover:[transform:var(--grammar-library-artwork-hover-transform)]"
     : "[transform:var(--grammar-library-artwork-transform)]";
   const titleHoverClass = hoverEnabled
-    ? "transition-[color,opacity] duration-300 ease-out group-hover:text-white dark:group-hover:text-white"
+    ? "transition-[color,opacity] duration-300 ease-out"
     : "";
   const unlockHoldVisualActive = isHoldingUnlock || unlockPending;
+  const unlockVisualVars = getUnlockVisualVars("grammar");
 
   const clearHoldTimer = useCallback(() => {
     if (holdTimerRef.current !== null) {
@@ -335,6 +331,7 @@ export function GrammarLibraryCard({
       ]
         .filter(Boolean)
         .join(" ")}
+      style={unlockVisualVars}
     >
       <div
         className={[
@@ -343,7 +340,7 @@ export function GrammarLibraryCard({
           variant.border,
           variant.text,
           isLockedCard
-                ? "border border-border-default/70 bg-[#d9d4d0] dark:bg-[#1a181c] dark:border-white/[0.05]"
+                ? ""
             : CARD_STATE_ACCENTS[lesson.status],
         ].join(" ")}
       >
@@ -359,30 +356,7 @@ export function GrammarLibraryCard({
           aria-disabled={isLockedCard || !onSelect ? true : undefined}
           aria-label={lesson.title}
         >
-          <div className="pointer-events-none absolute inset-0 rounded-[24px] bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-70" />
-          <div className="pointer-events-none absolute inset-0 rounded-[24px] bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.14),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.08),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.05),transparent_28%)]" />
-          <div className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-white/50 dark:border-white/10" />
-
-          {!isLockedCard ? (
-            <div
-              aria-hidden
-              className={[
-                "pointer-events-none absolute inset-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
-                hoverTransition,
-                "from-[#8F2F2D]/90 via-[#A63B38]/82 to-[#C24D45]/74",
-              ].join(" ")}
-            />
-          ) : null}
-
-          {!isLockedCard ? (
-            <div
-              aria-hidden
-              className={[
-                "pointer-events-none absolute inset-x-0 bottom-0 h-28 rounded-b-[24px] bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100",
-                hoverTransition,
-              ].join(" ")}
-            />
-          ) : null}
+          <div className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-black/6 dark:border-white/8" />
 
           {pressUnlockEnabled ? (
             <>
@@ -391,7 +365,7 @@ export function GrammarLibraryCard({
               />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1.5 overflow-hidden rounded-b-[24px] bg-black/6 dark:bg-white/8">
                 <div
-                  className={`h-full origin-left rounded-full bg-gradient-to-r from-accent via-[#C5544D] to-accent-hover shadow-[0_0_16px_rgba(153,51,49,0.28)] ${unlockPending ? "animate-pulse" : ""}`}
+                  className={`h-full origin-left rounded-full bg-gradient-to-r from-accent via-[#C5544D] to-accent-hover ${unlockPending ? "animate-pulse" : ""}`}
                   style={{
                     transform: `scaleX(${unlockPending ? 1 : unlockHoldVisualActive ? 1 : 0})`,
                     transition: unlockPending
@@ -406,8 +380,6 @@ export function GrammarLibraryCard({
           ) : null}
 
           <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[24px]">
-            <div className={`absolute inset-0 ${artworkPalette.glow}`} />
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_88%_14%,rgba(255,255,255,0.08),transparent_34%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,0.06),transparent_30%)] dark:bg-[radial-gradient(circle_at_88%_14%,rgba(255,255,255,0.03),transparent_34%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,0.02),transparent_30%)]" />
             <span
               className={`absolute ${artworkPalette.secondary} ${artworkHoverClass} mix-blend-multiply dark:mix-blend-screen ${isLockedCard ? "saturate-0 opacity-80" : ""}`}
               style={echoArtworkStyle}
@@ -421,7 +393,7 @@ export function GrammarLibraryCard({
           <div className="relative z-10 flex h-full flex-col justify-end">
             {showLockedIndicator ? (
               <div className="flex h-full flex-col items-center justify-center gap-2">
-                <LockKeyhole className="h-5 w-5 text-content-muted/60 dark:text-white/30" strokeWidth={2.1} />
+                <LockedStateBadge size="md" />
               </div>
             ) : (
               <div className="max-w-[78%]">

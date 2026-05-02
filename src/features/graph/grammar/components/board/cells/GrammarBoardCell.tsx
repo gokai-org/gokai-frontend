@@ -13,6 +13,8 @@ import {
 import { LockKeyhole } from "lucide-react";
 import { getGrammarBoardArtworkPreset } from "../../../constants/grammarBoardBackgrounds";
 import type { GrammarBoardCellViewModel } from "../../../types";
+import { getUnlockVisualVars } from "@/shared/lib/unlockVisuals";
+import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
 
 const UNLOCK_HOLD_DURATION_MS = 720;
 const LOCKED_SHAKE_DURATION_MS = 580;
@@ -93,11 +95,10 @@ const LOCKED_CARD_VARIANT: BoardCardVariant = {
 };
 
 const CARD_STATE_ACCENTS = {
-  active:
-    "shadow-[0_20px_40px_rgba(0,0,0,0.14)] dark:shadow-[0_18px_38px_rgba(0,0,0,0.34)]",
-  available: "shadow-[0_12px_28px_rgba(0,0,0,0.08)]",
-  completed: "shadow-[0_14px_30px_rgba(0,0,0,0.09)]",
-  locked: "shadow-[0_10px_22px_rgba(0,0,0,0.06)]",
+  active: "shadow-none",
+  available: "shadow-none",
+  completed: "shadow-none",
+  locked: "shadow-none",
 } as const;
 
 const PANEL_ARTWORK_SCALE: Record<
@@ -171,25 +172,19 @@ const PANEL_ARTWORK_FRAME: Record<PanelKind, ArtworkFitProfile> = {
 
 const ARTWORK_PALETTE_CLASSES: Record<
   ArtworkTone,
-  { primary: string; secondary: string; glow: string }
+  { primary: string; secondary: string }
 > = {
   paper: {
     primary: "bg-[#5f575225] dark:bg-[#f2eae214]",
     secondary: "bg-[#8b827b16] dark:bg-[#d8cec50c]",
-    glow:
-      "bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.34),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(96,88,82,0.11),transparent_56%)] dark:bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.04),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(244,237,230,0.04),transparent_56%)]",
   },
   accent: {
     primary: "bg-[#675a541f] dark:bg-[#d45d551f]",
     secondary: "bg-[#95898314] dark:bg-[#f3a29312]",
-    glow:
-      "bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.3),transparent_40%),radial-gradient(circle_at_78%_16%,rgba(104,93,86,0.12),transparent_56%)] dark:bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.04),transparent_40%),radial-gradient(circle_at_78%_16%,rgba(212,82,79,0.08),transparent_56%)]",
   },
   locked: {
     primary: "bg-[#6259531b] dark:bg-[#d8d0c912]",
     secondary: "bg-[#90867f12] dark:bg-[#ece5df0b]",
-    glow:
-      "bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.3),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(98,89,83,0.09),transparent_56%)] dark:bg-[radial-gradient(circle_at_18%_20%,rgba(255,255,255,0.03),transparent_40%),radial-gradient(circle_at_82%_18%,rgba(214,206,198,0.03),transparent_56%)]",
   },
 };
 
@@ -619,6 +614,7 @@ function GrammarBoardCellComponent({
   const shellClass = getShellClass(cell);
   const { outer: outerCornerClass, inner: innerCornerClass } = resolveCornerClasses(layout);
   const artworkPalette = ARTWORK_PALETTE_CLASSES[variant.artTone];
+  const unlockVisualVars = getUnlockVisualVars("grammar");
   const primaryArtworkStyle = getArtworkLayerStyle(
     cell,
     panelKind,
@@ -640,7 +636,7 @@ function GrammarBoardCellComponent({
   const hoverVisualsEnabled = hoverEnabled && !isHoldingUnlock && !unlockPending;
   const hoverClass = interactive
     ? hoverVisualsEnabled
-      ? "hover:shadow-[0_10px_22px_rgba(153,51,49,0.16)] dark:hover:shadow-[0_10px_26px_rgba(153,51,49,0.24)]"
+      ? ""
       : ""
     : "cursor-default";
   const buttonHoverClass = hoverVisualsEnabled
@@ -779,6 +775,7 @@ function GrammarBoardCellComponent({
       data-just-unlocked={justUnlocked ? "true" : undefined}
       className={`group absolute text-left outline-none transition-shadow duration-300 focus-visible:z-20 ${outerCornerClass} ${hoverClass} ${justUnlocked ? "gokai-unlock-burst" : ""} ${isLockedShakeActive ? "grammar-board-cell-shaking" : ""}`}
       style={{
+        ...unlockVisualVars,
         left: `${layout.x}%`,
         top: `${layout.y}%`,
         width: `${layout.width}%`,
@@ -799,9 +796,7 @@ function GrammarBoardCellComponent({
         aria-disabled={isLockedCell || !interactive ? true : undefined}
         aria-label={isComingSoonCell ? "Proximamente" : progress.title}
       >
-        <div className={`pointer-events-none absolute inset-0 ${outerCornerClass} bg-gradient-to-br from-white/10 via-transparent to-transparent opacity-70`} />
-        <div className={`pointer-events-none absolute inset-0 ${outerCornerClass} bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.14),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.08),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.05),transparent_28%)]`} />
-        <div className={`pointer-events-none absolute inset-[1px] border border-white/50 dark:border-white/10 ${innerCornerClass}`} />
+        <div className={`pointer-events-none absolute inset-[1px] border border-black/6 dark:border-white/8 ${innerCornerClass}`} />
 
         {pressUnlockEnabled ? (
           <>
@@ -810,7 +805,7 @@ function GrammarBoardCellComponent({
             />
             <div className={`pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1.5 overflow-hidden bg-black/6 dark:bg-white/8 ${innerCornerClass}`}>
               <div
-                className={`h-full origin-left rounded-full bg-gradient-to-r from-accent via-[#C5544D] to-accent-hover shadow-[0_0_16px_rgba(153,51,49,0.28)] ${unlockPending ? "animate-pulse" : ""}`}
+                className={`h-full origin-left rounded-full bg-gradient-to-r from-accent via-[#C5544D] to-accent-hover ${unlockPending ? "animate-pulse" : ""}`}
                 style={{
                   transform: `scaleX(${unlockPending ? 1 : unlockHoldVisualActive ? 1 : 0})`,
                   transition: unlockPending
@@ -828,8 +823,6 @@ function GrammarBoardCellComponent({
           aria-hidden
           className={`pointer-events-none absolute inset-0 z-0 overflow-hidden ${outerCornerClass}`}
         >
-          <div className={`absolute inset-0 ${artworkPalette.glow}`} />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_88%_14%,rgba(255,255,255,0.08),transparent_34%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,0.06),transparent_30%)] dark:bg-[radial-gradient(circle_at_88%_14%,rgba(255,255,255,0.03),transparent_34%),radial-gradient(circle_at_18%_78%,rgba(255,255,255,0.02),transparent_30%)]" />
           <span
             className={`absolute ${artworkPalette.secondary} ${artworkHoverClass} ${artworkEchoHoverClass} mix-blend-multiply dark:mix-blend-screen ${isLockedCell ? "saturate-0 opacity-80" : ""}`}
             style={echoArtworkStyle}
@@ -851,9 +844,7 @@ function GrammarBoardCellComponent({
         >
           {isLockedCell ? (
             <div className="flex flex-col items-center justify-center gap-1.5">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full border border-black/8 bg-white/72 text-content-muted/70 shadow-[0_10px_24px_rgba(0,0,0,0.12)] backdrop-blur-[2px] dark:border-white/10 dark:bg-white/[0.06] dark:text-white/30">
-                <LockKeyhole className="h-4.5 w-4.5" strokeWidth={2.1} />
-              </div>
+              <LockedStateBadge size="md" />
             </div>
           ) : (
             <div className={`min-w-0 ${getContentWidthClass(panelKind)}`}>

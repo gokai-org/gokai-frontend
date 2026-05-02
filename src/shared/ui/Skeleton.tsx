@@ -56,6 +56,165 @@ export function SkeletonCard({ className = "" }: { className?: string }) {
   );
 }
 
+export function ScriptCardSkeleton({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={[
+        "min-h-[190px] rounded-[24px] border border-[#E8E3E1] bg-surface-primary p-5 dark:border-[#2a2a2a]",
+        "flex flex-col justify-between overflow-hidden",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <SkeletonBox className="h-14 w-14 bg-surface-tertiary" rounded="rounded-[20px]" />
+        <SkeletonBox className="h-8 w-8 bg-surface-tertiary" rounded="rounded-full" />
+      </div>
+
+      <div className="mt-8 space-y-3">
+        <SkeletonLine width="w-16" height="h-4" className="bg-surface-tertiary" />
+        <SkeletonLine width="w-3/4" height="h-6" />
+        <SkeletonLine width="w-1/2" height="h-3.5" className="bg-surface-tertiary" />
+      </div>
+    </div>
+  );
+}
+
+export function VocabularyCardSkeleton({
+  className = "",
+  compact = false,
+}: {
+  className?: string;
+  compact?: boolean;
+}) {
+  const minHeight = compact ? "min-h-[190px]" : "min-h-[210px]";
+
+  return (
+    <div
+      className={[
+        minHeight,
+        "rounded-[24px] border border-[#E8E3E1] bg-surface-primary p-5 dark:border-[#2a2a2a]",
+        "flex flex-col overflow-hidden",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-3">
+          <SkeletonLine width="w-24" height="h-4" className="bg-surface-tertiary" />
+          <SkeletonLine width="w-20" height="h-3.5" className="bg-surface-tertiary" />
+        </div>
+        <SkeletonBox
+          className={compact ? "h-12 w-12 bg-surface-tertiary" : "h-14 w-14 bg-surface-tertiary"}
+          rounded="rounded-[18px]"
+        />
+      </div>
+
+      <div className="mt-auto space-y-3 pt-10">
+        <SkeletonLine width="w-4/5" height="h-6" />
+        <SkeletonLine width="w-2/3" height="h-3.5" className="bg-surface-tertiary" />
+      </div>
+    </div>
+  );
+}
+
+export function GrammarLibraryCardSkeleton({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={[
+        "min-h-[190px] rounded-[24px] border border-border-default/70 bg-surface-tertiary p-5 dark:border-white/[0.05] dark:bg-[#1a181c]",
+        "relative overflow-hidden",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
+    >
+      <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-surface-primary/50 blur-2xl" />
+
+      <div className="relative flex h-full flex-col justify-between gap-8">
+        <div className="flex items-start justify-between gap-4">
+          <div className="space-y-3">
+            <SkeletonLine width="w-14" height="h-4" className="bg-surface-primary/70" />
+            <SkeletonLine width="w-20" height="h-3.5" className="bg-surface-primary/60" />
+          </div>
+          <SkeletonBox className="h-9 w-9 bg-surface-primary/60" rounded="rounded-full" />
+        </div>
+
+        <div className="space-y-3">
+          <SkeletonLine width="w-4/5" height="h-6" className="bg-surface-primary/80" />
+          <SkeletonLine width="w-2/3" height="h-3.5" className="bg-surface-primary/60" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const DEFAULT_LIBRARY_CARD_SKELETON_GRID_CLASSNAME =
+  "grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6";
+
+type LibrarySkeletonVariant = "default" | "script" | "vocabulary" | "word" | "grammar";
+
+export function LibraryCardsSkeletonGrid({
+  cards = 12,
+  className = DEFAULT_LIBRARY_CARD_SKELETON_GRID_CLASSNAME,
+  cardClassName = "",
+  variant = "default",
+}: {
+  cards?: number;
+  className?: string;
+  cardClassName?: string;
+  variant?: LibrarySkeletonVariant;
+}) {
+  const renderSkeletonCard = (index: number) => {
+    switch (variant) {
+      case "script":
+        return (
+          <ScriptCardSkeleton
+            key={`library-card-skeleton-${index}`}
+            className={cardClassName}
+          />
+        );
+      case "vocabulary":
+        return (
+          <VocabularyCardSkeleton
+            key={`library-card-skeleton-${index}`}
+            className={cardClassName}
+            compact
+          />
+        );
+      case "word":
+        return (
+          <VocabularyCardSkeleton
+            key={`library-card-skeleton-${index}`}
+            className={cardClassName}
+          />
+        );
+      case "grammar":
+        return (
+          <GrammarLibraryCardSkeleton
+            key={`library-card-skeleton-${index}`}
+            className={cardClassName}
+          />
+        );
+      default:
+        return (
+          <SkeletonCard
+            key={`library-card-skeleton-${index}`}
+            className={cardClassName}
+          />
+        );
+    }
+  };
+
+  return (
+    <div className={className} aria-hidden="true">
+      {Array.from({ length: cards }).map((_, index) => renderSkeletonCard(index))}
+    </div>
+  );
+}
+
 /* ── Stat card skeleton (estilo StatsOverview) ───────── */
 
 export function SkeletonStatCard() {

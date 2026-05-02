@@ -93,17 +93,12 @@ export function AnswerConfirmationPanel({
   const palette = mastered ? MASTERY_PALETTE : CONFIRMATION_PALETTES[tone];
 
   const panelStyle: CSSProperties = {
-    borderColor: hexToRgba(palette.base, mastered ? 0.24 : 0.16),
-    boxShadow: `0 20px 44px ${hexToRgba(palette.shadow, mastered ? 0.18 : 0.12)}`,
-  };
-
-  const accentWashStyle: CSSProperties = {
-    background: `linear-gradient(145deg, ${hexToRgba(palette.base, mastered ? 0.18 : 0.12)} 0%, ${hexToRgba(palette.to, mastered ? 0.08 : 0.05)} 42%, rgba(255,255,255,0) 100%)`,
+    borderColor: hexToRgba(palette.base, mastered ? 0.3 : 0.14),
   };
 
   const iconStyle: CSSProperties = {
-    background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
-    boxShadow: `0 12px 24px ${hexToRgba(palette.shadow, mastered ? 0.3 : 0.22)}`,
+    backgroundColor: hexToRgba(palette.base, mastered ? 0.2 : 0.12),
+    color: palette.base,
   };
 
   const secondaryStyle: CSSProperties = {
@@ -118,20 +113,23 @@ export function AnswerConfirmationPanel({
         boxShadow: "none",
       }
     : {
-        background: `linear-gradient(135deg, ${palette.from}, ${palette.to})`,
-        boxShadow: `0 12px 26px ${hexToRgba(palette.shadow, mastered ? 0.3 : 0.22)}`,
+        backgroundColor: palette.base,
+        boxShadow: "none",
       };
 
   return (
     <div
-      className="relative overflow-hidden rounded-[24px] border bg-surface-primary/95 p-3.5 backdrop-blur-xl sm:p-4"
+      className="relative overflow-hidden rounded-[24px] border bg-white p-3.5 shadow-[0_16px_32px_rgba(15,23,42,0.08)] backdrop-blur-xl dark:bg-[#101010] dark:shadow-[0_20px_40px_rgba(0,0,0,0.42)] sm:p-4"
       style={panelStyle}
     >
-      <div className="pointer-events-none absolute inset-0 rounded-[24px]" style={accentWashStyle} />
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 h-px"
+        style={{ backgroundColor: hexToRgba(palette.base, mastered ? 0.24 : 0.1) }}
+      />
 
       <div className="relative flex items-start gap-3">
         <div
-          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px] text-white"
+          className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-[16px]"
           style={iconStyle}
         >
           <CheckCircle2 className="h-4 w-4" />
@@ -142,11 +140,11 @@ export function AnswerConfirmationPanel({
             <div className="min-w-0 space-y-1">
               <p
                 className="text-[10px] font-black uppercase tracking-[0.18em]"
-                style={{ color: hexToRgba(palette.base, 0.88) }}
+                style={{ color: mastered ? hexToRgba(palette.base, 0.92) : hexToRgba(palette.base, 0.82) }}
               >
                 {title}
               </p>
-              <p className="text-sm leading-5 text-content-secondary">
+              <p className="text-sm leading-5 text-content-secondary dark:text-[#d6d0ca]">
                 {description}
               </p>
             </div>

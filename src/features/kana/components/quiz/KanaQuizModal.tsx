@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useCallback, useMemo, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKanaQuiz } from "@/features/kana/hooks/useKanaQuiz";
 import { isValidCanvasQuestion } from "@/features/kana/utils/quizParser";
@@ -20,6 +21,7 @@ import { KanaQuizCanvasExercise } from "./KanaQuizCanvasExercise";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 import {
   ReaffirmedMasteryResult,
   UnlockedMasterySequence,
@@ -60,10 +62,13 @@ export function KanaQuizModal({
   onClose,
   onComplete,
 }: KanaQuizModalProps) {
+  useMiniDockBlocker(true);
+
   const quiz = useKanaQuiz();
   const platformMotion = usePlatformMotion();
   const autoClosedForMasteryRef = useRef(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
   const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
   const shouldPersistProgress =
     progressEligible && !wasCompletedBefore && quizType === undefined;
@@ -302,11 +307,52 @@ export function KanaQuizModal({
     quiz.confirmAnswer();
   }, [quiz]);
 
+  const handleDismissAnswerConfirmation = useCallback(
+    (event?: ReactMouseEvent<HTMLDivElement>) => {
+      event?.stopPropagation();
+      setIsConfirmDialogOpen(false);
+    },
+    [],
+  );
+
+  const handleStayInQuiz = useCallback(
+    (event?: ReactMouseEvent<HTMLDivElement> | ReactMouseEvent<HTMLButtonElement>) => {
+      event?.stopPropagation();
+      setIsExitDialogOpen(false);
+    },
+    [],
+  );
+
+  const handleConfirmExit = useCallback(() => {
+    setIsExitDialogOpen(false);
+    handleClose();
+  }, [handleClose]);
+
+  const handleRequestClose = useCallback(
+    (event?: ReactMouseEvent<HTMLElement>) => {
+      event?.stopPropagation();
+
+      if (isConfirmDialogOpen) {
+        setIsConfirmDialogOpen(false);
+        return;
+      }
+
+      setIsExitDialogOpen(true);
+    },
+    [isConfirmDialogOpen],
+  );
+
   useEffect(() => {
     if (state.step !== "exercise" || state.isAnswered) {
       setIsConfirmDialogOpen(false);
     }
   }, [state.currentQuestionIndex, state.isAnswered, state.step]);
+
+  useEffect(() => {
+    if (isConfirmDialogOpen) {
+      setIsExitDialogOpen(false);
+    }
+  }, [isConfirmDialogOpen]);
 
   if (shouldAutoCloseForMastery) {
     return null;
@@ -321,7 +367,7 @@ export function KanaQuizModal({
         animate="visible"
         exit="exit"
         className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-        onClick={handleClose}
+        onClick={handleRequestClose}
       >
         <motion.div
           variants={panelVariants}
@@ -329,7 +375,7 @@ export function KanaQuizModal({
           animate="visible"
           exit="exit"
           className={[
-            "relative bg-surface-primary w-full shadow-2xl ring-1 ring-border-subtle flex flex-col",
+            "relative bg-surface-primary w-full overflow-hidden shadow-2xl ring-1 ring-border-subtle flex flex-col",
             state.step === "summary" || state.step === "celebration"
               ? "max-w-2xl"
               : "max-w-lg",
@@ -355,7 +401,7 @@ export function KanaQuizModal({
               </div>
 
               <button
-                onClick={handleClose}
+                onClick={handleRequestClose}
                 className="w-8 h-8 rounded-xl bg-surface-primary/15 hover:bg-surface-primary/25 text-content-inverted flex items-center justify-center transition"
                 aria-label="Cerrar"
               >
@@ -677,40 +723,77 @@ export function KanaQuizModal({
               ))}
           </div>
 
-          <AnimatePresence>
-            {isConfirmDialogOpen ? (
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 p-4 backdrop-blur-sm"
-                onClick={() => setIsConfirmDialogOpen(false)}
-              >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.96, y: 12 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.96, y: 8 }}
-                  transition={{ duration: 0.18 }}
-                  className="w-full max-w-md"
-                  onClick={(event) => event.stopPropagation()}
-                >
-                  <AnswerConfirmationPanel
-                    title="Confirmar respuesta"
-                    description="Si ya revisaste tu respuesta, confirma para mostrar el resultado de esta pregunta."
-                    confirmLabel="Mostrar resultado"
-                    onConfirm={handleConfirmCurrentAnswer}
-                    tone={kanaType === "katakana" ? "katakana" : "hiragana"}
-                    mastered={isMastered}
-                    secondaryAction={{
-                      label: "Seguir revisando",
-                      onAction: () => setIsConfirmDialogOpen(false),
-                    }}
-                  />
-                </motion.div>
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
         </motion.div>
+
+        <AnimatePresence>
+          {isConfirmDialogOpen ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+              onClick={handleDismissAnswerConfirmation}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                transition={{ duration: 0.18 }}
+                className="relative z-10 w-full max-w-md"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <AnswerConfirmationPanel
+                  title="Confirmar respuesta"
+                  description="Si ya revisaste tu respuesta, confirma para mostrar el resultado de esta pregunta."
+                  confirmLabel="Mostrar resultado"
+                  onConfirm={handleConfirmCurrentAnswer}
+                  tone={kanaType === "katakana" ? "katakana" : "hiragana"}
+                  mastered={isMastered}
+                  secondaryAction={{
+                    label: "Seguir revisando",
+                    onAction: () => setIsConfirmDialogOpen(false),
+                  }}
+                />
+              </motion.div>
+            </motion.div>
+          ) : null}
+
+          {isExitDialogOpen ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+              onClick={handleStayInQuiz}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                transition={{ duration: 0.18 }}
+                className="relative z-10 w-full max-w-md"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <AnswerConfirmationPanel
+                  title={isMastered ? "Salir de maestria" : "Salir del quiz"}
+                  description={
+                    isMastered
+                      ? "Si sales ahora, cerrarás esta sesion de maestria y volverás a la pantalla anterior."
+                      : "Si sales ahora, cerrarás esta sesión y volverás a la pantalla anterior."
+                  }
+                  confirmLabel="Salir"
+                  onConfirm={handleConfirmExit}
+                  tone={kanaType === "katakana" ? "katakana" : "hiragana"}
+                  mastered={isMastered}
+                  secondaryAction={{
+                    label: isMastered ? "Seguir en maestria" : "Seguir en el quiz",
+                    onAction: () => setIsExitDialogOpen(false),
+                  }}
+                />
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </motion.div>
     </AnimatePresence>
   );
@@ -735,7 +818,7 @@ function QuizProgress({
           transition={{ duration: 0.4, ease: "easeOut" }}
         />
       </div>
-      <p className="text-[10px] text-content-muted font-medium text-center">
+      <p className="text-[0.625rem] text-content-muted font-medium text-center">
         Pregunta{" "}
         <span className="text-accent font-bold">
           {Math.min(current + 1, total)}
@@ -813,7 +896,7 @@ function KanaQuizSummary({
             </p>
           </div>
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
                 Resultado
               </p>
               <p
@@ -828,7 +911,7 @@ function KanaQuizSummary({
             </div>
 
             <div className="text-left sm:text-right">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
                 Estado
               </p>
               <p className={`mt-1 text-sm font-bold ${statusClass}`}>
@@ -951,7 +1034,7 @@ function KanaRoundResultCard({
       }
     >
       <span
-        className={`text-[10px] font-bold uppercase tracking-wider ${isPerfect ? "" : "text-content-muted"}`}
+        className={`text-[0.625rem] font-bold uppercase tracking-wider ${isPerfect ? "" : "text-content-muted"}`}
         style={isPerfect ? { color: "var(--accent)" } : undefined}
       >
         {KANA_QUIZ_TYPE_LABELS[type]}
@@ -966,7 +1049,7 @@ function KanaRoundResultCard({
       ) : (
         <span className="text-xl font-extrabold text-content-muted">—</span>
       )}
-      <span className="text-[11px] text-content-muted">
+      <span className="text-[0.6875rem] text-content-muted">
         {isPerfect ? "Perfecta" : isDone ? "Por mejorar" : "Pendiente"}
       </span>
     </motion.div>
@@ -1022,7 +1105,7 @@ function KanaPracticeResult({
 
           <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border-subtle pt-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
                 Resultado
               </p>
               <p
@@ -1037,7 +1120,7 @@ function KanaPracticeResult({
             </div>
 
             <div className="text-left sm:text-right">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
                 Estado
               </p>
               <p

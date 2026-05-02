@@ -1,6 +1,6 @@
 "use client";
 
-import { SkeletonCard } from "@/shared/ui/Skeleton";
+import { LibraryCardsSkeletonGrid } from "@/shared/ui/Skeleton";
 
 interface LibraryCategorySectionProps {
   title: string;
@@ -9,6 +9,10 @@ interface LibraryCategorySectionProps {
   emptyTitle: string;
   emptyDescription: string;
   children?: React.ReactNode;
+  skeletonCards?: number;
+  skeletonGridClassName?: string;
+  skeletonCardClassName?: string;
+  skeletonVariant?: "default" | "script" | "vocabulary" | "word" | "grammar";
 }
 
 export function LibraryCategorySection({
@@ -18,6 +22,10 @@ export function LibraryCategorySection({
   emptyTitle,
   emptyDescription,
   children,
+  skeletonCards = 12,
+  skeletonGridClassName,
+  skeletonCardClassName,
+  skeletonVariant = "default",
 }: LibraryCategorySectionProps) {
   return (
     <div>
@@ -27,11 +35,12 @@ export function LibraryCategorySection({
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <SkeletonCard key={i} />
-          ))}
-        </div>
+        <LibraryCardsSkeletonGrid
+          cards={skeletonCards}
+          className={skeletonGridClassName}
+          cardClassName={skeletonCardClassName}
+          variant={skeletonVariant}
+        />
       ) : children ? (
         children
       ) : (

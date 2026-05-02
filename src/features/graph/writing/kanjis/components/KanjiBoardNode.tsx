@@ -6,6 +6,8 @@ import { Handle, Position, type NodeProps } from "reactflow";
 import { LockKeyhole } from "lucide-react";
 import type { KanjiBoardNodeData } from "../types";
 import { useMasteryTheme } from "@/features/mastery/components/MasteryThemeProvider";
+import { getUnlockVisualVars } from "@/shared/lib/unlockVisuals";
+import { LockedStateStack } from "@/shared/ui/LockedStateIndicator";
 import {
   KANJI_UNLOCK_HOLD_DURATION_MS,
   useKanjiBoardInteraction,
@@ -199,6 +201,7 @@ function KanjiBoardNode({ id, data }: NodeProps<KanjiBoardNodeData>) {
   );
   const showPulse = data.shouldUsePulse && selected;
   const unlockRingColor = isGolden ? "rgba(212, 168, 67, 0.64)" : "rgba(186, 72, 69, 0.64)";
+  const unlockVisualVars = getUnlockVisualVars(isGolden ? "gold" : "kanji");
   const pointsFloatClass = isGolden
     ? "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#D4A843] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(212,168,67,0.52)]"
     : "kanji-node-points-float inline-block whitespace-nowrap rounded-full bg-[#BA4845] px-2.5 py-[3px] text-[11px] font-black text-white shadow-[0_2px_10px_rgba(186,72,66,0.52)]";
@@ -339,6 +342,7 @@ function KanjiBoardNode({ id, data }: NodeProps<KanjiBoardNodeData>) {
         data-help-target-priority={selected ? "10" : undefined}
         data-just-unlocked={interaction?.recentlyUnlockedIds?.has(id) ? "true" : undefined}
         className={`flex h-full w-full flex-col items-center justify-start pt-2 ${interaction?.recentlyUnlockedIds?.has(id) ? "gokai-unlock-burst" : ""}`}
+        style={unlockVisualVars}
       >
         <div className="relative flex h-[138px] w-[138px] items-center justify-center">
           <div
@@ -402,12 +406,14 @@ function KanjiBoardNode({ id, data }: NodeProps<KanjiBoardNodeData>) {
             style={pressUnlockEnabled ? { touchAction: "none", cursor: "pointer" } : undefined}
           >
             {progress.status === "locked" ? (
-              <div className="flex flex-col items-center justify-center gap-1.5">
-                <span className="text-[30px] leading-none">
-                  {progress.kanji.symbol}
-                </span>
-                <LockKeyhole className="h-3.5 w-3.5" strokeWidth={2} />
-              </div>
+              <LockedStateStack
+                badgeSize="sm"
+                symbol={
+                  <span className="text-[30px] leading-none">
+                    {progress.kanji.symbol}
+                  </span>
+                }
+              />
             ) : (
               <span className="text-[42px]">{progress.kanji.symbol}</span>
             )}

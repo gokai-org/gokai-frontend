@@ -15,6 +15,7 @@ import LessonShell from "./LessonShell";
 import { SkeletonDrawerContent } from "@/shared/ui/Skeleton";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { FIXED_KANJI_UNLOCK_COST } from "@/shared/config/unlockCosts";
+import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 
 const modeTitle: Record<LessonMode, string> = {
   writing: "Escritura",
@@ -58,6 +59,8 @@ export default function LessonDrawer({
   onWritingStart,
   onQuizStart,
 }: Props) {
+  useMiniDockBlocker(open);
+
   const [loading, setLoading] = useState(false);
   const [lessons, setLessons] = useState<LessonResolved[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
