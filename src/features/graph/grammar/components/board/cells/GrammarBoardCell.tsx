@@ -13,6 +13,16 @@ import {
 import { LockKeyhole } from "lucide-react";
 import { getGrammarBoardArtworkPreset } from "../../../constants/grammarBoardBackgrounds";
 import type { GrammarBoardCellViewModel } from "../../../types";
+import {
+  GRAMMAR_ARTWORK_PALETTE_CLASSES,
+  GRAMMAR_CARD_HOVER_ARTWORK_PRIMARY_CLASS,
+  GRAMMAR_CARD_HOVER_ARTWORK_SECONDARY_CLASS,
+  GRAMMAR_CARD_HOVER_SURFACE_CLASS,
+  GRAMMAR_CARD_HOVER_TITLE_CLASS,
+  GRAMMAR_LOCKED_CARD_VARIANT,
+  GRAMMAR_UNLOCKED_CARD_VARIANTS,
+  type GrammarCardVariant,
+} from "../../../lib/grammarCardTheme";
 import { getUnlockVisualVars } from "@/shared/lib/unlockVisuals";
 import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
 
@@ -20,15 +30,6 @@ const UNLOCK_HOLD_DURATION_MS = 720;
 const LOCKED_SHAKE_DURATION_MS = 580;
 
 type PanelKind = "goal" | "banner" | "wide" | "tower" | "standard";
-type ArtworkTone = "paper" | "accent" | "locked";
-
-type BoardCardVariant = {
-  bg: string;
-  text: string;
-  badge: string;
-  border: string;
-  artTone: ArtworkTone;
-};
 
 type ArtworkFitProfile = {
   xMin: number;
@@ -54,45 +55,6 @@ interface GrammarBoardCellProps {
   isTinyPortrait?: boolean;
   justUnlocked?: boolean;
 }
-
-const UNLOCKED_CARD_VARIANTS: readonly BoardCardVariant[] = [
-  {
-    bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
-    text: "text-content-primary dark:text-white",
-    badge: "bg-content-primary/10 dark:bg-white/10",
-    border: "border-content-primary/10 dark:border-white/10",
-    artTone: "paper",
-  },
-  {
-    bg: "bg-accent/15 dark:bg-accent/20",
-    text: "text-content-primary dark:text-white",
-    badge: "bg-accent/15 dark:bg-accent/25",
-    border: "border-accent/20 dark:border-accent/25",
-    artTone: "accent",
-  },
-  {
-    bg: "bg-surface-inset dark:bg-[#202020]",
-    text: "text-content-primary dark:text-white",
-    badge: "bg-content-primary/10 dark:bg-white/10",
-    border: "border-content-primary/10 dark:border-white/10",
-    artTone: "paper",
-  },
-  {
-    bg: "bg-surface-secondary dark:bg-surface-secondary",
-    text: "text-content-primary dark:text-white",
-    badge: "bg-content-primary/10 dark:bg-white/10",
-    border: "border-content-primary/10 dark:border-white/10",
-    artTone: "paper",
-  },
-] as const;
-
-const LOCKED_CARD_VARIANT: BoardCardVariant = {
-  bg: "bg-surface-tertiary dark:bg-[#1a181c]",
-  text: "text-content-primary dark:text-white",
-  badge: "bg-black/5 dark:bg-white/10",
-  border: "border-border-default/70 dark:border-white/[0.05]",
-  artTone: "locked",
-};
 
 const CARD_STATE_ACCENTS = {
   active: "shadow-none",
@@ -170,24 +132,6 @@ const PANEL_ARTWORK_FRAME: Record<PanelKind, ArtworkFitProfile> = {
   },
 };
 
-const ARTWORK_PALETTE_CLASSES: Record<
-  ArtworkTone,
-  { primary: string; secondary: string }
-> = {
-  paper: {
-    primary: "bg-[#5f575225] dark:bg-[#f2eae214]",
-    secondary: "bg-[#8b827b16] dark:bg-[#d8cec50c]",
-  },
-  accent: {
-    primary: "bg-[#675a541f] dark:bg-[#d45d551f]",
-    secondary: "bg-[#95898314] dark:bg-[#f3a29312]",
-  },
-  locked: {
-    primary: "bg-[#6259531b] dark:bg-[#d8d0c912]",
-    secondary: "bg-[#90867f12] dark:bg-[#ece5df0b]",
-  },
-};
-
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
@@ -200,12 +144,14 @@ function getPresentationVisualState(cell: GrammarBoardCellViewModel) {
   return cell.visualState;
 }
 
-function getCardVariant(cell: GrammarBoardCellViewModel) {
+function getCardVariant(cell: GrammarBoardCellViewModel): GrammarCardVariant {
   if (cell.visualState === "locked") {
-    return LOCKED_CARD_VARIANT;
+    return GRAMMAR_LOCKED_CARD_VARIANT;
   }
 
-  return UNLOCKED_CARD_VARIANTS[cell.progress.index % UNLOCKED_CARD_VARIANTS.length];
+  return GRAMMAR_UNLOCKED_CARD_VARIANTS[
+    cell.progress.index % GRAMMAR_UNLOCKED_CARD_VARIANTS.length
+  ];
 }
 
 function getShellClass(cell: GrammarBoardCellViewModel) {
@@ -613,7 +559,7 @@ function GrammarBoardCellComponent({
   const variant = getCardVariant(cell);
   const shellClass = getShellClass(cell);
   const { outer: outerCornerClass, inner: innerCornerClass } = resolveCornerClasses(layout);
-  const artworkPalette = ARTWORK_PALETTE_CLASSES[variant.artTone];
+  const artworkPalette = GRAMMAR_ARTWORK_PALETTE_CLASSES[variant.artTone];
   const unlockVisualVars = getUnlockVisualVars("grammar");
   const primaryArtworkStyle = getArtworkLayerStyle(
     cell,
@@ -640,19 +586,19 @@ function GrammarBoardCellComponent({
       : ""
     : "cursor-default";
   const buttonHoverClass = hoverVisualsEnabled
-    ? "transition-[background-color,border-color,box-shadow] duration-300 ease-out hover:bg-accent hover:border-accent-hover dark:hover:bg-accent dark:hover:border-accent-hover"
+    ? GRAMMAR_CARD_HOVER_SURFACE_CLASS
     : "";
   const titleHoverClass = hoverVisualsEnabled
-    ? "transition-[color,opacity] duration-300 ease-out group-hover:text-white dark:group-hover:text-white group-hover:opacity-100"
+    ? GRAMMAR_CARD_HOVER_TITLE_CLASS
     : "";
   const artworkHoverClass = hoverVisualsEnabled
     ? "transition-[transform,filter] duration-300 ease-out [transform:var(--grammar-artwork-transform)] group-hover:[transform:var(--grammar-artwork-hover-transform)]"
     : "[transform:var(--grammar-artwork-transform)]";
   const artworkToneHoverClass = hoverVisualsEnabled
-    ? "group-hover:bg-white/18 dark:group-hover:bg-white/18"
+    ? GRAMMAR_CARD_HOVER_ARTWORK_PRIMARY_CLASS
     : "";
   const artworkEchoHoverClass = hoverVisualsEnabled
-    ? "group-hover:bg-white/10 dark:group-hover:bg-white/10"
+    ? GRAMMAR_CARD_HOVER_ARTWORK_SECONDARY_CLASS
     : "";
   const unlockReadyArtworkPulseClass = isUnlockReadyCell
     ? "animate-[grammar-board-unlock-artwork_2.8s_ease-in-out_infinite]"

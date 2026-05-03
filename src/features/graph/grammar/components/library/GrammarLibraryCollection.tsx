@@ -189,6 +189,15 @@ export function GrammarLibraryCollection({
     setStage("lesson");
   }, [stage]);
 
+  const handleExitQuizToGrid = useCallback(() => {
+    if (stage !== "quiz") {
+      return;
+    }
+
+    setSelectedLessonId(null);
+    setStage("grid");
+  }, [stage]);
+
   const handleQuizComplete = useCallback(
     (result: GrammarQuizCompletionResult) => {
       dispatchMasteryProgressSync({ points: result.userPoints });
@@ -275,6 +284,7 @@ export function GrammarLibraryCollection({
           <GrammarQuizModal
             lesson={lesson}
             onClose={handleCloseQuiz}
+            onExitToBoard={handleExitQuizToGrid}
             onComplete={handleQuizComplete}
           />
         ) : null}

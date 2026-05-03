@@ -107,7 +107,7 @@ export default function AdminSidebar() {
       setLoggingOut(true);
 
       try {
-        await fetch("/api/auth/logout", { method: "POST" });
+        await fetch("/api/users/auth/logout", { method: "POST" });
         window.location.replace("/auth/login");
       } catch (error) {
         console.error("Error al cerrar sesion:", error);

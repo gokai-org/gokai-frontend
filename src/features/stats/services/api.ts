@@ -8,37 +8,37 @@ import type {
   StatsPeriod,
 } from "@/features/stats/types";
 
-/** GET /api/user/stats/overview?period=... */
+/** GET /api/users/stats/overview?period=... */
 export async function getStatsOverview(
   period: StatsPeriod = "week",
 ): Promise<OverviewStatsResponse> {
   return apiFetch<OverviewStatsResponse>(
-    `/api/user/stats/overview?period=${period}`,
+    `/api/users/stats/overview?period=${period}`,
   );
 }
 
-/** GET /api/user/stats/activity
+/** GET /api/users/stats/activity
  *  Siempre devuelve ambas vistas: weekly + monthly. Sin parámetro de período.
  */
 export async function getStatsActivity(): Promise<ActivityResponse> {
-  return apiFetch<ActivityResponse>("/api/user/stats/activity");
+  return apiFetch<ActivityResponse>("/api/users/stats/activity");
 }
 
-/** GET /api/user/stats/skills */
+/** GET /api/users/stats/skills */
 export async function getStatsSkills(): Promise<SkillsResponse> {
-  return apiFetch<SkillsResponse>("/api/user/stats/skills");
+  return apiFetch<SkillsResponse>("/api/users/stats/skills");
 }
 
-/** GET /api/user/stats/recent-activity */
+/** GET /api/users/stats/recent-activity */
 export async function getStatsRecentActivity(): Promise<RecentActivityResponse> {
-  return apiFetch<RecentActivityResponse>("/api/user/stats/recent-activity");
+  return apiFetch<RecentActivityResponse>("/api/users/stats/recent-activity");
 }
 
-/** GET /api/user/stats/streak?weeks=... */
+/** GET /api/users/stats/streak?weeks=... */
 export async function getStatsStreak(
   weeks: number = 12,
 ): Promise<StreakCalendarResponse> {
   return apiFetch<StreakCalendarResponse>(
-    `/api/user/stats/streak?weeks=${weeks}`,
+    `/api/users/stats/streak?weeks=${weeks}`,
   );
 }

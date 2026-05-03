@@ -542,6 +542,14 @@ html[data-jp-font="meiryo"] {
   --kanji-edge-available-stroke: rgba(172, 56, 52, 1);
   --kanji-edge-completed-stroke: rgba(172, 56, 52, 1);
 
+  --grammar-card-dark-surface-1: #1a1a1c;
+  --grammar-card-dark-surface-2: #1d1d20;
+  --grammar-card-dark-surface-3: #202024;
+  --grammar-card-dark-surface-locked: #1b1a1d;
+  --grammar-card-dark-border: rgba(255, 255, 255, 0.09);
+  --grammar-card-dark-border-locked: rgba(255, 255, 255, 0.06);
+  --grammar-card-dark-badge: rgba(255, 255, 255, 0.1);
+
   /* Hiragana (purple) */
   --hiragana-edge-locked-stroke: rgba(28, 22, 32, 0.8);
   --hiragana-edge-available-stroke: rgba(123, 63, 138, 1);
@@ -566,6 +574,57 @@ html[data-jp-font="meiryo"] {
   --katakana-edge-locked-stroke: rgba(200, 210, 220, 0.6);
   --katakana-edge-available-stroke: rgba(46, 130, 181, 1);
   --katakana-edge-completed-stroke: rgba(79, 168, 216, 1);
+}
+
+.dark .grammar-card-surface-1 {
+  background-color: var(--grammar-card-dark-surface-1);
+}
+
+.dark .grammar-card-surface-2 {
+  background-color: var(--grammar-card-dark-surface-2);
+}
+
+.dark .grammar-card-surface-3 {
+  background-color: var(--grammar-card-dark-surface-3);
+}
+
+.dark .grammar-card-surface-locked {
+  background-color: var(--grammar-card-dark-surface-locked);
+}
+
+.dark .grammar-card-border-default {
+  border-color: var(--grammar-card-dark-border);
+}
+
+.dark .grammar-card-border-locked {
+  border-color: var(--grammar-card-dark-border-locked);
+}
+
+.dark .grammar-card-badge-default,
+.dark .grammar-card-badge-locked {
+  background-color: var(--grammar-card-dark-badge);
+}
+
+.grammar-card-hover-surface:hover,
+.group:hover .grammar-card-hover-surface {
+  background-color: var(--accent);
+  border-color: var(--accent-hover);
+}
+
+.grammar-card-hover-title:hover,
+.group:hover .grammar-card-hover-title {
+  color: var(--text-inverted);
+  opacity: 1;
+}
+
+.grammar-card-hover-artwork-primary:hover,
+.group:hover .grammar-card-hover-artwork-primary {
+  background-color: rgb(255 255 255 / 0.18);
+}
+
+.grammar-card-hover-artwork-secondary:hover,
+.group:hover .grammar-card-hover-artwork-secondary {
+  background-color: rgb(255 255 255 / 0.1);
 }
 
 /* ── Kanji node / edge animations ── */

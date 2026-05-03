@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Crown,
@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
 import { ThemeModeToggle } from "@/shared/components";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { ScreenTransitionOverlay } from "@/shared/ui";
 
 const UNLOCKED_FEATURES = [
   { icon: Bot, label: "Chatbot ilimitado con IA" },
@@ -104,15 +106,39 @@ function PremiumGlow() {
 }
 
 function CheckoutSuccessPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const platformMotion = usePlatformMotion();
   const [phase, setPhase] = useState<Phase>("unlocking");
-  const isPremiumOnboardingFlow =
-    searchParams.get("flow") === "premium-onboarding";
+  const [screenTransition, setScreenTransition] = useState<{
+    title: string;
+    description: string;
+  } | null>(null);
+  const transitionTimeoutRef = useRef<number | null>(null);
+  const flow = searchParams.get("flow");
+  const isPremiumOnboardingFlow = flow === "premium-onboarding";
+  const isConfigurationUpgradeFlow = flow === "configuration-upgrade";
+  const requestedReturnTo = searchParams.get("returnTo");
+  const safeReturnTo =
+    requestedReturnTo && requestedReturnTo.startsWith("/")
+      ? requestedReturnTo
+      : "/dashboard/configuration";
+  const destination = isPremiumOnboardingFlow
+    ? "/onboarding/interests?plan=premium"
+    : isConfigurationUpgradeFlow
+      ? safeReturnTo
+      : "/dashboard/graph";
+  const routeTransitionDelayMs = platformMotion.shouldAnimate
+    ? Math.max(170, Math.round(340 * platformMotion.durationScale))
+    : 0;
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase("features"), 5200);
     const t2 = setTimeout(
-      () => setPhase(isPremiumOnboardingFlow ? "interests" : "ready"),
+      () =>
+        setPhase(
+          isPremiumOnboardingFlow ? "interests" : "ready",
+        ),
       11200,
     );
 
@@ -122,12 +148,42 @@ function CheckoutSuccessPageContent() {
     };
   }, [isPremiumOnboardingFlow]);
 
-  function handleContinue() {
-    const destination = isPremiumOnboardingFlow
-      ? "/onboarding/interests?plan=premium"
-      : "/dashboard/graph";
+  useEffect(() => {
+    router.prefetch(destination);
 
-    window.location.replace(destination);
+    return () => {
+      if (transitionTimeoutRef.current !== null) {
+        window.clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, [destination, router]);
+
+  function handleContinue() {
+    setScreenTransition({
+      title: isPremiumOnboardingFlow
+        ? "Abriendo tu onboarding premium"
+        : isConfigurationUpgradeFlow
+          ? "Volviendo a configuración"
+          : "Entrando a GOKAI",
+      description: isPremiumOnboardingFlow
+        ? "Llevándote a tus intereses y configuración inicial con beneficios premium activos."
+        : isConfigurationUpgradeFlow
+          ? "Regresando con tu plan premium activo y tus beneficios desbloqueados."
+          : "Preparando tu dashboard principal y tus herramientas desbloqueadas.",
+    });
+
+    if (transitionTimeoutRef.current !== null) {
+      window.clearTimeout(transitionTimeoutRef.current);
+    }
+
+    if (routeTransitionDelayMs === 0) {
+      router.replace(destination);
+      return;
+    }
+
+    transitionTimeoutRef.current = window.setTimeout(() => {
+      router.replace(destination);
+    }, routeTransitionDelayMs);
   }
 
   return (
@@ -527,8 +583,9 @@ function CheckoutSuccessPageContent() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.1, duration: 1.3 }}
               >
-                Tu suscripción GOKAI+ está activa y todas las funciones premium
-                ya fueron desbloqueadas para tu aprendizaje.
+                {isConfigurationUpgradeFlow
+                  ? "Tu suscripción GOKAI+ ya está activa. Volverás a configuración para seguir administrando tu cuenta con los beneficios premium desbloqueados."
+                  : "Tu suscripción GOKAI+ está activa y todas las funciones premium ya fueron desbloqueadas para tu aprendizaje."}
               </motion.p>
 
               <motion.button
@@ -544,7 +601,9 @@ function CheckoutSuccessPageContent() {
                 whileTap={{ scale: 0.985 }}
                 className="mt-10 w-full max-w-xs rounded-2xl bg-gradient-to-r from-accent via-[#A83F3A] to-accent-hover py-4 text-base font-bold text-content-inverted shadow-[0_18px_40px_rgba(153,51,49,0.22)] transition-all"
               >
-                Comenzar a aprender
+                {isConfigurationUpgradeFlow
+                  ? "Volver a configuración"
+                  : "Comenzar a aprender"}
               </motion.button>
 
               <motion.p
@@ -553,7 +612,9 @@ function CheckoutSuccessPageContent() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 1.85, duration: 1 }}
               >
-                Serás redirigido al panel principal
+                {isConfigurationUpgradeFlow
+                  ? "Serás redirigido a la página de configuración"
+                  : "Serás redirigido al panel principal"}
               </motion.p>
             </motion.div>
           )}
@@ -668,6 +729,12 @@ function CheckoutSuccessPageContent() {
           )}
         </AnimatePresence>
       </div>
+
+      <ScreenTransitionOverlay
+        active={screenTransition !== null}
+        title={screenTransition?.title ?? ""}
+        description={screenTransition?.description}
+      />
     </main>
   );
 }

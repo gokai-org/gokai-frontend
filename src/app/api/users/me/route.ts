@@ -247,7 +247,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    console.log("PATCH /api/auth/user called");
+    console.log("PATCH /api/users/me called");
 
     const token = getTokenFromRequest(request);
 

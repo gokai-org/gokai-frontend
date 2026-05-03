@@ -185,6 +185,7 @@ export function InitialExperienceSettings({
 }: InitialExperienceSettingsProps) {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [settingIndex, setSettingIndex] = useState(0);
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -254,6 +255,7 @@ export function InitialExperienceSettings({
 
   const handlePrimaryAction = async () => {
     if (!isLastStep) {
+      setStepDirection(1);
       setSettingIndex((current) =>
         Math.min(current + 1, SETTING_STEPS.length - 1),
       );
@@ -284,6 +286,7 @@ export function InitialExperienceSettings({
       return;
     }
 
+    setStepDirection(-1);
     setSettingIndex((current) => Math.max(current - 1, 0));
   };
 
@@ -392,9 +395,17 @@ export function InitialExperienceSettings({
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, x: 42, filter: "blur(8px)" }}
+            initial={{
+              opacity: 0,
+              x: stepDirection > 0 ? 42 : -42,
+              filter: "blur(8px)",
+            }}
             animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -42, filter: "blur(8px)" }}
+            exit={{
+              opacity: 0,
+              x: stepDirection > 0 ? -42 : 42,
+              filter: "blur(8px)",
+            }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="mx-auto max-w-5xl"
           >
@@ -428,11 +439,13 @@ export function InitialExperienceSettings({
 
           <div className="flex items-center gap-2">
             {SETTING_STEPS.map((settingStep, index) => (
-              <span
+              <motion.span
                 key={settingStep}
+                layout
                 className={`h-2.5 rounded-full transition-all duration-300 ${
                   index === settingIndex ? "w-8 bg-accent" : "w-2.5 bg-content-muted/30"
                 }`}
+                transition={{ type: "spring", stiffness: 320, damping: 26 }}
               />
             ))}
           </div>

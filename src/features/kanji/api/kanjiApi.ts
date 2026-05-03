@@ -81,7 +81,7 @@ export function getKanjiLessonResults(params?: {
   query.set("limit", String(params?.limit ?? 100));
 
   const qs = query.toString();
-  const path = `/api/user/kanji-lessons/results${qs ? `?${qs}` : ""}`;
+  const path = `/api/users/kanji-lessons/results${qs ? `?${qs}` : ""}`;
 
   return apiFetch<{ results: KanjiLessonResult[] }>(
     path,

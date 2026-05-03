@@ -60,6 +60,7 @@ interface UpgradePlanModalProps {
   onApplyCoupon?: () => void;
   couponLoading?: boolean;
   couponError?: string | null;
+  couponSuccess?: string | null;
 }
 
 const modalVariants = {
@@ -89,7 +90,10 @@ export function UpgradePlanModal({
   onApplyCoupon,
   couponLoading = false,
   couponError = null,
+  couponSuccess = null,
 }: UpgradePlanModalProps) {
+  const hasCoupon = coupon.trim().length > 0;
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -266,12 +270,17 @@ export function UpgradePlanModal({
                           disabled={couponLoading || !coupon.trim()}
                           className="rounded-lg bg-accent/10 px-4 py-2 text-sm font-semibold text-accent hover:bg-accent/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                         >
-                          {couponLoading ? "..." : "Aplicar"}
+                          {couponLoading ? "Aplicando..." : "Aplicar"}
                         </motion.button>
                       </div>
                       {couponError && (
                         <p className="mt-1 text-xs text-red-600">
                           {couponError}
+                        </p>
+                      )}
+                      {couponSuccess && (
+                        <p className="mt-1 text-xs text-emerald-600">
+                          {couponSuccess}
                         </p>
                       )}
                     </div>
@@ -306,11 +315,15 @@ export function UpgradePlanModal({
                             d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                           />
                         </svg>
-                        Redirigiendo a Stripe...
+                        {hasCoupon
+                          ? "Activando GOKAI+..."
+                          : "Redirigiendo a Stripe..."}
                       </span>
                     ) : (
                       <span className="flex items-center justify-center gap-2">
-                        Suscribirme a GOKAI+
+                        {hasCoupon
+                          ? "Aplicar cupón y activar GOKAI+"
+                          : "Suscribirme a GOKAI+"}
                       </span>
                     )}
                   </motion.button>

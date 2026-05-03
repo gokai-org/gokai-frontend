@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
@@ -23,24 +23,39 @@ import {
 } from "@/features/onboarding/components/OnboardingInterestOptions";
 import type { OnboardingInterest } from "@/features/onboarding/types";
 import { getCurrentUser } from "@/features/auth/services/api";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { ThemeModeToggle } from "@/shared/components";
+import { ScreenTransitionOverlay } from "@/shared/ui";
 
 type OnboardingStep = "interests" | "settings";
 type PlanVariant = "free" | "premium";
 
-export function OnboardingInterestsExperience() {
+type OnboardingInterestsExperienceProps = {
+  initialPlanVariant?: PlanVariant;
+};
+
+type ScreenTransitionState = {
+  title: string;
+  description: string;
+};
+
+export function OnboardingInterestsExperience({
+  initialPlanVariant = "free",
+}: OnboardingInterestsExperienceProps) {
   const router = useRouter();
+  const platformMotion = usePlatformMotion();
   const [showIntro, setShowIntro] = useState(true);
   const [step, setStep] = useState<OnboardingStep>("interests");
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1);
+  const [sectionDirection, setSectionDirection] = useState<1 | -1>(1);
   const [currentSettingsStep, setCurrentSettingsStep] =
     useState<SettingStep>("appearance");
-  const [planVariant, setPlanVariant] = useState<PlanVariant>(() => {
-    if (typeof window === "undefined") return "free";
-    return new URLSearchParams(window.location.search).get("plan") === "premium"
-      ? "premium"
-      : "free";
-  });
+  const [planVariant, setPlanVariant] =
+    useState<PlanVariant>(initialPlanVariant);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
+  const [screenTransition, setScreenTransition] =
+    useState<ScreenTransitionState | null>(null);
+  const transitionTimeoutRef = useRef<number | null>(null);
   const {
     sections,
     status,
@@ -52,6 +67,22 @@ export function OnboardingInterestsExperience() {
     toggleInterest,
     saveSelections,
   } = useOnboardingInterests();
+
+  const routeTransitionDelayMs = platformMotion.shouldAnimate
+    ? Math.max(170, Math.round(360 * platformMotion.durationScale))
+    : 0;
+
+  useEffect(() => {
+    router.prefetch("/dashboard/graph");
+  }, [router]);
+
+  useEffect(() => {
+    return () => {
+      if (transitionTimeoutRef.current !== null) {
+        window.clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     let mounted = true;
@@ -83,12 +114,14 @@ export function OnboardingInterestsExperience() {
 
   const handleNext = () => {
     if (currentSectionIndex < totalSections - 1) {
+      setSectionDirection(1);
       setCurrentSectionIndex((current) => current + 1);
     }
   };
 
   const handlePrevious = () => {
     if (currentSectionIndex > 0) {
+      setSectionDirection(-1);
       setCurrentSectionIndex((current) => current - 1);
     }
   };
@@ -98,6 +131,7 @@ export function OnboardingInterestsExperience() {
 
     try {
       await saveSelections();
+      setStepDirection(1);
       setStep("settings");
     } catch {
       // The hook keeps the user-facing error state.
@@ -105,7 +139,23 @@ export function OnboardingInterestsExperience() {
   };
 
   const handleCompleteSettings = () => {
-    router.push("/dashboard/graph");
+    setScreenTransition({
+      title: "Entrando a tu dashboard",
+      description: "Aplicando tus preferencias y preparando tu ruta de aprendizaje.",
+    });
+
+    if (transitionTimeoutRef.current !== null) {
+      window.clearTimeout(transitionTimeoutRef.current);
+    }
+
+    if (routeTransitionDelayMs === 0) {
+      router.push("/dashboard/graph");
+      return;
+    }
+
+    transitionTimeoutRef.current = window.setTimeout(() => {
+      router.push("/dashboard/graph");
+    }, routeTransitionDelayMs);
   };
 
   return (
@@ -194,16 +244,52 @@ export function OnboardingInterestsExperience() {
           </div>
         </header>
 
-        {step === "settings" ? (
-          <div className="flex-1">
-            <InitialExperienceSettings
-              onBack={() => setStep("interests")}
-              onComplete={handleCompleteSettings}
-              onStepChange={setCurrentSettingsStep}
-            />
-          </div>
-        ) : (
-          <>
+        <AnimatePresence mode="wait" initial={false} custom={stepDirection}>
+          {step === "settings" ? (
+            <motion.div
+              key="settings"
+              custom={stepDirection}
+              initial={{
+                opacity: 0,
+                x: stepDirection > 0 ? 42 : -42,
+                filter: "blur(8px)",
+              }}
+              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+              exit={{
+                opacity: 0,
+                x: stepDirection > 0 ? -30 : 30,
+                filter: "blur(8px)",
+              }}
+              transition={{ duration: 0.44, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1"
+            >
+              <InitialExperienceSettings
+                onBack={() => {
+                  setStepDirection(-1);
+                  setStep("interests");
+                }}
+                onComplete={handleCompleteSettings}
+                onStepChange={setCurrentSettingsStep}
+              />
+            </motion.div>
+          ) : (
+            <motion.div
+              key="interests"
+              custom={stepDirection}
+              initial={{
+                opacity: 0,
+                x: stepDirection > 0 ? 42 : -42,
+                filter: "blur(8px)",
+              }}
+              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+              exit={{
+                opacity: 0,
+                x: stepDirection > 0 ? -30 : 30,
+                filter: "blur(8px)",
+              }}
+              transition={{ duration: 0.44, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1"
+            >
 
         <div className="px-6 lg:px-16 xl:px-20 mb-6">
           <div className="max-w-[1600px] mx-auto px-6 lg:px-0">
@@ -280,13 +366,22 @@ export function OnboardingInterestsExperience() {
 
         <div className="flex-1 px-0 lg:px-16 xl:px-20 pb-8">
           <div className="max-w-[1600px] mx-auto">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="wait" initial={false} custom={sectionDirection}>
               <motion.div
                 key={currentSection.id}
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{ duration: 0.4, ease: "easeInOut" }}
+                custom={sectionDirection}
+                initial={{
+                  opacity: 0,
+                  x: sectionDirection > 0 ? 54 : -54,
+                  filter: "blur(8px)",
+                }}
+                animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+                exit={{
+                  opacity: 0,
+                  x: sectionDirection > 0 ? -54 : 54,
+                  filter: "blur(8px)",
+                }}
+                transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
               >
                 <div className="text-left mb-8">
                   <motion.div
@@ -395,9 +490,16 @@ export function OnboardingInterestsExperience() {
             </AnimatePresence>
           </div>
         </div>
-          </>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
+
+      <ScreenTransitionOverlay
+        active={screenTransition !== null}
+        title={screenTransition?.title ?? ""}
+        description={screenTransition?.description}
+      />
     </main>
   );
 }

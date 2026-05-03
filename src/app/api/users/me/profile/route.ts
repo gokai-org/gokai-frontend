@@ -5,7 +5,7 @@ import { apiConfig } from "@/shared/config";
 export const dynamic = "force-dynamic";
 
 export async function PATCH(request: NextRequest) {
-  console.log("PATCH /api/auth/user/profile called");
+  console.log("PATCH /api/users/me/profile called");
 
   try {
     const token = getTokenFromRequest(request);

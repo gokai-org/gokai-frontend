@@ -191,10 +191,16 @@ function GrammarQuizSummary({
 export interface GrammarQuizModalProps {
   lesson: GrammarLesson;
   onClose: () => void;
+  onExitToBoard?: () => void;
   onComplete?: (result: GrammarQuizCompletionResult) => void;
 }
 
-export default function GrammarQuizModal({ lesson, onClose, onComplete }: GrammarQuizModalProps) {
+export default function GrammarQuizModal({
+  lesson,
+  onClose,
+  onExitToBoard,
+  onComplete,
+}: GrammarQuizModalProps) {
   useMiniDockBlocker(true);
 
   const platformMotion = usePlatformMotion();
@@ -502,6 +508,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
   const shouldShowUnlockedCompletion = completedSuccessfully && awardedPoints > 0;
   const shouldShowReaffirmedCompletion = completedSuccessfully && awardedPoints === 0;
   const displayedAwardedPoints = Math.max(awardedPoints, GRAMMAR_COMPLETION_REWARD);
+  const handleCloseCompletedSession = onExitToBoard ?? onClose;
 
   const footerActionVisible =
     step === "exercise" &&
@@ -620,7 +627,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
                   symbol="文"
                   pointsDelta={displayedAwardedPoints}
                   statusLabel="Lección completada"
-                  onClose={onClose}
+                  onClose={handleCloseCompletedSession}
                 />
               ) : shouldShowReaffirmedCompletion ? (
                 <ReaffirmedMasteryResult
@@ -630,7 +637,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
                   statusLabel="Dominio reafirmado"
                   primaryActionLabel="Repetir examen"
                   onRetry={resetSession}
-                  onClose={onClose}
+                  onClose={handleCloseCompletedSession}
                 />
               ) : (
                 <GrammarQuizSummary
@@ -756,7 +763,7 @@ export default function GrammarQuizModal({ lesson, onClose, onComplete }: Gramma
               </button>
               <button
                 type="button"
-                onClick={onClose}
+                onClick={handleCloseCompletedSession}
                 className="rounded-2xl bg-surface-secondary px-5 py-3 text-sm font-semibold text-content-secondary transition hover:bg-surface-tertiary"
               >
                 Volver al tablero

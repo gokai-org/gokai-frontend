@@ -11,7 +11,7 @@ export function useAuthProtection() {
   useEffect(() => {
     async function checkAuth() {
       try {
-        const res = await fetch("/api/auth/user", {
+        const res = await fetch("/api/users/me", {
           method: "GET",
           credentials: "include",
           cache: "no-store",

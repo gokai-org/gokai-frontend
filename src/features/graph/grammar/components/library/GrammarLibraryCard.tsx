@@ -14,65 +14,20 @@ import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
 import { getUnlockVisualVars } from "@/shared/lib/unlockVisuals";
 import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
 import { getGrammarBoardArtworkPreset } from "../../constants/grammarBoardBackgrounds";
+import {
+  GRAMMAR_ARTWORK_PALETTE_CLASSES,
+  GRAMMAR_CARD_HOVER_ARTWORK_PRIMARY_CLASS,
+  GRAMMAR_CARD_HOVER_ARTWORK_SECONDARY_CLASS,
+  GRAMMAR_CARD_HOVER_SURFACE_CLASS,
+  GRAMMAR_CARD_HOVER_TITLE_CLASS,
+  GRAMMAR_LOCKED_CARD_VARIANT,
+  GRAMMAR_UNLOCKED_CARD_VARIANTS,
+  type GrammarCardVariant,
+} from "../../lib/grammarCardTheme";
 import type { GrammarBoardProgress } from "../../types";
 
 const UNLOCK_HOLD_DURATION_MS = 720;
 const LOCKED_SHAKE_DURATION_MS = 580;
-
-type ArtworkTone = "paper" | "accent" | "locked";
-
-type CardVariant = {
-  bg: string;
-  text: string;
-  border: string;
-  accent: string;
-  badge: string;
-  artTone: ArtworkTone;
-};
-
-const UNLOCKED_CARD_VARIANTS: readonly CardVariant[] = [
-  {
-    bg: "bg-surface-tertiary dark:bg-[#1a1a1a]",
-    text: "text-content-primary dark:text-white",
-    border: "border-content-primary/10 dark:border-white/10",
-    accent: "from-[#B14540] via-[#C55C55] to-[#D88A6E]",
-    badge: "bg-content-primary/10 dark:bg-white/10",
-    artTone: "paper",
-  },
-  {
-    bg: "bg-accent/15 dark:bg-accent/20",
-    text: "text-content-primary dark:text-white",
-    border: "border-accent/20 dark:border-accent/25",
-    accent: "from-[#8F3D36] via-[#B14540] to-[#E09A73]",
-    badge: "bg-accent/15 dark:bg-accent/25",
-    artTone: "accent",
-  },
-  {
-    bg: "bg-surface-inset dark:bg-[#202020]",
-    text: "text-content-primary dark:text-white",
-    border: "border-content-primary/10 dark:border-white/10",
-    accent: "from-[#744842] via-[#A9605C] to-[#DBAE8A]",
-    badge: "bg-content-primary/10 dark:bg-white/10",
-    artTone: "paper",
-  },
-  {
-    bg: "bg-surface-secondary dark:bg-surface-secondary",
-    text: "text-content-primary dark:text-white",
-    border: "border-content-primary/10 dark:border-white/10",
-    accent: "from-[#9D463E] via-[#C96455] to-[#F0B989]",
-    badge: "bg-content-primary/10 dark:bg-white/10",
-    artTone: "paper",
-  },
-] as const;
-
-const LOCKED_CARD_VARIANT: CardVariant = {
-  bg: "bg-surface-tertiary dark:bg-[#1a181c]",
-  text: "text-content-primary dark:text-white",
-  border: "border-border-default/70 dark:border-white/[0.05]",
-  accent: "from-[#6E5E5B] via-[#8B7B76] to-[#A99B95]",
-  badge: "bg-black/5 dark:bg-white/10",
-  artTone: "locked",
-};
 
 const CARD_STATE_ACCENTS = {
   available: "shadow-none",
@@ -80,34 +35,18 @@ const CARD_STATE_ACCENTS = {
   locked: "shadow-none",
 } as const;
 
-const ARTWORK_PALETTE_CLASSES: Record<
-  ArtworkTone,
-  { primary: string; secondary: string }
-> = {
-  paper: {
-    primary: "bg-[#5f575225] dark:bg-[#f2eae214]",
-    secondary: "bg-[#8b827b16] dark:bg-[#d8cec50c]",
-  },
-  accent: {
-    primary: "bg-[#675a541f] dark:bg-[#d45d551f]",
-    secondary: "bg-[#95898314] dark:bg-[#f3a29312]",
-  },
-  locked: {
-    primary: "bg-[#6259531b] dark:bg-[#d8d0c912]",
-    secondary: "bg-[#90867f12] dark:bg-[#ece5df0b]",
-  },
-};
-
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
 }
 
-function getCardVariant(lesson: GrammarBoardProgress) {
+function getCardVariant(lesson: GrammarBoardProgress): GrammarCardVariant {
   if (lesson.status === "locked") {
-    return LOCKED_CARD_VARIANT;
+    return GRAMMAR_LOCKED_CARD_VARIANT;
   }
 
-  return UNLOCKED_CARD_VARIANTS[lesson.index % UNLOCKED_CARD_VARIANTS.length];
+  return GRAMMAR_UNLOCKED_CARD_VARIANTS[
+    lesson.index % GRAMMAR_UNLOCKED_CARD_VARIANTS.length
+  ];
 }
 
 function getArtworkMaskStyle(asset: number): CSSProperties {
@@ -193,19 +132,22 @@ export function GrammarLibraryCard({
   const showLockedIndicator = isLockedCard && !lesson.canUnlock;
   const unlockCost = Math.max(0, lesson.pointsToUnlock ?? lesson.unlockCost ?? 0);
   const variant = getCardVariant(lesson);
-  const artworkPalette = ARTWORK_PALETTE_CLASSES[variant.artTone];
+  const artworkPalette = GRAMMAR_ARTWORK_PALETTE_CLASSES[variant.artTone];
   const primaryArtworkStyle = getArtworkLayerStyle(lesson, "primary");
   const echoArtworkStyle = getArtworkLayerStyle(lesson, "echo");
   const hoverEnabled = !isLockedCard && !isComingSoon;
   const hoverClass = hoverEnabled
     ? "hover:-translate-y-[1px]"
     : "";
+  const surfaceHoverClass = hoverEnabled ? GRAMMAR_CARD_HOVER_SURFACE_CLASS : "";
   const artworkHoverClass = hoverEnabled
     ? "transition-[transform,filter] duration-300 ease-out [transform:var(--grammar-library-artwork-transform)] group-hover:[transform:var(--grammar-library-artwork-hover-transform)]"
     : "[transform:var(--grammar-library-artwork-transform)]";
   const titleHoverClass = hoverEnabled
-    ? "transition-[color,opacity] duration-300 ease-out"
+    ? GRAMMAR_CARD_HOVER_TITLE_CLASS
     : "";
+  const artworkToneHoverClass = hoverEnabled ? GRAMMAR_CARD_HOVER_ARTWORK_PRIMARY_CLASS : "";
+  const artworkEchoHoverClass = hoverEnabled ? GRAMMAR_CARD_HOVER_ARTWORK_SECONDARY_CLASS : "";
   const unlockHoldVisualActive = isHoldingUnlock || unlockPending;
   const unlockVisualVars = getUnlockVisualVars("grammar");
 
@@ -339,6 +281,7 @@ export function GrammarLibraryCard({
           variant.bg,
           variant.border,
           variant.text,
+            surfaceHoverClass,
           isLockedCard
                 ? ""
             : CARD_STATE_ACCENTS[lesson.status],
@@ -381,11 +324,11 @@ export function GrammarLibraryCard({
 
           <div aria-hidden className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-[24px]">
             <span
-              className={`absolute ${artworkPalette.secondary} ${artworkHoverClass} mix-blend-multiply dark:mix-blend-screen ${isLockedCard ? "saturate-0 opacity-80" : ""}`}
+              className={`absolute ${artworkPalette.secondary} ${artworkHoverClass} ${artworkEchoHoverClass} mix-blend-multiply dark:mix-blend-screen ${isLockedCard ? "saturate-0 opacity-80" : ""}`}
               style={echoArtworkStyle}
             />
             <span
-              className={`absolute ${artworkPalette.primary} ${artworkHoverClass} mix-blend-multiply dark:mix-blend-screen ${isLockedCard ? "saturate-0 opacity-90" : ""}`}
+              className={`absolute ${artworkPalette.primary} ${artworkHoverClass} ${artworkToneHoverClass} mix-blend-multiply dark:mix-blend-screen ${isLockedCard ? "saturate-0 opacity-90" : ""}`}
               style={primaryArtworkStyle}
             />
           </div>

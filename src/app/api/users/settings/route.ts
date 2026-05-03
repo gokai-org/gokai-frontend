@@ -94,7 +94,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ settings });
   } catch (error) {
-    console.error("[GET /api/user/settings]", error);
+    console.error("[GET /api/users/settings]", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 },
@@ -169,7 +169,7 @@ export async function PATCH(request: NextRequest) {
 
     return NextResponse.json({ settings });
   } catch (error) {
-    console.error("[PATCH /api/user/settings]", error);
+    console.error("[PATCH /api/users/settings]", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 },
@@ -218,7 +218,7 @@ export async function PUT(request: NextRequest) {
 
     return NextResponse.json({ settings });
   } catch (error) {
-    console.error("[PUT /api/user/settings]", error);
+    console.error("[PUT /api/users/settings]", error);
     return NextResponse.json(
       { error: "Error interno del servidor" },
       { status: 500 },
