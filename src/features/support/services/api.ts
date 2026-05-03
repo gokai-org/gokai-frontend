@@ -5,13 +5,13 @@ import type {
 } from "@/features/support/types";
 
 /**
- * POST /api/support/tickets
+ * POST /api/users/support/tickets
  * Envía un ticket de soporte al backend.
  */
 export async function createSupportTicket(
   data: SupportContactRequest,
 ): Promise<SupportTicketResponse> {
-  return apiFetch<SupportTicketResponse>("/api/support/tickets", {
+  return apiFetch<SupportTicketResponse>("/api/users/support/tickets", {
     method: "POST",
     body: JSON.stringify(data),
   });

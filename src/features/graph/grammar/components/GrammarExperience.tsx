@@ -193,6 +193,8 @@ export function GrammarExperience({
       return;
     }
 
+    clearPathPreview();
+    setHelpFocusedLessonId(null);
     setUnlockPending(true);
     setUnlockPendingLessonId(lessonId);
 
@@ -200,7 +202,6 @@ export function GrammarExperience({
       const response = await unlockGrammar(lessonId);
       dispatchMasteryProgressSync({ points: response.userPoints });
       applyOptimisticUnlock(lessonId);
-      setHelpFocusedLessonId(lessonId);
       void refetchBoard();
     } catch (error) {
       const message = getRequestErrorMessage(
@@ -213,7 +214,7 @@ export function GrammarExperience({
       setUnlockPending(false);
       setUnlockPendingLessonId(null);
     }
-  }, [applyOptimisticUnlock, board.cells, refetchBoard, toast, unlockPending]);
+  }, [applyOptimisticUnlock, board.cells, clearPathPreview, refetchBoard, toast, unlockPending]);
 
   useEffect(() => {
     if (status !== "success") return;
@@ -294,6 +295,20 @@ export function GrammarExperience({
     setStage("lesson");
   }, [stage]);
 
+  const handleExitQuizToBoard = useCallback(() => {
+    if (stage !== "quiz") {
+      return;
+    }
+
+    if (boardQuality.shouldAnimateBoardZoom) {
+      setStage("zooming-out");
+      return;
+    }
+
+    setSelectedLessonId(null);
+    setStage("board");
+  }, [boardQuality.shouldAnimateBoardZoom, stage]);
+
   const handleQuizComplete = useCallback(
     (result: GrammarQuizCompletionResult) => {
       dispatchMasteryProgressSync({ points: result.userPoints });
@@ -355,7 +370,7 @@ export function GrammarExperience({
           title: "Guía de Gramática",
           scopeSelector: '[data-help-surface="grammar-board"]',
           boardLabel: "Tablero de gramática",
-          requirementLabel: "25 puntos",
+          requirementLabel: "35 puntos",
           targetName: "grammar-board-canvas",
         });
       }
@@ -482,6 +497,7 @@ export function GrammarExperience({
           <GrammarQuizModal
             lesson={lesson}
             onClose={handleCloseQuiz}
+            onExitToBoard={handleExitQuizToBoard}
             onComplete={handleQuizComplete}
           />
         ) : null}

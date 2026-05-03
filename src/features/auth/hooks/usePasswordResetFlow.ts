@@ -58,7 +58,7 @@ export function usePasswordResetFlow({ email: initialEmail = "", onSuccess }: Op
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/auth/verification/send-code", {
+      const res = await fetch("/api/users/auth/verification/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, type: "password-recovery" }),
@@ -84,7 +84,7 @@ export function usePasswordResetFlow({ email: initialEmail = "", onSuccess }: Op
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/auth/verification/verify-code", {
+      const res = await fetch("/api/users/auth/verification/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code: joined, type: "password-recovery" }),
@@ -112,7 +112,7 @@ export function usePasswordResetFlow({ email: initialEmail = "", onSuccess }: Op
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/auth/verification/reset-password", {
+      const res = await fetch("/api/users/auth/verification/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, code: code.join(""), newPassword }),

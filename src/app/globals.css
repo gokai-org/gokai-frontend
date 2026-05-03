@@ -433,11 +433,13 @@ html[data-font-size="x-large"] {
 html[data-jp-font="noto"] {
   --jp-font-family: var(--font-noto-sans-jp, "Noto Sans JP"), sans-serif;
 }
-html[data-jp-font="hiragino"] {
-  --jp-font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
+html[data-jp-font="noto-serif"] {
+  --jp-font-family: var(--font-noto-serif-jp, "Noto Serif JP"), "Yu Mincho",
+    serif;
 }
-html[data-jp-font="yugothic"] {
-  --jp-font-family: "Yu Gothic", "YuGothic", sans-serif;
+html[data-jp-font="sawarabi"] {
+  --jp-font-family: var(--font-sawarabi-mincho, "Sawarabi Mincho"), "Yu Mincho",
+    serif;
 }
 html[data-jp-font="meiryo"] {
   --jp-font-family: "Meiryo", "メイリオ", sans-serif;
@@ -447,6 +449,24 @@ html[data-jp-font="meiryo"] {
 .jp-text,
 [lang="ja"] {
   font-family: var(--jp-font-family, "Noto Sans JP", sans-serif);
+}
+
+.jp-font-sample[data-jp-font="noto"] {
+  font-family: var(--font-noto-sans-jp, "Noto Sans JP"), sans-serif;
+}
+
+.jp-font-sample[data-jp-font="noto-serif"] {
+  font-family: var(--font-noto-serif-jp, "Noto Serif JP"), "Yu Mincho",
+    serif;
+}
+
+.jp-font-sample[data-jp-font="sawarabi"] {
+  font-family: var(--font-sawarabi-mincho, "Sawarabi Mincho"), "Yu Mincho",
+    serif;
+}
+
+.jp-font-sample[data-jp-font="meiryo"] {
+  font-family: "Meiryo", "メイリオ", sans-serif;
 }
 
 /* ── Custom scrollbar for KanjiDetailModal ── */
@@ -522,6 +542,14 @@ html[data-jp-font="meiryo"] {
   --kanji-edge-available-stroke: rgba(172, 56, 52, 1);
   --kanji-edge-completed-stroke: rgba(172, 56, 52, 1);
 
+  --grammar-card-dark-surface-1: #1a1a1c;
+  --grammar-card-dark-surface-2: #1d1d20;
+  --grammar-card-dark-surface-3: #202024;
+  --grammar-card-dark-surface-locked: #1b1a1d;
+  --grammar-card-dark-border: rgba(255, 255, 255, 0.09);
+  --grammar-card-dark-border-locked: rgba(255, 255, 255, 0.06);
+  --grammar-card-dark-badge: rgba(255, 255, 255, 0.1);
+
   /* Hiragana (purple) */
   --hiragana-edge-locked-stroke: rgba(28, 22, 32, 0.8);
   --hiragana-edge-available-stroke: rgba(123, 63, 138, 1);
@@ -546,6 +574,57 @@ html[data-jp-font="meiryo"] {
   --katakana-edge-locked-stroke: rgba(200, 210, 220, 0.6);
   --katakana-edge-available-stroke: rgba(46, 130, 181, 1);
   --katakana-edge-completed-stroke: rgba(79, 168, 216, 1);
+}
+
+.dark .grammar-card-surface-1 {
+  background-color: var(--grammar-card-dark-surface-1);
+}
+
+.dark .grammar-card-surface-2 {
+  background-color: var(--grammar-card-dark-surface-2);
+}
+
+.dark .grammar-card-surface-3 {
+  background-color: var(--grammar-card-dark-surface-3);
+}
+
+.dark .grammar-card-surface-locked {
+  background-color: var(--grammar-card-dark-surface-locked);
+}
+
+.dark .grammar-card-border-default {
+  border-color: var(--grammar-card-dark-border);
+}
+
+.dark .grammar-card-border-locked {
+  border-color: var(--grammar-card-dark-border-locked);
+}
+
+.dark .grammar-card-badge-default,
+.dark .grammar-card-badge-locked {
+  background-color: var(--grammar-card-dark-badge);
+}
+
+.grammar-card-hover-surface:hover,
+.group:hover .grammar-card-hover-surface {
+  background-color: var(--accent);
+  border-color: var(--accent-hover);
+}
+
+.grammar-card-hover-title:hover,
+.group:hover .grammar-card-hover-title {
+  color: var(--text-inverted);
+  opacity: 1;
+}
+
+.grammar-card-hover-artwork-primary:hover,
+.group:hover .grammar-card-hover-artwork-primary {
+  background-color: rgb(255 255 255 / 0.18);
+}
+
+.grammar-card-hover-artwork-secondary:hover,
+.group:hover .grammar-card-hover-artwork-secondary {
+  background-color: rgb(255 255 255 / 0.1);
 }
 
 /* ── Kanji node / edge animations ── */
@@ -591,21 +670,21 @@ html[data-jp-font="meiryo"] {
 @keyframes gokai-unlock-burst {
   0% {
     transform: scale(0.92);
-    filter: drop-shadow(0 0 0 rgba(186, 72, 69, 0));
+    filter: drop-shadow(0 0 0 rgba(var(--gokai-unlock-rgb, 186,72,69), 0));
   }
   35% {
     transform: scale(1.08);
-    filter: drop-shadow(0 0 24px rgba(153, 51, 49, 0.42))
-      drop-shadow(0 0 12px rgba(186, 81, 73, 0.6));
+    filter: drop-shadow(0 0 24px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.42))
+      drop-shadow(0 0 12px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.6));
   }
   70% {
     transform: scale(1.02);
-    filter: drop-shadow(0 0 14px rgba(153, 51, 49, 0.24))
-      drop-shadow(0 0 6px rgba(186, 81, 73, 0.3));
+    filter: drop-shadow(0 0 14px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.24))
+      drop-shadow(0 0 6px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.3));
   }
   100% {
     transform: scale(1);
-    filter: drop-shadow(0 0 0 rgba(186, 72, 69, 0));
+    filter: drop-shadow(0 0 0 rgba(var(--gokai-unlock-rgb, 186,72,69), 0));
   }
 }
 
@@ -613,18 +692,18 @@ html[data-jp-font="meiryo"] {
   0% {
     opacity: 0;
     transform: scale(0.7);
-    box-shadow: 0 0 0 0 rgba(153, 51, 49, 0.55);
+    box-shadow: 0 0 0 0 rgba(var(--gokai-unlock-rgb, 186,72,69), 0.55);
   }
   40% {
     opacity: 1;
     transform: scale(1.05);
-    box-shadow: 0 0 0 18px rgba(153, 51, 49, 0.16),
-      0 0 32px 8px rgba(186, 81, 73, 0.32);
+    box-shadow: 0 0 0 18px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.16),
+      0 0 32px 8px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.32);
   }
   100% {
     opacity: 0;
     transform: scale(1.18);
-    box-shadow: 0 0 0 36px rgba(153, 51, 49, 0);
+    box-shadow: 0 0 0 36px rgba(var(--gokai-unlock-rgb, 186,72,69), 0);
   }
 }
 
@@ -632,6 +711,8 @@ html[data-jp-font="meiryo"] {
   animation: gokai-unlock-burst 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
   position: relative;
   z-index: 5;
+  transform: translateZ(0);
+  will-change: transform, filter;
 }
 
 .gokai-unlock-burst::after {
@@ -653,24 +734,25 @@ html[data-jp-font="meiryo"] {
 /* ── Kanji nodo "puede desbloquearse" — esfera roja palpitante ── */
 @keyframes kanji-node-unlock-ready-pulse {
   0%, 100% {
-    box-shadow: 0 0 0 0 rgba(186, 72, 69, 0),
-      0 4px 16px rgba(153, 51, 49, 0.32),
+    box-shadow: 0 0 0 0 rgba(var(--gokai-unlock-rgb, 186,72,69), 0),
+      0 4px 16px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.32),
       inset 0 0 0 1px rgba(255, 255, 255, 0.16);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(186, 72, 69, 0.18),
-      0 6px 22px rgba(153, 51, 49, 0.55),
+    box-shadow: 0 0 0 10px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.18),
+      0 6px 22px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.55),
       inset 0 0 0 1px rgba(255, 255, 255, 0.22);
     transform: scale(1.04);
   }
 }
 
 .kanji-node-unlock-ready {
-  background: linear-gradient(135deg, #C5544D 0%, #993331 100%);
+  background: linear-gradient(135deg, var(--gokai-unlock-to, #C5544D) 0%, var(--gokai-unlock-from, #993331) 100%);
   border-color: rgba(255, 255, 255, 0.18) !important;
   color: #fff;
   animation: kanji-node-unlock-ready-pulse 2.2s ease-in-out infinite;
+  will-change: transform, box-shadow;
 }
 
 .kanji-node-unlock-ready.kanji-node-hold-active {
@@ -680,19 +762,20 @@ html[data-jp-font="meiryo"] {
 @keyframes kanji-library-unlock-ready-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(186, 72, 69, 0),
-      0 8px 24px -18px rgba(153, 51, 49, 0.55);
-    border-color: rgba(186, 72, 69, 0.28);
+    box-shadow: 0 0 0 0 rgba(var(--gokai-unlock-rgb, 186,72,69), 0),
+      0 8px 24px -18px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.55);
+    border-color: rgba(var(--gokai-unlock-rgb, 186,72,69), 0.28);
   }
   50% {
-    box-shadow: 0 0 0 10px rgba(186, 72, 69, 0.08),
-      0 18px 38px -18px rgba(153, 51, 49, 0.72);
-    border-color: rgba(186, 72, 69, 0.52);
+    box-shadow: 0 0 0 10px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.08),
+      0 18px 38px -18px rgba(var(--gokai-unlock-rgb, 186,72,69), 0.72);
+    border-color: rgba(var(--gokai-unlock-rgb, 186,72,69), 0.52);
   }
 }
 
 .kanji-library-unlock-ready {
   animation: kanji-library-unlock-ready-pulse 2.2s ease-in-out infinite;
+  will-change: transform, box-shadow, border-color;
 }
 
 .kanji-library-unlock-hold {
@@ -847,6 +930,7 @@ html[data-jp-font="meiryo"] {
 
 .kanji-node-unlocking {
   animation: kanji-node-unlock-burst 1.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity, filter;
 }
 
 @keyframes kanji-edge-unlock-draw {
@@ -862,16 +946,19 @@ html[data-jp-font="meiryo"] {
 
 .kanji-edge-unlocking {
   animation: kanji-edge-unlock-draw 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: stroke-dashoffset, opacity;
 }
 
 /* ── Locked sphere: neutral gray matching library locked card design ── */
 .kanji-node-sphere-locked {
   background: var(--surface-tertiary);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(17, 24, 39, 0.06);
+  box-shadow: none;
   color: #6b7280;
 }
 .dark .kanji-node-sphere-locked {
-  background: var(--surface-tertiary);
+  background: #1f1b24;
+  border-color: rgba(255, 255, 255, 0.08);
   box-shadow: none;
   color: #d1d5db;
 }
@@ -888,10 +975,11 @@ html[data-jp-font="meiryo"] {
   }
 }
 .kanji-node-unlock-ring {
-  border: 2px solid rgba(186, 72, 69, 0.64);
+  border: 2px solid rgba(var(--gokai-unlock-rgb, 186,72,69), 0.64);
   border-radius: 50%;
   pointer-events: none;
   animation: kanji-node-unlock-ring 0.92s cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
 }
 
 /* ── Points float: unlock cost badge rises and fades from completed node ── */

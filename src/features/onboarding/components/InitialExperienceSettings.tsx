@@ -21,32 +21,40 @@ import type { UserSettings } from "@/features/configuration/types";
 import { DEFAULT_SETTINGS } from "@/features/configuration/types";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
-import type { FontSize, JapaneseFont } from "@/shared/hooks/useTypography";
+import {
+  FONT_SIZE_OPTIONS,
+  JAPANESE_FONT_OPTIONS,
+  JP_FONT_ATTR_MAP,
+  normalizeFontSize,
+  normalizeJapaneseFont,
+  type FontSize,
+  type JapaneseFont,
+} from "@/shared/hooks/useTypography";
 
 type InitialExperienceSettingsProps = {
   onBack: () => void;
   onComplete: () => void;
+  onStepChange?: (step: SettingStep) => void;
 };
 
-type SettingStep = "appearance" | "japaneseFont" | "fontSize";
+export type SettingStep = "appearance" | "japaneseFont" | "fontSize";
 type AppearanceMode = "Claro" | "Oscuro";
 
 const SETTING_STEPS: SettingStep[] = ["appearance", "japaneseFont", "fontSize"];
-const FONT_SIZE_OPTIONS: FontSize[] = ["Pequeño", "Mediano", "Grande", "Muy grande"];
-const JAPANESE_FONT_OPTIONS: JapaneseFont[] = [
-  "Noto Sans JP",
-  "Hiragino",
-  "Yu Gothic",
-  "Meiryo",
-];
 
 function mergeWithDefaults(remote: UserSettings | null): UserSettings {
   if (!remote) return DEFAULT_SETTINGS;
 
+  const appearance = { ...DEFAULT_SETTINGS.appearance, ...remote.appearance };
+
   return {
     general: { ...DEFAULT_SETTINGS.general, ...remote.general },
     notifications: { ...DEFAULT_SETTINGS.notifications, ...remote.notifications },
-    appearance: { ...DEFAULT_SETTINGS.appearance, ...remote.appearance },
+    appearance: {
+      ...appearance,
+      fontSize: normalizeFontSize(appearance.fontSize),
+      japaneseFont: normalizeJapaneseFont(appearance.japaneseFont),
+    },
     learning: { ...DEFAULT_SETTINGS.learning, ...remote.learning },
     accessibility: { ...DEFAULT_SETTINGS.accessibility, ...remote.accessibility },
     privacy: { ...DEFAULT_SETTINGS.privacy, ...remote.privacy },
@@ -173,9 +181,11 @@ function LivePreview({
 export function InitialExperienceSettings({
   onBack,
   onComplete,
+  onStepChange,
 }: InitialExperienceSettingsProps) {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [settingIndex, setSettingIndex] = useState(0);
+  const [stepDirection, setStepDirection] = useState<1 | -1>(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -189,6 +199,10 @@ export function InitialExperienceSettings({
     : "Claro";
 
   useEffect(() => {
+    onStepChange?.(currentStep);
+  }, [currentStep, onStepChange]);
+
+  useEffect(() => {
     let mounted = true;
 
     getUserSettings()
@@ -197,8 +211,8 @@ export function InitialExperienceSettings({
         const merged = mergeWithDefaults(remote);
         setSettings(merged);
         setTheme(merged.appearance.darkMode ? "dark" : "light");
-        setFontSize(merged.appearance.fontSize as FontSize);
-        setJapaneseFont(merged.appearance.japaneseFont as JapaneseFont);
+        setFontSize(merged.appearance.fontSize);
+        setJapaneseFont(merged.appearance.japaneseFont);
       })
       .catch(() => {
         if (mounted) {
@@ -241,6 +255,7 @@ export function InitialExperienceSettings({
 
   const handlePrimaryAction = async () => {
     if (!isLastStep) {
+      setStepDirection(1);
       setSettingIndex((current) =>
         Math.min(current + 1, SETTING_STEPS.length - 1),
       );
@@ -271,6 +286,7 @@ export function InitialExperienceSettings({
       return;
     }
 
+    setStepDirection(-1);
     setSettingIndex((current) => Math.max(current - 1, 0));
   };
 
@@ -318,7 +334,12 @@ export function InitialExperienceSettings({
                 icon={Languages}
                 onClick={() => handleJapaneseFontChange(font)}
               >
-                <p className="jp-text mt-4 text-2xl font-bold">日本語</p>
+                <p
+                  className="jp-font-sample mt-4 text-2xl font-bold"
+                  data-jp-font={JP_FONT_ATTR_MAP[font]}
+                >
+                  日本語
+                </p>
               </ChoiceCard>
             ))}
           </div>
@@ -374,9 +395,17 @@ export function InitialExperienceSettings({
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
             key={currentStep}
-            initial={{ opacity: 0, x: 42, filter: "blur(8px)" }}
+            initial={{
+              opacity: 0,
+              x: stepDirection > 0 ? 42 : -42,
+              filter: "blur(8px)",
+            }}
             animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -42, filter: "blur(8px)" }}
+            exit={{
+              opacity: 0,
+              x: stepDirection > 0 ? -42 : 42,
+              filter: "blur(8px)",
+            }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
             className="mx-auto max-w-5xl"
           >
@@ -410,11 +439,13 @@ export function InitialExperienceSettings({
 
           <div className="flex items-center gap-2">
             {SETTING_STEPS.map((settingStep, index) => (
-              <span
+              <motion.span
                 key={settingStep}
+                layout
                 className={`h-2.5 rounded-full transition-all duration-300 ${
                   index === settingIndex ? "w-8 bg-accent" : "w-2.5 bg-content-muted/30"
                 }`}
+                transition={{ type: "spring", stiffness: 320, damping: 26 }}
               />
             ))}
           </div>

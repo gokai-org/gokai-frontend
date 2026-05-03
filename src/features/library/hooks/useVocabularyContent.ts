@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   listThemes,
   listSubthemesByThemeId,
@@ -12,6 +12,10 @@ export function useVocabularyContent(searchQuery: string) {
   const [themes, setThemes] = useState<Theme[]>([]);
   const [subthemes, setSubthemes] = useState<Subtheme[]>([]);
   const [words, setWords] = useState<Word[]>([]);
+  const subthemesCacheRef = useRef<Map<string, Subtheme[]>>(new Map());
+  const wordsCacheRef = useRef<Map<string, Word[]>>(new Map());
+  const subthemesRequestIdRef = useRef(0);
+  const wordsRequestIdRef = useRef(0);
 
   const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
   const [selectedSubtheme, setSelectedSubtheme] = useState<Subtheme | null>(
@@ -37,44 +41,88 @@ export function useVocabularyContent(searchQuery: string) {
     })();
   }, []);
 
-  const openTheme = async (theme: Theme) => {
+  const openTheme = useCallback(async (theme: Theme) => {
     setSelectedTheme(theme);
     setSelectedSubtheme(null);
     setWords([]);
+
+    const cachedSubthemes = subthemesCacheRef.current.get(theme.id);
+    if (cachedSubthemes) {
+      setSubthemes(cachedSubthemes);
+      setLoadingSubthemes(false);
+      return;
+    }
+
+    setSubthemes([]);
     setLoadingSubthemes(true);
+    const requestId = subthemesRequestIdRef.current + 1;
+    subthemesRequestIdRef.current = requestId;
 
     try {
       const res = await listSubthemesByThemeId(theme.id);
+      if (subthemesRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      subthemesCacheRef.current.set(theme.id, res);
       setSubthemes(res);
     } catch (error) {
       console.error("Error loading subthemes:", error);
+      if (subthemesRequestIdRef.current !== requestId) {
+        return;
+      }
       setSubthemes([]);
     } finally {
-      setLoadingSubthemes(false);
+      if (subthemesRequestIdRef.current === requestId) {
+        setLoadingSubthemes(false);
+      }
     }
-  };
+  }, []);
 
-  const openSubtheme = async (subtheme: Subtheme) => {
+  const openSubtheme = useCallback(async (subtheme: Subtheme) => {
     setSelectedSubtheme(subtheme);
+
+    const cachedWords = wordsCacheRef.current.get(subtheme.id);
+    if (cachedWords) {
+      setWords(cachedWords);
+      setLoadingWords(false);
+      return;
+    }
+
+    setWords([]);
     setLoadingWords(true);
+    const requestId = wordsRequestIdRef.current + 1;
+    wordsRequestIdRef.current = requestId;
 
     try {
       const res = await listWordsBySubthemeId(subtheme.id);
+      if (wordsRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      wordsCacheRef.current.set(subtheme.id, res);
       setWords(res);
     } catch (error) {
       console.error("Error loading words:", error);
+      if (wordsRequestIdRef.current !== requestId) {
+        return;
+      }
       setWords([]);
     } finally {
-      setLoadingWords(false);
+      if (wordsRequestIdRef.current === requestId) {
+        setLoadingWords(false);
+      }
     }
-  };
+  }, []);
 
-  const resetVocabularyView = () => {
+  const resetVocabularyView = useCallback(() => {
     setSelectedTheme(null);
     setSelectedSubtheme(null);
     setSubthemes([]);
     setWords([]);
-  };
+    setLoadingSubthemes(false);
+    setLoadingWords(false);
+  }, []);
 
   const normalizedQuery = searchQuery.trim().toLowerCase();
 

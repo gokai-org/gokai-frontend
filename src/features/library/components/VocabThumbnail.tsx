@@ -68,7 +68,7 @@ export function VocabThumbnail({
       <div
         className={[
           base,
-          "overflow-hidden bg-gradient-to-br font-bold text-content-inverted shadow-lg",
+          "overflow-hidden bg-gradient-to-br font-bold text-content-inverted",
           textSize,
           gradient,
         ].join(" ")}
@@ -85,7 +85,7 @@ export function VocabThumbnail({
       <div
         className={[
           base,
-          "overflow-hidden bg-gradient-to-br font-bold text-content-inverted shadow-lg",
+          "overflow-hidden bg-gradient-to-br font-bold text-content-inverted",
           textSize,
           gradient,
         ].join(" ")}
@@ -101,7 +101,7 @@ export function VocabThumbnail({
     <div
       className={[
         base,
-        "overflow-hidden bg-gradient-to-br font-bold text-content-inverted shadow-lg",
+        "overflow-hidden bg-gradient-to-br font-bold text-content-inverted",
         "px-1 py-0.5",
         textSize,
         gradient,

@@ -1,10 +1,17 @@
 import { OnboardingInterestsExperience } from "@/features/onboarding";
-import { TypographyProvider } from "@/shared/components";
 
-export default function InterestsPage() {
+type InterestsPageProps = {
+  searchParams: Promise<{
+    plan?: string;
+  }>;
+};
+
+export default async function InterestsPage({ searchParams }: InterestsPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const initialPlanVariant =
+    resolvedSearchParams.plan === "premium" ? "premium" : "free";
+
   return (
-    <TypographyProvider>
-      <OnboardingInterestsExperience />
-    </TypographyProvider>
+    <OnboardingInterestsExperience initialPlanVariant={initialPlanVariant} />
   );
 }

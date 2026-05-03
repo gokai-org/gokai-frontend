@@ -16,6 +16,7 @@ import { createGrammarBoardViewModel } from "../../lib/grammarBoardLayout";
 import { GRAMMAR_SUGOROKU_SLOTS_VERTICAL } from "../../constants/grammarBoard";
 
 const BOARD_EASE = [0.22, 1, 0.36, 1] as const;
+const LANDSCAPE_BOARD_MARGIN = 12;
 type GrammarBoardTransitionState = "idle" | "tour-focus" | "zooming-in" | "hidden" | "zooming-out";
 
 type GrammarBoardLoadStatus = "idle" | "loading" | "error" | "success";
@@ -346,7 +347,14 @@ export function GrammarBoard({
             ? "calc(env(safe-area-inset-bottom, 0px) + 4.1rem)"
             : "calc(env(safe-area-inset-bottom, 0px) + 4.35rem)",
       }
-    : undefined;
+    : embedded
+      ? undefined
+      : {
+          paddingLeft: `${LANDSCAPE_BOARD_MARGIN}px`,
+          paddingRight: `${LANDSCAPE_BOARD_MARGIN}px`,
+          paddingTop: `${LANDSCAPE_BOARD_MARGIN}px`,
+          paddingBottom: `${LANDSCAPE_BOARD_MARGIN}px`,
+        };
 
   return (
     <>

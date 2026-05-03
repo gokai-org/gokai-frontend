@@ -27,9 +27,7 @@ function isUrl(value: string): boolean {
  * Layout for **theme** and **subtheme** cards.
  *
  * Default state: white card with coloured thumbnail + tinted badge.
- * Hover state: full gradient background floods the card with a smooth
- * transition (opacity-0 → opacity-100 overlay), text turns white,
- * badge becomes glass-morphism, decorative character appears.
+ * Hover state: only subtle border/motion feedback; visual treatment stays flat.
  */
 export function GradientCardLayout({
   title,
@@ -43,15 +41,16 @@ export function GradientCardLayout({
 
   return (
     <>
-      {/* ── Gradient overlay – invisible by default, full on hover ───── */}
-      <div
-        aria-hidden
-        className={[
-          "pointer-events-none absolute inset-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
-          hoverTransition,
-          config.cardGradient,
-        ].join(" ")}
-      />
+      {hasOnClick && (
+        <span
+          aria-hidden
+          className={[
+            "pointer-events-none absolute inset-0 z-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
+            hoverTransition,
+            config.cardGradient,
+          ].join(" ")}
+        />
+      )}
 
       {/* ── Decorative background character ─────────────────────────── */}
       <span
@@ -61,7 +60,7 @@ export function GradientCardLayout({
         <span
           className={[
             "-translate-y-2 translate-x-6 text-[100px] font-black leading-none",
-            "text-accent/[0.06] group-hover:text-white/[0.08]",
+            "text-accent/[0.05] group-hover:text-white/10",
             hoverTransition,
           ].join(" ")}
         >
@@ -69,22 +68,11 @@ export function GradientCardLayout({
         </span>
       </span>
 
-      {/* ── Bottom vignette – only visible on hover ──────────────────── */}
-      <div
-        className={[
-          "pointer-events-none absolute inset-x-0 bottom-0 h-28 rounded-b-[24px]",
-          "bg-gradient-to-t from-black/30 to-transparent",
-          "opacity-0 group-hover:opacity-100",
-          hoverTransition,
-        ].join(" ")}
-      />
-
       {/* ── Top row: thumbnail ────────────────────────────────────────── */}
       <div className="relative z-10 mb-4">
         <div
           className={[
-            "inline-block rounded-2xl ring-2 ring-transparent",
-            "group-hover:ring-white/25 group-hover:shadow-[0_4px_16px_-4px_rgba(0,0,0,0.35)]",
+            "inline-block rounded-2xl",
             hoverTransition,
           ].join(" ")}
         >
@@ -105,7 +93,7 @@ export function GradientCardLayout({
         <h3
           className={[
             "line-clamp-2 text-[17px] font-black leading-tight",
-            "text-content-primary group-hover:text-content-inverted",
+            "text-content-primary group-hover:text-white",
             hoverTransition,
           ].join(" ")}
         >
@@ -116,7 +104,7 @@ export function GradientCardLayout({
           <p
             className={[
               "mt-1 line-clamp-1 text-[12px] font-medium",
-              "text-content-muted group-hover:text-white/60",
+              "text-content-muted group-hover:text-white/72",
               hoverTransition,
             ].join(" ")}
           >
@@ -128,7 +116,8 @@ export function GradientCardLayout({
           <div className="mt-2.5 flex justify-end">
             <ChevronRight
               className={[
-                "h-4 w-4 text-accent/30 group-hover:translate-x-0.5 group-hover:text-white/75",
+                "h-4 w-4 text-accent/30 group-hover:translate-x-0.5 group-hover:text-accent/55",
+                "group-hover:text-white/85",
                 hoverTransition,
               ].join(" ")}
             />
@@ -145,9 +134,7 @@ export function GradientCardLayout({
  * Vertical / portrait layout for **word** cards.
  *
  * Structure (top to bottom):
- *   • Gradient overlay (opacity-0 → 1 on hover)
  *   • Large decorative icon/character behind content
- *   • Bottom vignette on hover
  *   • Small coloured thumbnail (top-left)
  *   • Flex spacer
  *   • Title + subtitle (bottom)
@@ -164,15 +151,16 @@ export function WordCardLayout({
 
   return (
     <>
-      {/* ── Gradient overlay ─────────────────────────────────────── */}
-      <div
-        aria-hidden
-        className={[
-          "pointer-events-none absolute inset-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
-          hoverTransition,
-          config.cardGradient,
-        ].join(" ")}
-      />
+      {hasOnClick && (
+        <span
+          aria-hidden
+          className={[
+            "pointer-events-none absolute inset-0 z-0 rounded-[24px] bg-gradient-to-br opacity-0 group-hover:opacity-100",
+            hoverTransition,
+            config.cardGradient,
+          ].join(" ")}
+        />
+      )}
 
       {/* ── Decorative background icon / character ───────────────── */}
       <div
@@ -190,7 +178,8 @@ export function WordCardLayout({
               sizes="(max-width: 640px) 140px, 220px"
               className={[
                 "object-contain",
-                "opacity-[0.30] group-hover:opacity-[0.40]",
+                "opacity-[0.22]",
+                "group-hover:opacity-[0.3]",
                 hoverTransition,
               ].join(" ")}
               style={{
@@ -203,7 +192,7 @@ export function WordCardLayout({
           <span
             className={[
               "-translate-y-4 text-[75px] font-black leading-none select-none",
-              "text-accent/[0.22] group-hover:text-white/[0.16]",
+              "text-accent/[0.16] group-hover:text-white/18",
               hoverTransition,
             ].join(" ")}
           >
@@ -211,16 +200,6 @@ export function WordCardLayout({
           </span>
         )}
       </div>
-
-      {/* ── Bottom vignette ──────────────────────────────────────── */}
-      <div
-        className={[
-          "pointer-events-none absolute inset-x-0 bottom-0 h-28 rounded-b-[24px]",
-          "bg-gradient-to-t from-black/30 to-transparent",
-          "opacity-0 group-hover:opacity-100",
-          hoverTransition,
-        ].join(" ")}
-      />
 
       {/* ── Flex spacer ──────────────────────────────────────────── */}
       <div className="relative z-10 flex-1" />
@@ -230,7 +209,7 @@ export function WordCardLayout({
         <h3
           className={[
             "line-clamp-2 text-[15px] font-black leading-tight",
-            "text-content-primary group-hover:text-content-inverted",
+            "text-content-primary group-hover:text-white",
             hoverTransition,
           ].join(" ")}
         >
@@ -241,7 +220,7 @@ export function WordCardLayout({
           <p
             className={[
               "mt-1 line-clamp-2 text-[11px] font-medium",
-              "text-content-muted group-hover:text-white/60",
+              "text-content-muted group-hover:text-white/72",
               hoverTransition,
             ].join(" ")}
           >
@@ -253,7 +232,8 @@ export function WordCardLayout({
           <div className="mt-2.5 flex justify-end">
             <ChevronRight
               className={[
-                "h-4 w-4 text-accent/30 group-hover:translate-x-0.5 group-hover:text-white/75",
+                "h-4 w-4 text-accent/30 group-hover:translate-x-0.5 group-hover:text-accent/55",
+                "group-hover:text-white/85",
                 hoverTransition,
               ].join(" ")}
             />

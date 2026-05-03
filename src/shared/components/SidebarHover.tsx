@@ -157,7 +157,7 @@ export default function SidebarOnly() {
       setLoggingOut(true);
 
       try {
-        await fetch("/api/auth/logout", { method: "POST" });
+        await fetch("/api/users/auth/logout", { method: "POST" });
         clearFirstRunOnboardingSession();
         // Usar window.location.replace para limpiar el historial y evitar volver atrás
         window.location.replace("/auth/login");

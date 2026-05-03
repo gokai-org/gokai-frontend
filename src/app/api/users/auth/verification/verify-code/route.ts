@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { apiConfig } from "@/shared/config";
 
 /**
- * POST /api/auth/verification/verify-code
+ * POST /api/users/auth/verification/verify-code
  */
 export async function POST(req: Request) {
   const base = apiConfig.usersApiBase;

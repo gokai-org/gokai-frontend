@@ -21,7 +21,7 @@ export default function GrammarQuestionExercise({
       <div className="relative overflow-hidden rounded-[18px] border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-3.5 py-3.5 sm:rounded-[24px] sm:px-6 sm:py-6">
         <div className="absolute -right-14 -top-14 h-28 w-28 rounded-full bg-accent/8 blur-3xl" />
         <p
-          className="relative text-[13px] leading-5 text-content-primary sm:text-lg sm:leading-8"
+          className="relative text-[0.8125rem] leading-5 text-content-primary sm:text-lg sm:leading-8"
           dangerouslySetInnerHTML={{ __html: question.question }}
         />
       </div>
@@ -73,12 +73,12 @@ export default function GrammarQuestionExercise({
               className={`flex min-h-[54px] w-full items-center gap-3 rounded-[16px] border px-3 py-2.5 text-left transition-colors duration-200 sm:min-h-[84px] sm:gap-4 sm:rounded-[22px] sm:px-5 sm:py-4 ${stateClass[state]}`}
             >
               <span
-                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-[11px] font-black leading-none transition-all duration-200 sm:h-11 sm:w-11 sm:rounded-xl sm:text-base ${badgeClass[state]}`}
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border text-[0.6875rem] font-black leading-none transition-all duration-200 sm:h-11 sm:w-11 sm:rounded-xl sm:text-base ${badgeClass[state]}`}
               >
                 {String.fromCharCode(65 + i)}
               </span>
 
-              <span className={`flex-1 text-[12px] leading-[1.35rem] transition-colors duration-200 sm:text-base sm:leading-7 ${textClass[state]}`}>
+              <span className={`flex-1 text-[0.75rem] leading-[1.35rem] transition-colors duration-200 sm:text-base sm:leading-7 ${textClass[state]}`}>
                 {opt.option}
               </span>
 

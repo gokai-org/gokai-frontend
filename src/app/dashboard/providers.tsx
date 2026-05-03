@@ -7,7 +7,6 @@ import { GuideTourProvider } from "@/features/help/components/GuideTourProvider"
 import { GuideTourOverlay } from "@/features/help/components/GuideTourOverlay";
 import { FirstRunOnboarding } from "@/features/help/utils/firstRunOnboarding";
 import { SettingsBootstrap } from "@/features/configuration/components/SettingsBootstrap";
-import { TypographyProvider } from "@/shared/components/TypographyProvider";
 import { MasteredModulesProvider } from "@/features/mastery/components/MasteredModulesProvider";
 import { AuthenticatedUserGate } from "@/features/auth/components/AuthenticatedUserGate";
 import { ProgressBootstrap } from "@/features/dashboard/components/ProgressBootstrap";
@@ -16,19 +15,17 @@ export default function Providers({ children }: { children: React.ReactNode }) {
   return (
     <AuthenticatedUserGate>
       <SidebarProvider>
-        <TypographyProvider>
-          <ToastProvider>
-            <GuideTourProvider>
-              <MasteredModulesProvider>
-                <SettingsBootstrap />
-                <ProgressBootstrap />
-                <FirstRunOnboarding />
-                {children}
-                <GuideTourOverlay />
-              </MasteredModulesProvider>
-            </GuideTourProvider>
-          </ToastProvider>
-        </TypographyProvider>
+        <ToastProvider>
+          <GuideTourProvider>
+            <MasteredModulesProvider>
+              <SettingsBootstrap />
+              <ProgressBootstrap />
+              <FirstRunOnboarding />
+              {children}
+              <GuideTourOverlay />
+            </MasteredModulesProvider>
+          </GuideTourProvider>
+        </ToastProvider>
       </SidebarProvider>
     </AuthenticatedUserGate>
   );

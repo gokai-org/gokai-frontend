@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, type FormEvent } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import {
   Crown,
@@ -23,6 +24,8 @@ import { ChangePasswordModal } from "@/features/configuration/components/ChangeP
 import { UpgradePlanModal } from "@/features/configuration/components/UpgradePlanModal";
 import { CancelSubscriptionModal } from "@/features/configuration/components/CancelSubscriptionModal";
 import { AccountSettingsSkeleton } from "@/features/configuration/components/AccountSettingsSkeleton";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { ScreenTransitionOverlay } from "@/shared/ui";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -161,6 +164,8 @@ interface Props {
 }
 
 export function AccountSettings({ user, setUser, loading }: Props) {
+  const router = useRouter();
+  const platformMotion = usePlatformMotion();
   const toast = useToast();
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -184,6 +189,11 @@ export function AccountSettings({ user, setUser, loading }: Props) {
   const [coupon, setCoupon] = useState("");
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+  const [screenTransition, setScreenTransition] = useState<{
+    title: string;
+    description: string;
+  } | null>(null);
 
   // Cancel state
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -205,7 +215,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
   useEffect(() => {
     if (!user?.id) return;
     setSubLoading(true);
-    fetch("/api/subscription/me")
+    fetch("/api/subscriptions/me")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) setSubscription(data); })
       .catch(console.error)
@@ -226,6 +236,14 @@ export function AccountSettings({ user, setUser, loading }: Props) {
   );
   const isCouponBased = isActive && !hasRecurring;
   const planLabel = isActive ? "GOKAI+" : user?.plan === "premium" ? "Plan Premium" : "Plan Gratuito";
+  const configurationSuccessPath = "/checkout/success?flow=configuration-upgrade&returnTo=%2Fdashboard%2Fconfiguration";
+  const routeTransitionDelayMs = platformMotion.shouldAnimate
+    ? Math.max(170, Math.round(320 * platformMotion.durationScale))
+    : 0;
+
+  useEffect(() => {
+    router.prefetch(configurationSuccessPath);
+  }, [configurationSuccessPath, router]);
 
   // ── Actions ───────────────────────────────────────────────────────────────
 
@@ -233,13 +251,29 @@ export function AccountSettings({ user, setUser, loading }: Props) {
     const updated = await getCurrentUser();
     if (!updated) return;
     setUser(updated);
-    const r = await fetch("/api/subscription/me");
+    const r = await fetch("/api/subscriptions/me");
     if (r.ok) setSubscription(await r.json());
+  };
+
+  const navigateToConfigurationSuccess = () => {
+    setScreenTransition({
+      title: "Activando privilegios premium",
+      description: "Preparando tu bienvenida premium antes de volver a configuración.",
+    });
+
+    if (routeTransitionDelayMs === 0) {
+      router.push(configurationSuccessPath);
+      return;
+    }
+
+    window.setTimeout(() => {
+      router.push(configurationSuccessPath);
+    }, routeTransitionDelayMs);
   };
 
   const claimCoupon = async (code: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const res = await fetch("/api/subscription/claim", {
+      const res = await fetch("/api/subscriptions/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
@@ -257,34 +291,39 @@ export function AccountSettings({ user, setUser, loading }: Props) {
     if (!code) return;
     setCouponLoading(true);
     setCouponError(null);
+    setCouponSuccess(null);
     const result = await claimCoupon(code);
     if (!result.success) { setCouponError(result.error ?? "No se pudo aplicar el cupón"); setCouponLoading(false); return; }
-    await refresh();
+    setCouponSuccess("Cupón validado. Estamos activando tu plan premium.");
     setCoupon("");
     setShowUpgradeModal(false);
     setCouponLoading(false);
-    toast.success("Cupón aplicado. Tu suscripción está activa.");
+    navigateToConfigurationSuccess();
   };
 
   const handleStripe = async () => {
     setStripeLoading(true);
     setStripeError(null);
+    setCouponError(null);
+    setCouponSuccess(null);
     const code = coupon.trim();
     if (code) {
       const result = await claimCoupon(code);
       if (!result.success) { setCouponError(result.error ?? "No se pudo aplicar el cupón"); setStripeLoading(false); return; }
-      await refresh();
+      setCouponSuccess("Cupón validado. Estamos activando tu plan premium.");
       setCoupon("");
       setShowUpgradeModal(false);
       setStripeLoading(false);
-      toast.success("Cupón aplicado. Tu suscripción está activa.");
+      navigateToConfigurationSuccess();
       return;
     }
     try {
-      const res = await fetch("/api/subscription/subscribe", {
+      const res = await fetch("/api/subscriptions/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ successUrl: window.location.href }),
+        body: JSON.stringify({
+          successUrl: `${window.location.origin}${configurationSuccessPath}`,
+        }),
       });
       const data = await res.json();
       if (data.url) { window.location.href = data.url; return; }
@@ -298,7 +337,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
     setCancelLoading(true);
     setCancelError(null);
     try {
-      const res = await fetch(`/api/subscription/${user.id}`, { method: "DELETE" });
+      const res = await fetch(`/api/subscriptions/${user.id}`, { method: "DELETE" });
       const data = await res.json();
       if (!res.ok) { setCancelError(data.error || "Error al cancelar"); return; }
       toast.success("Suscripción cancelada.");
@@ -312,7 +351,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
     if (e) e.preventDefault();
     setIsSaving(true);
     try {
-      const res = await fetch("/api/auth/user", {
+      const res = await fetch("/api/users/me", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ firstName: form.firstName, lastName: form.lastName }),
@@ -356,10 +395,15 @@ export function AccountSettings({ user, setUser, loading }: Props) {
         loading={stripeLoading}
         error={stripeError}
         coupon={coupon}
-        onCouponChange={(v) => { setCoupon(v); if (couponError) setCouponError(null); }}
+        onCouponChange={(v) => {
+          setCoupon(v);
+          if (couponError) setCouponError(null);
+          if (couponSuccess) setCouponSuccess(null);
+        }}
         onApplyCoupon={handleApplyCoupon}
         couponLoading={couponLoading}
         couponError={couponError}
+        couponSuccess={couponSuccess}
       />
       <CancelSubscriptionModal
         isOpen={showCancelModal}
@@ -629,7 +673,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
                     <button
                       onClick={async () => {
                         try {
-                          await fetch("/api/auth/user", { method: "DELETE" });
+                          await fetch("/api/users/me", { method: "DELETE" });
                           window.location.href = "/auth/login";
                         } catch { toast.error("Error al eliminar cuenta"); }
                       }}
@@ -663,6 +707,12 @@ export function AccountSettings({ user, setUser, loading }: Props) {
           </div>
         </Section>
       </div>
+
+      <ScreenTransitionOverlay
+        active={screenTransition !== null}
+        title={screenTransition?.title ?? ""}
+        description={screenTransition?.description}
+      />
     </>
   );
 }

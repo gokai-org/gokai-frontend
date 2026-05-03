@@ -18,7 +18,7 @@ interface SettingsSelectItemProps {
   label: string;
   description?: string;
   value: string;
-  options: string[];
+  options: readonly string[];
   onChange?: (value: string) => void;
   className?: string;
   icon?: ReactNode;
@@ -31,7 +31,7 @@ interface SettingsToggleSelectItemProps {
   onToggleChange?: (enabled: boolean) => void;
   toggleDisabled?: boolean;
   value: string;
-  options: string[];
+  options: readonly string[];
   onChange?: (value: string) => void;
   icon?: ReactNode;
 }

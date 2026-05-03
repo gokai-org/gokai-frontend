@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useCallback, useMemo, useRef } from "react";
+import { useEffect, useCallback, useMemo, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKanjiQuiz } from "@/features/kanji/hooks/useKanjiQuiz";
 import {
@@ -19,13 +20,16 @@ import { KanjiMeaningExercise } from "./KanjiMeaningExercise";
 import { KanjiSelectionExercise } from "./KanjiSelectionExercise";
 import { KanjiReadingExercise } from "./KanjiReadingExercise";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { KanjiQuizWritingExercise } from "./KanjiQuizWritingExercise";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
+import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 import {
   ReaffirmedMasteryResult,
   UnlockedMasterySequence,
 } from "@/shared/ui/ReaffirmedMasteryResult";
+import { AnswerConfirmationPanel } from "@/shared/ui";
 
 const KANJI_COMPLETION_REWARD = 30;
 
@@ -59,11 +63,16 @@ export function KanjiQuizModal({
   onClose,
   onComplete,
 }: KanjiQuizModalProps) {
+  useMiniDockBlocker(true);
+
   const quiz = useKanjiQuiz();
   const platformMotion = usePlatformMotion();
   const mastered = useMasteredModules();
   const isKanjiMastered = mastered.has("kanji");
   const autoClosedForMasteryRef = useRef(false);
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
+  const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
   const shouldPersistProgress =
     progressEligible && !wasCompletedBefore && quizType === undefined;
 
@@ -258,6 +267,74 @@ export function KanjiQuizModal({
     state.selectedOptionIndex !== null
       ? (currentQuestion?.options?.[state.selectedOptionIndex]?.correct ?? false)
       : false;
+  const isWritingQuestion = quizData?.type === "writing";
+  const showExerciseAdvance =
+    state.step === "exercise" &&
+    !state.isAnswered &&
+    !isWritingQuestion &&
+    state.selectedOptionIndex !== null;
+  const handleExerciseAdvance = useCallback(() => {
+    if (!showExerciseAdvance) return;
+
+    if (confirmAnswersEnabled) {
+      setIsConfirmDialogOpen(true);
+      return;
+    }
+
+    quiz.confirmAnswer();
+  }, [confirmAnswersEnabled, quiz, showExerciseAdvance]);
+
+  const handleConfirmCurrentAnswer = useCallback(() => {
+    setIsConfirmDialogOpen(false);
+    quiz.confirmAnswer();
+  }, [quiz]);
+
+  const handleDismissAnswerConfirmation = useCallback(
+    (event?: ReactMouseEvent<HTMLDivElement>) => {
+      event?.stopPropagation();
+      setIsConfirmDialogOpen(false);
+    },
+    [],
+  );
+
+  const handleStayInQuiz = useCallback(
+    (event?: ReactMouseEvent<HTMLDivElement> | ReactMouseEvent<HTMLButtonElement>) => {
+      event?.stopPropagation();
+      setIsExitDialogOpen(false);
+    },
+    [],
+  );
+
+  const handleConfirmExit = useCallback(() => {
+    setIsExitDialogOpen(false);
+    handleClose();
+  }, [handleClose]);
+
+  const handleRequestClose = useCallback(
+    (event?: ReactMouseEvent<HTMLElement>) => {
+      event?.stopPropagation();
+
+      if (isConfirmDialogOpen) {
+        setIsConfirmDialogOpen(false);
+        return;
+      }
+
+      setIsExitDialogOpen(true);
+    },
+    [isConfirmDialogOpen],
+  );
+
+  useEffect(() => {
+    if (state.step !== "exercise" || state.isAnswered) {
+      setIsConfirmDialogOpen(false);
+    }
+  }, [state.currentQuestionIndex, state.isAnswered, state.step, state.writingQuestionIndex]);
+
+  useEffect(() => {
+    if (isConfirmDialogOpen) {
+      setIsExitDialogOpen(false);
+    }
+  }, [isConfirmDialogOpen]);
 
   if (shouldAutoCloseForMastery) {
     return null;
@@ -272,7 +349,7 @@ export function KanjiQuizModal({
         animate="visible"
         exit="exit"
         className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
-        onClick={handleClose}
+        onClick={handleRequestClose}
       >
         <motion.div
           variants={panelVariants}
@@ -280,7 +357,7 @@ export function KanjiQuizModal({
           animate="visible"
           exit="exit"
           className={[
-            "bg-surface-primary w-full shadow-2xl ring-1 ring-border-subtle flex flex-col",
+            "relative bg-surface-primary w-full overflow-hidden shadow-2xl ring-1 ring-border-subtle flex flex-col",
             state.step === "summary" || state.step === "celebration"
               ? "max-w-2xl"
               : "max-w-lg",
@@ -315,7 +392,7 @@ export function KanjiQuizModal({
                 )}
 
                 <button
-                  onClick={handleClose}
+                  onClick={handleRequestClose}
                   className="w-8 h-8 rounded-xl bg-surface-primary/15 hover:bg-surface-primary/25 text-content-inverted flex items-center justify-center transition"
                   aria-label="Cerrar"
                 >
@@ -500,7 +577,6 @@ export function KanjiQuizModal({
                         selectedIndex={state.selectedOptionIndex}
                         revealed={state.isAnswered}
                         onSelect={quiz.selectOption}
-                        onConfirm={quiz.confirmAnswer}
                       />
                     )}
 
@@ -513,7 +589,6 @@ export function KanjiQuizModal({
                         selectedIndex={state.selectedOptionIndex}
                         revealed={state.isAnswered}
                         onSelect={quiz.selectOption}
-                        onConfirm={quiz.confirmAnswer}
                       />
                     )}
 
@@ -526,7 +601,6 @@ export function KanjiQuizModal({
                         selectedIndex={state.selectedOptionIndex}
                         revealed={state.isAnswered}
                         onSelect={quiz.selectOption}
-                        onConfirm={quiz.confirmAnswer}
                       />
                     )}
 
@@ -564,6 +638,23 @@ export function KanjiQuizModal({
                   </div>
                 </AnimatePresence>
               )}
+
+            {showExerciseAdvance ? (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-center mt-4"
+              >
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleExerciseAdvance}
+                  className="w-full max-w-sm py-3.5 bg-gradient-to-r from-accent to-accent-hover text-content-inverted rounded-2xl font-bold shadow-lg shadow-accent/15 transition-all"
+                >
+                  Siguiente
+                </motion.button>
+              </motion.div>
+            ) : null}
 
             {state.step === "exercise-feedback" &&
               quizData &&
@@ -683,7 +774,78 @@ export function KanjiQuizModal({
               />
               ))}
           </div>
+
         </motion.div>
+
+        <AnimatePresence>
+          {isConfirmDialogOpen ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+              onClick={handleDismissAnswerConfirmation}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                transition={{ duration: 0.18 }}
+                className="relative z-10 w-full max-w-md"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <AnswerConfirmationPanel
+                  title="Confirmar respuesta"
+                  description="Si ya revisaste tu respuesta, confirma para mostrar el resultado de esta pregunta."
+                  confirmLabel="Mostrar resultado"
+                  onConfirm={handleConfirmCurrentAnswer}
+                  tone="kanji"
+                  mastered={isKanjiMastered}
+                  secondaryAction={{
+                    label: "Seguir revisando",
+                    onAction: () => setIsConfirmDialogOpen(false),
+                  }}
+                />
+              </motion.div>
+            </motion.div>
+          ) : null}
+
+          {isExitDialogOpen ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-10 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+              onClick={handleStayInQuiz}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 12 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 8 }}
+                transition={{ duration: 0.18 }}
+                className="relative z-10 w-full max-w-md"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <AnswerConfirmationPanel
+                  title={isKanjiMastered ? "Salir de maestria" : "Salir del quiz"}
+                  description={
+                    isKanjiMastered
+                      ? "Si sales ahora, cerrarás esta sesion de maestria y volverás a la pantalla anterior."
+                      : "Si sales ahora, cerrarás esta sesión y volverás a la pantalla anterior."
+                  }
+                  confirmLabel="Salir"
+                  onConfirm={handleConfirmExit}
+                  tone="kanji"
+                  mastered={isKanjiMastered}
+                  secondaryAction={{
+                    label: isKanjiMastered ? "Seguir en maestria" : "Seguir en el quiz",
+                    onAction: () => setIsExitDialogOpen(false),
+                  }}
+                />
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </motion.div>
     </AnimatePresence>
   );
@@ -773,7 +935,7 @@ function QuizProgress({
           transition={{ duration: 0.4, ease: "easeOut" }}
         />
       </div>
-      <p className="text-[10px] text-content-muted font-medium text-center">
+      <p className="text-[0.625rem] text-content-muted font-medium text-center">
         Pregunta{" "}
         <span className="text-accent font-bold">
           {Math.min(current + 1, total)}
@@ -859,7 +1021,7 @@ function QuizMultiRoundSummary({
 
           <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border-subtle pt-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
                 Resultado
               </p>
               <p
@@ -874,7 +1036,7 @@ function QuizMultiRoundSummary({
             </div>
 
             <div className="text-left sm:text-right">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
                 Estado
               </p>
               <p className={`mt-1 text-sm font-bold ${statusClass}`}>
@@ -997,7 +1159,7 @@ function RoundResultCard({
       }
     >
       <span
-        className={`text-[10px] font-bold uppercase tracking-wider ${isPerfect ? "" : "text-content-muted"}`}
+        className={`text-[0.625rem] font-bold uppercase tracking-wider ${isPerfect ? "" : "text-content-muted"}`}
         style={isPerfect ? { color: "var(--accent)" } : undefined}
       >
         {QUIZ_TYPE_LABELS[type]}
@@ -1012,7 +1174,7 @@ function RoundResultCard({
       ) : (
         <span className="text-xl font-extrabold text-content-muted">—</span>
       )}
-      <span className="text-[11px] text-content-muted">
+      <span className="text-[0.6875rem] text-content-muted">
         {isPerfect ? "Perfecta" : isDone ? "Por mejorar" : "Pendiente"}
       </span>
     </motion.div>
@@ -1068,7 +1230,7 @@ function KanjiPracticeResult({
 
           <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border-subtle pt-4">
             <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
                 Resultado
               </p>
               <p
@@ -1083,7 +1245,7 @@ function KanjiPracticeResult({
             </div>
 
             <div className="text-left sm:text-right">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-content-muted">
+              <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
                 Estado
               </p>
               <p

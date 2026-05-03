@@ -189,7 +189,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch("/api/users/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password, remember }),
@@ -201,7 +201,7 @@ export default function LoginPage() {
       let profile = normalizeProfile(data?.user?.profile);
 
       if (!profile) {
-        const meRes = await fetch("/api/auth/user", {
+        const meRes = await fetch("/api/users/me", {
           method: "GET",
           credentials: "include",
         });
@@ -245,7 +245,7 @@ export default function LoginPage() {
 
     try {
       if (fromGoogle) {
-        const res = await fetch("/api/auth/register", {
+        const res = await fetch("/api/users/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -261,7 +261,7 @@ export default function LoginPage() {
         const data = await res.json().catch(() => null);
         if (!res.ok) throw new Error(data?.error || "No se pudo registrar.");
 
-        const loginRes = await fetch("/api/auth/login", {
+        const loginRes = await fetch("/api/users/auth/login", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -287,7 +287,7 @@ export default function LoginPage() {
         return;
       }
 
-      const registerRes = await fetch("/api/auth/register", {
+      const registerRes = await fetch("/api/users/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -305,7 +305,7 @@ export default function LoginPage() {
         return;
       }
 
-      const codeRes = await fetch("/api/auth/verification/send-code", {
+      const codeRes = await fetch("/api/users/auth/verification/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: regEmail, type: "email-verification" }),
@@ -332,7 +332,7 @@ export default function LoginPage() {
   }
 
   function handleGoogleLogin() {
-    window.location.href = "/api/auth/google";
+    window.location.href = "/api/users/auth/google";
   }
 
   function handleRegCodeInput(index: number, value: string) {
@@ -374,7 +374,7 @@ export default function LoginPage() {
         return;
       }
 
-      const verifyRes = await fetch("/api/auth/verification/verify-code", {
+      const verifyRes = await fetch("/api/users/auth/verification/verify-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -391,7 +391,7 @@ export default function LoginPage() {
 
       toast.success("Correo verificado");
 
-      const loginRes = await fetch("/api/auth/login", {
+      const loginRes = await fetch("/api/users/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -430,7 +430,7 @@ export default function LoginPage() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/auth/verification/send-code", {
+      const res = await fetch("/api/users/auth/verification/send-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: regEmail, type: "email-verification" }),

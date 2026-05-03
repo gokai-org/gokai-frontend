@@ -2,7 +2,15 @@ import { NextResponse } from "next/server";
 import { apiConfig } from "@/shared/config";
 
 /**
- * POST /api/auth/verification/send-code
+ * POST /api/users/auth/verification/reset-password
+ *
+ * Body:
+ *   - email:       string
+ *   - code:        string   — código de 6 dígitos
+ *   - newPassword: string   — nueva contraseña (mín 8 caracteres)
+ *
+ * Proxy hacia el backend de usuarios:
+ *   POST {GOKAI_USERS_API_BASE}/users/verification/reset-password
  */
 export async function POST(req: Request) {
   const base = apiConfig.usersApiBase;
@@ -25,45 +33,34 @@ export async function POST(req: Request) {
   }
 
   const email = String(body.email ?? "").trim();
-  const rawType = String(body.type ?? "").trim();
+  const code = String(body.code ?? "").trim();
+  const newPassword = String(body.newPassword ?? "");
 
-  if (!email) {
+  if (!email || !code || !newPassword) {
     return NextResponse.json(
-      { error: "El campo 'email' es requerido." },
+      { error: "Los campos 'email', 'code' y 'newPassword' son requeridos." },
       { status: 400 },
     );
   }
 
-  const typeMap: Record<string, string> = {
-    "email-verification": "verification",
-    "password-recovery": "password",
-    email_verification: "verification",
-    "verify-email": "verification",
-    verification: "verification",
-    password_recovery: "password",
-    "password-reset": "password",
-    "reset-password": "password",
-    password: "password",
-  };
-
-  const type = typeMap[rawType];
-
-  if (!type) {
+  if (newPassword.length < 8) {
     return NextResponse.json(
-      {
-        error:
-          "El campo 'type' es inválido. Usa 'email-verification' o 'password-recovery'.",
-        received: rawType,
-      },
+      { error: "La contraseña debe tener al menos 8 caracteres." },
       { status: 400 },
     );
   }
 
   try {
-    const response = await fetch(`${base}/users/verification/send-code`, {
+    const response = await fetch(`${base}/users/verification/reset-password`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, type }),
+      body: JSON.stringify({
+        email,
+        code,
+        password: newPassword,
+        newPassword,
+        type: "password",
+      }),
     });
 
     const text = await response.text();
@@ -74,27 +71,27 @@ export async function POST(req: Request) {
     } catch {}
 
     if (!response.ok) {
-      console.error("send-code backend error:", {
+      console.error("reset-password backend error:", {
         status: response.status,
         text,
       });
 
       return NextResponse.json(
-        { error: data?.error || text || "No se pudo enviar el código." },
+        {
+          error: data?.error || text || "No se pudo restablecer la contraseña.",
+        },
         { status: response.status },
       );
     }
 
     return NextResponse.json({
       success: true,
-      message:
-        (data?.message as string) ||
-        `Código de verificación enviado a ${email}.`,
+      message: data?.message || "Contraseña actualizada exitosamente.",
     });
   } catch (err) {
-    console.error("Error al enviar código:", err);
+    console.error("Error al restablecer contraseña:", err);
     return NextResponse.json(
-      { error: "Error interno al enviar el código." },
+      { error: "Error interno al restablecer la contraseña." },
       { status: 500 },
     );
   }

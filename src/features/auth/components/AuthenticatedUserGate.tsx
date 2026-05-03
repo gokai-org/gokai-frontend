@@ -18,7 +18,7 @@ export function AuthenticatedUserGate({
 
     async function verifyUser() {
       try {
-        const response = await fetch("/api/auth/user", {
+        const response = await fetch("/api/users/me", {
           method: "GET",
           credentials: "include",
           cache: "no-store",

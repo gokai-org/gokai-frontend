@@ -7,7 +7,7 @@ import type {
 // ─── GET: obtener todas las configuraciones ──────────────────────
 
 export async function getUserSettings(): Promise<UserSettings | null> {
-  const res = await apiFetch<SettingsApiResponse>("/api/user/settings");
+  const res = await apiFetch<SettingsApiResponse>("/api/users/settings");
   return res.settings ?? null;
 }
 
@@ -17,7 +17,7 @@ export async function updateSettingsSection<K extends keyof UserSettings>(
   section: K,
   data: Partial<UserSettings[K]>,
 ): Promise<UserSettings> {
-  const res = await apiFetch<SettingsApiResponse>("/api/user/settings", {
+  const res = await apiFetch<SettingsApiResponse>("/api/users/settings", {
     method: "PATCH",
     body: JSON.stringify({ section, data }),
   });
@@ -29,7 +29,7 @@ export async function updateSettingsSection<K extends keyof UserSettings>(
 export async function replaceAllSettings(
   settings: UserSettings,
 ): Promise<UserSettings> {
-  const res = await apiFetch<SettingsApiResponse>("/api/user/settings", {
+  const res = await apiFetch<SettingsApiResponse>("/api/users/settings", {
     method: "PUT",
     body: JSON.stringify(settings),
   });

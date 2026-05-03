@@ -17,15 +17,15 @@ export const CARD_ANIMATION_EASE = [0.22, 1, 0.36, 1] as const;
  */
 export function useCardAnimation(
   index = 0,
-  options: { useInView?: boolean } = {},
+  options: { useInView?: boolean; stagger?: boolean } = {},
 ) {
-  const { useInView = true } = options;
+  const { useInView = true, stagger = false } = options;
   const platformMotion = usePlatformMotion();
   const animationsEnabled = platformMotion.shouldAnimate;
   const heavyAnimationsEnabled = platformMotion.motionMode === "full";
 
   // Cap del stagger: máximo 14 × 30 ms = 420 ms
-  const cappedDelay = Math.min(index, 14) * 0.03;
+  const cappedDelay = stagger ? Math.min(index, 14) * 0.03 : 0;
 
   const animationTarget = {
     opacity: 1,

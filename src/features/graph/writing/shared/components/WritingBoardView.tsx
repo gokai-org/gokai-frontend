@@ -550,12 +550,10 @@ export function WritingBoardView({
       ? new Set(unlockedIds)
       : new Set<string>();
 
-    const raf = window.requestAnimationFrame(() => {
-      setSelectedId(firstUnlockedId);
-      setUnlockFocusNodeId(firstUnlockedId);
-      setNewlyUnlockedIds(nextUnlockedIds);
-      setSuppressedUnlockPointIds(nextSuppressedUnlockPointIds);
-    });
+    setSelectedId(firstUnlockedId);
+    setUnlockFocusNodeId(firstUnlockedId);
+    setNewlyUnlockedIds(nextUnlockedIds);
+    setSuppressedUnlockPointIds(nextSuppressedUnlockPointIds);
 
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedIds(new Set());
@@ -566,8 +564,6 @@ export function WritingBoardView({
     unlockFocusTimerRef.current = setTimeout(() => {
       setUnlockFocusNodeId(null);
     }, 2200);
-
-    return () => window.cancelAnimationFrame(raf);
   }, [
     items,
     loading,

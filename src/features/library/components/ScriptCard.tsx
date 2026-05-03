@@ -18,6 +18,8 @@ import { ScriptCardLayout } from "@/features/library/components/ScriptCardLayout
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import type { MasteryModuleId } from "@/features/mastery/types";
 import { useShakeFeedback } from "@/shared/hooks/useShakeFeedback";
+import { getUnlockVisualVars } from "@/shared/lib/unlockVisuals";
+import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
 
 const LOCKED_SHAKE_DURATION_MS = 580;
 const UNLOCK_HOLD_DURATION_MS = 720;
@@ -87,10 +89,11 @@ export function ScriptCard({
       } as const)[variant];
   const unlockCost = Math.max(0, unlockPoints ?? 0);
   const unlockBadgeText = variant === "kanji" ? (unlockCost > 0 ? `-${unlockCost}` : "0") : "+5";
-  const unlockSequenceDelay = animationsEnabled ? Math.min(index, 8) * 0.12 : 0;
+  const unlockSequenceDelay = 0;
   const pressUnlockEnabled =
     effectiveLocked && unlockReady && typeof onPressUnlock === "function";
   const showLockedShakeFeedback = effectiveLocked && !pressUnlockEnabled;
+  const unlockVisualVars = getUnlockVisualVars(isMastered ? "gold" : variant);
 
   // ── Long-press to toggle favourite on mobile ──────────────────────────────
   const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -221,9 +224,6 @@ export function ScriptCard({
     effectiveLocked
       ? [
           "items-center justify-center border border-border-default/70 bg-surface-tertiary p-4 dark:border-white/[0.05] dark:bg-[#1a181c]",
-          pressUnlockEnabled
-            ? "shadow-[0_0_0_1px_rgba(186,72,69,0.14),0_10px_28px_-14px_rgba(186,72,69,0.62)]"
-            : "",
           isInteractive
             ? `cursor-pointer focus:outline-none focus-visible:ring-2 ${config.ring}`
             : "cursor-default",
@@ -234,7 +234,7 @@ export function ScriptCard({
           config.shadowCard,
           config.shadowHover,
           onClick
-            ? `cursor-pointer hover:-translate-y-1 hover:border-transparent focus:outline-none focus-visible:ring-2 ${config.ring}`
+            ? `cursor-pointer hover:-translate-y-[1px] hover:border-accent/20 focus:outline-none focus-visible:ring-2 ${config.ring}`
             : "",
         ]
           .filter(Boolean)
@@ -286,6 +286,24 @@ export function ScriptCard({
     </AnimatePresence>
   );
 
+  const cardStyle = {
+    ...unlockVisualVars,
+    ...(pressUnlockEnabled
+      ? {
+          boxShadow: `0 0 0 1px rgba(${unlockColor.rgba},0.14), 0 10px 28px -14px rgba(${unlockColor.rgba},0.62)`,
+        }
+      : null),
+    WebkitTouchCallout: "none",
+    touchAction: pressUnlockEnabled ? "none" : undefined,
+  } as React.CSSProperties;
+  const unlockHoldOverlayStyle = {
+    background: `linear-gradient(135deg, rgba(${unlockColor.rgba},0.08), rgba(${unlockColor.rgba},0.18), rgba(255,255,255,0.04))`,
+  } as React.CSSProperties;
+  const unlockHoldBarStyle = {
+    backgroundImage: `linear-gradient(90deg, var(--gokai-unlock-from), var(--gokai-unlock-to), ${unlockColor.hex})`,
+    boxShadow: `0 0 16px rgba(${unlockColor.rgba},0.28)`,
+  } as React.CSSProperties;
+
   // ── Minimal locked layout (board-node style) ─────────────────────────────
   const lockedContent = effectiveLocked ? (
     <div className="relative z-10 flex flex-col items-center gap-3">
@@ -311,10 +329,7 @@ export function ScriptCard({
         </div>
       )}
       {/* Lock icon */}
-      <LockKeyhole
-        className="h-4 w-4 text-content-muted/50 dark:text-white/30"
-        strokeWidth={2}
-      />
+      <LockedStateBadge size="sm" />
     </div>
   ) : null;
 
@@ -429,18 +444,20 @@ export function ScriptCard({
       onTouchEnd={effectiveLocked ? undefined : cancelLongPress}
       onTouchMove={effectiveLocked ? undefined : cancelLongPress}
       onContextMenu={(e) => e.preventDefault()}
-      style={{ WebkitTouchCallout: "none", touchAction: pressUnlockEnabled ? "none" : undefined } as React.CSSProperties}
+      style={cardStyle}
       className={cardClassName}
     >
       {pressUnlockEnabled ? (
         <>
           <div
-            className={`pointer-events-none absolute inset-0 z-[1] rounded-[24px] bg-[linear-gradient(135deg,rgba(153,51,49,0.08),rgba(186,81,73,0.18),rgba(255,255,255,0.04))] transition-opacity duration-200 ${unlockHoldVisualActive ? "opacity-100" : "opacity-0"}`}
+            className={`pointer-events-none absolute inset-0 z-[1] rounded-[24px] transition-opacity duration-200 ${unlockHoldVisualActive ? "opacity-100" : "opacity-0"}`}
+            style={unlockHoldOverlayStyle}
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1.5 overflow-hidden rounded-b-[24px] bg-black/6 dark:bg-white/8">
             <div
-              className={`h-full origin-left rounded-full bg-gradient-to-r from-[#993331] via-[#C5544D] to-[#BA4845] shadow-[0_0_16px_rgba(153,51,49,0.28)] ${unlockPending ? "animate-pulse" : ""}`}
+              className={`h-full origin-left rounded-full ${unlockPending ? "animate-pulse" : ""}`}
               style={{
+                ...unlockHoldBarStyle,
                 transform: `scaleX(${unlockPending ? 1 : unlockHoldVisualActive ? 1 : 0})`,
                 transition: unlockPending
                   ? "transform 120ms ease-out"
@@ -467,18 +484,20 @@ export function ScriptCard({
       onTouchEnd={effectiveLocked ? undefined : cancelLongPress}
       onTouchMove={effectiveLocked ? undefined : cancelLongPress}
       onContextMenu={(e) => e.preventDefault()}
-      style={{ WebkitTouchCallout: "none", touchAction: pressUnlockEnabled ? "none" : undefined } as React.CSSProperties}
+      style={cardStyle}
       className={cardClassName}
     >
       {pressUnlockEnabled ? (
         <>
           <div
-            className={`pointer-events-none absolute inset-0 z-[1] rounded-[24px] bg-[linear-gradient(135deg,rgba(153,51,49,0.08),rgba(186,81,73,0.18),rgba(255,255,255,0.04))] transition-opacity duration-200 ${unlockHoldVisualActive ? "opacity-100" : "opacity-0"}`}
+            className={`pointer-events-none absolute inset-0 z-[1] rounded-[24px] transition-opacity duration-200 ${unlockHoldVisualActive ? "opacity-100" : "opacity-0"}`}
+            style={unlockHoldOverlayStyle}
           />
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1.5 overflow-hidden rounded-b-[24px] bg-black/6 dark:bg-white/8">
             <div
-              className={`h-full origin-left rounded-full bg-gradient-to-r from-[#993331] via-[#C5544D] to-[#BA4845] shadow-[0_0_16px_rgba(153,51,49,0.28)] ${unlockPending ? "animate-pulse" : ""}`}
+              className={`h-full origin-left rounded-full ${unlockPending ? "animate-pulse" : ""}`}
               style={{
+                ...unlockHoldBarStyle,
                 transform: `scaleX(${unlockPending ? 1 : unlockHoldVisualActive ? 1 : 0})`,
                 transition: unlockPending
                   ? "transform 120ms ease-out"

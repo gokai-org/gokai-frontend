@@ -1,9 +1,9 @@
 "use client";
 
-import { Suspense, useState, useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Sparkles,
@@ -17,7 +17,9 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { ThemeModeToggle } from "@/shared/components";
+import { ScreenTransitionOverlay } from "@/shared/ui";
 
 const PLAN_FEATURES = [
   {
@@ -55,7 +57,9 @@ const PLAN_FEATURES = [
 ];
 
 function CheckoutPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const platformMotion = usePlatformMotion();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -63,6 +67,11 @@ function CheckoutPageContent() {
   const [couponLoading, setCouponLoading] = useState(false);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponSuccess, setCouponSuccess] = useState<string | null>(null);
+  const [screenTransition, setScreenTransition] = useState<{
+    title: string;
+    description: string;
+  } | null>(null);
+  const transitionTimeoutRef = useRef<number | null>(null);
 
   const successPath = useMemo(() => {
     if (searchParams.get("flow") === "premium-onboarding") {
@@ -72,16 +81,69 @@ function CheckoutPageContent() {
     return "/checkout/success";
   }, [searchParams]);
 
+  const routeTransitionDelayMs = platformMotion.shouldAnimate
+    ? Math.max(170, Math.round(320 * platformMotion.durationScale))
+    : 0;
+  const hasCoupon = coupon.trim().length > 0;
+
   useEffect(() => {
     const t = setTimeout(() => setReady(true), 100);
     return () => clearTimeout(t);
   }, []);
 
+  useEffect(() => {
+    router.prefetch(successPath);
+    router.prefetch("/onboarding/interests");
+
+    return () => {
+      if (transitionTimeoutRef.current !== null) {
+        window.clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, [router, successPath]);
+
+  const runScreenTransition = ({
+    title,
+    description,
+    destination,
+    external = false,
+  }: {
+    title: string;
+    description: string;
+    destination: string;
+    external?: boolean;
+  }) => {
+    setScreenTransition({ title, description });
+
+    if (transitionTimeoutRef.current !== null) {
+      window.clearTimeout(transitionTimeoutRef.current);
+    }
+
+    const commitNavigation = () => {
+      if (external) {
+        window.location.assign(destination);
+        return;
+      }
+
+      router.replace(destination);
+    };
+
+    if (routeTransitionDelayMs === 0) {
+      commitNavigation();
+      return;
+    }
+
+    transitionTimeoutRef.current = window.setTimeout(
+      commitNavigation,
+      routeTransitionDelayMs,
+    );
+  };
+
   async function claimCoupon(
     code: string,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const response = await fetch("/api/subscription/claim", {
+      const response = await fetch("/api/subscriptions/claim", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
@@ -122,7 +184,11 @@ function CheckoutPageContent() {
     );
     setCoupon("");
     setCouponLoading(false);
-    window.location.href = successPath;
+    runScreenTransition({
+      title: "Activando GOKAI+",
+      description: "Preparando tu bienvenida premium y sincronizando tu cuenta.",
+      destination: successPath,
+    });
   }
 
   async function handleCheckout() {
@@ -138,12 +204,16 @@ function CheckoutPageContent() {
         setLoading(false);
         return;
       }
-      window.location.href = successPath;
+      runScreenTransition({
+        title: "Activando GOKAI+",
+        description: "Tu cupón fue aceptado. Estamos abriendo tu experiencia premium.",
+        destination: successPath,
+      });
       return;
     }
 
     try {
-      const res = await fetch("/api/subscription/subscribe", {
+      const res = await fetch("/api/subscriptions/subscribe", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -154,7 +224,12 @@ function CheckoutPageContent() {
       const data = await res.json();
 
       if (data.url) {
-        window.location.href = data.url;
+        runScreenTransition({
+          title: "Conectando con Stripe",
+          description: "Redirigiendo a la pasarela segura para completar tu suscripción.",
+          destination: data.url,
+          external: true,
+        });
         return;
       }
 
@@ -349,13 +424,13 @@ function CheckoutPageContent() {
 
                 <motion.button
                   type="button"
-                  disabled={loading}
+                  disabled={loading || couponLoading}
                   onClick={handleCheckout}
-                  whileHover={{ scale: loading ? 1 : 1.02 }}
-                  whileTap={{ scale: loading ? 1 : 0.98 }}
+                  whileHover={{ scale: loading || couponLoading ? 1 : 1.02 }}
+                  whileTap={{ scale: loading || couponLoading ? 1 : 0.98 }}
                   className="w-full rounded-xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-base font-bold text-content-inverted shadow-lg shadow-accent/20 transition-all hover:shadow-xl hover:shadow-accent/30 disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  {loading ? (
+                  {loading || couponLoading ? (
                     <span className="flex items-center justify-center gap-2">
                       <svg
                         className="h-5 w-5 animate-spin"
@@ -376,11 +451,11 @@ function CheckoutPageContent() {
                           d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                         />
                       </svg>
-                      Redirigiendo a Stripe...
+                      {hasCoupon ? "Activando GOKAI+..." : "Redirigiendo a Stripe..."}
                     </span>
                   ) : (
                     <span className="flex items-center justify-center gap-2">
-                      {coupon.trim()
+                      {hasCoupon
                         ? "Aplicar cupón y activar GOKAI+"
                         : "Suscribirme a GOKAI+"}
                     </span>
@@ -399,12 +474,19 @@ function CheckoutPageContent() {
                 </p>
 
                 <div className="border-t border-border-subtle pt-3 text-center">
-                  <a
-                    href="/onboarding/interests"
+                  <button
+                    type="button"
+                    onClick={() =>
+                      runScreenTransition({
+                        title: "Volviendo al onboarding",
+                        description: "Retomando tus primeros pasos con el plan gratuito.",
+                        destination: "/onboarding/interests",
+                      })
+                    }
                     className="text-sm font-medium text-content-muted transition hover:text-content-secondary"
                   >
                     Continuar con plan gratuito →
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -425,6 +507,12 @@ function CheckoutPageContent() {
           </motion.div>
         </motion.div>
       </div>
+
+      <ScreenTransitionOverlay
+        active={screenTransition !== null}
+        title={screenTransition?.title ?? ""}
+        description={screenTransition?.description}
+      />
     </main>
   );
 }

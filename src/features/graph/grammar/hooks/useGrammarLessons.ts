@@ -83,8 +83,14 @@ export function useGrammarLessons() {
   }, [optimisticPoints]);
 
   const fetch = useCallback(async () => {
-    setStatus("loading");
+    const hasBoardData = lessons.length > 0;
+
+    if (!hasBoardData) {
+      setStatus("loading");
+    }
+
     setError(null);
+
     try {
       const [data, user, nextProgress] = await Promise.all([
         listGrammarLessons(),
@@ -101,11 +107,20 @@ export function useGrammarLessons() {
       setStatus("success");
       void resolvedPoints;
     } catch (err) {
-      setLessons([]);
-      setError(err instanceof Error ? err.message : "Error desconocido");
-      setStatus("error");
+      const message = err instanceof Error ? err.message : "Error desconocido";
+
+      setError(message);
+
+      if (!hasBoardData) {
+        setLessons([]);
+        setStatus("error");
+        return;
+      }
+
+      // Keep the current board visible on background refresh failures.
+      setStatus("success");
     }
-  }, [resolveUserPoints]);
+  }, [lessons.length, resolveUserPoints]);
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {

@@ -642,13 +642,11 @@ export default function KanjisView() {
       ? new Set(unlockedIds)
       : new Set<string>();
 
-    const raf = requestAnimationFrame(() => {
-      setDetailNodeId(null);
-      setManualSelectedId(firstUnlockedId);
-      setUnlockFocusNodeId(firstUnlockedId);
-      setNewlyUnlockedIds(nextUnlockedIds);
-      setSuppressedUnlockPointIds(nextSuppressedUnlockPointIds);
-    });
+    setDetailNodeId(null);
+    setManualSelectedId(firstUnlockedId);
+    setUnlockFocusNodeId(firstUnlockedId);
+    setNewlyUnlockedIds(nextUnlockedIds);
+    setSuppressedUnlockPointIds(nextSuppressedUnlockPointIds);
 
     unlockAnimationTimerRef.current = setTimeout(() => {
       setNewlyUnlockedIds(new Set());
@@ -665,8 +663,6 @@ export default function KanjisView() {
     unlockFocusTimerRef.current = setTimeout(() => {
       setUnlockFocusNodeId(null);
     }, 2500);
-
-    return () => cancelAnimationFrame(raf);
   }, [items]);
 
   useEffect(() => {
