@@ -21,7 +21,7 @@ export default function ContentShell({
   const isLibrary = pathname === "/dashboard/library";
   const isReviews = pathname === "/dashboard/reviews";
   const isGraph = pathname.startsWith("/dashboard/graph");
-  const isGraphExplore = pathname === "/dashboard/graph";
+  const isVocabularyGraph = pathname === "/dashboard/graph";
   const isGrammarBoard = pathname === "/dashboard/graph/grammar";
   const isKanjiBoard =
     pathname === "/dashboard/graph/kanjis" ||
@@ -34,7 +34,7 @@ export default function ContentShell({
   const shouldShowMiniProfile =
     isChatbot ||
     isReviews ||
-    isGraphExplore ||
+    isVocabularyGraph ||
     isGrammarBoard ||
     isKanjiBoard ||
     (isLibrary && showLibraryMiniDock);

@@ -3,16 +3,14 @@ export { default as AnimatedGraphBackground } from "./components/AnimatedGraphBa
 export { default as GraphNavBar } from "./components/GraphNavBar";
 export * from "./lib/graphTypes";
 
-// Explore
-export { CustomEdge, CustomNode, LearningGraph, UserGraph } from "./explore";
+// Vocabulary
 export {
   createCustomGraph,
   generateConnections,
-  updateNodeStatus,
   GRAPH_CONFIG,
   NODE_TYPE_CONFIG,
   NODE_STATUS_CONFIG,
-} from "./explore";
+} from "./vocabulary";
 
 // Grammar
 export { GrammarView } from "./grammar";

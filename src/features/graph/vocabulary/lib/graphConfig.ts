@@ -27,9 +27,15 @@ export const GRAPH_CONFIG = {
     damping: 20,
   },
   layout: {
-    centerX: 400,
-    centerY: 300,
+    width: 960,
+    height: 760,
+    centerX: 480,
+    centerY: 320,
     radius: 250,
+    homeY: 128,
+    paddingX: 136,
+    paddingTop: 56,
+    paddingBottom: 136,
   },
 } as const;
 

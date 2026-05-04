@@ -14,8 +14,12 @@ export interface GraphNodeData {
   status: NodeStatus;
   icon: React.ReactNode;
 
-  entityKind?: "kanji" | "subtheme" | "grammar";
+  entityKind?: "kanji" | "theme" | "subtheme" | "word" | "grammar";
   entityId?: string;
+  graphId?: string;
+  recommendationId?: string;
+  similarity?: number;
+  isRecommendation?: boolean;
   symbol?: string;
 
   description?: string;
@@ -35,16 +39,15 @@ export type GraphEdge = Edge<GraphEdgeData> & {
   targetHandle?: string;
 };
 
-export interface LearningGraph {
-  nodes: GraphNode[];
-  edges: GraphEdge[];
-  userId: string;
-  progress: number;
-}
-
 export interface GraphLayoutConfig {
+  width: number;
+  height: number;
   centerX: number;
   centerY: number;
   radius: number;
+  homeY: number;
+  paddingX: number;
+  paddingTop: number;
+  paddingBottom: number;
   nodeSpacing?: number;
 }
