@@ -38,50 +38,50 @@ export const REGION_CONFIG: Record<
   }
 > = {
   hokkaido: {
-    label: "Hokkaido",
-    identity: "Naturaleza, nieve, clima y paisajes abiertos.",
-    themes: ["Clima y naturaleza", "Animales"],
+    label: "Hokkaidō",
+    identity: "Naturaleza, nieve, clima, paisajes abiertos y fauna",
+    themes: ["Clima y naturaleza"],
     color: regionColors.hokkaido,
   },
   tohoku: {
-    label: "Tohoku",
-    identity: "Tradicion, festivales, vida tranquila y estaciones.",
+    label: "Tōhoku",
+    identity: "Tradición, festivales, estaciones, calma y sensibilidad",
     themes: ["Fechas y horario", "Sentidos y emociones"],
     color: regionColors.tohoku,
   },
   kanto: {
-    label: "Kanto",
-    identity: "Tokio, ciudad, tecnologia, educacion y ritmo moderno.",
-    themes: ["Tecnologia", "Educacion", "Trabajo y negocios"],
+    label: "Kantō",
+    identity: "Tokio, ciudad, tecnología, educación, oficinas y ritmo moderno",
+    themes: ["Tecnología", "Educación", "Trabajo y negocios"],
     color: regionColors.kanto,
   },
   chubu: {
-    label: "Chubu",
-    identity: "Monte Fuji, montanas, trayectos y precision.",
-    themes: ["Numeros y cantidades", "Colores y apariencia"],
+    label: "Chūbu",
+    identity: "Monte Fuji, montañas, industria, precisión y descripción visual",
+    themes: ["Números y cantidades", "Colores y apariencia"],
     color: regionColors.chubu,
   },
   kansai: {
     label: "Kansai",
-    identity: "Osaka, Kyoto, Nara, comida, cultura cotidiana y convivencia.",
-    themes: ["Cocinar", "Vida diaria", "Interaccion social"],
+    identity: "Osaka, Kyoto, Nara, comida, convivencia y vida cotidiana",
+    themes: ["Cocinar", "Vida diaria", "Interacción social"],
     color: regionColors.kansai,
   },
   chugoku: {
-    label: "Chugoku",
-    identity: "Historia, rutas y paisajes culturales.",
+    label: "Chūgoku",
+    identity: "Historia, rutas culturales, paisajes y ocio",
     themes: ["Viajes y turismo", "Hobbies"],
     color: regionColors.chugoku,
   },
   shikoku: {
     label: "Shikoku",
-    identity: "Peregrinaje, calma, rutas espirituales y cuidado personal.",
+    identity: "Peregrinaje, calma, cuidado personal, salud y vínculos humanos",
     themes: ["Medicina y salud", "Familia y relaciones"],
     color: regionColors.shikoku,
   },
   kyushu: {
-    label: "Kyushu/Okinawa",
-    identity: "Playas, energia, cultura popular, deporte y estilo.",
+    label: "Kyūshū/Okinawa",
+    identity: "Playas, energía, cultura popular, movimiento y estilo",
     themes: ["Deportes", "Ropa y moda", "Anime y Manga"],
     color: regionColors.kyushu,
   },
@@ -122,16 +122,6 @@ function getThemeProgress(graph?: VocabularyGraphSummary) {
   return Math.min(100, Math.max(8, graph.nodesCount * 10));
 }
 
-export function getRegionIdForTheme(meaning?: string | null) {
-  const normalizedMeaning = normalizeVocabularyText(meaning);
-
-  return REGION_ORDER.find((regionId) =>
-    REGION_CONFIG[regionId].themes.some(
-      (theme) => normalizeVocabularyText(theme) === normalizedMeaning,
-    ),
-  ) ?? null;
-}
-
 export function buildVocabularyRegionViewModels(
   themeCatalog: VocabularyThemeContent[],
   graphs: VocabularyGraphSummary[],
@@ -140,28 +130,39 @@ export function buildVocabularyRegionViewModels(
     const config = REGION_CONFIG[regionId];
     const themes: VocabularyRegionThemeNode[] = config.themes.map((themeLabel) => {
       const theme = themeCatalog.find(
-        (item) => normalizeVocabularyText(item.meaning) === normalizeVocabularyText(themeLabel),
+        (item) =>
+          normalizeVocabularyText(item.meaning) ===
+          normalizeVocabularyText(themeLabel),
       );
       const graph = theme
         ? graphs.find((item) => item.themeId === theme.id)
-        : undefined;
+        : graphs.find(
+            (item) =>
+              normalizeVocabularyText(item.meaning) ===
+              normalizeVocabularyText(themeLabel),
+          );
       const status = !theme
-        ? "locked"
+        ? graph
+          ? "completed"
+          : "locked"
         : graph && graph.nodesCount > 0
           ? "completed"
           : "available";
 
       return {
-        id: theme?.id ?? `${regionId}-${normalizeVocabularyText(themeLabel)}`,
+        id:
+          theme?.id ??
+          graph?.themeId ??
+          `${regionId}-${normalizeVocabularyText(themeLabel)}`,
         regionId,
-        label: theme?.meaning ?? themeLabel,
-        themeId: theme?.id,
+        label: theme?.meaning ?? graph?.meaning ?? themeLabel,
+        themeId: theme?.id ?? graph?.themeId,
         graphId: graph?.graphId,
-        kanji: theme?.kanji,
-        kana: theme?.kana,
+        kanji: theme?.kanji ?? graph?.kanji,
+        kana: theme?.kana ?? graph?.kana,
         status,
         progress: getThemeProgress(graph),
-        isAvailable: Boolean(theme),
+        isAvailable: Boolean(theme || graph),
       };
     });
 

@@ -2,6 +2,7 @@ import { apiFetch, invalidateApiCache } from "@/shared/lib/api/client";
 import type {
   CreateVocabularyGraphResponse,
   SaveVocabularyNodeAnswerRequest,
+  SaveVocabularyNodeAnswerResponse,
   SelectVocabularySubthemeResponse,
   VocabularyGraphProgress,
   VocabularyGraphsResponse,
@@ -104,7 +105,7 @@ export async function saveVocabularyNodeAnswers(
   nodeId: string,
   payload: SaveVocabularyNodeAnswerRequest,
 ) {
-  const response = await apiFetch<{ success: boolean }>(
+  const response = await apiFetch<SaveVocabularyNodeAnswerResponse>(
     `/api/study/vocabulary/nodes/${nodeId}/answers`,
     {
       method: "POST",

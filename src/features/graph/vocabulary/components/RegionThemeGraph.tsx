@@ -13,6 +13,10 @@ import {
   buildRegionGraphCurve,
   toSvgPoint,
 } from "../lib/regionGraphLayout";
+import {
+  VocabularyGraphLabel,
+  VocabularyGraphVisualDefs,
+} from "./VocabularyGraphLabel";
 
 type RegionThemeGraphProps = {
   region: VocabularyRegionViewModel;
@@ -21,11 +25,14 @@ type RegionThemeGraphProps = {
   viewport: VocabularySvgViewport | null;
   actionPendingId: string | null;
   onThemeSelect: (theme: VocabularyRegionThemeNode) => void;
-  onBack: () => void;
 };
 
-const BACK_NODE_RADIUS = 3.9;
 const THEME_NODE_RADIUS = 3.05;
+const LABEL_OFFSET = 3.52;
+const LABEL_WIDTH = 8.2;
+const LABEL_HEIGHT = 1.68;
+const LABEL_RADIUS = 0.84;
+const LABEL_FONT_SIZE = 0.72;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -34,34 +41,34 @@ function clamp(value: number, min: number, max: number) {
 const NODE_LAYOUTS: Record<number, Array<{ x: number; y: number }>> = {
   1: [{ x: 0.5, y: 0.52 }],
   2: [
-    { x: 0.4, y: 0.42 },
-    { x: 0.62, y: 0.6 },
+    { x: 0.24, y: 0.3 },
+    { x: 0.76, y: 0.68 },
   ],
   3: [
-    { x: 0.38, y: 0.4 },
-    { x: 0.64, y: 0.42 },
-    { x: 0.5, y: 0.66 },
+    { x: 0.18, y: 0.22 },
+    { x: 0.84, y: 0.28 },
+    { x: 0.42, y: 0.78 },
   ],
   4: [
-    { x: 0.38, y: 0.38 },
-    { x: 0.63, y: 0.36 },
-    { x: 0.4, y: 0.64 },
-    { x: 0.63, y: 0.62 },
+    { x: 0.14, y: 0.18 },
+    { x: 0.86, y: 0.18 },
+    { x: 0.22, y: 0.8 },
+    { x: 0.8, y: 0.8 },
   ],
   5: [
-    { x: 0.34, y: 0.38 },
-    { x: 0.5, y: 0.3 },
-    { x: 0.68, y: 0.42 },
-    { x: 0.4, y: 0.66 },
-    { x: 0.62, y: 0.62 },
+    { x: 0.12, y: 0.26 },
+    { x: 0.5, y: 0.1 },
+    { x: 0.88, y: 0.28 },
+    { x: 0.2, y: 0.82 },
+    { x: 0.8, y: 0.82 },
   ],
   6: [
-    { x: 0.35, y: 0.36 },
-    { x: 0.5, y: 0.28 },
-    { x: 0.66, y: 0.38 },
-    { x: 0.36, y: 0.62 },
-    { x: 0.5, y: 0.7 },
-    { x: 0.65, y: 0.6 },
+    { x: 0.12, y: 0.22 },
+    { x: 0.5, y: 0.08 },
+    { x: 0.88, y: 0.22 },
+    { x: 0.16, y: 0.76 },
+    { x: 0.5, y: 0.9 },
+    { x: 0.84, y: 0.76 },
   ],
 };
 
@@ -70,16 +77,17 @@ function projectPoint(
   point: { x: number; y: number },
 ) {
   const labelPaddingX = Math.max(
-    4.8,
-    Math.min(10.5, regionBounds.width * 0.18),
+    3.2,
+    Math.min(6.6, regionBounds.width * 0.1),
   );
-  const labelPaddingY = Math.max(4.4, Math.min(10, regionBounds.height * 0.2));
-  const insetX = Math.max(labelPaddingX, regionBounds.width * 0.16);
-  const insetY = Math.max(labelPaddingY, regionBounds.height * 0.17);
+  const labelPaddingTop = Math.max(2.2, Math.min(4.8, regionBounds.height * 0.05));
+  const labelPaddingBottom = Math.max(4.6, Math.min(9.2, regionBounds.height * 0.14));
+  const insetX = Math.max(labelPaddingX, regionBounds.width * 0.07);
+  const insetY = Math.max(labelPaddingTop, regionBounds.height * 0.05);
   const minX = regionBounds.x + insetX;
   const maxX = regionBounds.x + regionBounds.width - insetX;
   const minY = regionBounds.y + insetY;
-  const maxY = regionBounds.y + regionBounds.height - insetY;
+  const maxY = regionBounds.y + regionBounds.height - labelPaddingBottom;
 
   return {
     x: clamp(
@@ -89,8 +97,8 @@ function projectPoint(
     ),
     y: clamp(
       minY + (maxY - minY) * point.y,
-      regionBounds.y + labelPaddingY,
-      regionBounds.y + regionBounds.height - labelPaddingY,
+      regionBounds.y + labelPaddingTop,
+      regionBounds.y + regionBounds.height - labelPaddingBottom,
     ),
   };
 }
@@ -124,8 +132,8 @@ function buildNodePositions(
     }
 
     const normalizedPoint = {
-      x: 0.2 + (0.6 / Math.max(columns - 1, 1)) * column,
-      y: rows === 1 ? 0.5 : 0.22 + (0.56 / Math.max(rows - 1, 1)) * row,
+      x: 0.12 + (0.76 / Math.max(columns - 1, 1)) * column,
+      y: rows === 1 ? 0.5 : 0.15 + (0.7 / Math.max(rows - 1, 1)) * row,
     };
 
     return projectPoint(regionBounds, normalizedPoint);
@@ -139,46 +147,68 @@ function getDistance(
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
+function shouldFallbackToExplicitLayout(
+  regionBounds: VocabularyRegionBounds | null,
+  points: VocabularyRegionNodePoint[] | null,
+  expectedCount: number,
+) {
+  if (!regionBounds || !points || points.length < expectedCount) {
+    return true;
+  }
+
+  let minPairDistance = Number.POSITIVE_INFINITY;
+  let minX = Number.POSITIVE_INFINITY;
+  let maxX = Number.NEGATIVE_INFINITY;
+
+  points.forEach((point, index) => {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+
+    points.slice(index + 1).forEach((candidate) => {
+      minPairDistance = Math.min(minPairDistance, getDistance(point, candidate));
+    });
+  });
+
+  const minRequiredGap = Math.max(Math.min(regionBounds.width, regionBounds.height) * 0.16, 6);
+  const minRequiredSpanX = expectedCount >= 3 ? Math.max(regionBounds.width * 0.22, 7) : 0;
+
+  return minPairDistance < minRequiredGap || maxX - minX < minRequiredSpanX;
+}
+
 function splitGraphPoints(
   regionBounds: VocabularyRegionBounds | null,
   nodePoints: VocabularyRegionNodePoint[] | null,
   themeCount: number,
 ) {
-  const fallbackPoints = buildNodePositions(regionBounds, themeCount + 1);
+  const fallbackPoints = buildNodePositions(regionBounds, themeCount);
+
+  if (regionBounds && NODE_LAYOUTS[themeCount]) {
+    return { themePoints: fallbackPoints };
+  }
+
   const center = regionBounds
     ? { x: regionBounds.centerX, y: regionBounds.centerY }
     : fallbackPoints[0];
-  const points =
-    nodePoints && nodePoints.length >= themeCount + 1
-      ? [...nodePoints]
-      : fallbackPoints;
-  let backIndex = 0;
-  let backDistance = Number.POSITIVE_INFINITY;
-
-  points.forEach((point, index) => {
-    const distance = getDistance(point, center);
-
-    if (distance < backDistance) {
-      backDistance = distance;
-      backIndex = index;
-    }
-  });
-
-  const backPoint = points[backIndex] ?? center;
+  const points = shouldFallbackToExplicitLayout(
+    regionBounds,
+    nodePoints,
+    themeCount,
+  )
+    ? fallbackPoints
+    : [...(nodePoints ?? fallbackPoints)];
   const themePoints = points
-    .filter((_, index) => index !== backIndex)
     .sort(
       (a, b) =>
-        Math.atan2(a.y - backPoint.y, a.x - backPoint.x) -
-        Math.atan2(b.y - backPoint.y, b.x - backPoint.x),
+        Math.atan2(a.y - center.y, a.x - center.x) -
+        Math.atan2(b.y - center.y, b.x - center.x),
     )
     .slice(0, themeCount);
 
   while (themePoints.length < themeCount) {
-    themePoints.push(fallbackPoints[themePoints.length + 1] ?? center);
+    themePoints.push(fallbackPoints[themePoints.length] ?? center);
   }
 
-  return { backPoint, themePoints };
+  return { themePoints };
 }
 
 function getThemeFill(theme: VocabularyRegionThemeNode) {
@@ -193,6 +223,13 @@ function getThemeFill(theme: VocabularyRegionThemeNode) {
   return "var(--accent)";
 }
 
+function formatThemeLabel(theme: VocabularyRegionThemeNode) {
+  const source = theme.label;
+  const trimmed = source.trim();
+
+  return trimmed.length > 12 ? `${trimmed.slice(0, 10)}...` : trimmed;
+}
+
 export default function RegionThemeGraph({
   region,
   regionBounds,
@@ -200,90 +237,75 @@ export default function RegionThemeGraph({
   viewport,
   actionPendingId,
   onThemeSelect,
-  onBack,
 }: RegionThemeGraphProps) {
   if (!viewport) {
     return null;
   }
 
-  const { backPoint, themePoints } = splitGraphPoints(
+  const { themePoints } = splitGraphPoints(
     regionBounds,
     nodePoints,
     region.themes.length,
   );
-  const backPosition = toSvgPoint(backPoint, viewport);
   const viewBox = `${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}`;
 
   return (
     <motion.svg
       initial={{ opacity: 0, scale: 0.98 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="region-graph-layer pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible"
+      className="region-graph-layer pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible [--vocabulary-edge-shadow:#2E26211F] [--vocabulary-edge-default:#6D625BA8] [--vocabulary-node-stroke:#2D251F30] [--vocabulary-label-fill:var(--surface-elevated)] [--vocabulary-label-border:var(--border-primary)] [--vocabulary-label-inner-border:rgba(255,255,255,0.55)] [--vocabulary-label-highlight:rgba(255,255,255,0.55)] [--vocabulary-label-text:var(--content-primary)] dark:[--vocabulary-edge-shadow:#00000036] dark:[--vocabulary-edge-default:#ECE4DD66] dark:[--vocabulary-node-stroke:#FFFFFF52] dark:[--vocabulary-label-fill:var(--surface-secondary)] dark:[--vocabulary-label-border:rgba(255,255,255,0.12)] dark:[--vocabulary-label-inner-border:rgba(255,255,255,0.04)] dark:[--vocabulary-label-highlight:rgba(255,255,255,0.04)] dark:[--vocabulary-label-text:#F5F0EB]"
       viewBox={viewBox}
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
     >
+      <VocabularyGraphVisualDefs idPrefix="vocabulary-theme" />
+
       {themePoints.map((point, index) => {
+        const nextPoint = themePoints[index + 1];
+
+        if (!nextPoint) {
+          return null;
+        }
+
         const position = toSvgPoint(point, viewport);
+        const nextPosition = toSvgPoint(nextPoint, viewport);
         const connection = buildNodeEdgeConnection(
-          backPosition,
           position,
-          BACK_NODE_RADIUS,
+          nextPosition,
+          THEME_NODE_RADIUS,
           THEME_NODE_RADIUS,
         );
+        const curve = buildRegionGraphCurve(connection.from, connection.to);
 
         return (
-          <motion.path
-            key={`region-theme-edge-${region.themes[index]?.id ?? index}`}
-            d={buildRegionGraphCurve(connection.from, connection.to)}
-            fill="none"
-            stroke="rgba(255,255,255,0.52)"
-            strokeWidth={0.9}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeOpacity={0.28}
-            vectorEffect="non-scaling-stroke"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-          />
+          <g key={`region-theme-edge-${region.themes[index]?.id ?? index}`}>
+            <motion.path
+              d={curve}
+              fill="none"
+              stroke="var(--vocabulary-edge-shadow)"
+              strokeWidth={1.72}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.92 }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <motion.path
+              d={curve}
+              fill="none"
+              stroke="var(--vocabulary-edge-default)"
+              strokeWidth={1}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.98 }}
+              transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </g>
         );
       })}
-
-      <g
-        data-vocabulary-node="true"
-        className="pointer-events-auto cursor-pointer"
-        transform={`translate(${backPosition.x} ${backPosition.y})`}
-        onClick={onBack}
-        aria-label="Regresar"
-      >
-        <motion.g
-          initial={{ opacity: 0, scale: 0.55 }}
-          animate={{ opacity: 1, scale: 1 }}
-          whileHover={{ scale: 1.14 }}
-          transition={{ type: "spring", stiffness: 300, damping: 22 }}
-          style={{ transformBox: "fill-box", transformOrigin: "center" }}
-        >
-          <circle
-            r={BACK_NODE_RADIUS}
-            fill="var(--accent-hover)"
-            stroke="rgba(255,255,255,0.42)"
-            strokeWidth={0.85}
-            vectorEffect="non-scaling-stroke"
-          />
-          <text
-            y={0.82}
-            textAnchor="middle"
-            dominantBaseline="middle"
-            fill="white"
-            fontSize={2.65}
-            fontWeight={900}
-            style={{ pointerEvents: "none" }}
-          >
-            戻
-          </text>
-        </motion.g>
-      </g>
 
       {region.themes.map((theme, index) => {
         const position = toSvgPoint(themePoints[index], viewport);
@@ -304,6 +326,16 @@ export default function RegionThemeGraph({
             onClick={() => onThemeSelect(theme)}
             aria-label={theme.label}
           >
+            <VocabularyGraphLabel
+              idPrefix="vocabulary-theme"
+              text={formatThemeLabel(theme)}
+              y={LABEL_OFFSET}
+              width={LABEL_WIDTH}
+              height={LABEL_HEIGHT}
+              radius={LABEL_RADIUS}
+              fontSize={LABEL_FONT_SIZE}
+            />
+
             <motion.g
               initial={{ opacity: 0, scale: 0.55 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -314,7 +346,7 @@ export default function RegionThemeGraph({
               <circle
                 r={THEME_NODE_RADIUS}
                 fill={getThemeFill(theme)}
-                stroke="rgba(255,255,255,0.32)"
+                stroke="var(--vocabulary-node-stroke)"
                 strokeWidth={0.8}
                 vectorEffect="non-scaling-stroke"
               />
@@ -332,17 +364,6 @@ export default function RegionThemeGraph({
                   2,
                 )}
               </text>
-              {pending ? (
-                <circle
-                  cx={2.35}
-                  cy={-2.35}
-                  r={0.95}
-                  fill="white"
-                  stroke="var(--accent)"
-                  strokeWidth={0.45}
-                  vectorEffect="non-scaling-stroke"
-                />
-              ) : null}
             </motion.g>
           </g>
         );

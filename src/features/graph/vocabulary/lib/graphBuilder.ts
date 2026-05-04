@@ -12,6 +12,7 @@ interface NodeDefinition {
   type: NodeType;
   label: string;
   status: NodeStatus;
+  description?: string;
 
   entityKind?: "kanji" | "theme" | "subtheme" | "word" | "grammar";
   entityId?: string;
@@ -99,8 +100,10 @@ function buildPositionedDefinitions(
   nodes: NodeDefinition[],
   layoutConfig: GraphLayoutConfig,
 ): PositionedNodeDefinition[] {
-  const homeNode = nodes.find((node) => node.type === "home") ?? nodes[0];
-  const childNodes = nodes.filter((node) => node.id !== homeNode?.id);
+  const homeNode = nodes.find((node) => node.type === "home");
+  const childNodes = homeNode
+    ? nodes.filter((node) => node.id !== homeNode.id)
+    : [...nodes];
   const rowCounts = getChildRowCounts(childNodes.length);
   const centerX = layoutConfig.centerX;
   const homeCenterY = clamp(
@@ -111,7 +114,9 @@ function buildPositionedDefinitions(
   const childLeft = layoutConfig.paddingX;
   const childRight = layoutConfig.width - layoutConfig.paddingX;
   const usableWidth = Math.max(childRight - childLeft, REGULAR_NODE_SIZE * 2);
-  const childTop = homeCenterY + HOME_NODE_SIZE / 2 + 88;
+  const childTop = homeNode
+    ? homeCenterY + HOME_NODE_SIZE / 2 + 88
+    : layoutConfig.paddingTop + REGULAR_NODE_SIZE / 2;
   const childBottom = layoutConfig.height - layoutConfig.paddingBottom;
   const usableHeight = Math.max(childBottom - childTop, REGULAR_NODE_SIZE * 2);
   const rows = Math.max(rowCounts.length, 1);
@@ -205,6 +210,8 @@ export function createCustomGraph(
       focusable: false,
       data: {
         label: node.label,
+        description: node.description,
+        displayLabel: node.description || node.label,
         type: node.type,
         status: node.status,
         icon: null,
@@ -298,9 +305,9 @@ export function generateConnections(
   nodes: NodeDefinition[],
 ): GraphConnection[] {
   const homeNode = nodes.find((n) => n.type === "home");
-  if (!homeNode) return [];
-
-  const childNodes = nodes.filter((node) => node.id !== homeNode.id);
+  const childNodes = homeNode
+    ? nodes.filter((node) => node.id !== homeNode.id)
+    : [...nodes];
   const rowCounts = getChildRowCounts(childNodes.length);
   const completionById = new Map(nodes.map((node) => [node.id, node.status === "completed"]));
   const rowGroups = rowCounts.map((count) => {
@@ -310,17 +317,19 @@ export function generateConnections(
   const connections: GraphConnection[] = [];
   const seenConnections = new Set<string>();
 
-  const firstRow = rowGroups[0] ?? [];
+  if (homeNode) {
+    const firstRow = rowGroups[0] ?? [];
 
-  firstRow.forEach((node) => {
-    pushConnection(
-      connections,
-      seenConnections,
-      homeNode.id,
-      node.id,
-      Boolean(completionById.get(homeNode.id) && completionById.get(node.id)),
-    );
-  });
+    firstRow.forEach((node) => {
+      pushConnection(
+        connections,
+        seenConnections,
+        homeNode.id,
+        node.id,
+        Boolean(completionById.get(homeNode.id) && completionById.get(node.id)),
+      );
+    });
+  }
 
   rowGroups.forEach((row, rowIndex) => {
     row.forEach((node, index) => {

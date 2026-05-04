@@ -103,34 +103,58 @@ function getRecommendationKey(recommendation: VocabularyRecommendation) {
     .join("|");
 }
 
+function compareProgressItems(
+  a: VocabularyGraphProgressItem,
+  b: VocabularyGraphProgressItem,
+) {
+  const timeA = a.selectedAt ? new Date(a.selectedAt).getTime() : Number.MAX_SAFE_INTEGER;
+  const timeB = b.selectedAt ? new Date(b.selectedAt).getTime() : Number.MAX_SAFE_INTEGER;
+
+  if (timeA !== timeB) {
+    return timeA - timeB;
+  }
+
+  return `${a.meaning}|${a.kanji}|${a.kana}`.localeCompare(
+    `${b.meaning}|${b.kanji}|${b.kana}`,
+    "es",
+    { sensitivity: "base" },
+  );
+}
+
+function compareRecommendations(
+  a: VocabularyRecommendation,
+  b: VocabularyRecommendation,
+) {
+  if (a.similarity !== b.similarity) {
+    return b.similarity - a.similarity;
+  }
+
+  return `${a.meaning || a.description}|${a.kanji || ""}|${a.kana || ""}`.localeCompare(
+    `${b.meaning || b.description}|${b.kanji || ""}|${b.kana || ""}`,
+    "es",
+    { sensitivity: "base" },
+  );
+}
+
 export function buildVocabularyThemeGraphElements(
   graph: VocabularyGraphSummary,
   items: VocabularyGraphProgressItem[],
   subthemeRecommendations: VocabularyRecommendation[],
 ) {
+  const sortedItems = [...items].sort(compareProgressItems);
   const selectedSubthemeKeys = new Set(
-    items.map((item) => getSubthemeProgressKey(item)),
+    sortedItems.map((item) => getSubthemeProgressKey(item)),
   );
-  const definitions: VocabularyNodeDefinition[] = [
-    {
-      id: "home",
-      type: "home",
-      label: graph.meaning,
-      status: "completed",
-      entityKind: "theme",
-      entityId: graph.themeId,
-      graphId: graph.graphId,
-      symbol: graph.kanji || graph.kana,
-    },
-  ];
+  const definitions: VocabularyNodeDefinition[] = [];
 
-  items.forEach((item) => {
+  sortedItems.forEach((item) => {
     const mastery = getVocabularyNodeMastery(item);
 
     definitions.push({
       id: item.nodeId,
       type: getNextNodeType(item),
       label: item.meaning,
+      description: item.meaning,
       status: getNodeStatus(item),
       entityKind: "subtheme",
       entityId: item.nodeId,
@@ -140,7 +164,8 @@ export function buildVocabularyThemeGraphElements(
     });
   });
 
-  subthemeRecommendations
+  [...subthemeRecommendations]
+    .sort(compareRecommendations)
     .filter(
       (recommendation) =>
         !selectedSubthemeKeys.has(getRecommendationKey(recommendation)),
@@ -149,8 +174,9 @@ export function buildVocabularyThemeGraphElements(
     .forEach((recommendation, index) => {
       definitions.push({
         id: `subtheme-rec-${recommendation.entityId}`,
-        type: pickNodeType(items.length + index),
+        type: pickNodeType(sortedItems.length + index),
         label: recommendation.meaning || recommendation.description,
+        description: recommendation.meaning || recommendation.description,
         status: "available",
         entityKind: "subtheme",
         entityId: recommendation.entityId,
@@ -183,27 +209,16 @@ export function buildVocabularySubthemeGraphElements(
     if (seenWordIds.has(word.wordId)) return false;
     seenWordIds.add(word.wordId);
     return true;
-  });
+  }).sort((a, b) => getWordLabel(a).localeCompare(getWordLabel(b), "es", { sensitivity: "base" }));
 
-  const definitions: VocabularyNodeDefinition[] = [
-    {
-      id: "home",
-      type: "home",
-      label: item.meaning,
-      status: "completed",
-      entityKind: "subtheme",
-      entityId: item.nodeId,
-      graphId: item.graphId,
-      symbol: item.kanji || item.kana,
-      progress: getVocabularyNodeMastery(item).average,
-    },
-  ];
+  const definitions: VocabularyNodeDefinition[] = [];
 
   uniqueWords.forEach((word, index) => {
     definitions.push({
       id: `word-${word.wordId}`,
       type: pickNodeType(index),
       label: getWordLabel(word),
+      description: getWordLabel(word),
       status: "available",
       entityKind: "word",
       entityId: word.wordId,

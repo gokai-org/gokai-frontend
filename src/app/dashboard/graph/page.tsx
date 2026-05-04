@@ -1,6 +1,12 @@
 "use client";
 
-import { AnimatePresence, animate, motion, useMotionValue } from "framer-motion";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValue,
+  useTransform,
+} from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GraphEdge, GraphNode } from "@/features/graph/lib/graphTypes";
 import JapanRegionMap from "@/features/graph/vocabulary/components/JapanRegionMap";
@@ -14,12 +20,12 @@ import {
 } from "@/features/graph/vocabulary/lib/vocabularyGraphBuilder";
 import {
   buildVocabularyRegionViewModels,
-  getRegionIdForTheme,
 } from "@/features/graph/vocabulary/lib/vocabularyRegions";
 import {
   getVocabularyQuiz,
   listVocabularyWordsBySubthemeId,
 } from "@/features/graph/vocabulary/services/api";
+import { useSidebar } from "@/shared/components/SidebarContext";
 import type {
   VocabularyGraphProgressItem,
   VocabularyRegionId,
@@ -74,6 +80,13 @@ function isNodeTarget(target: EventTarget | null) {
   return (
     target instanceof Element &&
     Boolean(target.closest("[data-vocabulary-node='true']"))
+  );
+}
+
+function isOverlayTarget(target: EventTarget | null) {
+  return (
+    target instanceof Element &&
+    Boolean(target.closest("[data-vocabulary-overlay='true']"))
   );
 }
 
@@ -219,6 +232,7 @@ function toWordLesson(
 }
 
 export default function Page() {
+  const { setHidden } = useSidebar();
   const sceneRef = useRef<HTMLDivElement | null>(null);
   const pointersRef = useRef(new Map<number, PointerPosition>());
   const dragRef = useRef<{
@@ -230,11 +244,14 @@ export default function Page() {
     null,
   );
   const suppressRegionClickRef = useRef(false);
+  const [sceneSize, setSceneSize] = useState({ width: 0, height: 0 });
 
   // Motion values: direct DOM updates during pan/zoom — no React re-renders
   const mvX = useMotionValue(0);
   const mvY = useMotionValue(0);
   const mvScale = useMotionValue(1);
+  const mvLayerWidth = useTransform(mvScale, (scale) => sceneSize.width * scale);
+  const mvLayerHeight = useTransform(mvScale, (scale) => sceneSize.height * scale);
 
   // Stable refs for values consumed in event handlers (no stale closures)
   const manualTransformRef = useRef<SceneTransform>({ scale: 1, x: 0, y: 0 });
@@ -248,7 +265,6 @@ export default function Page() {
   const [regionLayouts, setRegionLayouts] = useState<
     Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>
   >({});
-  const [sceneSize, setSceneSize] = useState({ width: 0, height: 0 });
   const [currentLevel, setCurrentLevel] = useState<VocabularyViewLevel>("map");
   const [selectedRegionId, setSelectedRegionId] =
     useState<VocabularyRegionId | null>(null);
@@ -293,6 +309,7 @@ export default function Page() {
     () => subthemeWords.find((word) => word.wordId === selectedWordId) ?? null,
     [selectedWordId, subthemeWords],
   );
+  const isLessonOpen = Boolean(selectedSubthemeItem && selectedWord);
   const activeRegionId = currentLevel === "map" ? null : selectedRegionId;
   const selectedRegion = useMemo(
     () => regions.find((region) => region.id === activeRegionId) ?? null,
@@ -312,6 +329,13 @@ export default function Page() {
         : { x: 0, y: 0, width: sceneSize.width, height: sceneSize.height },
     [mapViewport, sceneSize],
   );
+  const loadingRegionId = useMemo(() => {
+    if (!activeRegionId) {
+      return null;
+    }
+
+    return actionPendingId || subthemeWordsLoading ? activeRegionId : null;
+  }, [actionPendingId, activeRegionId, subthemeWordsLoading]);
 
   useEffect(() => {
     const element = sceneRef.current;
@@ -343,12 +367,19 @@ export default function Page() {
     }
 
     const fallbackRegionId =
-      selectedTheme?.regionId ?? getRegionIdForTheme(selectedGraph?.meaning);
+      selectedTheme?.regionId ??
+      regions.find(
+        (region) =>
+          region.themes.some(
+            (theme) => theme.themeId === selectedGraph?.themeId,
+          ),
+      )?.id ??
+      null;
 
     if (fallbackRegionId) {
       setSelectedRegionId(fallbackRegionId);
     }
-  }, [selectedGraph?.meaning, selectedRegionId, selectedTheme?.regionId]);
+  }, [regions, selectedGraph?.themeId, selectedRegionId, selectedTheme?.regionId]);
 
   useEffect(() => {
     if (currentLevel !== "subtheme" || !selectedSubthemeItem?.subthemeId) {
@@ -401,6 +432,14 @@ export default function Page() {
     dragRef.current = null;
     pinchRef.current = null;
   }, [activeRegionId, currentLevel]);
+
+  useEffect(() => {
+    setHidden(isLessonOpen);
+
+    return () => {
+      setHidden(false);
+    };
+  }, [isLessonOpen, setHidden]);
 
   const graphElements = useMemo(() => {
     if (currentLevel === "subtheme" && selectedSubthemeItem) {
@@ -466,18 +505,6 @@ export default function Page() {
 
   const handleNodeSelected = useCallback(
     async (node: GraphNode) => {
-      if (node.id === "home") {
-        if (currentLevel === "subtheme") {
-          setSelectedWordId(null);
-          setCurrentLevel("theme");
-        } else if (currentLevel === "theme") {
-          setSelectedSubthemeNodeId(null);
-          setSelectedWordId(null);
-          setCurrentLevel("region");
-        }
-        return;
-      }
-
       if (node.data.entityKind === "subtheme") {
         if (node.data.isRecommendation && node.data.entityId) {
           const nodeId = await addSubthemeToGraph(node.data.entityId);
@@ -690,6 +717,10 @@ export default function Page() {
   // Native wheel handler — registered with { passive: false } so preventDefault works
   const handleWheelNative = useCallback(
     (event: WheelEvent) => {
+      if (isOverlayTarget(event.target)) {
+        return;
+      }
+
       event.preventDefault();
 
       const rect = sceneRef.current?.getBoundingClientRect();
@@ -719,7 +750,7 @@ export default function Page() {
 
   const handlePointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
-      if (isNodeTarget(event.target)) {
+      if (isNodeTarget(event.target) || isOverlayTarget(event.target)) {
         return;
       }
 
@@ -758,6 +789,10 @@ export default function Page() {
 
   const handlePointerMove = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      if (isOverlayTarget(event.target)) {
+        return;
+      }
+
       if (!pointersRef.current.has(event.pointerId)) {
         return;
       }
@@ -822,6 +857,23 @@ export default function Page() {
 
   const handlePointerEnd = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
+      if (isOverlayTarget(event.target)) {
+        pointersRef.current.delete(event.pointerId);
+
+        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+          event.currentTarget.releasePointerCapture(event.pointerId);
+        }
+
+        if (pointersRef.current.size === 0) {
+          dragRef.current = null;
+          pinchRef.current = null;
+          isNavigatingRef.current = false;
+          if (sceneRef.current) sceneRef.current.style.cursor = "grab";
+        }
+
+        return;
+      }
+
       const currentDrag = dragRef.current;
       const selectedRegionFromTarget =
         !currentDrag?.dragged && pointersRef.current.size === 1
@@ -882,15 +934,17 @@ export default function Page() {
 
     const nodeCount =
       currentLevel === "region"
-        ? (selectedRegion?.themes.length ?? 0) + 1
+        ? (selectedRegion?.themes.length ?? 0)
         : regionGraph?.nodes.length;
 
     if (!nodeCount) {
       return undefined;
     }
 
+    const sampleCount = Math.min(Math.max(nodeCount * 6, 18), 56);
+
     return {
-      [activeRegionId]: nodeCount,
+      [activeRegionId]: sampleCount,
     };
   }, [
     activeRegionId,
@@ -903,13 +957,12 @@ export default function Page() {
     <div
       ref={sceneRef}
       data-help-target="graph-canvas"
-      className="absolute inset-0 h-full w-full overflow-hidden touch-none select-none z-0 cursor-grab"
+      className="absolute inset-0 z-0 h-full w-full cursor-grab overflow-hidden touch-none select-none bg-[#F3EFE9] dark:bg-[#0B0B0C]"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
       onPointerCancel={handlePointerEnd}
       style={{
-        background: "#0b0b0c",
         overscrollBehavior: "contain",
         userSelect: "none",
         WebkitUserSelect: "none",
@@ -928,13 +981,12 @@ export default function Page() {
         <>
           <motion.div
             data-map-transform-layer="true"
-            className="map-transform-layer absolute inset-0 z-10 bg-transparent"
+            className="map-transform-layer absolute left-0 top-0 z-10 bg-transparent"
             style={{
-              x: mvX,
-              y: mvY,
-              scale: mvScale,
-              transformOrigin: "0 0",
-              willChange: "transform",
+              left: mvX,
+              top: mvY,
+              width: mvLayerWidth,
+              height: mvLayerHeight,
               userSelect: "none",
               WebkitUserSelect: "none",
             }}
@@ -942,6 +994,7 @@ export default function Page() {
             <JapanRegionMap
               regions={regions}
               selectedRegionId={activeRegionId}
+              loadingRegionId={loadingRegionId}
               layoutCountsByRegion={layoutCountsByRegion}
               onRegionSelect={handleMapRegionSelect}
               onRegionHover={() => undefined}
@@ -956,7 +1009,6 @@ export default function Page() {
                 viewport={regionLayouts[selectedRegion.id]?.viewport ?? null}
                 actionPendingId={actionPendingId}
                 onThemeSelect={handleThemeSelected}
-                onBack={handleBack}
               />
             ) : null}
 
@@ -977,16 +1029,6 @@ export default function Page() {
               ) : null}
             </AnimatePresence>
           </motion.div>
-
-          {subthemeWordsLoading && (
-            <div
-              className="pointer-events-none absolute bottom-6 left-1/2 z-20 flex h-9 w-9 -translate-x-1/2 items-center justify-center rounded-full border border-border-subtle bg-surface-primary/90 shadow-lg backdrop-blur-md"
-              aria-label="Cargando palabras"
-            >
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
-            </div>
-          )}
-
           <VocabularyNodePanel
             item={selectedSubthemeItem}
             question={selectedWord}

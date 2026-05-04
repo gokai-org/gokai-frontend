@@ -188,6 +188,11 @@ export type SaveVocabularyNodeAnswerRequest = {
   answers: VocabularyWordAnswer[];
 };
 
+export type SaveVocabularyNodeAnswerResponse = {
+  success: boolean;
+  userPoints?: number;
+};
+
 export type VocabularyNodeMastery = {
   total: number;
   completedTypes: number;

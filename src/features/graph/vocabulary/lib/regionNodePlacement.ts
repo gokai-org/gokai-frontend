@@ -83,35 +83,124 @@ function isInsideRegion(shapes: SVGGeometryElement[], point: SvgSamplePoint) {
   return shapes.some((shape) => shape.isPointInFill(point));
 }
 
+function getRegionFootprint(box: DOMRect | SVGRect, count: number) {
+  const base = Math.min(box.width, box.height);
+
+  return {
+    x: clamp(base * (count <= 4 ? 0.1 : count <= 8 ? 0.088 : 0.078), 5.2, 11.5),
+    top: clamp(base * 0.058, 3.8, 7.4),
+    bottom: clamp(base * (count <= 4 ? 0.13 : count <= 8 ? 0.118 : 0.104), 6.2, 13.8),
+  };
+}
+
+function hasRegionFootprint(
+  shapes: SVGGeometryElement[],
+  point: SvgSamplePoint,
+  footprint: ReturnType<typeof getRegionFootprint>,
+) {
+  const checkpoints = [
+    { x: 0, y: 0 },
+    { x: footprint.x, y: 0 },
+    { x: -footprint.x, y: 0 },
+    { x: footprint.x * 0.72, y: -footprint.top },
+    { x: -footprint.x * 0.72, y: -footprint.top },
+    { x: 0, y: -footprint.top },
+    { x: footprint.x * 0.88, y: footprint.bottom * 0.62 },
+    { x: -footprint.x * 0.88, y: footprint.bottom * 0.62 },
+    { x: footprint.x * 0.4, y: footprint.bottom },
+    { x: -footprint.x * 0.4, y: footprint.bottom },
+    { x: 0, y: footprint.bottom },
+  ];
+
+  return checkpoints.every((checkpoint) =>
+    isInsideRegion(shapes, {
+      x: point.x + checkpoint.x,
+      y: point.y + checkpoint.y,
+    }),
+  );
+}
+
 function getCandidatePoints(shapes: SVGGeometryElement[], box: DOMRect | SVGRect, count: number) {
   const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-  const insetX = clamp(box.width * 0.14, 3, 22);
-  const insetY = clamp(box.height * 0.14, 3, 22);
-  const usableWidth = Math.max(box.width - insetX * 2, box.width * 0.3);
-  const usableHeight = Math.max(box.height - insetY * 2, box.height * 0.3);
+  const insetX = clamp(box.width * 0.2, 5, 28);
+  const insetY = clamp(box.height * 0.2, 5, 28);
+  const usableWidth = Math.max(box.width - insetX * 2, box.width * 0.2);
+  const usableHeight = Math.max(box.height - insetY * 2, box.height * 0.2);
   const attempts = Math.max(180, count * 90);
-  const candidates: SvgSamplePoint[] = [];
+  const footprint = getRegionFootprint(box, count);
+  const safeCandidates: SvgSamplePoint[] = [];
+  const insideCandidates: SvgSamplePoint[] = [];
 
   if (isInsideRegion(shapes, center)) {
-    candidates.push(center);
+    insideCandidates.push(center);
+
+    if (hasRegionFootprint(shapes, center, footprint)) {
+      safeCandidates.push(center);
+    }
   }
 
-  for (let index = 1; index <= attempts * 3 && candidates.length < attempts; index += 1) {
+  for (let index = 1; index <= attempts * 3 && insideCandidates.length < attempts; index += 1) {
     const point = {
       x: box.x + insetX + usableWidth * halton(index, 2),
       y: box.y + insetY + usableHeight * halton(index, 3),
     };
 
     if (isInsideRegion(shapes, point)) {
-      candidates.push(point);
+      insideCandidates.push(point);
+
+      if (hasRegionFootprint(shapes, point, footprint)) {
+        safeCandidates.push(point);
+      }
     }
   }
 
-  return candidates;
+  if (safeCandidates.length >= count) {
+    return safeCandidates;
+  }
+
+  return [...safeCandidates, ...insideCandidates].filter(
+    (candidate, index, collection) =>
+      collection.findIndex(
+        (point) => getDistance(point, candidate) < 0.001,
+      ) === index,
+  );
 }
 
 function getDistance(a: SvgSamplePoint, b: SvgSamplePoint) {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function buildAnchorPoints(box: DOMRect | SVGRect, count: number) {
+  if (count <= 0) {
+    return [];
+  }
+
+  const center = {
+    x: box.x + box.width / 2,
+    y: box.y + box.height / 2,
+  };
+
+  if (count === 1) {
+    return [center];
+  }
+
+  const aspectRatio = box.width / Math.max(box.height, 1);
+  const radiusX = aspectRatio < 0.78 ? 0.16 : aspectRatio > 1.28 ? 0.3 : 0.24;
+  const radiusY = aspectRatio < 0.78 ? 0.34 : aspectRatio > 1.28 ? 0.2 : 0.27;
+  const orbitCount = count - 1;
+  const startAngle = aspectRatio < 0.78 ? -Math.PI / 2 : -Math.PI * 0.66;
+
+  return [
+    center,
+    ...Array.from({ length: orbitCount }).map((_, index) => {
+      const angle = startAngle + (Math.PI * 2 * index) / orbitCount;
+
+      return {
+        x: box.x + box.width * (0.5 + Math.cos(angle) * radiusX),
+        y: box.y + box.height * (0.5 + Math.sin(angle) * radiusY),
+      };
+    }),
+  ];
 }
 
 function getCenterBias(point: SvgSamplePoint, box: DOMRect | SVGRect) {
@@ -143,25 +232,13 @@ function selectNaturalPoints(candidates: SvgSamplePoint[], box: DOMRect | SVGRec
     return candidates.slice(0, count);
   }
 
+  const anchors = buildAnchorPoints(box, count);
   const selected: SvgSamplePoint[] = [];
   const remaining = [...candidates];
   const boxScale = Math.max(box.width, box.height);
 
-  let firstIndex = 0;
-  let firstScore = -Infinity;
-
-  remaining.forEach((candidate, index) => {
-    const score = getCenterBias(candidate, box) * boxScale + getEdgeBias(candidate, box) * boxScale * 0.42;
-
-    if (score > firstScore) {
-      firstScore = score;
-      firstIndex = index;
-    }
-  });
-
-  selected.push(remaining.splice(firstIndex, 1)[0]);
-
   while (selected.length < count && remaining.length > 0) {
+    const anchor = anchors[selected.length] ?? anchors[anchors.length - 1];
     let bestIndex = 0;
     let bestScore = -Infinity;
 
@@ -170,10 +247,19 @@ function selectNaturalPoints(candidates: SvgSamplePoint[], box: DOMRect | SVGRec
         (distance, point) => Math.min(distance, getDistance(candidate, point)),
         Number.POSITIVE_INFINITY,
       );
+      const anchorDistance = anchor
+        ? getDistance(candidate, anchor)
+        : getDistance(candidate, {
+            x: box.x + box.width / 2,
+            y: box.y + box.height / 2,
+          });
       const score =
-        nearestDistance +
-        getCenterBias(candidate, box) * boxScale * 0.26 +
-        getEdgeBias(candidate, box) * boxScale * 0.22;
+        (Number.isFinite(nearestDistance) ? nearestDistance : boxScale * 0.35) *
+          (selected.length === 0 ? 0.28 : 0.72) +
+        getCenterBias(candidate, box) * boxScale *
+          (selected.length === 0 ? 0.72 : 0.18) +
+        getEdgeBias(candidate, box) * boxScale * 0.22 -
+        anchorDistance * 1.08;
 
       if (score > bestScore) {
         bestScore = score;
@@ -192,12 +278,7 @@ function getFallbackPoints(box: DOMRect | SVGRect, count: number) {
     return [];
   }
 
-  return Array.from({ length: count }).map((_, index) => {
-    const x = box.x + box.width * (0.28 + ((index % 3) / Math.max(Math.min(count, 3) - 1, 1)) * 0.44);
-    const y = box.y + box.height * (0.32 + (Math.floor(index / 3) / Math.max(Math.ceil(count / 3) - 1, 1)) * 0.36);
-
-    return { x, y };
-  });
+  return buildAnchorPoints(box, count);
 }
 
 export function buildRegionLayout(

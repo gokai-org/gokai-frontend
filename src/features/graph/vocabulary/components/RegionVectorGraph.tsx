@@ -16,6 +16,10 @@ import {
   buildRegionGraphCurve,
   buildRegionGraphLayout,
 } from "../lib/regionGraphLayout";
+import {
+  VocabularyGraphLabel,
+  VocabularyGraphVisualDefs,
+} from "./VocabularyGraphLabel";
 
 type RegionVectorGraphProps = {
   nodes: FlowGraphNode[];
@@ -35,6 +39,20 @@ function getSymbol(node: FlowGraphNode) {
   return node.data.symbol || node.data.label.slice(0, 1);
 }
 
+function getNodeLabel(node: FlowGraphNode) {
+  if (node.id === "home") {
+    return "Inicio";
+  }
+
+  return node.data.displayLabel || node.data.description || node.data.label;
+}
+
+function formatNodeLabel(value: string) {
+  const trimmed = value.trim();
+
+  return trimmed.length > 12 ? `${trimmed.slice(0, 10)}...` : trimmed;
+}
+
 function getVisualScale(
   level: Extract<VocabularyViewLevel, "theme" | "subtheme">,
 ) {
@@ -45,10 +63,13 @@ function getVisualScale(
       homeFontSize: 2.45,
       nodeFontSize: 1.9,
       textOffset: 0.62,
-      edgeWidth: 0.82,
-      completedEdgeWidth: 1.05,
-      badgeRadius: 0.82,
-      badgeOffset: 2.08,
+      edgeWidth: 0.94,
+      completedEdgeWidth: 1.08,
+      labelOffset: 3.28,
+      labelWidth: 7.7,
+      labelHeight: 1.56,
+      labelFontSize: 0.68,
+      labelRadius: 0.78,
     };
   }
 
@@ -58,10 +79,13 @@ function getVisualScale(
     homeFontSize: 2.72,
     nodeFontSize: 2.12,
     textOffset: 0.7,
-    edgeWidth: 0.96,
-    completedEdgeWidth: 1.18,
-    badgeRadius: 0.92,
-    badgeOffset: 2.35,
+    edgeWidth: 1,
+    completedEdgeWidth: 1.12,
+    labelOffset: 3.52,
+    labelWidth: 8.2,
+    labelHeight: 1.68,
+    labelFontSize: 0.72,
+    labelRadius: 0.84,
   };
 }
 
@@ -119,92 +143,118 @@ export default function RegionVectorGraph({
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.98 }}
       transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-      className="region-graph-layer pointer-events-none absolute inset-0 z-30 h-full w-full overflow-visible"
+      className="region-graph-layer pointer-events-none absolute inset-0 z-30 h-full w-full overflow-visible [--vocabulary-edge-shadow:#2E26211F] [--vocabulary-edge-shadow-completed:#A73D3730] [--vocabulary-edge-default:#6D625BA8] [--vocabulary-edge-completed:#B54842E0] [--vocabulary-node-stroke:#2D251F30] [--vocabulary-label-fill:var(--surface-elevated)] [--vocabulary-label-border:var(--border-primary)] [--vocabulary-label-inner-border:rgba(255,255,255,0.55)] [--vocabulary-label-highlight:rgba(255,255,255,0.55)] [--vocabulary-label-text:var(--content-primary)] dark:[--vocabulary-edge-shadow:#00000036] dark:[--vocabulary-edge-shadow-completed:#A33C363A] dark:[--vocabulary-edge-default:#ECE4DD66] dark:[--vocabulary-edge-completed:#D9625CDE] dark:[--vocabulary-node-stroke:#FFFFFF52] dark:[--vocabulary-label-fill:var(--surface-secondary)] dark:[--vocabulary-label-border:rgba(255,255,255,0.12)] dark:[--vocabulary-label-inner-border:rgba(255,255,255,0.04)] dark:[--vocabulary-label-highlight:rgba(255,255,255,0.04)] dark:[--vocabulary-label-text:#F5F0EB]"
       viewBox={viewBox}
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
     >
+      <VocabularyGraphVisualDefs idPrefix="vocabulary-vector" />
+
       {layout.edges.map(({ edge, from, to }) => {
         const completed = edge.data?.status === "completed";
+        const curve = buildRegionGraphCurve(from, to);
 
         return (
-          <motion.path
-            key={edge.id}
-            d={buildRegionGraphCurve(from, to)}
-            fill="none"
-            stroke={completed ? "var(--accent)" : "rgba(255,255,255,0.56)"}
-            strokeWidth={
-              completed ? visualScale.completedEdgeWidth : visualScale.edgeWidth
-            }
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeOpacity={completed ? 0.54 : 0.24}
-            vectorEffect="non-scaling-stroke"
-            initial={{ pathLength: 0, opacity: 0 }}
-            animate={{ pathLength: 1, opacity: 1 }}
-            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-          />
+          <g key={edge.id}>
+            <motion.path
+              d={curve}
+              fill="none"
+              stroke={
+                completed
+                  ? "var(--vocabulary-edge-shadow-completed)"
+                  : "var(--vocabulary-edge-shadow)"
+              }
+              strokeWidth={(completed ? visualScale.completedEdgeWidth : visualScale.edgeWidth) + 0.72}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.92 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            />
+            <motion.path
+              d={curve}
+              fill="none"
+              stroke={
+                completed
+                  ? "var(--vocabulary-edge-completed)"
+                  : "var(--vocabulary-edge-default)"
+              }
+              strokeWidth={
+                completed ? visualScale.completedEdgeWidth : visualScale.edgeWidth
+              }
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              initial={{ pathLength: 0, opacity: 0 }}
+              animate={{ pathLength: 1, opacity: 0.98 }}
+              transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            />
+          </g>
         );
       })}
 
-      {layout.nodes.map(({ node, x, y }) => (
-        <g
-          key={node.id}
-          data-vocabulary-node="true"
-          className={
-            node.data.status === "locked"
-              ? "cursor-default"
-              : "pointer-events-auto cursor-pointer"
-          }
-          transform={`translate(${x} ${y})`}
-          onClick={() => onNodeSelected(node)}
-          aria-label={node.data.label}
-        >
-          <motion.g
-            initial={{ opacity: 0, scale: 0.55 }}
-            animate={{ opacity: 1, scale: 1 }}
-            whileHover={
-              node.data.status === "locked" ? undefined : { scale: 1.18 }
+      {layout.nodes.map(({ node, x, y }) => {
+        const label = formatNodeLabel(getNodeLabel(node));
+
+        return (
+          <g
+            key={node.id}
+            data-vocabulary-node="true"
+            className={
+              node.data.status === "locked"
+                ? "cursor-default"
+                : "pointer-events-auto cursor-pointer"
             }
-            transition={{ type: "spring", stiffness: 300, damping: 22 }}
-            style={{ transformBox: "fill-box", transformOrigin: "center" }}
+            transform={`translate(${x} ${y})`}
+            onClick={() => onNodeSelected(node)}
+            aria-label={node.data.label}
           >
-            <circle
-              r={getNodeRadius(node, visualScale)}
-              fill={getNodeFill(node)}
-              stroke="rgba(255,255,255,0.32)"
-              strokeWidth={node.id === "home" ? 0.82 : 0.72}
-              vectorEffect="non-scaling-stroke"
+            <VocabularyGraphLabel
+              idPrefix="vocabulary-vector"
+              text={label}
+              y={visualScale.labelOffset}
+              width={visualScale.labelWidth}
+              height={visualScale.labelHeight}
+              radius={visualScale.labelRadius}
+              fontSize={visualScale.labelFontSize}
             />
-            <text
-              y={visualScale.textOffset}
-              textAnchor="middle"
-              dominantBaseline="middle"
-              fill="white"
-              fontSize={
-                node.id === "home"
-                  ? visualScale.homeFontSize
-                  : visualScale.nodeFontSize
+
+            <motion.g
+              initial={{ opacity: 0, scale: 0.55 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileHover={
+                node.data.status === "locked" ? undefined : { scale: 1.18 }
               }
-              fontWeight={900}
-              style={{ pointerEvents: "none" }}
+              transition={{ type: "spring", stiffness: 300, damping: 22 }}
+              style={{ transformBox: "fill-box", transformOrigin: "center" }}
             >
-              {getSymbol(node).slice(0, 2)}
-            </text>
-            {node.data.isRecommendation ? (
               <circle
-                cx={visualScale.badgeOffset}
-                cy={-visualScale.badgeOffset}
-                r={visualScale.badgeRadius}
-                fill="white"
-                stroke="var(--accent)"
-                strokeWidth={0.4}
+                r={getNodeRadius(node, visualScale)}
+                fill={getNodeFill(node)}
+                stroke="var(--vocabulary-node-stroke)"
+                strokeWidth={node.id === "home" ? 0.82 : 0.72}
                 vectorEffect="non-scaling-stroke"
               />
-            ) : null}
-          </motion.g>
-        </g>
-      ))}
+              <text
+                y={visualScale.textOffset}
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="white"
+                fontSize={
+                  node.id === "home"
+                    ? visualScale.homeFontSize
+                    : visualScale.nodeFontSize
+                }
+                fontWeight={900}
+                style={{ pointerEvents: "none" }}
+              >
+                {getSymbol(node).slice(0, 2)}
+              </text>
+            </motion.g>
+          </g>
+        );
+      })}
     </motion.svg>
   );
 }

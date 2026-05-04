@@ -23,6 +23,7 @@ export interface GraphNodeData {
   symbol?: string;
 
   description?: string;
+  displayLabel?: string;
   progress?: number;
   userId?: string;
 }

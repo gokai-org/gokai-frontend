@@ -97,6 +97,7 @@ export default function VocabularyNodePanel({
       {item && question && mastery && (
         <>
           <motion.button
+            data-vocabulary-overlay="true"
             aria-label="Cerrar"
             onClick={onClose}
             className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[1px]"
@@ -108,12 +109,16 @@ export default function VocabularyNodePanel({
 
           <div className={wrapperClasses}>
             <motion.aside
+              data-vocabulary-overlay="true"
               data-help-target="lesson-drawer"
               className={asideClasses}
               initial={initialAnimation}
               animate={quizOpen ? initialAnimation : visibleAnimation}
               exit={initialAnimation}
               transition={{ type: "spring", stiffness: 260, damping: 26 }}
+              onWheelCapture={(event) => event.stopPropagation()}
+              onPointerDownCapture={(event) => event.stopPropagation()}
+              onPointerMoveCapture={(event) => event.stopPropagation()}
               style={{
                 ...desktopAsideStyle,
                 ...(quizOpen ? { pointerEvents: "none" as const } : {}),

@@ -1,4 +1,5 @@
 import type { GraphEdge, GraphNode } from "@/features/graph/lib/graphTypes";
+import { GRAPH_CONFIG } from "./graphConfig";
 import type {
   VocabularyRegionBounds,
   VocabularyRegionNodePoint,
@@ -26,21 +27,29 @@ export type RegionGraphLayout = {
 export type RegionGraphNodeRadiusResolver = (node: GraphNode) => number;
 
 const DEFAULT_NODE_RADIUS = 2.8;
-const EDGE_NODE_GAP = 0.45;
+const EDGE_NODE_GAP = 0.08;
+const BOARD_HOME_NODE_SIZE = 112;
+const BOARD_REGULAR_NODE_SIZE = 80;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-function distanceToBoundsCenter(
-  point: VocabularyRegionNodePoint,
-  bounds: VocabularyRegionBounds,
-) {
-  return Math.hypot(point.x - bounds.centerX, point.y - bounds.centerY);
-}
-
 function distance(a: VocabularyRegionNodePoint, b: VocabularyRegionNodePoint) {
   return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function getSafeBoundsPadding(
+  bounds: VocabularyRegionBounds,
+  total: number,
+) {
+  const density = clamp((total - 1) / 10, 0, 1);
+
+  return {
+    side: Math.max(bounds.width * (0.055 + density * 0.01), 2.6),
+    top: Math.max(bounds.height * 0.05, 1.9),
+    bottom: Math.max(bounds.height * (0.11 + density * 0.025), 4.1),
+  };
 }
 
 export function buildNodeEdgeConnection(
@@ -93,16 +102,15 @@ function getFallbackPoint(
     return { x: bounds.centerX, y: bounds.centerY };
   }
 
-  const columns = total <= 4 ? 2 : total <= 9 ? 3 : 4;
+  const columns = total <= 4 ? 2 : total <= 8 ? 3 : total <= 14 ? 4 : 5;
   const rows = Math.ceil(total / columns);
   const column = index % columns;
   const row = Math.floor(index / columns);
-  const insetX = Math.max(bounds.width * 0.22, 2.4);
-  const insetY = Math.max(bounds.height * 0.22, 2.4);
-  const minX = bounds.x + insetX;
-  const maxX = bounds.x + bounds.width - insetX;
-  const minY = bounds.y + insetY;
-  const maxY = bounds.y + bounds.height - insetY;
+  const padding = getSafeBoundsPadding(bounds, total);
+  const minX = bounds.x + padding.side;
+  const maxX = bounds.x + bounds.width - padding.side;
+  const minY = bounds.y + padding.top;
+  const maxY = bounds.y + bounds.height - padding.bottom;
 
   return {
     x: clamp(
@@ -120,71 +128,162 @@ function getFallbackPoint(
   };
 }
 
+function getBoardNodeSize(node: GraphNode) {
+  return node.id === "home" || node.data.type === "home"
+    ? BOARD_HOME_NODE_SIZE
+    : BOARD_REGULAR_NODE_SIZE;
+}
+
+function buildPreferredRegionPoint(
+  node: GraphNode,
+  bounds: VocabularyRegionBounds,
+  totalNodes: number,
+): VocabularyRegionNodePoint {
+  const boardNodeSize = getBoardNodeSize(node);
+  const boardMaxX = Math.max(GRAPH_CONFIG.layout.width - boardNodeSize, 1);
+  const boardMaxY = Math.max(GRAPH_CONFIG.layout.height - boardNodeSize, 1);
+  const normalizedX = clamp(node.position.x / boardMaxX, 0, 1);
+  const normalizedY = clamp(node.position.y / boardMaxY, 0, 1);
+  const aspectRatio = bounds.width / Math.max(bounds.height, 1);
+  const density = clamp((totalNodes - 1) / 8, 0, 1);
+  const spreadX = clamp(
+    (aspectRatio < 0.78 ? 0.72 : aspectRatio > 1.28 ? 0.96 : 0.88) +
+      density * 0.04,
+    0.68,
+    0.98,
+  );
+  const spreadY = clamp(
+    (aspectRatio < 0.78 ? 0.96 : aspectRatio > 1.28 ? 0.72 : 0.88) +
+      density * 0.04,
+    0.68,
+    0.98,
+  );
+  const compactX =
+    node.id === "home"
+      ? 0.5 + (normalizedX - 0.5) * Math.min(spreadX, 0.4)
+      : 0.5 + (normalizedX - 0.5) * spreadX;
+  const compactY =
+    node.id === "home"
+      ? 0.34 + (normalizedY - 0.18) * Math.min(spreadY, 0.42)
+      : 0.5 + (normalizedY - 0.5) * spreadY;
+  const padding = getSafeBoundsPadding(bounds, totalNodes);
+  const minX = bounds.x + padding.side;
+  const maxX = bounds.x + bounds.width - padding.side;
+  const minY = bounds.y + padding.top;
+  const maxY = bounds.y + bounds.height - padding.bottom;
+
+  return {
+    x: clamp(
+      minX + (maxX - minX) * compactX,
+      bounds.x + 1.8,
+      bounds.x + bounds.width - 1.8,
+    ),
+    y: clamp(
+      minY + (maxY - minY) * compactY,
+      bounds.y + 1.8,
+      bounds.y + bounds.height - 1.8,
+    ),
+  };
+}
+
+function getUniquePoints(points: VocabularyRegionNodePoint[]) {
+  return points.filter(
+    (point, index, collection) =>
+      collection.findIndex((candidate) => distance(candidate, point) < 0.001) ===
+      index,
+  );
+}
+
+function buildCandidatePointPool(
+  bounds: VocabularyRegionBounds,
+  nodePoints: VocabularyRegionNodePoint[] | null,
+  total: number,
+) {
+  const providedPoints = getUniquePoints([...(nodePoints ?? [])]);
+
+  if (providedPoints.length >= total) {
+    return providedPoints;
+  }
+
+  const fallbackPoints = Array.from({ length: total }).map((_, index) =>
+    getFallbackPoint(bounds, index, total),
+  );
+
+  return getUniquePoints([...providedPoints, ...fallbackPoints]);
+}
+
 function getOrderedPoints(
   nodes: GraphNode[],
   bounds: VocabularyRegionBounds,
   nodePoints: VocabularyRegionNodePoint[] | null,
 ) {
-  const availablePoints = [...(nodePoints ?? [])];
-  const orderedPoints: VocabularyRegionNodePoint[] = [];
-  const homeIndex = nodes.findIndex((node) => node.id === "home");
-  const boundsCenter = { x: bounds.centerX, y: bounds.centerY };
-
-  if (homeIndex >= 0 && availablePoints.length > 0) {
-    let bestPointIndex = 0;
-    let bestDistance = Number.POSITIVE_INFINITY;
-
-    availablePoints.forEach((point, index) => {
-      const distance = distanceToBoundsCenter(point, bounds);
-
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        bestPointIndex = index;
-      }
-    });
-
-    orderedPoints[homeIndex] = availablePoints.splice(bestPointIndex, 1)[0];
-  }
-
-  const graphCenter = orderedPoints[homeIndex] ?? boundsCenter;
-  const childNodes = nodes
-    .map((node, index) => ({ node, index }))
-    .filter(({ index }) => index !== homeIndex);
-  const childFallbackPoints = childNodes.map((_, index) =>
-    getFallbackPoint(bounds, index + 1, nodes.length),
+  const candidatePool = buildCandidatePointPool(bounds, nodePoints, nodes.length);
+  const preferredPoints = nodes.map((node) =>
+    buildPreferredRegionPoint(node, bounds, nodes.length),
   );
-  const childPoints = [...availablePoints, ...childFallbackPoints]
-    .filter(
-      (point, index, points) =>
-        points.findIndex((candidate) => distance(candidate, point) < 0.001) ===
-        index,
-    )
-    .sort((a, b) => {
-      const angleA = Math.atan2(a.y - graphCenter.y, a.x - graphCenter.x);
-      const angleB = Math.atan2(b.y - graphCenter.y, b.x - graphCenter.x);
+  const orderedPoints: VocabularyRegionNodePoint[] = Array.from({ length: nodes.length });
+  const remainingCandidates = [...candidatePool];
+  const assignedPoints: VocabularyRegionNodePoint[] = [];
+  const desiredSpacing = Math.max(
+    Math.min(bounds.width, bounds.height) * 0.18,
+    nodes.length <= 6 ? 7.4 : 6.2,
+  );
+  const nodeAssignmentOrder = nodes
+    .map((node, index) => ({
+      index,
+      node,
+      target: preferredPoints[index],
+      priority:
+        node.id === "home"
+          ? Number.POSITIVE_INFINITY
+          : distance(preferredPoints[index], {
+              x: bounds.centerX,
+              y: bounds.centerY,
+            }),
+    }))
+    .sort((a, b) => b.priority - a.priority);
 
-      if (Math.abs(angleA - angleB) > 0.001) {
-        return angleA - angleB;
-      }
-
-      return distance(graphCenter, a) - distance(graphCenter, b);
-    });
-
-  childNodes.forEach(({ index }, childIndex) => {
-    orderedPoints[index] =
-      childPoints[childIndex] ?? getFallbackPoint(bounds, index, nodes.length);
-  });
-
-  nodes.forEach((_, index) => {
-    if (orderedPoints[index]) {
+  nodeAssignmentOrder.forEach(({ index, target }) => {
+    if (remainingCandidates.length === 0) {
+      orderedPoints[index] = getFallbackPoint(bounds, index, nodes.length);
+      assignedPoints.push(orderedPoints[index]);
       return;
     }
 
-    orderedPoints[index] =
-      availablePoints.shift() ?? getFallbackPoint(bounds, index, nodes.length);
+    let bestCandidateIndex = 0;
+    let bestScore = Number.POSITIVE_INFINITY;
+
+    remainingCandidates.forEach((candidate, candidateIndex) => {
+      const targetDistance = distance(candidate, target);
+      const centerDistance = distance(candidate, {
+        x: bounds.centerX,
+        y: bounds.centerY,
+      });
+      const nearestAssignedDistance = assignedPoints.length
+        ? Math.min(
+            ...assignedPoints.map((assignedPoint) =>
+              distance(candidate, assignedPoint),
+            ),
+          )
+        : desiredSpacing;
+      const spacingPenalty = Math.max(0, desiredSpacing - nearestAssignedDistance) * 2.3;
+      const spreadBonus = Math.min(nearestAssignedDistance, desiredSpacing * 1.35) * 0.26;
+      const edgeBias = centerDistance * 0.08;
+      const score = targetDistance * 0.86 + spacingPenalty - spreadBonus - edgeBias;
+
+      if (score < bestScore) {
+        bestScore = score;
+        bestCandidateIndex = candidateIndex;
+      }
+    });
+
+    orderedPoints[index] = remainingCandidates.splice(bestCandidateIndex, 1)[0];
+    assignedPoints.push(orderedPoints[index]);
   });
 
-  return orderedPoints;
+  return orderedPoints.map(
+    (point, index) => point ?? getFallbackPoint(bounds, index, nodes.length),
+  );
 }
 
 export function buildRegionGraphLayout(
@@ -239,12 +338,18 @@ export function buildRegionGraphCurve(
   const deltaX = to.x - from.x;
   const deltaY = to.y - from.y;
   const edgeLength = Math.max(Math.hypot(deltaX, deltaY), 1);
+
+  if (edgeLength <= 9) {
+    return `M ${from.x} ${from.y} L ${to.x} ${to.y}`;
+  }
+
   const unitX = deltaX / edgeLength;
   const unitY = deltaY / edgeLength;
   const normalX = -unitY;
   const normalY = unitX;
-  const bend = clamp(edgeLength * 0.1, 0.8, 4.8) * (deltaX >= 0 ? 1 : -1);
-  const controlDistance = edgeLength * 0.42;
+  const bendDirection = Math.abs(deltaX) > 0.001 ? (deltaX >= 0 ? 1 : -1) : deltaY >= 0 ? -1 : 1;
+  const bend = clamp(edgeLength * 0.052, 0.34, 2.5) * bendDirection;
+  const controlDistance = edgeLength * 0.34;
   const firstControl = {
     x: from.x + unitX * controlDistance + normalX * bend,
     y: from.y + unitY * controlDistance + normalY * bend,
