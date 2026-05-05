@@ -182,10 +182,6 @@ function splitGraphPoints(
 ) {
   const fallbackPoints = buildNodePositions(regionBounds, themeCount);
 
-  if (regionBounds && NODE_LAYOUTS[themeCount]) {
-    return { themePoints: fallbackPoints };
-  }
-
   const center = regionBounds
     ? { x: regionBounds.centerX, y: regionBounds.centerY }
     : fallbackPoints[0];
@@ -235,7 +231,7 @@ export default function RegionThemeGraph({
   regionBounds,
   nodePoints,
   viewport,
-  actionPendingId,
+  actionPendingId: _actionPendingId,
   onThemeSelect,
 }: RegionThemeGraphProps) {
   if (!viewport) {
@@ -309,9 +305,6 @@ export default function RegionThemeGraph({
 
       {region.themes.map((theme, index) => {
         const position = toSvgPoint(themePoints[index], viewport);
-        const pending = Boolean(
-          theme.themeId && actionPendingId === theme.themeId,
-        );
 
         return (
           <g

@@ -199,8 +199,6 @@ export function createCustomGraph(
 
   // Crear nodos
   const graphNodes: GraphNode[] = positionedNodes.map((node) => {
-    const isHome = node.type === "home";
-
     return {
       id: node.id,
       type: "custom",

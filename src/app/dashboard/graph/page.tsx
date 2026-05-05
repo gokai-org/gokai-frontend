@@ -27,7 +27,6 @@ import {
 } from "@/features/graph/vocabulary/services/api";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import type {
-  VocabularyGraphProgressItem,
   VocabularyRegionId,
   VocabularyRegionLayout,
   VocabularyRegionThemeNode,
@@ -526,7 +525,7 @@ export default function Page() {
         setSelectedWordId(node.data.entityId ?? node.id.replace(/^word-/, ""));
       }
     },
-    [addSubthemeToGraph, currentLevel],
+    [addSubthemeToGraph],
   );
 
   const handleBack = useCallback(() => {
@@ -604,8 +603,7 @@ export default function Page() {
   }, [
     currentLevel,
     regionLayouts,
-    sceneSize.height,
-    sceneSize.width,
+    sceneSize,
     selectedRegion,
   ]);
 
@@ -629,15 +627,6 @@ export default function Page() {
     animateTransformTo(targetX, targetY, targetScale, isNavigatingRef.current);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoTransform]); // intentionally only autoTransform — helpers are stable
-
-  const sceneTransform = useMemo(
-    () => ({
-      scale: autoTransform.scale,
-      x: autoTransform.x,
-      y: autoTransform.y,
-    }),
-    [autoTransform],
-  );
 
   // Stable clamp helpers — use refs, no closure deps that change on every render
   const clampManualScale = useCallback((scale: number) => {
@@ -957,7 +946,7 @@ export default function Page() {
     <div
       ref={sceneRef}
       data-help-target="graph-canvas"
-      className="absolute inset-0 z-0 h-full w-full cursor-grab overflow-hidden touch-none select-none bg-[#F3EFE9] dark:bg-[#0B0B0C]"
+      className="absolute inset-0 z-0 h-full w-full cursor-grab overflow-hidden touch-none select-none bg-surface-primary"
       onPointerDown={handlePointerDown}
       onPointerMove={handlePointerMove}
       onPointerUp={handlePointerEnd}
@@ -987,6 +976,9 @@ export default function Page() {
               top: mvY,
               width: mvLayerWidth,
               height: mvLayerHeight,
+              willChange: "left, top, width, height",
+              transform: "translateZ(0)",
+              backfaceVisibility: "hidden",
               userSelect: "none",
               WebkitUserSelect: "none",
             }}

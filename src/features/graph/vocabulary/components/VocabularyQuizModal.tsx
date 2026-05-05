@@ -71,12 +71,6 @@ function getWordTitle(
   return question.kanji || question.hiragana || "語";
 }
 
-function getWordSubtitle(
-  question: Pick<VocabularyQuizQuestion | VocabularyWordLesson, "meanings" | "hiragana">,
-) {
-  return question.meanings?.join(", ") || question.hiragana || "Vocabulario";
-}
-
 function getNodeTitle(item: VocabularyGraphProgressItem) {
   return item.meaning || item.kanji || item.kana || "Nodo de vocabulario";
 }

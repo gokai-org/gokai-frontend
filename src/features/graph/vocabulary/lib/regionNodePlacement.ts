@@ -10,6 +10,13 @@ type SvgSamplePoint = {
   y: number;
 };
 
+type SvgExclusionRect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 const DEFAULT_VIEWPORT = { x: 0, y: 0, width: 483, height: 545 };
 
 function clamp(value: number, min: number, max: number) {
@@ -120,18 +127,54 @@ function hasRegionFootprint(
   );
 }
 
-function getCandidatePoints(shapes: SVGGeometryElement[], box: DOMRect | SVGRect, count: number) {
+function overlapsExclusionRect(
+  point: SvgSamplePoint,
+  footprint: ReturnType<typeof getRegionFootprint>,
+  rect: SvgExclusionRect,
+) {
+  const safeLeft = point.x - footprint.x * 1.02;
+  const safeRight = point.x + footprint.x * 1.02;
+  const safeTop = point.y - footprint.top * 1.12;
+  const safeBottom = point.y + footprint.bottom * 1.08;
+
+  return !(
+    safeRight < rect.x ||
+    safeLeft > rect.x + rect.width ||
+    safeBottom < rect.y ||
+    safeTop > rect.y + rect.height
+  );
+}
+
+function respectsExclusionZones(
+  point: SvgSamplePoint,
+  footprint: ReturnType<typeof getRegionFootprint>,
+  exclusionRects: SvgExclusionRect[],
+) {
+  return exclusionRects.every(
+    (rect) => !overlapsExclusionRect(point, footprint, rect),
+  );
+}
+
+function getCandidatePoints(
+  shapes: SVGGeometryElement[],
+  box: DOMRect | SVGRect,
+  count: number,
+  exclusionRects: SvgExclusionRect[],
+) {
   const center = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
   const insetX = clamp(box.width * 0.2, 5, 28);
   const insetY = clamp(box.height * 0.2, 5, 28);
   const usableWidth = Math.max(box.width - insetX * 2, box.width * 0.2);
   const usableHeight = Math.max(box.height - insetY * 2, box.height * 0.2);
-  const attempts = Math.max(180, count * 90);
+  const attempts = Math.max(220, count * 120);
   const footprint = getRegionFootprint(box, count);
   const safeCandidates: SvgSamplePoint[] = [];
   const insideCandidates: SvgSamplePoint[] = [];
 
-  if (isInsideRegion(shapes, center)) {
+  if (
+    isInsideRegion(shapes, center) &&
+    respectsExclusionZones(center, footprint, exclusionRects)
+  ) {
     insideCandidates.push(center);
 
     if (hasRegionFootprint(shapes, center, footprint)) {
@@ -145,7 +188,10 @@ function getCandidatePoints(shapes: SVGGeometryElement[], box: DOMRect | SVGRect
       y: box.y + insetY + usableHeight * halton(index, 3),
     };
 
-    if (isInsideRegion(shapes, point)) {
+    if (
+      isInsideRegion(shapes, point) &&
+      respectsExclusionZones(point, footprint, exclusionRects)
+    ) {
       insideCandidates.push(point);
 
       if (hasRegionFootprint(shapes, point, footprint)) {
@@ -281,10 +327,49 @@ function getFallbackPoints(box: DOMRect | SVGRect, count: number) {
   return buildAnchorPoints(box, count);
 }
 
+function pullPointOutsideExclusionRects(
+  point: SvgSamplePoint,
+  box: DOMRect | SVGRect,
+  exclusionRects: SvgExclusionRect[],
+) {
+  if (!exclusionRects.length) {
+    return point;
+  }
+
+  const adjusted = { ...point };
+
+  for (let iteration = 0; iteration < 6; iteration += 1) {
+    const overlappingRect = exclusionRects.find(
+      (rect) =>
+        adjusted.x >= rect.x &&
+        adjusted.x <= rect.x + rect.width &&
+        adjusted.y >= rect.y &&
+        adjusted.y <= rect.y + rect.height,
+    );
+
+    if (!overlappingRect) {
+      break;
+    }
+
+    const rectCenterX = overlappingRect.x + overlappingRect.width / 2;
+    const rectCenterY = overlappingRect.y + overlappingRect.height / 2;
+    const awayX = adjusted.x - rectCenterX || (adjusted.x >= rectCenterX ? 1 : -1);
+    const awayY = adjusted.y - rectCenterY || (adjusted.y >= rectCenterY ? 1 : -1);
+    const pushX = (overlappingRect.width / 2 + 4.5) * Math.sign(awayX);
+    const pushY = (overlappingRect.height / 2 + 4.5) * Math.sign(awayY);
+
+    adjusted.x = clamp(adjusted.x + pushX, box.x + 4, box.x + box.width - 4);
+    adjusted.y = clamp(adjusted.y + pushY, box.y + 4, box.y + box.height - 4);
+  }
+
+  return adjusted;
+}
+
 export function buildRegionLayout(
   regionGroup: SVGGElement,
   svgRoot: SVGSVGElement,
   count: number,
+  exclusionRects: SvgExclusionRect[] = [],
 ): VocabularyRegionLayout | null {
   const box = regionGroup.getBBox();
 
@@ -294,10 +379,14 @@ export function buildRegionLayout(
 
   const viewport = getSvgViewport(svgRoot);
   const shapes = getRegionShapes(regionGroup);
-  const candidates = shapes.length > 0 ? getCandidatePoints(shapes, box, count) : [];
+  const candidates = shapes.length > 0
+    ? getCandidatePoints(shapes, box, count, exclusionRects)
+    : [];
   const rawPoints = candidates.length > 0
     ? selectNaturalPoints(candidates, box, count)
-    : getFallbackPoints(box, count);
+    : getFallbackPoints(box, count).map((point) =>
+        pullPointOutsideExclusionRects(point, box, exclusionRects),
+      );
 
   return {
     bounds: toPercentBounds(box, viewport),

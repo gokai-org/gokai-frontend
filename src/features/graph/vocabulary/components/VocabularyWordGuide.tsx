@@ -110,10 +110,6 @@ function getWordTitle(question: VocabularyWordLesson) {
   return question.kanji || question.hiragana || "語";
 }
 
-function getWordSubtitle(question: VocabularyWordLesson) {
-  return question.meanings?.join(", ") || question.hiragana || "Palabra de vocabulario";
-}
-
 function getReading(question: VocabularyWordLesson) {
   return question.hiragana || "Lectura pendiente";
 }
