@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  AnimatePresence,
   animate,
   motion,
   useMotionValue,
@@ -216,6 +215,75 @@ function clampSceneToFrame(
   };
 }
 
+function areNumbersClose(a: number, b: number, epsilon = 0.01) {
+  return Math.abs(a - b) <= epsilon;
+}
+
+function areTransformsEquivalent(a: SceneTransform, b: SceneTransform, epsilon = 0.01) {
+  return (
+    areNumbersClose(a.scale, b.scale, epsilon) &&
+    areNumbersClose(a.x, b.x, epsilon) &&
+    areNumbersClose(a.y, b.y, epsilon)
+  );
+}
+
+function arePointsEquivalent(
+  a: VocabularyRegionLayout["nodePoints"],
+  b: VocabularyRegionLayout["nodePoints"],
+  epsilon = 0.01,
+) {
+  if (a.length !== b.length) {
+    return false;
+  }
+
+  return a.every(
+    (point, index) =>
+      areNumbersClose(point.x, b[index]?.x ?? Number.NaN, epsilon) &&
+      areNumbersClose(point.y, b[index]?.y ?? Number.NaN, epsilon),
+  );
+}
+
+function areRegionLayoutsEquivalent(
+  a: Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>,
+  b: Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>,
+  epsilon = 0.01,
+) {
+  const regionIds = new Set<VocabularyRegionId>([
+    ...Object.keys(a),
+    ...Object.keys(b),
+  ] as VocabularyRegionId[]);
+
+  for (const regionId of regionIds) {
+    const left = a[regionId];
+    const right = b[regionId];
+
+    if (!left || !right) {
+      if (left !== right) {
+        return false;
+      }
+      continue;
+    }
+
+    if (
+      !areNumbersClose(left.bounds.x, right.bounds.x, epsilon) ||
+      !areNumbersClose(left.bounds.y, right.bounds.y, epsilon) ||
+      !areNumbersClose(left.bounds.width, right.bounds.width, epsilon) ||
+      !areNumbersClose(left.bounds.height, right.bounds.height, epsilon) ||
+      !areNumbersClose(left.bounds.centerX, right.bounds.centerX, epsilon) ||
+      !areNumbersClose(left.bounds.centerY, right.bounds.centerY, epsilon) ||
+      !areNumbersClose(left.viewport.x, right.viewport.x, epsilon) ||
+      !areNumbersClose(left.viewport.y, right.viewport.y, epsilon) ||
+      !areNumbersClose(left.viewport.width, right.viewport.width, epsilon) ||
+      !areNumbersClose(left.viewport.height, right.viewport.height, epsilon) ||
+      !arePointsEquivalent(left.nodePoints, right.nodePoints, epsilon)
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 function toWordLesson(
   word: VocabularyWordContent,
   audioByWordId: Map<string, string | undefined>,
@@ -260,6 +328,8 @@ export default function Page() {
   const currentLevelRef = useRef<VocabularyViewLevel>("map");
   const isNavigatingRef = useRef(false);
   const animStopRef = useRef<Array<() => void>>([]);
+  const lastAutoTargetRef = useRef<SceneTransform | null>(null);
+  const subthemeLoadRequestRef = useRef(0);
 
   const [regionLayouts, setRegionLayouts] = useState<
     Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>
@@ -274,6 +344,8 @@ export default function Page() {
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
   const [subthemeWords, setSubthemeWords] = useState<VocabularyWordLesson[]>([]);
   const [subthemeWordsLoading, setSubthemeWordsLoading] = useState(false);
+  const [pendingThemeId, setPendingThemeId] = useState<string | null>(null);
+  const [pendingGraphNodeId, setPendingGraphNodeId] = useState<string | null>(null);
   const {
     graphs,
     selectedGraph,
@@ -335,6 +407,9 @@ export default function Page() {
 
     return actionPendingId || subthemeWordsLoading ? activeRegionId : null;
   }, [actionPendingId, activeRegionId, subthemeWordsLoading]);
+  const graphInteractionDisabled = Boolean(
+    pendingThemeId || pendingGraphNodeId || actionPendingId || subthemeWordsLoading,
+  );
 
   useEffect(() => {
     const element = sceneRef.current;
@@ -380,25 +455,23 @@ export default function Page() {
     }
   }, [regions, selectedGraph?.themeId, selectedRegionId, selectedTheme?.regionId]);
 
-  useEffect(() => {
-    if (currentLevel !== "subtheme" || !selectedSubthemeItem?.subthemeId) {
+  const loadSubthemeWordsForNode = useCallback(
+    async (nodeId: string, subthemeId: string) => {
+      const requestId = subthemeLoadRequestRef.current + 1;
+      subthemeLoadRequestRef.current = requestId;
       setSubthemeWords([]);
-      return;
-    }
-
-    let alive = true;
-
-    queueMicrotask(() => {
-      if (!alive) return;
       setSubthemeWordsLoading(true);
-    });
 
-    Promise.all([
-      listVocabularyWordsBySubthemeId(selectedSubthemeItem.subthemeId),
-      getVocabularyQuiz(selectedSubthemeItem.nodeId, "listening"),
-    ])
-      .then(([words, listeningQuiz]) => {
-        if (!alive) return;
+      try {
+        const [words, listeningQuiz] = await Promise.all([
+          listVocabularyWordsBySubthemeId(subthemeId),
+          getVocabularyQuiz(nodeId, "listening"),
+        ]);
+
+        if (subthemeLoadRequestRef.current !== requestId) {
+          return false;
+        }
+
         const audioByWordId = new Map(
           listeningQuiz.questions.map((quizQuestion) => [
             quizQuestion.wordId,
@@ -406,21 +479,23 @@ export default function Page() {
           ]),
         );
         setSubthemeWords(words.map((word) => toWordLesson(word, audioByWordId)));
-      })
-      .catch((quizError) => {
+        return true;
+      } catch (quizError) {
         console.error("Error cargando palabras del subtema:", quizError);
-        if (!alive) return;
-        setSubthemeWords([]);
-      })
-      .finally(() => {
-        if (!alive) return;
-        setSubthemeWordsLoading(false);
-      });
 
-    return () => {
-      alive = false;
-    };
-  }, [currentLevel, selectedSubthemeItem]);
+        if (subthemeLoadRequestRef.current === requestId) {
+          setSubthemeWords([]);
+        }
+
+        return false;
+      } finally {
+        if (subthemeLoadRequestRef.current === requestId) {
+          setSubthemeWordsLoading(false);
+        }
+      }
+    },
+    [],
+  );
 
   useEffect(() => {
     // Reset manual transform and cancel any running animation when navigating levels
@@ -465,6 +540,11 @@ export default function Page() {
 
   const handleRegionSelect = useCallback(
     (regionId: VocabularyRegionId) => {
+      subthemeLoadRequestRef.current += 1;
+      setPendingThemeId(null);
+      setPendingGraphNodeId(null);
+      setSubthemeWordsLoading(false);
+      setSubthemeWords([]);
       setSelectedRegionId(regionId);
       setSelectedThemeId(null);
       setSelectedSubthemeNodeId(null);
@@ -473,6 +553,17 @@ export default function Page() {
       setCurrentLevel("region");
     },
     [setSelectedGraphId],
+  );
+
+  const handleRegionLayoutsChange = useCallback(
+    (nextLayouts: Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>) => {
+      setRegionLayouts((currentLayouts) =>
+        areRegionLayoutsEquivalent(currentLayouts, nextLayouts)
+          ? currentLayouts
+          : nextLayouts,
+      );
+    },
+    [],
   );
 
   const handleThemeSelected = useCallback(
@@ -485,6 +576,7 @@ export default function Page() {
       setSelectedThemeId(theme.themeId);
       setSelectedSubthemeNodeId(null);
       setSelectedWordId(null);
+      setSubthemeWords([]);
 
       if (theme.graphId) {
         setSelectedGraphId(theme.graphId);
@@ -492,7 +584,11 @@ export default function Page() {
         return;
       }
 
+      setPendingThemeId(theme.themeId);
+
       const graphId = await createGraphFromTheme(theme.themeId);
+
+      setPendingThemeId(null);
 
       if (graphId) {
         setSelectedGraphId(graphId);
@@ -505,19 +601,41 @@ export default function Page() {
   const handleNodeSelected = useCallback(
     async (node: GraphNode) => {
       if (node.data.entityKind === "subtheme") {
+        setSelectedWordId(null);
+        setPendingGraphNodeId(node.id);
+
         if (node.data.isRecommendation && node.data.entityId) {
-          const nodeId = await addSubthemeToGraph(node.data.entityId);
+          const subthemeId = node.data.entityId;
+          const nodeId = await addSubthemeToGraph(subthemeId);
+
           if (nodeId) {
             setSelectedSubthemeNodeId(nodeId);
-            setSelectedWordId(null);
-            setCurrentLevel("subtheme");
+            const ready = await loadSubthemeWordsForNode(nodeId, subthemeId);
+
+            if (ready) {
+              setCurrentLevel("subtheme");
+            }
           }
+
+          setPendingGraphNodeId(null);
           return;
         }
 
         setSelectedSubthemeNodeId(node.id);
-        setSelectedWordId(null);
-        setCurrentLevel("subtheme");
+        const matchedItem = progressItems.find((item) => item.nodeId === node.id);
+
+        if (matchedItem?.subthemeId) {
+          const ready = await loadSubthemeWordsForNode(
+            matchedItem.nodeId,
+            matchedItem.subthemeId,
+          );
+
+          if (ready) {
+            setCurrentLevel("subtheme");
+          }
+        }
+
+        setPendingGraphNodeId(null);
         return;
       }
 
@@ -525,17 +643,24 @@ export default function Page() {
         setSelectedWordId(node.data.entityId ?? node.id.replace(/^word-/, ""));
       }
     },
-    [addSubthemeToGraph],
+    [addSubthemeToGraph, loadSubthemeWordsForNode, progressItems],
   );
 
   const handleBack = useCallback(() => {
     if (currentLevel === "subtheme") {
+      subthemeLoadRequestRef.current += 1;
+      setPendingGraphNodeId(null);
+      setSubthemeWordsLoading(false);
+      setSubthemeWords([]);
       setSelectedWordId(null);
       setCurrentLevel("theme");
       return;
     }
 
     if (currentLevel === "theme") {
+      setPendingThemeId(null);
+      setPendingGraphNodeId(null);
+      setSubthemeWords([]);
       setSelectedSubthemeNodeId(null);
       setSelectedWordId(null);
       setCurrentLevel("region");
@@ -543,6 +668,9 @@ export default function Page() {
     }
 
     if (currentLevel === "region") {
+      setPendingThemeId(null);
+      setPendingGraphNodeId(null);
+      setSubthemeWords([]);
       setSelectedThemeId(null);
       setSelectedSubthemeNodeId(null);
       setSelectedWordId(null);
@@ -621,10 +749,23 @@ export default function Page() {
     const clampedScale = clampManualScale(manual.scale);
     const clamped = clampManualPan({ ...manual, scale: clampedScale });
     manualTransformRef.current = clamped;
-    const targetX = autoTransform.x + clamped.x;
-    const targetY = autoTransform.y + clamped.y;
-    const targetScale = autoTransform.scale * clamped.scale;
-    animateTransformTo(targetX, targetY, targetScale, isNavigatingRef.current);
+    const nextTarget = {
+      x: autoTransform.x + clamped.x,
+      y: autoTransform.y + clamped.y,
+      scale: autoTransform.scale * clamped.scale,
+    };
+
+    if (lastAutoTargetRef.current && areTransformsEquivalent(lastAutoTargetRef.current, nextTarget)) {
+      return;
+    }
+
+    lastAutoTargetRef.current = nextTarget;
+    animateTransformTo(
+      nextTarget.x,
+      nextTarget.y,
+      nextTarget.scale,
+      isNavigatingRef.current,
+    );
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoTransform]); // intentionally only autoTransform — helpers are stable
 
@@ -665,7 +806,7 @@ export default function Page() {
         mvScale.set(s);
         return;
       }
-      const opts = { duration: 0.55, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
+      const opts = { duration: 0.38, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
       const cX = animate(mvX, x, opts);
       const cY = animate(mvY, y, opts);
       const cS = animate(mvScale, s, opts);
@@ -972,12 +1113,11 @@ export default function Page() {
             data-map-transform-layer="true"
             className="map-transform-layer absolute left-0 top-0 z-10 bg-transparent"
             style={{
-              left: mvX,
-              top: mvY,
+              x: mvX,
+              y: mvY,
               width: mvLayerWidth,
               height: mvLayerHeight,
-              willChange: "left, top, width, height",
-              transform: "translateZ(0)",
+              willChange: "transform, width, height",
               backfaceVisibility: "hidden",
               userSelect: "none",
               WebkitUserSelect: "none",
@@ -990,7 +1130,7 @@ export default function Page() {
               layoutCountsByRegion={layoutCountsByRegion}
               onRegionSelect={handleMapRegionSelect}
               onRegionHover={() => undefined}
-              onLayoutChange={setRegionLayouts}
+              onLayoutChange={handleRegionLayoutsChange}
             />
 
             {selectedRegion && currentLevel === "region" ? (
@@ -999,27 +1139,27 @@ export default function Page() {
                 regionBounds={regionLayouts[selectedRegion.id]?.bounds ?? null}
                 nodePoints={regionLayouts[selectedRegion.id]?.nodePoints ?? null}
                 viewport={regionLayouts[selectedRegion.id]?.viewport ?? null}
-                actionPendingId={actionPendingId}
+                loadingThemeId={pendingThemeId}
+                interactionDisabled={graphInteractionDisabled}
                 onThemeSelect={handleThemeSelected}
               />
             ) : null}
 
-            <AnimatePresence>
-              {selectedRegion &&
-              regionGraph &&
-              (currentLevel === "theme" || currentLevel === "subtheme") ? (
-                <RegionVectorGraph
-                  key={`${currentLevel}-${activeRegionId}-${regionGraph.nodes.map((node: GraphNode) => node.id).join("|")}`}
-                  nodes={regionGraph.nodes}
-                  edges={regionGraph.edges as GraphEdge[]}
-                  regionBounds={regionLayouts[selectedRegion.id]?.bounds ?? null}
-                  nodePoints={regionLayouts[selectedRegion.id]?.nodePoints ?? null}
-                  viewport={regionLayouts[selectedRegion.id]?.viewport ?? null}
-                  level={currentLevel}
-                  onNodeSelected={regionGraph.onNodeSelected}
-                />
-              ) : null}
-            </AnimatePresence>
+            {selectedRegion &&
+            regionGraph &&
+            (currentLevel === "theme" || currentLevel === "subtheme") ? (
+              <RegionVectorGraph
+                nodes={regionGraph.nodes}
+                edges={regionGraph.edges as GraphEdge[]}
+                regionBounds={regionLayouts[selectedRegion.id]?.bounds ?? null}
+                nodePoints={regionLayouts[selectedRegion.id]?.nodePoints ?? null}
+                viewport={regionLayouts[selectedRegion.id]?.viewport ?? null}
+                level={currentLevel}
+                loadingNodeId={pendingGraphNodeId}
+                interactionDisabled={graphInteractionDisabled}
+                onNodeSelected={regionGraph.onNodeSelected}
+              />
+            ) : null}
           </motion.div>
           <VocabularyNodePanel
             item={selectedSubthemeItem}

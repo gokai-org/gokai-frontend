@@ -20,11 +20,11 @@ export const REGION_ORDER: VocabularyRegionId[] = [
 export const regionColors: Record<VocabularyRegionId, string> = {
   hokkaido: "#3A0B0B",
   tohoku: "#5A0F0F",
-  kanto: "#C94A4A",
+  kanto: "#881111",
   chubu: "#8E2E2E",
   kansai: "#A91F1F",
   chugoku: "#7A1D1D",
-  shikoku: "#B83A3A",
+  shikoku: "#810404",
   kyushu: "#4A0909",
 };
 
@@ -90,10 +90,12 @@ export const REGION_CONFIG: Record<
 export const REGION_FILL_TO_ID: Record<string, VocabularyRegionId> = {
   "#3A0B0B": "hokkaido",
   "#5A0F0F": "tohoku",
+  "#881111": "kanto",
   "#C94A4A": "kanto",
   "#8E2E2E": "chubu",
   "#A91F1F": "kansai",
   "#7A1D1D": "chugoku",
+  "#810404": "shikoku",
   "#B83A3A": "shikoku",
   "#4A0909": "kyushu",
   "#470F0F": "hokkaido",

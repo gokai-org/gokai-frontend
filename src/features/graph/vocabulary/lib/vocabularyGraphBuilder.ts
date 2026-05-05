@@ -12,6 +12,7 @@ export type VocabularyNodeDefinition = {
   id: string;
   type: NodeType;
   label: string;
+  description?: string;
   status: NodeStatus;
   entityKind?: "theme" | "subtheme" | "word";
   entityId?: string;

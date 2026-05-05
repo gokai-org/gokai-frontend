@@ -74,10 +74,7 @@ export function useVocabularyGraph() {
     VocabularySubthemeContent[]
   >([]);
   const [loading, setLoading] = useState(true);
-  const [progressLoading, setProgressLoading] = useState(false);
-  const [recommendationsLoading, setRecommendationsLoading] = useState(false);
   const [actionPendingId, setActionPendingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const selectedGraph = useMemo(
     () => graphs.find((graph) => graph.graphId === selectedGraphId) ?? null,
@@ -109,7 +106,6 @@ export function useVocabularyGraph() {
   }, [rawProgress, selectedGraphSubthemes]);
 
   const loadGraphs = useCallback(async () => {
-    setError(null);
     const nextGraphs = sortGraphs(await listVocabularyGraphs());
     setGraphs(nextGraphs);
 
@@ -141,8 +137,6 @@ export function useVocabularyGraph() {
     Promise.all([loadGraphs(), loadThemeCatalog()])
       .catch((loadError) => {
         console.error("Error cargando grafo de vocabulario:", loadError);
-        if (!alive) return;
-        setError("No se pudo cargar tu grafo de vocabulario.");
       })
       .finally(() => {
         if (!alive) return;
@@ -161,9 +155,6 @@ export function useVocabularyGraph() {
       return null;
     }
 
-    setProgressLoading(true);
-    setError(null);
-
     try {
       const nextProgress = await getVocabularyGraphProgress(selectedGraphId);
       setRawProgress(nextProgress);
@@ -171,10 +162,7 @@ export function useVocabularyGraph() {
     } catch (progressError) {
       console.error("Error cargando progreso de vocabulario:", progressError);
       setRawProgress(null);
-      setError("No se pudo cargar el progreso del grafo.");
       return null;
-    } finally {
-      setProgressLoading(false);
     }
   }, [selectedGraphId]);
 
@@ -188,8 +176,6 @@ export function useVocabularyGraph() {
       setSubthemeRecommendations([]);
       return [] as VocabularySubthemeContent[];
     }
-
-    setRecommendationsLoading(true);
 
     try {
       const [recommendations, subthemes] = await Promise.all([
@@ -211,8 +197,6 @@ export function useVocabularyGraph() {
       setSelectedGraphSubthemes([]);
       setSubthemeRecommendations([]);
       return [] as VocabularySubthemeContent[];
-    } finally {
-      setRecommendationsLoading(false);
     }
   }, [selectedGraph]);
 
@@ -223,7 +207,6 @@ export function useVocabularyGraph() {
   const createGraphFromTheme = useCallback(
     async (themeId: string) => {
       setActionPendingId(themeId);
-      setError(null);
 
       try {
         const created = await createVocabularyGraph(themeId);
@@ -237,7 +220,6 @@ export function useVocabularyGraph() {
         return nextGraphId;
       } catch (actionError) {
         console.error("Error creando grafo de vocabulario:", actionError);
-        setError("No se pudo crear el grafo para ese tema.");
         return null;
       } finally {
         setActionPendingId(null);
@@ -251,7 +233,6 @@ export function useVocabularyGraph() {
       if (!selectedGraphId) return null;
 
       setActionPendingId(subthemeId);
-      setError(null);
 
       try {
         const selected = await selectVocabularySubtheme(selectedGraphId, subthemeId);
@@ -280,7 +261,6 @@ export function useVocabularyGraph() {
         }
 
         console.error("Error agregando subtema al grafo:", actionError);
-        setError("No se pudo agregar ese subtema al grafo.");
         return null;
       } finally {
         setActionPendingId(null);
@@ -297,10 +277,7 @@ export function useVocabularyGraph() {
     themeCatalog,
     subthemeRecommendations,
     loading,
-    progressLoading,
-    recommendationsLoading,
     actionPendingId,
-    error,
     setSelectedGraphId,
     createGraphFromTheme,
     addSubthemeToGraph,

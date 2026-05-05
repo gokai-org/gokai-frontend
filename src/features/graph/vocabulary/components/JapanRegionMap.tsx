@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type CSSProperties,
   forwardRef,
   memo,
   useEffect,
@@ -8,13 +9,18 @@ import {
   useRef,
   useState,
 } from "react";
+import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import type {
   VocabularyRegionId,
   VocabularyRegionLayout,
   VocabularyRegionViewModel,
 } from "../types";
 import { buildRegionLayout } from "../lib/regionNodePlacement";
-import { REGION_FILL_TO_ID, REGION_ORDER } from "../lib/vocabularyRegions";
+import {
+  REGION_FILL_TO_ID,
+  REGION_ORDER,
+  regionColors,
+} from "../lib/vocabularyRegions";
 
 type JapanRegionMapProps = {
   regions: VocabularyRegionViewModel[];
@@ -33,6 +39,7 @@ type JapanRegionMapProps = {
 type ParsedMap = {
   viewBox: string;
   annotatedInnerHtml: string;
+  iconInnerHtml: string;
   regionCloneMarkup: Partial<Record<VocabularyRegionId, string>>;
 };
 
@@ -50,6 +57,12 @@ type IconClassificationCache = {
   iconBoxesByRegion: Partial<Record<VocabularyRegionId, RegionIconBox[]>>;
 };
 
+type RegionLayoutCacheEntry = {
+  layoutCount: number;
+  iconLayoutRevision: number;
+  layout: VocabularyRegionLayout;
+};
+
 const DEFAULT_MAP_VIEWBOX = "0 0 483 545";
 const SVG_REGION_SHAPE_SELECTOR =
   "path[fill], polygon[fill], circle[fill], ellipse[fill], rect[fill]";
@@ -59,6 +72,61 @@ const STRUCTURAL_PARENT_SELECTOR = "defs, clipPath, mask";
 let parsedMapPromise: Promise<ParsedMap> | null = null;
 let parsedMapCache: ParsedMap | null = null;
 let iconClassificationCache: IconClassificationCache | null = null;
+
+const BLOCKED_REGION_COLOR = "#1B1A1D";
+
+function clampChannel(value: number) {
+  return Math.max(0, Math.min(255, Math.round(value)));
+}
+
+function lightenHexColor(hex: string, amount: number) {
+  const normalized = hex.replace("#", "");
+
+  if (normalized.length !== 6) {
+    return hex;
+  }
+
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+
+  const mixChannel = (channel: number) =>
+    clampChannel(channel + (255 - channel) * amount)
+      .toString(16)
+      .padStart(2, "0");
+
+  return `#${mixChannel(red)}${mixChannel(green)}${mixChannel(blue)}`.toUpperCase();
+}
+
+function darkenHexColor(hex: string, amount: number) {
+  const normalized = hex.replace("#", "");
+
+  if (normalized.length !== 6) {
+    return hex;
+  }
+
+  const red = Number.parseInt(normalized.slice(0, 2), 16);
+  const green = Number.parseInt(normalized.slice(2, 4), 16);
+  const blue = Number.parseInt(normalized.slice(4, 6), 16);
+
+  const mixChannel = (channel: number) =>
+    clampChannel(channel * (1 - amount))
+      .toString(16)
+      .padStart(2, "0");
+
+  return `#${mixChannel(red)}${mixChannel(green)}${mixChannel(blue)}`.toUpperCase();
+}
+
+const LIGHT_REGION_COLORS = Object.fromEntries(
+  REGION_ORDER.map((regionId) => [regionId, lightenHexColor(regionColors[regionId], 0.14)]),
+) as Record<VocabularyRegionId, string>;
+const LIGHT_REGION_STROKES = Object.fromEntries(
+  REGION_ORDER.map((regionId) => [regionId, darkenHexColor(regionColors[regionId], 0.08)]),
+) as Record<VocabularyRegionId, string>;
+const DARK_REGION_STROKES = Object.fromEntries(
+  REGION_ORDER.map((regionId) => [regionId, lightenHexColor(regionColors[regionId], 0.22)]),
+) as Record<VocabularyRegionId, string>;
+const LIGHT_BLOCKED_REGION_COLOR = lightenHexColor(BLOCKED_REGION_COLOR, 0.16);
 
 function normalizeHex(value?: string | null) {
   return (value ?? "").trim().toUpperCase();
@@ -94,11 +162,13 @@ function buildAnnotatedMap(svgText: string): ParsedMap {
   const document = parser.parseFromString(svgText, "image/svg+xml");
   const svg = document.querySelector("svg");
   const regionCloneMarkup: Partial<Record<VocabularyRegionId, string[]>> = {};
+  const iconMarkup: string[] = [];
 
   if (!svg) {
     return {
       viewBox: DEFAULT_MAP_VIEWBOX,
       annotatedInnerHtml: "",
+      iconInnerHtml: "",
       regionCloneMarkup: {},
     };
   }
@@ -137,6 +207,17 @@ function buildAnnotatedMap(svgText: string): ParsedMap {
     }
 
     if (isWhiteFill(fill)) {
+      const clone = shape.cloneNode(true);
+
+      if (clone instanceof Element) {
+        clone.removeAttribute("class");
+        clone.removeAttribute("data-icon-region");
+        clone.setAttribute("fill", "currentColor");
+        clone.setAttribute("stroke", "none");
+        appendClass(clone, "vmap-icon-mask-shape");
+        iconMarkup.push(clone.outerHTML);
+      }
+
       shape.removeAttribute("fill");
       appendClass(shape, "vmap-icon");
     }
@@ -145,6 +226,7 @@ function buildAnnotatedMap(svgText: string): ParsedMap {
   return {
     viewBox: svg.getAttribute("viewBox") || DEFAULT_MAP_VIEWBOX,
     annotatedInnerHtml: svg.innerHTML,
+    iconInnerHtml: iconMarkup.join(""),
     regionCloneMarkup: Object.fromEntries(
       REGION_ORDER.map((regionId) => [
         regionId,
@@ -167,28 +249,42 @@ const REGION_RULE_TEMPLATE = (id: VocabularyRegionId) => `
   }
   .japan-map-layer[data-hover-region="${id}"] [data-region-path="${id}"],
   .japan-map-layer[data-active-region="${id}"] [data-region-path="${id}"] {
-    fill: var(--vmap-region-highlight-fill);
-    stroke: var(--vmap-region-highlight-stroke);
+    fill: var(--vmap-region-fill-${id});
+    stroke: var(--vmap-region-stroke-${id});
+    stroke-width: var(--vmap-highlight-stroke-width, 0.92);
     opacity: 1;
-    filter: drop-shadow(0 0 4px var(--vmap-glow));
+    filter: var(--vmap-region-hover-filter, none);
   }
   .japan-map-layer[data-active-region="${id}"] [data-region-path="${id}"] {
-    fill: var(--vmap-region-active-fill);
-    stroke: var(--vmap-region-highlight-stroke);
+    fill: var(--vmap-region-active-fill-${id});
+    stroke: var(--vmap-region-stroke-${id});
   }
   .japan-map-layer[data-hover-region="${id}"] .vmap-icon[data-icon-region="${id}"],
   .japan-map-layer[data-active-region="${id}"] .vmap-icon[data-icon-region="${id}"] {
     fill: var(--vmap-icon-hover);
     opacity: 1;
   }
+  .japan-map-layer[data-hover-region="${id}"] .vmap-icon-hover-layer[data-icon-layer="${id}"],
+  .japan-map-layer[data-active-region="${id}"] .vmap-icon-hover-layer[data-icon-layer="${id}"] {
+    display: block;
+  }
+  .japan-map-layer[data-loading-region="${id}"] {
+    --vmap-region-loading-pulse-current: var(--vmap-region-active-fill-${id});
+  }
   .japan-map-layer[data-loading-region="${id}"] [data-region-path="${id}"] {
-    animation: vmap-region-pulse 1.25s cubic-bezier(.4,0,.6,1) infinite;
+    fill: var(--vmap-region-active-fill-${id});
+    stroke: var(--vmap-region-stroke-${id});
+    stroke-width: var(--vmap-highlight-stroke-width, 0.92);
+    will-change: opacity;
+    animation: vmap-region-pulse 920ms ease-in-out infinite;
   }
 `;
 
 const VMAP_STYLE = `
   .japan-map-layer {
     transition: background-color 320ms ease-out;
+    contain: layout paint style;
+    isolation: isolate;
   }
   .japan-map-layer .vmap-content {
     pointer-events: none;
@@ -202,45 +298,68 @@ const VMAP_STYLE = `
     opacity: 0.98;
     pointer-events: auto;
     transition:
-      fill 220ms cubic-bezier(.22,1,.36,1),
-      stroke 220ms ease-out,
-      opacity 180ms ease-out,
-      filter 220ms ease-out;
+      fill var(--vmap-transition-duration, 72ms) linear,
+      stroke var(--vmap-transition-duration, 72ms) linear,
+      opacity var(--vmap-transition-duration, 72ms) linear,
+      filter var(--vmap-transition-duration, 72ms) linear;
     cursor: pointer;
   }
-  .japan-map-layer[data-hover-region] .vmap-region-shape,
   .japan-map-layer[data-active-region] .vmap-region-shape {
     fill: var(--vmap-region-dim);
     opacity: 0.84;
   }
+  .japan-map-layer[data-hover-enabled="false"] .vmap-region-shape {
+    transition: fill 48ms linear, stroke 48ms linear, opacity 48ms linear;
+  }
   .japan-map-layer [data-vocabulary-region] {
     pointer-events: auto;
+    touch-action: manipulation;
   }
   .japan-map-layer .vmap-icon {
     fill: var(--vmap-icon);
     opacity: 0.86;
     pointer-events: none;
-    transition: fill 180ms ease-out, opacity 180ms ease-out;
+    transition: fill var(--vmap-transition-duration, 72ms) linear, opacity var(--vmap-transition-duration, 72ms) linear;
   }
   .japan-map-layer .vmap-icon-unassigned {
     fill: var(--vmap-icon);
     opacity: 0.5;
     pointer-events: none;
-    transition: fill 180ms ease-out, opacity 180ms ease-out;
+    transition: fill var(--vmap-transition-duration, 72ms) linear, opacity var(--vmap-transition-duration, 72ms) linear;
   }
-  .japan-map-layer[data-hover-region] .vmap-icon:not([data-icon-region]),
+  .japan-map-layer .vmap-icon-hover-layer {
+    display: none;
+    color: var(--vmap-icon-hover);
+    pointer-events: none;
+  }
+  .japan-map-layer .vmap-icon-hover-layer .vmap-icon-mask-shape {
+    fill: currentColor;
+    stroke: none;
+  }
   .japan-map-layer[data-active-region] .vmap-icon:not([data-icon-region]) {
     opacity: 0.42;
   }
   @keyframes vmap-region-pulse {
     0%, 100% {
-      fill: var(--vmap-region-loading);
-      filter: drop-shadow(0 0 0 transparent);
+      opacity: 0.88;
     }
     50% {
-      fill: var(--vmap-region-loading-pulse);
-      filter: drop-shadow(0 0 8px var(--vmap-glow));
+      opacity: 1;
     }
+  }
+  .japan-map-layer {
+    --vmap-region-locked: ${LIGHT_BLOCKED_REGION_COLOR};
+${REGION_ORDER.map(
+  (regionId) =>
+    `    --vmap-region-fill-${regionId}: ${LIGHT_REGION_COLORS[regionId]};\n    --vmap-region-stroke-${regionId}: ${LIGHT_REGION_STROKES[regionId]};\n    --vmap-region-active-fill-${regionId}: ${LIGHT_REGION_COLORS[regionId]};`,
+).join("\n")}
+  }
+  .dark .japan-map-layer {
+    --vmap-region-locked: ${BLOCKED_REGION_COLOR};
+${REGION_ORDER.map(
+  (regionId) =>
+    `    --vmap-region-fill-${regionId}: ${regionColors[regionId]};\n    --vmap-region-stroke-${regionId}: ${DARK_REGION_STROKES[regionId]};\n    --vmap-region-active-fill-${regionId}: ${regionColors[regionId]};`,
+).join("\n")}
   }
 ${REGION_ORDER.map(REGION_RULE_TEMPLATE).join("\n")}
 `;
@@ -280,7 +399,7 @@ function getParsedMap() {
   return parsedMapPromise;
 }
 
-export default function JapanRegionMap({
+function JapanRegionMap({
   regions,
   selectedRegionId,
   loadingRegionId = null,
@@ -289,6 +408,7 @@ export default function JapanRegionMap({
   onRegionHover,
   onLayoutChange,
 }: JapanRegionMapProps) {
+  const platformMotion = usePlatformMotion();
   const [parsedMap, setParsedMap] = useState<ParsedMap | null>(null);
   const [iconLayoutRevision, setIconLayoutRevision] = useState(0);
 
@@ -301,10 +421,32 @@ export default function JapanRegionMap({
   const iconBoxesByRegionRef = useRef<
     Partial<Record<VocabularyRegionId, RegionIconBox[]>>
   >({});
+  const layoutCacheRef = useRef<
+    Partial<Record<VocabularyRegionId, RegionLayoutCacheEntry>>
+  >({});
 
   const regionLookup = useMemo(
     () => Object.fromEntries(regions.map((region) => [region.id, region])),
     [regions],
+  );
+  const hoverEnabled = platformMotion.shouldUseHoverAnimations;
+  const heavyEffectsEnabled =
+    platformMotion.heavyAnimationsEnabled &&
+    platformMotion.graphicsProfile.shouldUseHeavyEffects;
+  const showGridOverlay = platformMotion.graphicsProfile.tier !== "low";
+  const svgStyle = useMemo<CSSProperties>(
+    () => ({
+      display: "block",
+      userSelect: "none",
+      WebkitUserSelect: "none",
+      WebkitTouchCallout: "none",
+      backgroundColor: "var(--vmap-bg)",
+      ["--vmap-region-hover-filter" as const]:
+        heavyEffectsEnabled ? "drop-shadow(0 0 4px var(--vmap-glow))" : "none",
+      ["--vmap-transition-duration" as const]:
+        hoverEnabled ? "120ms" : "80ms",
+    }),
+    [heavyEffectsEnabled, hoverEnabled],
   );
 
   const regionStatusByRegion = useMemo(() => {
@@ -386,14 +528,6 @@ export default function JapanRegionMap({
       applyCachedClassification(iconClassificationCache);
       return;
     }
-
-    const idleWindow = window as Window & {
-      requestIdleCallback?: (
-        callback: () => void,
-        options?: { timeout: number },
-      ) => number;
-      cancelIdleCallback?: (handle: number) => void;
-    };
 
     const classifyIcons = () => {
       if (cancelled || !svgRef.current) {
@@ -496,17 +630,11 @@ export default function JapanRegionMap({
       applyCachedClassification(iconClassificationCache);
     };
 
-    const handle = idleWindow.requestIdleCallback
-      ? idleWindow.requestIdleCallback(classifyIcons, { timeout: 220 })
-      : window.setTimeout(classifyIcons, 32);
+    const handle = window.requestAnimationFrame(classifyIcons);
 
     return () => {
       cancelled = true;
-      if (idleWindow.cancelIdleCallback && typeof handle === "number") {
-        idleWindow.cancelIdleCallback(handle);
-        return;
-      }
-      window.clearTimeout(handle as number);
+      window.cancelAnimationFrame(handle);
     };
   }, [parsedMap]);
 
@@ -531,6 +659,17 @@ export default function JapanRegionMap({
           region.themes.length,
           layoutCountsByRegion?.[regionId] ?? 0,
         );
+        const cachedLayout = layoutCacheRef.current[regionId];
+
+        if (
+          cachedLayout &&
+          cachedLayout.layoutCount === layoutCount &&
+          cachedLayout.iconLayoutRevision === iconLayoutRevision
+        ) {
+          accumulator[regionId] = cachedLayout.layout;
+          return accumulator;
+        }
+
         const layout = buildRegionLayout(
           group,
           svgElement,
@@ -539,6 +678,11 @@ export default function JapanRegionMap({
         );
 
         if (layout) {
+          layoutCacheRef.current[regionId] = {
+            layoutCount,
+            iconLayoutRevision,
+            layout,
+          };
           accumulator[regionId] = layout;
         }
 
@@ -571,6 +715,20 @@ export default function JapanRegionMap({
     nextRegionId: VocabularyRegionId | null,
     event?: React.PointerEvent<SVGSVGElement>,
   ) => {
+    if (!hoverEnabled) {
+      if (hoveredRegionRef.current !== null) {
+        hoveredRegionRef.current = null;
+
+        if (svgRef.current) {
+          delete svgRef.current.dataset.hoverRegion;
+        }
+
+        onRegionHover(null);
+      }
+
+      return;
+    }
+
     if (hoveredRegionRef.current === nextRegionId) {
       return;
     }
@@ -605,7 +763,7 @@ export default function JapanRegionMap({
     });
   };
 
-  const handlePointerMove = (event: React.PointerEvent<SVGSVGElement>) => {
+  const handlePointerOver = (event: React.PointerEvent<SVGSVGElement>) => {
     const target = event.target;
 
     if (!(target instanceof Element)) {
@@ -664,41 +822,34 @@ export default function JapanRegionMap({
         "[--vmap-grid-major:#11182710]",
         "[--vmap-region:#F1EFEC]",
         "[--vmap-region-dim:#ECE8E4]",
-        "[--vmap-region-locked:#E8E4DF]",
         "[--vmap-region-completed:#F1EFEC]",
         "[--vmap-completed-stroke:#D1B277]",
         "[--vmap-stroke:#CEC8C1]",
-        "[--vmap-icon:#9B9490]",
-        "[--vmap-icon-hover:#FFF8F3]",
-        "[--vmap-region-highlight-fill:#D84A4A]",
-        "[--vmap-region-highlight-stroke:#A83A3A]",
-        "[--vmap-region-active-fill:#D84A4A]",
+        "[--vmap-icon:#6F6763]",
+        "[--vmap-icon-hover:#FFFFFF]",
         "[--vmap-region-loading:#E9E5E0]",
-        "[--vmap-region-loading-pulse:#D84A4A]",
-        "[--vmap-glow:rgba(185,58,58,0.18)]",
+        "[--vmap-region-loading-pulse:#BA5149]",
+        "[--vmap-glow:rgba(153,51,49,0.22)]",
         "dark:[--vmap-bg:var(--surface-primary)]",
         "dark:[--vmap-grid-minor:#FFFFFF08]",
         "dark:[--vmap-grid-major:#FFFFFF10]",
         "dark:[--vmap-region:#17171B]",
         "dark:[--vmap-region-dim:#141418]",
-        "dark:[--vmap-region-locked:#111115]",
         "dark:[--vmap-region-completed:#17171B]",
         "dark:[--vmap-completed-stroke:#D6A84F]",
         "dark:[--vmap-stroke:#2F2F36]",
         "dark:[--vmap-icon:#73737B]",
-        "dark:[--vmap-icon-hover:#F2D6D6]",
-        "dark:[--vmap-region-highlight-fill:#E15656]",
-        "dark:[--vmap-region-highlight-stroke:#B83E3E]",
-        "dark:[--vmap-region-active-fill:#E15656]",
+        "dark:[--vmap-icon-hover:#FFFFFF]",
         "dark:[--vmap-region-loading:#24242A]",
-        "dark:[--vmap-region-loading-pulse:#E15656]",
-        "dark:[--vmap-glow:rgba(225,86,86,0.28)]",
+        "dark:[--vmap-region-loading-pulse:#BA5149]",
+        "dark:[--vmap-glow:rgba(153,51,49,0.28)]",
       ].join(" ")}
       role="img"
       aria-label="Mapa de Japon por regiones"
       shapeRendering="geometricPrecision"
       textRendering="geometricPrecision"
       data-loading-region={loadingRegionId ?? undefined}
+      data-hover-enabled={hoverEnabled ? "true" : "false"}
       data-status-hokkaido={regionStatusByRegion.hokkaido}
       data-status-tohoku={regionStatusByRegion.tohoku}
       data-status-kanto={regionStatusByRegion.kanto}
@@ -707,16 +858,10 @@ export default function JapanRegionMap({
       data-status-chugoku={regionStatusByRegion.chugoku}
       data-status-shikoku={regionStatusByRegion.shikoku}
       data-status-kyushu={regionStatusByRegion.kyushu}
-      onPointerMove={handlePointerMove}
+      onPointerOver={handlePointerOver}
       onPointerLeave={handlePointerLeave}
       onClick={handleClick}
-      style={{
-        display: "block",
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        WebkitTouchCallout: "none",
-        backgroundColor: "var(--vmap-bg)",
-      }}
+      style={svgStyle}
     >
       <style>{VMAP_STYLE}</style>
 
@@ -748,6 +893,21 @@ export default function JapanRegionMap({
             strokeWidth="0.8"
           />
         </pattern>
+        {REGION_ORDER.map((regionId) => (
+          <clipPath key={`vmap-region-clip-${regionId}`} id={`vmap-region-clip-${regionId}`}>
+            <g
+              dangerouslySetInnerHTML={{
+                __html: parsedMap.regionCloneMarkup[regionId] ?? "",
+              }}
+            />
+          </clipPath>
+        ))}
+        {parsedMap.iconInnerHtml ? (
+          <g
+            id="vmap-icon-hover-source"
+            dangerouslySetInnerHTML={{ __html: parsedMap.iconInnerHtml }}
+          />
+        ) : null}
       </defs>
 
       <g aria-hidden="true" pointerEvents="none">
@@ -758,14 +918,16 @@ export default function JapanRegionMap({
           height="10545"
           fill="var(--vmap-bg)"
         />
-        <rect
-          x="-5000"
-          y="-5000"
-          width="10483"
-          height="10545"
-          fill="url(#vmapCartesianMajor)"
-          opacity="0.65"
-        />
+        {showGridOverlay ? (
+          <rect
+            x="-5000"
+            y="-5000"
+            width="10483"
+            height="10545"
+            fill="url(#vmapCartesianMajor)"
+            opacity={heavyEffectsEnabled ? 0.65 : 0.3}
+          />
+        ) : null}
       </g>
 
       <g aria-hidden="true" pointerEvents="none" visibility="hidden" opacity={0}>
@@ -784,6 +946,24 @@ export default function JapanRegionMap({
       </g>
 
       <RawMapContent ref={contentRef} innerHtml={parsedMap.annotatedInnerHtml} />
+
+      {parsedMap.iconInnerHtml
+        ? REGION_ORDER.map((regionId) => (
+            <g
+              key={`vmap-icon-hover-layer-${regionId}`}
+              className="vmap-icon-hover-layer"
+              data-icon-layer={regionId}
+              clipPath={`url(#vmap-region-clip-${regionId})`}
+              pointerEvents="none"
+            >
+              <use href="#vmap-icon-hover-source" />
+            </g>
+          ))
+        : null}
     </svg>
   );
 }
+
+JapanRegionMap.displayName = "JapanRegionMap";
+
+export default memo(JapanRegionMap);
