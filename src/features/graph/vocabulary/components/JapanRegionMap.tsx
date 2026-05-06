@@ -1,8 +1,6 @@
 "use client";
 
 import {
-  type CSSProperties,
-  forwardRef,
   memo,
   useCallback,
   useEffect,
@@ -11,17 +9,27 @@ import {
   useState,
 } from "react";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { buildRegionLayout } from "../lib/regionNodePlacement";
+import { REGION_ORDER } from "../lib/vocabularyRegions";
 import type {
   VocabularyRegionId,
   VocabularyRegionLayout,
   VocabularyRegionViewModel,
 } from "../types";
-import { buildRegionLayout } from "../lib/regionNodePlacement";
+import ActiveRegionOverlay from "./japanMap/ActiveRegionOverlay";
+import InteractiveRegionLayer, {
+  type RegionVisualStatus,
+} from "./japanMap/InteractiveRegionLayer";
+import MeasurementLayer, {
+  type MeasurementLayerHandle,
+} from "./japanMap/MeasurementLayer";
+import StaticJapanMapLayer from "./japanMap/StaticJapanMapLayer";
 import {
-  REGION_FILL_TO_ID,
-  REGION_ORDER,
-  regionColors,
-} from "../lib/vocabularyRegions";
+  getCachedJapanMap,
+  loadJapanMapAssets,
+  type ParsedJapanMap,
+} from "./japanMap/japanMapAssets";
+import { JAPAN_MAP_PALETTE } from "./japanMap/japanMapTheme";
 
 type JapanRegionMapProps = {
   regions: VocabularyRegionViewModel[];
@@ -29,22 +37,10 @@ type JapanRegionMapProps = {
   loadingRegionId?: VocabularyRegionId | null;
   layoutCountsByRegion?: Partial<Record<VocabularyRegionId, number>>;
   onRegionSelect: (regionId: VocabularyRegionId) => void;
-  onRegionHover?: (
-    payload: { regionId: VocabularyRegionId; x: number; y: number } | null,
-  ) => void;
   onLayoutChange: (
     layout: Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>,
   ) => void;
 };
-
-type ParsedMap = {
-  viewBox: string;
-  annotatedInnerHtml: string;
-  iconInnerHtml: string;
-  regionCloneMarkup: Partial<Record<VocabularyRegionId, string>>;
-};
-
-type RegionVisualStatus = "locked" | "available" | "completed";
 
 type RegionIconBox = {
   x: number;
@@ -54,7 +50,6 @@ type RegionIconBox = {
 };
 
 type IconClassificationCache = {
-  iconRegionsByIndex: Array<VocabularyRegionId | null>;
   iconBoxesByRegion: Partial<Record<VocabularyRegionId, RegionIconBox[]>>;
 };
 
@@ -64,506 +59,37 @@ type RegionLayoutCacheEntry = {
   layout: VocabularyRegionLayout;
 };
 
-const DEFAULT_MAP_VIEWBOX = "0 0 483 545";
-const SVG_REGION_SHAPE_SELECTOR =
-  "path[fill], polygon[fill], circle[fill], ellipse[fill], rect[fill]";
-const SVG_GEOMETRY_SELECTOR = "path, polygon, circle, ellipse, rect";
-const MAP_SOURCE_URL = "/backgrounds/vocabulary/Map-japon-design.svg";
-const STRUCTURAL_PARENT_SELECTOR = "defs, clipPath, mask";
-let parsedMapPromise: Promise<ParsedMap> | null = null;
-let parsedMapCache: ParsedMap | null = null;
 let iconClassificationCache: IconClassificationCache | null = null;
 
-const BLOCKED_REGION_COLOR = "#1B1A1D";
+const SVG_GEOMETRY_SELECTOR = "path, polygon, circle, ellipse, rect";
 
-function clampChannel(value: number) {
-  return Math.max(0, Math.min(255, Math.round(value)));
-}
-
-function lightenHexColor(hex: string, amount: number) {
-  const normalized = hex.replace("#", "");
-
-  if (normalized.length !== 6) {
-    return hex;
-  }
-
-  const red = Number.parseInt(normalized.slice(0, 2), 16);
-  const green = Number.parseInt(normalized.slice(2, 4), 16);
-  const blue = Number.parseInt(normalized.slice(4, 6), 16);
-
-  const mixChannel = (channel: number) =>
-    clampChannel(channel + (255 - channel) * amount)
-      .toString(16)
-      .padStart(2, "0");
-
-  return `#${mixChannel(red)}${mixChannel(green)}${mixChannel(blue)}`.toUpperCase();
-}
-
-function darkenHexColor(hex: string, amount: number) {
-  const normalized = hex.replace("#", "");
-
-  if (normalized.length !== 6) {
-    return hex;
-  }
-
-  const red = Number.parseInt(normalized.slice(0, 2), 16);
-  const green = Number.parseInt(normalized.slice(2, 4), 16);
-  const blue = Number.parseInt(normalized.slice(4, 6), 16);
-
-  const mixChannel = (channel: number) =>
-    clampChannel(channel * (1 - amount))
-      .toString(16)
-      .padStart(2, "0");
-
-  return `#${mixChannel(red)}${mixChannel(green)}${mixChannel(blue)}`.toUpperCase();
-}
-
-const LIGHT_REGION_COLORS = Object.fromEntries(
-  REGION_ORDER.map((regionId) => [regionId, lightenHexColor(regionColors[regionId], 0.14)]),
-) as Record<VocabularyRegionId, string>;
-const LIGHT_REGION_STROKES = Object.fromEntries(
-  REGION_ORDER.map((regionId) => [regionId, darkenHexColor(regionColors[regionId], 0.08)]),
-) as Record<VocabularyRegionId, string>;
-const DARK_REGION_STROKES = Object.fromEntries(
-  REGION_ORDER.map((regionId) => [regionId, lightenHexColor(regionColors[regionId], 0.22)]),
-) as Record<VocabularyRegionId, string>;
-const LIGHT_BLOCKED_REGION_COLOR = lightenHexColor(BLOCKED_REGION_COLOR, 0.16);
-
-function normalizeHex(value?: string | null) {
-  return (value ?? "").trim().toUpperCase();
-}
-
-function isWhiteFill(value?: string | null) {
-  if (!value) {
-    return false;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  return normalized === "white" || normalized === "#ffffff" || normalized === "#fff";
-}
-
-function appendClass(element: Element, className: string) {
-  const current = element.getAttribute("class")?.trim();
-  if (!current) {
-    element.setAttribute("class", className);
-    return;
-  }
-
-  if (!current.split(/\s+/).includes(className)) {
-    element.setAttribute("class", `${current} ${className}`);
-  }
-}
-
-function isStructuralShape(element: Element) {
-  return Boolean(element.closest(STRUCTURAL_PARENT_SELECTOR));
-}
-
-function buildAnnotatedMap(svgText: string): ParsedMap {
-  const parser = new DOMParser();
-  const document = parser.parseFromString(svgText, "image/svg+xml");
-  const svg = document.querySelector("svg");
-  const regionCloneMarkup: Partial<Record<VocabularyRegionId, string[]>> = {};
-  const iconMarkup: string[] = [];
-
-  if (!svg) {
-    return {
-      viewBox: DEFAULT_MAP_VIEWBOX,
-      annotatedInnerHtml: "",
-      iconInnerHtml: "",
-      regionCloneMarkup: {},
-    };
-  }
-
-  svg.querySelectorAll(SVG_REGION_SHAPE_SELECTOR).forEach((shape) => {
-    if (!(shape instanceof Element) || isStructuralShape(shape)) {
-      return;
-    }
-
-    const fill = shape.getAttribute("fill");
-    const normalizedFill = normalizeHex(fill);
-    const regionId = REGION_FILL_TO_ID[normalizedFill];
-
-    if (regionId) {
-      const clone = shape.cloneNode(true);
-
-      if (clone instanceof Element) {
-        clone.removeAttribute("class");
-        clone.removeAttribute("data-region-path");
-        clone.removeAttribute("data-vocabulary-region");
-        clone.setAttribute("fill", "#000");
-        clone.setAttribute("stroke", "none");
-        regionCloneMarkup[regionId] = [
-          ...(regionCloneMarkup[regionId] ?? []),
-          clone.outerHTML,
-        ];
-      }
-
-      shape.removeAttribute("fill");
-      shape.removeAttribute("stroke");
-      shape.removeAttribute("stroke-width");
-      shape.setAttribute("data-region-path", regionId);
-      shape.setAttribute("data-vocabulary-region", regionId);
-      appendClass(shape, "vmap-region-shape");
-      return;
-    }
-
-    if (isWhiteFill(fill)) {
-      const clone = shape.cloneNode(true);
-
-      if (clone instanceof Element) {
-        clone.removeAttribute("class");
-        clone.removeAttribute("data-icon-region");
-        clone.setAttribute("fill", "currentColor");
-        clone.setAttribute("stroke", "none");
-        appendClass(clone, "vmap-icon-mask-shape");
-        iconMarkup.push(clone.outerHTML);
-      }
-
-      shape.removeAttribute("fill");
-      appendClass(shape, "vmap-icon");
-    }
-  });
-
-  return {
-    viewBox: svg.getAttribute("viewBox") || DEFAULT_MAP_VIEWBOX,
-    annotatedInnerHtml: svg.innerHTML,
-    iconInnerHtml: iconMarkup.join(""),
-    regionCloneMarkup: Object.fromEntries(
-      REGION_ORDER.map((regionId) => [
-        regionId,
-        (regionCloneMarkup[regionId] ?? []).join(""),
-      ]),
-    ),
-  };
-}
-
-const REGION_RULE_TEMPLATE = (id: VocabularyRegionId) => `
-  .japan-map-layer[data-status-${id}="locked"] [data-region-path="${id}"] {
-    fill: var(--vmap-region-locked);
-    stroke: var(--vmap-stroke);
-    opacity: 0.68;
-  }
-  .japan-map-layer[data-status-${id}="completed"] [data-region-path="${id}"] {
-    fill: var(--vmap-region-completed);
-    stroke: var(--vmap-stroke);
-    opacity: 0.98;
-  }
-  .japan-map-layer[data-hover-region="${id}"] [data-region-path="${id}"],
-  .japan-map-layer[data-active-region="${id}"] [data-region-path="${id}"] {
-    fill: var(--vmap-region-fill-${id});
-    stroke: var(--vmap-region-stroke-${id});
-    opacity: 1;
-  }
-  .japan-map-layer[data-active-region="${id}"] [data-region-path="${id}"] {
-    fill: var(--vmap-region-active-fill-${id});
-    stroke: var(--vmap-region-stroke-${id});
-    filter: var(--vmap-region-active-filter, none);
-  }
-  .japan-map-layer[data-hover-region="${id}"] .vmap-icon[data-icon-region="${id}"],
-  .japan-map-layer[data-active-region="${id}"] .vmap-icon[data-icon-region="${id}"] {
-    fill: var(--vmap-icon-hover);
-    opacity: 1;
-  }
-  .japan-map-layer[data-hover-region="${id}"] .vmap-icon-hover-layer[data-icon-layer="${id}"],
-  .japan-map-layer[data-active-region="${id}"] .vmap-icon-hover-layer[data-icon-layer="${id}"] {
-    color: var(--vmap-icon-hover);
-    opacity: 1;
-  }
-  .japan-map-layer[data-loading-region="${id}"] {
-    --vmap-region-loading-pulse-current: var(--vmap-region-active-fill-${id});
-  }
-  .japan-map-layer[data-loading-region="${id}"] [data-region-path="${id}"] {
-    fill: var(--vmap-region-active-fill-${id});
-    stroke: var(--vmap-region-stroke-${id});
-    will-change: opacity;
-    animation: vmap-region-pulse 920ms ease-in-out infinite;
-  }
-`;
-
-const VMAP_STYLE = `
-  .japan-map-layer {
-    transition: background-color 320ms ease-out;
-    contain: layout paint style;
-    isolation: isolate;
-  }
-  .japan-map-layer .vmap-content {
-    pointer-events: none;
-  }
-  .japan-map-layer .vmap-region-shape {
-    fill: var(--vmap-region);
-    stroke: var(--vmap-stroke);
-    stroke-width: 0.56;
-    stroke-linejoin: round;
-    paint-order: stroke fill;
-    opacity: 0.98;
-    pointer-events: auto;
-    transition:
-      fill var(--vmap-transition-duration, 56ms) linear,
-      stroke var(--vmap-transition-duration, 56ms) linear,
-      opacity var(--vmap-transition-duration, 56ms) linear,
-      filter 120ms linear;
-    cursor: pointer;
-  }
-  .japan-map-layer[data-active-region] .vmap-region-shape {
-    fill: var(--vmap-region-dim);
-    opacity: 0.84;
-  }
-  .japan-map-layer[data-hover-enabled="false"] .vmap-region-shape {
-    transition: fill 48ms linear, stroke 48ms linear, opacity 48ms linear;
-  }
-  .japan-map-layer [data-vocabulary-region] {
-    pointer-events: auto;
-    touch-action: manipulation;
-  }
-  .japan-map-layer .vmap-icon {
-    fill: var(--vmap-icon);
-    opacity: 0.86;
-    pointer-events: none;
-    transition: fill var(--vmap-transition-duration, 56ms) linear, opacity var(--vmap-transition-duration, 56ms) linear;
-  }
-  .japan-map-layer .vmap-icon-unassigned {
-    fill: var(--vmap-icon);
-    opacity: 0.5;
-    pointer-events: none;
-    transition: fill var(--vmap-transition-duration, 56ms) linear, opacity var(--vmap-transition-duration, 56ms) linear;
-  }
-  .japan-map-layer .vmap-icon-hover-layer {
-    display: block;
-    color: var(--vmap-icon-hover);
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity var(--vmap-transition-duration, 56ms) linear;
-  }
-  .japan-map-layer .vmap-icon-hover-layer .vmap-icon-mask-shape {
-    fill: currentColor;
-    stroke: none;
-  }
-  .japan-map-layer[data-active-region] .vmap-icon:not([data-icon-region]) {
-    opacity: 0.42;
-  }
-  @keyframes vmap-region-pulse {
-    0%, 100% {
-      opacity: 0.88;
-    }
-    50% {
-      opacity: 1;
-    }
-  }
-  .japan-map-layer {
-    --vmap-region-locked: ${LIGHT_BLOCKED_REGION_COLOR};
-${REGION_ORDER.map(
-  (regionId) =>
-    `    --vmap-region-fill-${regionId}: ${LIGHT_REGION_COLORS[regionId]};\n    --vmap-region-stroke-${regionId}: ${LIGHT_REGION_STROKES[regionId]};\n    --vmap-region-active-fill-${regionId}: ${LIGHT_REGION_COLORS[regionId]};`,
-).join("\n")}
-  }
-  .dark .japan-map-layer {
-    --vmap-region-locked: ${BLOCKED_REGION_COLOR};
-${REGION_ORDER.map(
-  (regionId) =>
-    `    --vmap-region-fill-${regionId}: ${regionColors[regionId]};\n    --vmap-region-stroke-${regionId}: ${DARK_REGION_STROKES[regionId]};\n    --vmap-region-active-fill-${regionId}: ${regionColors[regionId]};`,
-).join("\n")}
-  }
-${REGION_ORDER.map(REGION_RULE_TEMPLATE).join("\n")}
-`;
-
-const RawMapContent = memo(
-  forwardRef<SVGGElement, { innerHtml: string }>(function RawMapContent(
-    { innerHtml },
-    ref,
-  ) {
-    return (
-      <g
-        ref={ref}
-        className="vmap-content"
-        dangerouslySetInnerHTML={{ __html: innerHtml }}
-      />
-    );
-  }),
-);
-
-RawMapContent.displayName = "RawMapContent";
-
-// Static defs: grid patterns + per-region clipPaths + icon source.
-// Only depends on parsedMap → never reconciled when interaction state changes.
-const MapDefsLayer = memo(function MapDefsLayer({
-  regionCloneMarkup,
-  iconInnerHtml,
-}: {
-  regionCloneMarkup: Partial<Record<VocabularyRegionId, string>>;
-  iconInnerHtml: string;
-}) {
-  return (
-    <defs>
-      <pattern
-        id="vmapCartesianMinor"
-        width="18"
-        height="18"
-        patternUnits="userSpaceOnUse"
-      >
-        <path
-          d="M 18 0 L 0 0 0 18"
-          fill="none"
-          stroke="var(--vmap-grid-minor)"
-          strokeWidth="0.35"
-        />
-      </pattern>
-      <pattern
-        id="vmapCartesianMajor"
-        width="72"
-        height="72"
-        patternUnits="userSpaceOnUse"
-      >
-        <rect width="72" height="72" fill="url(#vmapCartesianMinor)" />
-        <path
-          d="M 72 0 L 0 0 0 72"
-          fill="none"
-          stroke="var(--vmap-grid-major)"
-          strokeWidth="0.8"
-        />
-      </pattern>
-      {REGION_ORDER.map((regionId) => (
-        <clipPath
-          key={`vmap-region-clip-${regionId}`}
-          id={`vmap-region-clip-${regionId}`}
-        >
-          <g
-            dangerouslySetInnerHTML={{
-              __html: regionCloneMarkup[regionId] ?? "",
-            }}
-          />
-        </clipPath>
-      ))}
-      {iconInnerHtml ? (
-        <g
-          id="vmap-icon-hover-source"
-          dangerouslySetInnerHTML={{ __html: iconInnerHtml }}
-        />
-      ) : null}
-    </defs>
-  );
-});
-
-// Background grid layer. Re-renders only if grid visibility/intensity changes.
-const MapGridLayer = memo(function MapGridLayer({
-  showGridOverlay,
-  heavyEffectsEnabled,
-}: {
-  showGridOverlay: boolean;
-  heavyEffectsEnabled: boolean;
-}) {
-  return (
-    <g aria-hidden="true" pointerEvents="none">
-      <rect
-        x="-5000"
-        y="-5000"
-        width="10483"
-        height="10545"
-        fill="var(--vmap-bg)"
-      />
-      {showGridOverlay ? (
-        <rect
-          x="-5000"
-          y="-5000"
-          width="10483"
-          height="10545"
-          fill="url(#vmapCartesianMajor)"
-          opacity={heavyEffectsEnabled ? 0.65 : 0.3}
-        />
-      ) : null}
-    </g>
-  );
-});
-
-// Hidden geometry used to compute bboxes / point-in-fill tests.
-// Memoized — only re-renders when parsedMap changes. Refs are forwarded via callback.
-const MapHiddenGeometryLayer = memo(function MapHiddenGeometryLayer({
-  regionCloneMarkup,
-  registerRef,
-}: {
-  regionCloneMarkup: Partial<Record<VocabularyRegionId, string>>;
-  registerRef: (regionId: VocabularyRegionId, element: SVGGElement | null) => void;
-}) {
-  return (
-    <g aria-hidden="true" pointerEvents="none" visibility="hidden" opacity={0}>
-      {REGION_ORDER.map((regionId) => (
-        <g
-          key={regionId}
-          ref={(element) => registerRef(regionId, element)}
-          data-vocabulary-region-clone={regionId}
-          dangerouslySetInnerHTML={{
-            __html: regionCloneMarkup[regionId] ?? "",
-          }}
-        />
-      ))}
-    </g>
-  );
-});
-
-// Icon hover layer: 8 clipped <use> overlays. Only depends on whether iconInnerHtml exists.
-const MapIconHoverLayer = memo(function MapIconHoverLayer({
-  hasIcons,
-}: {
-  hasIcons: boolean;
-}) {
-  if (!hasIcons) {
-    return null;
-  }
-
-  return (
-    <>
-      {REGION_ORDER.map((regionId) => (
-        <g
-          key={`vmap-icon-hover-layer-${regionId}`}
-          className="vmap-icon-hover-layer"
-          data-icon-layer={regionId}
-          clipPath={`url(#vmap-region-clip-${regionId})`}
-          pointerEvents="none"
-        >
-          <use href="#vmap-icon-hover-source" />
-        </g>
-      ))}
-    </>
-  );
-});
-
-function getParsedMap() {
-  if (parsedMapCache) {
-    return Promise.resolve(parsedMapCache);
-  }
-
-  if (!parsedMapPromise) {
-    parsedMapPromise = fetch(MAP_SOURCE_URL)
-      .then((response) => response.text())
-      .then((svgText) => {
-        const parsed = buildAnnotatedMap(svgText);
-        parsedMapCache = parsed;
-        return parsed;
-      });
-  }
-
-  return parsedMapPromise;
-}
-
+/**
+ * Composes the Japan map view as a stack of independent layers:
+ *
+ *   1. `StaticJapanMapLayer`    — high-fidelity raster of the full map (no React).
+ *   2. `InteractiveRegionLayer` — 8 transparent hit-targets, CSS-driven hover.
+ *   3. `ActiveRegionOverlay`    — colored highlight + glow for the active region.
+ *   4. `MeasurementLayer`       — off-screen geometry used only for layout math.
+ *
+ * The visible heavy SVG never enters the React tree, so hover and selection
+ * cost is independent of the source map's complexity.
+ */
 function JapanRegionMap({
   regions,
   selectedRegionId,
   loadingRegionId = null,
   layoutCountsByRegion,
   onRegionSelect,
-  onRegionHover,
   onLayoutChange,
 }: JapanRegionMapProps) {
   const platformMotion = usePlatformMotion();
-  const [parsedMap, setParsedMap] = useState<ParsedMap | null>(null);
+  const [parsedMap, setParsedMap] = useState<ParsedJapanMap | null>(() =>
+    getCachedJapanMap(),
+  );
   const [iconLayoutRevision, setIconLayoutRevision] = useState(0);
   const [layoutCacheVersion, setLayoutCacheVersion] = useState(0);
 
-  const svgRef = useRef<SVGSVGElement | null>(null);
-  const contentRef = useRef<SVGGElement | null>(null);
-  const hoveredRegionRef = useRef<VocabularyRegionId | null>(null);
-  const hiddenRegionRefs = useRef<
-    Partial<Record<VocabularyRegionId, SVGGElement | null>>
-  >({});
+  const measurementRef = useRef<MeasurementLayerHandle | null>(null);
   const iconBoxesByRegionRef = useRef<
     Partial<Record<VocabularyRegionId, RegionIconBox[]>>
   >({});
@@ -571,42 +97,16 @@ function JapanRegionMap({
     Partial<Record<VocabularyRegionId, RegionLayoutCacheEntry>>
   >({});
   const pendingLayoutUpgradeRef = useRef<
-    Partial<Record<VocabularyRegionId, number>>
+    Partial<Record<VocabularyRegionId, number | undefined>>
   >({});
 
-  // Stable ref-callback so the memoized hidden geometry layer never re-renders.
-  const registerHiddenRegionRef = useCallback(
-    (regionId: VocabularyRegionId, element: SVGGElement | null) => {
-      hiddenRegionRefs.current[regionId] = element;
-    },
-    [],
-  );
+  const heavyEffectsEnabled =
+    platformMotion.heavyAnimationsEnabled &&
+    platformMotion.graphicsProfile.shouldUseHeavyEffects;
 
   const regionLookup = useMemo(
     () => Object.fromEntries(regions.map((region) => [region.id, region])),
     [regions],
-  );
-  // Keep region hover always available for pointer devices. The hover effect is
-  // driven by a single delegated listener + CSS data attributes, so it remains
-  // cheap even on lower motion profiles.
-  const hoverEnabled = true;
-  const heavyEffectsEnabled =
-    platformMotion.heavyAnimationsEnabled &&
-    platformMotion.graphicsProfile.shouldUseHeavyEffects;
-  const showGridOverlay = platformMotion.graphicsProfile.tier !== "low";
-  const svgStyle = useMemo<CSSProperties>(
-    () => ({
-      display: "block",
-      userSelect: "none",
-      WebkitUserSelect: "none",
-      WebkitTouchCallout: "none",
-      backgroundColor: "var(--vmap-bg)",
-      ["--vmap-region-active-filter" as const]:
-        heavyEffectsEnabled ? "drop-shadow(0 0 3px var(--vmap-glow))" : "none",
-      ["--vmap-transition-duration" as const]:
-        hoverEnabled ? "56ms" : "40ms",
-    }),
-    [heavyEffectsEnabled, hoverEnabled],
   );
 
   const regionStatusByRegion = useMemo(() => {
@@ -628,16 +128,19 @@ function JapanRegionMap({
     return result;
   }, [regions]);
 
+  // Load (or reuse cached) parsed map exactly once per mount.
   useEffect(() => {
+    if (parsedMap) {
+      return;
+    }
+
     let active = true;
 
-    getParsedMap()
+    loadJapanMapAssets()
       .then((nextParsedMap) => {
-        if (!active) {
-          return;
+        if (active) {
+          setParsedMap(nextParsedMap);
         }
-
-        setParsedMap(nextParsedMap);
       })
       .catch((error) => {
         console.error("Error cargando mapa de Japon:", error);
@@ -646,62 +149,61 @@ function JapanRegionMap({
     return () => {
       active = false;
     };
-  }, []);
+  }, [parsedMap]);
 
+  // Stable handler — keeps InteractiveRegionLayer's memo intact regardless of
+  // how the parent re-creates its callback identity.
+  const handleRegionSelect = useCallback(
+    (regionId: VocabularyRegionId) => {
+      onRegionSelect(regionId);
+    },
+    [onRegionSelect],
+  );
+
+  // Classify icons → region (one-shot, cached globally) so node placement
+  // can avoid overlapping interior decorations. Deferred until a region is
+  // selected so the initial map load and the first drag are uncontested.
   useEffect(() => {
-    if (!parsedMap || !svgRef.current || !contentRef.current) {
+    if (!parsedMap || !selectedRegionId) {
       return;
     }
 
-    const contentElement = contentRef.current;
-    const iconShapes = Array.from(
-      contentElement.querySelectorAll<SVGGeometryElement>(".vmap-icon"),
-    );
+    const measurement = measurementRef.current;
+
+    if (!measurement) {
+      return;
+    }
+
+    const svgElement = measurement.getSvg();
+
+    if (!svgElement) {
+      return;
+    }
+
+    if (iconClassificationCache) {
+      iconBoxesByRegionRef.current = iconClassificationCache.iconBoxesByRegion;
+      setIconLayoutRevision((value) => value + 1);
+      return;
+    }
 
     let cancelled = false;
 
-    const applyCachedClassification = (cache: IconClassificationCache) => {
-      iconBoxesByRegionRef.current = cache.iconBoxesByRegion;
-      iconShapes.forEach((icon, index) => {
-        const assignedRegion = cache.iconRegionsByIndex[index] ?? null;
-
-        icon.removeAttribute("data-icon-region");
-        icon.classList.remove("vmap-icon-unassigned");
-        icon.classList.add("vmap-icon");
-
-        if (assignedRegion) {
-          icon.setAttribute("data-icon-region", assignedRegion);
-          return;
-        }
-
-        icon.classList.remove("vmap-icon");
-        icon.classList.add("vmap-icon-unassigned");
-      });
-
-      setIconLayoutRevision((value) => value + 1);
-    };
-
-    if (
-      iconClassificationCache &&
-      iconClassificationCache.iconRegionsByIndex.length === iconShapes.length
-    ) {
-      applyCachedClassification(iconClassificationCache);
-      return;
-    }
-
     const classifyIcons = () => {
-      if (cancelled || !svgRef.current) {
+      if (cancelled) {
         return;
       }
 
-      const svgElement = svgRef.current;
+      const iconShapes = measurement.getIconShapes();
       const point = svgElement.createSVGPoint();
-      const iconRegionsByIndex: Array<VocabularyRegionId | null> = [];
-      const iconBoxesByRegion: Partial<Record<VocabularyRegionId, RegionIconBox[]>> = {};
+      const iconBoxesByRegion: Partial<Record<VocabularyRegionId, RegionIconBox[]>> =
+        {};
+
       const regionGeometry = REGION_ORDER.map((regionId) => {
-        const group = hiddenRegionRefs.current[regionId];
+        const group = measurement.getRegionGroup(regionId);
         const shapes = group
-          ? Array.from(group.querySelectorAll<SVGGeometryElement>(SVG_GEOMETRY_SELECTOR))
+          ? Array.from(
+              group.querySelectorAll<SVGGeometryElement>(SVG_GEOMETRY_SELECTOR),
+            )
           : [];
         const boxes = shapes.map((shape) => {
           try {
@@ -714,22 +216,16 @@ function JapanRegionMap({
         return { regionId, shapes, boxes };
       });
 
-      iconShapes.forEach((icon, index) => {
-        icon.removeAttribute("data-icon-region");
-        icon.classList.remove("vmap-icon-unassigned");
-        icon.classList.add("vmap-icon");
-
+      iconShapes.forEach((icon) => {
         let box: SVGRect | DOMRect;
 
         try {
           box = icon.getBBox();
         } catch {
-          iconRegionsByIndex[index] = null;
           return;
         }
 
         if (!box.width && !box.height) {
-          iconRegionsByIndex[index] = null;
           return;
         }
 
@@ -737,8 +233,6 @@ function JapanRegionMap({
         const centerY = box.y + box.height / 2;
         point.x = centerX;
         point.y = centerY;
-
-        let assignedRegion: VocabularyRegionId | null = null;
 
         outer: for (const { regionId, shapes, boxes } of regionGeometry) {
           for (let shapeIndex = 0; shapeIndex < shapes.length; shapeIndex += 1) {
@@ -758,49 +252,40 @@ function JapanRegionMap({
             }
 
             if (shapes[shapeIndex].isPointInFill(point)) {
-              assignedRegion = regionId;
+              iconBoxesByRegion[regionId] = [
+                ...(iconBoxesByRegion[regionId] ?? []),
+                { x: box.x, y: box.y, width: box.width, height: box.height },
+              ];
               break outer;
             }
           }
         }
-
-        iconRegionsByIndex[index] = assignedRegion;
-
-        if (assignedRegion) {
-          icon.setAttribute("data-icon-region", assignedRegion);
-          iconBoxesByRegion[assignedRegion] = [
-            ...(iconBoxesByRegion[assignedRegion] ?? []),
-            { x: box.x, y: box.y, width: box.width, height: box.height },
-          ];
-          return;
-        }
-
-        icon.classList.remove("vmap-icon");
-        icon.classList.add("vmap-icon-unassigned");
       });
 
       if (cancelled) {
         return;
       }
 
-      iconClassificationCache = {
-        iconRegionsByIndex,
-        iconBoxesByRegion,
-      };
-      applyCachedClassification(iconClassificationCache);
+      iconClassificationCache = { iconBoxesByRegion };
+      iconBoxesByRegionRef.current = iconBoxesByRegion;
+      setIconLayoutRevision((value) => value + 1);
     };
 
-    const handle = window.requestAnimationFrame(classifyIcons);
+    // Delay 300 ms so the selection animation completes before the
+    // classification work (getBBox / isPointInFill) competes for CPU.
+    const timeoutId = window.setTimeout(classifyIcons, 300);
 
     return () => {
       cancelled = true;
-      window.cancelAnimationFrame(handle);
+      window.clearTimeout(timeoutId);
     };
-  }, [parsedMap]);
+  }, [parsedMap, selectedRegionId]);
 
+  // Cancel any pending layout upgrades when the component unmounts.
   useEffect(() => {
+    const pending = pendingLayoutUpgradeRef.current;
     return () => {
-      Object.values(pendingLayoutUpgradeRef.current).forEach((handle) => {
+      Object.values(pending).forEach((handle) => {
         if (typeof handle === "number") {
           window.cancelAnimationFrame(handle);
         }
@@ -809,96 +294,62 @@ function JapanRegionMap({
     };
   }, []);
 
+  // Build node-placement layout for the active region only.
+  // Deferring until a region is selected means the initial map view
+  // and the first-drag path are free of getBBox / SVG geometry work.
   useEffect(() => {
-    if (!parsedMap || !svgRef.current) {
+    if (!parsedMap || !selectedRegionId) {
       return;
     }
 
-    const svgElement = svgRef.current;
+    const measurement = measurementRef.current;
+    const svgElement = measurement?.getSvg() ?? null;
+
+    if (!measurement || !svgElement) {
+      return;
+    }
+
     const frameId = window.requestAnimationFrame(() => {
-      const nextLayout = REGION_ORDER.reduce<
-        Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>
-      >((accumulator, regionId) => {
-        const group = hiddenRegionRefs.current[regionId];
-        const region = regionLookup[regionId];
+      const regionId = selectedRegionId;
+      const group = measurement.getRegionGroup(regionId);
+      const region = regionLookup[regionId];
 
-        if (!group || !region) {
-          return accumulator;
-        }
+      if (!group || !region) {
+        return;
+      }
 
-        const layoutCount = Math.max(
-          region.themes.length,
-          layoutCountsByRegion?.[regionId] ?? 0,
-        );
-        const cachedLayout = layoutCacheRef.current[regionId];
+      const layoutCount = Math.max(
+        region.themes.length,
+        layoutCountsByRegion?.[regionId] ?? 0,
+      );
+      const cachedLayout = layoutCacheRef.current[regionId];
 
-        if (
-          cachedLayout &&
-          cachedLayout.iconLayoutRevision === iconLayoutRevision
-        ) {
-          accumulator[regionId] = cachedLayout.layout;
+      if (
+        cachedLayout &&
+        cachedLayout.iconLayoutRevision === iconLayoutRevision &&
+        cachedLayout.layoutCount >= layoutCount
+      ) {
+        onLayoutChange({ [regionId]: cachedLayout.layout });
+        return;
+      }
 
-          // If the cached layout was built with fewer candidate points, reuse it
-          // immediately so the region opens without blocking the frame, then
-          // upgrade the cache in the next frame.
-          if (
-            cachedLayout.layoutCount < layoutCount &&
-            !pendingLayoutUpgradeRef.current[regionId]
-          ) {
-            pendingLayoutUpgradeRef.current[regionId] =
-              window.requestAnimationFrame(() => {
-                pendingLayoutUpgradeRef.current[regionId] = undefined;
+      const layout = buildRegionLayout(
+        group,
+        svgElement,
+        layoutCount,
+        iconBoxesByRegionRef.current[regionId] ?? [],
+      );
 
-                const currentGroup = hiddenRegionRefs.current[regionId];
-                const currentSvg = svgRef.current;
+      if (!layout) {
+        return;
+      }
 
-                if (!currentGroup || !currentSvg) {
-                  return;
-                }
-
-                const upgradedLayout = buildRegionLayout(
-                  currentGroup,
-                  currentSvg,
-                  layoutCount,
-                  iconBoxesByRegionRef.current[regionId] ?? [],
-                );
-
-                if (!upgradedLayout) {
-                  return;
-                }
-
-                layoutCacheRef.current[regionId] = {
-                  layoutCount,
-                  iconLayoutRevision,
-                  layout: upgradedLayout,
-                };
-                setLayoutCacheVersion((value) => value + 1);
-              });
-          }
-
-          return accumulator;
-        }
-
-        const layout = buildRegionLayout(
-          group,
-          svgElement,
-          layoutCount,
-          iconBoxesByRegionRef.current[regionId] ?? [],
-        );
-
-        if (layout) {
-          layoutCacheRef.current[regionId] = {
-            layoutCount,
-            iconLayoutRevision,
-            layout,
-          };
-          accumulator[regionId] = layout;
-        }
-
-        return accumulator;
-      }, {});
-
-      onLayoutChange(nextLayout);
+      layoutCacheRef.current[regionId] = {
+        layoutCount,
+        iconLayoutRevision,
+        layout,
+      };
+      onLayoutChange({ [regionId]: layout });
     });
 
     return () => {
@@ -906,193 +357,85 @@ function JapanRegionMap({
     };
   }, [
     iconLayoutRevision,
-    layoutCacheVersion,
     layoutCountsByRegion,
     onLayoutChange,
     parsedMap,
     regionLookup,
+    selectedRegionId,
   ]);
-
-  useEffect(() => {
-    const svgElement = svgRef.current;
-
-    if (!svgElement) {
-      return;
-    }
-
-    if (selectedRegionId) {
-      svgElement.dataset.activeRegion = selectedRegionId;
-    } else {
-      delete svgElement.dataset.activeRegion;
-    }
-  }, [selectedRegionId]);
-
-  const updateHoveredRegion = (
-    nextRegionId: VocabularyRegionId | null,
-    event?: React.PointerEvent<SVGSVGElement>,
-  ) => {
-    if (hoveredRegionRef.current === nextRegionId) {
-      return;
-    }
-
-    hoveredRegionRef.current = nextRegionId;
-
-    const svgElement = svgRef.current;
-
-    if (svgElement) {
-      if (nextRegionId) {
-        svgElement.dataset.hoverRegion = nextRegionId;
-      } else {
-        delete svgElement.dataset.hoverRegion;
-      }
-    }
-
-    // Skip the expensive getBoundingClientRect lookup when no consumer needs the
-    // pointer coordinates. The hover styling is already driven by data-attributes
-    // mutated above, so this short-circuit avoids forced layout in every move.
-    if (!onRegionHover) {
-      return;
-    }
-
-    if (!nextRegionId || !event) {
-      onRegionHover(null);
-      return;
-    }
-
-    const rect = svgElement?.getBoundingClientRect();
-
-    if (!rect) {
-      return;
-    }
-
-    onRegionHover({
-      regionId: nextRegionId,
-      x: event.clientX - rect.left,
-      y: event.clientY - rect.top,
-    });
-  };
-
-  const handlePointerOver = (event: React.PointerEvent<SVGSVGElement>) => {
-    const target = event.target;
-
-    if (!(target instanceof Element)) {
-      updateHoveredRegion(null);
-      return;
-    }
-
-    const regionElement = target.closest<SVGElement>("[data-region-path]");
-    const regionId = (regionElement?.getAttribute("data-region-path") ??
-      null) as VocabularyRegionId | null;
-
-    updateHoveredRegion(regionId, event);
-  };
-
-  const handlePointerLeave = () => {
-    updateHoveredRegion(null);
-  };
-
-  const handleClick = (event: React.MouseEvent<SVGSVGElement>) => {
-    const target = event.target;
-
-    if (!(target instanceof Element)) {
-      return;
-    }
-
-    const regionElement = target.closest<SVGElement>("[data-region-path]");
-    const regionId = regionElement?.getAttribute("data-region-path") as
-      | VocabularyRegionId
-      | null;
-
-    if (regionId) {
-      onRegionSelect(regionId);
-    }
-  };
 
   if (!parsedMap) {
     return (
       <div
         className="absolute inset-0 flex items-center justify-center"
         aria-label="Cargando mapa de Japon"
+        style={{ backgroundColor: JAPAN_MAP_PALETTE.background }}
       >
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
+        <StaticJapanMapLayer />
+        <div className="relative h-7 w-7 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
       </div>
     );
   }
 
   return (
-    <svg
-      ref={svgRef}
-      viewBox={parsedMap.viewBox}
-      preserveAspectRatio="xMidYMid meet"
-      className={[
-        "japan-map-layer absolute inset-0 h-full w-full",
-        "[--vmap-bg:var(--surface-primary)]",
-        "[--vmap-grid-minor:#11182708]",
-        "[--vmap-grid-major:#11182710]",
-        "[--vmap-region:#F1EFEC]",
-        "[--vmap-region-dim:#ECE8E4]",
-        "[--vmap-region-completed:#F1EFEC]",
-        "[--vmap-completed-stroke:#D1B277]",
-        "[--vmap-stroke:#CEC8C1]",
-        "[--vmap-icon:#6F6763]",
-        "[--vmap-icon-hover:#FFFFFF]",
-        "[--vmap-region-loading:#E9E5E0]",
-        "[--vmap-region-loading-pulse:#BA5149]",
-        "[--vmap-glow:rgba(153,51,49,0.22)]",
-        "dark:[--vmap-bg:var(--surface-primary)]",
-        "dark:[--vmap-grid-minor:#FFFFFF08]",
-        "dark:[--vmap-grid-major:#FFFFFF10]",
-        "dark:[--vmap-region:#17171B]",
-        "dark:[--vmap-region-dim:#141418]",
-        "dark:[--vmap-region-completed:#17171B]",
-        "dark:[--vmap-completed-stroke:#D6A84F]",
-        "dark:[--vmap-stroke:#2F2F36]",
-        "dark:[--vmap-icon:#73737B]",
-        "dark:[--vmap-icon-hover:#FFFFFF]",
-        "dark:[--vmap-region-loading:#24242A]",
-        "dark:[--vmap-region-loading-pulse:#BA5149]",
-        "dark:[--vmap-glow:rgba(153,51,49,0.28)]",
-      ].join(" ")}
-      role="img"
-      aria-label="Mapa de Japon por regiones"
-      shapeRendering="geometricPrecision"
-      textRendering="geometricPrecision"
-      data-loading-region={loadingRegionId ?? undefined}
-      data-hover-enabled={hoverEnabled ? "true" : "false"}
-      data-status-hokkaido={regionStatusByRegion.hokkaido}
-      data-status-tohoku={regionStatusByRegion.tohoku}
-      data-status-kanto={regionStatusByRegion.kanto}
-      data-status-chubu={regionStatusByRegion.chubu}
-      data-status-kansai={regionStatusByRegion.kansai}
-      data-status-chugoku={regionStatusByRegion.chugoku}
-      data-status-shikoku={regionStatusByRegion.shikoku}
-      data-status-kyushu={regionStatusByRegion.kyushu}
-      onPointerOver={handlePointerOver}
-      onPointerLeave={handlePointerLeave}
-      onClick={handleClick}
-      style={svgStyle}
+    <div
+      className="japan-map-stage absolute inset-0"
+      style={{
+        contain: "layout paint style",
+        isolation: "isolate",
+        backgroundColor: JAPAN_MAP_PALETTE.background,
+        backgroundImage:
+          // Subtle atmospheric depth without the heavy reddish tint.
+          "radial-gradient(ellipse at 50% 45%, rgba(14, 10, 10, 0.40) 0%, rgba(11, 11, 13, 0) 65%)",
+      }}
     >
-      <style>{VMAP_STYLE}</style>
-
-      <MapDefsLayer
-        regionCloneMarkup={parsedMap.regionCloneMarkup}
-        iconInnerHtml={parsedMap.iconInnerHtml}
+      <StaticJapanMapLayer />
+      {/* Dark veil that fades in when a region is selected, directing focus to
+          the active region overlay rendered above it. CSS transition keeps it
+          smooth; pointer-events:none so it never blocks interaction. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundColor: JAPAN_MAP_PALETTE.dimOverlay,
+          opacity: selectedRegionId ? 1 : 0,
+          transition: "opacity 380ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+        }}
       />
-
-      <MapGridLayer
-        showGridOverlay={showGridOverlay}
+      {/* Dark veil that fades in when a region is selected, directing focus
+          to the active region overlay above it. pointer-events:none so it
+          never blocks clicks on the interactive region layer. */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundColor: JAPAN_MAP_PALETTE.dimOverlay,
+          opacity: selectedRegionId ? 1 : 0,
+          transition: "opacity 380ms cubic-bezier(0.22, 0.61, 0.36, 1)",
+        }}
+      />
+      <ActiveRegionOverlay
+        parsedMap={parsedMap}
+        activeRegionId={selectedRegionId}
+        loadingRegionId={loadingRegionId}
         heavyEffectsEnabled={heavyEffectsEnabled}
+        activeRegionStatus={
+          selectedRegionId ? regionStatusByRegion[selectedRegionId] : undefined
+        }
       />
-
-      <MapHiddenGeometryLayer
-        regionCloneMarkup={parsedMap.regionCloneMarkup}
-        registerRef={registerHiddenRegionRef}
+      <InteractiveRegionLayer
+        parsedMap={parsedMap}
+        regionStatusByRegion={regionStatusByRegion}
+        activeRegionId={selectedRegionId}
+        onRegionSelect={handleRegionSelect}
       />
-
-      <RawMapContent ref={contentRef} innerHtml={parsedMap.annotatedInnerHtml} />
-
-      <MapIconHoverLayer hasIcons={Boolean(parsedMap.iconInnerHtml)} />
-    </svg>
+      {/* MeasurementLayer hosts the full SVG for getBBox/isPointInFill.
+          Mounting it only when a region is active avoids adding thousands of
+          DOM nodes during the map overview and the first-drag path. */}
+      {selectedRegionId ? (
+        <MeasurementLayer ref={measurementRef} parsedMap={parsedMap} />
+      ) : null}
+    </div>
   );
 }
 

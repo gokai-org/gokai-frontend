@@ -340,11 +340,18 @@ export default function Page() {
     start: PointerPosition;
     last: PointerPosition;
     dragged: boolean;
+    regionTarget: VocabularyRegionId | null;
   } | null>(null);
   const pinchRef = useRef<{ distance: number; center: PointerPosition } | null>(
     null,
   );
   const suppressRegionClickRef = useRef(false);
+  // Ref to the CSS transform layer. During drag we set pointer-events: none so
+  // the browser skips hit-testing SVG paths and never triggers CSS :hover state
+  // changes. Those changes force fill/stroke transitions (280ms) and a full
+  // repaint of the compositor layer on every frame — the primary source of the
+  // first-drag stutter.
+  const transformLayerRef = useRef<HTMLDivElement | null>(null);
   const [sceneSize, setSceneSize] = useState({ width: 0, height: 0 });
   const [renderScale, setRenderScale] = useState(1);
 
@@ -1109,7 +1116,7 @@ export default function Page() {
   }, [handleWheelNative]);
 
   const handlePointerDown = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
+    (event: PointerEvent) => {
       if (isNodeTarget(event.target) || isOverlayTarget(event.target)) {
         return;
       }
@@ -1130,8 +1137,25 @@ export default function Page() {
       pointersRef.current.set(event.pointerId, position);
 
       if (pointersRef.current.size === 1) {
-        dragRef.current = { start: position, last: position, dragged: false };
+        // Capture the pointer immediately so the browser routes all subsequent
+        // pointermove/pointerup to this element without changing internal routing mid-drag.
+        sceneRef.current?.setPointerCapture(event.pointerId);
+        dragRef.current = {
+          start: position,
+          last: position,
+          dragged: false,
+          // Save the region target here: once capture is set, event.target on
+          // subsequent events (pointerup) will be the capturing element, not the
+          // SVG region path.
+          regionTarget: getRegionTarget(event.target),
+        };
         pinchRef.current = null;
+        // Suspend hit-testing on the transform layer for the duration of this
+        // drag. The browser will no longer evaluate CSS :hover on SVG paths as
+        // the map translates, eliminating fill/stroke transition repaints.
+        if (transformLayerRef.current) {
+          transformLayerRef.current.style.pointerEvents = "none";
+        }
         return;
       }
 
@@ -1148,7 +1172,7 @@ export default function Page() {
   );
 
   const handlePointerMove = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
+    (event: PointerEvent) => {
       if (isOverlayTarget(event.target)) {
         return;
       }
@@ -1199,10 +1223,6 @@ export default function Page() {
       if (distance > 4) {
         drag.dragged = true;
         suppressRegionClickRef.current = true;
-
-        if (!event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.setPointerCapture(event.pointerId);
-        }
       }
 
       drag.last = position;
@@ -1216,12 +1236,12 @@ export default function Page() {
   );
 
   const handlePointerEnd = useCallback(
-    (event: React.PointerEvent<HTMLDivElement>) => {
+    (event: PointerEvent) => {
       if (isOverlayTarget(event.target)) {
         pointersRef.current.delete(event.pointerId);
 
-        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-          event.currentTarget.releasePointerCapture(event.pointerId);
+        if (sceneRef.current?.hasPointerCapture(event.pointerId)) {
+          sceneRef.current.releasePointerCapture(event.pointerId);
         }
 
         if (pointersRef.current.size === 0) {
@@ -1229,21 +1249,26 @@ export default function Page() {
           pinchRef.current = null;
           isNavigatingRef.current = false;
           if (sceneRef.current) sceneRef.current.style.cursor = "grab";
+          if (transformLayerRef.current) {
+            transformLayerRef.current.style.pointerEvents = "";
+          }
         }
 
         return;
       }
 
       const currentDrag = dragRef.current;
+      // Use the region target captured at pointerdown — event.target on pointerup
+      // is the capturing element (sceneRef div) when setPointerCapture is active.
       const selectedRegionFromTarget =
         !currentDrag?.dragged && pointersRef.current.size === 1
-          ? getRegionTarget(event.target)
+          ? (currentDrag?.regionTarget ?? null)
           : null;
 
       pointersRef.current.delete(event.pointerId);
 
-      if (event.currentTarget.hasPointerCapture(event.pointerId)) {
-        event.currentTarget.releasePointerCapture(event.pointerId);
+      if (sceneRef.current?.hasPointerCapture(event.pointerId)) {
+        sceneRef.current.releasePointerCapture(event.pointerId);
       }
 
       if (pointersRef.current.size === 0) {
@@ -1251,6 +1276,9 @@ export default function Page() {
         pinchRef.current = null;
         isNavigatingRef.current = false;
         if (sceneRef.current) sceneRef.current.style.cursor = "grab";
+        if (transformLayerRef.current) {
+          transformLayerRef.current.style.pointerEvents = "";
+        }
 
         if (selectedRegionFromTarget && !suppressRegionClickRef.current) {
           handleRegionSelect(selectedRegionFromTarget);
@@ -1273,12 +1301,61 @@ export default function Page() {
           start: pointers[0],
           last: pointers[0],
           dragged: false,
+          regionTarget: null, // transitioning from pinch — no region click
         };
         pinchRef.current = null;
       }
     },
     [clearSelectedRegionIfOffscreen, handleRegionSelect],
   );
+
+  // All pointer event listeners are native to bypass React's event delegation
+  // (root bubbling, SyntheticEvent allocation, fiber tree walk). That overhead
+  // is ~0.5–1 ms per call — negligible in steady state but causes a JIT-warmup
+  // stutter on the very first interaction because V8 hasn't compiled those paths.
+  useEffect(() => {
+    const el = sceneRef.current;
+    if (!el) return;
+    el.addEventListener("pointerdown", handlePointerDown);
+    el.addEventListener("pointermove", handlePointerMove, { passive: true });
+    el.addEventListener("pointerup", handlePointerEnd);
+    el.addEventListener("pointercancel", handlePointerEnd);
+    return () => {
+      el.removeEventListener("pointerdown", handlePointerDown);
+      el.removeEventListener("pointermove", handlePointerMove);
+      el.removeEventListener("pointerup", handlePointerEnd);
+      el.removeEventListener("pointercancel", handlePointerEnd);
+    };
+  }, [handlePointerDown, handlePointerMove, handlePointerEnd]);
+
+  // Pre-warm: after data is loaded and the scene is sized, trigger a
+  // sub-pixel micro-movement to force the browser's compositor to promote
+  // the transform layer to a GPU tile and JIT-compile the Framer Motion hot
+  // path. Without this, the very first drag may stutter while V8 compiles
+  // and the rasterizer promotes the layer.
+  useEffect(() => {
+    if (loading || !sceneSize.width || !sceneSize.height) {
+      return;
+    }
+
+    let secondFrame = 0;
+
+    const firstFrame = window.requestAnimationFrame(() => {
+      mvX.set(0.001);
+      mvY.set(0.001);
+
+      secondFrame = window.requestAnimationFrame(() => {
+        mvX.set(0);
+        mvY.set(0);
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      window.cancelAnimationFrame(secondFrame);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading, sceneSize.width, sceneSize.height]); // mvX/mvY are stable MotionValues
 
   const handleMapRegionSelect = useCallback(
     (regionId: VocabularyRegionId) => {
@@ -1323,11 +1400,7 @@ export default function Page() {
     <div
       ref={sceneRef}
       data-help-target="graph-canvas"
-      className="absolute inset-0 z-0 h-full w-full cursor-grab overflow-hidden touch-none select-none bg-surface-primary"
-      onPointerDown={handlePointerDown}
-      onPointerMove={handlePointerMove}
-      onPointerUp={handlePointerEnd}
-      onPointerCancel={handlePointerEnd}
+      className="absolute inset-0 z-0 cursor-grab overflow-hidden touch-none select-none bg-[#0B0B0D]"
       style={{
         overscrollBehavior: "contain",
         userSelect: "none",
@@ -1346,6 +1419,7 @@ export default function Page() {
       ) : (
         <>
           <motion.div
+            ref={transformLayerRef}
             data-map-transform-layer="true"
             className="map-transform-layer absolute left-0 top-0 z-10 bg-transparent"
             style={{
