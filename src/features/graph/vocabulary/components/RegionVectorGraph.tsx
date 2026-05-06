@@ -22,6 +22,8 @@ import {
   VocabularyGraphVisualDefs,
 } from "./VocabularyGraphLabel";
 
+const regionVectorLayoutCache = new Map<string, ReturnType<typeof buildRegionGraphLayout>>();
+
 type RegionVectorGraphProps = {
   nodes: FlowGraphNode[];
   edges: GraphEdge[];
@@ -29,7 +31,6 @@ type RegionVectorGraphProps = {
   nodePoints: VocabularyRegionNodePoint[] | null;
   viewport: VocabularySvgViewport | null;
   level: Extract<VocabularyViewLevel, "theme" | "subtheme">;
-  loadingNodeId?: string | null;
   interactionDisabled?: boolean;
   onNodeSelected: (node: FlowGraphNode) => void;
 };
@@ -111,6 +112,46 @@ function getNodeRadius(
   return node.id === "home" ? visualScale.homeRadius : visualScale.nodeRadius;
 }
 
+function getRegionVectorLayoutCacheKey(
+  nodes: FlowGraphNode[],
+  edges: GraphEdge[],
+  regionBounds: VocabularyRegionBounds | null,
+  nodePoints: VocabularyRegionNodePoint[] | null,
+  viewport: VocabularySvgViewport | null,
+  level: Extract<VocabularyViewLevel, "theme" | "subtheme">,
+) {
+  const boundsKey = regionBounds
+    ? [
+        regionBounds.x.toFixed(2),
+        regionBounds.y.toFixed(2),
+        regionBounds.width.toFixed(2),
+        regionBounds.height.toFixed(2),
+      ].join(":")
+    : "no-bounds";
+  const viewportKey = viewport
+    ? [
+        viewport.x.toFixed(2),
+        viewport.y.toFixed(2),
+        viewport.width.toFixed(2),
+        viewport.height.toFixed(2),
+      ].join(":")
+    : "no-viewport";
+  const nodePointKey = (nodePoints ?? [])
+    .map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+    .join("|");
+  const nodeKey = nodes
+    .map((node) => `${node.id}:${node.position.x},${node.position.y}:${node.data.status ?? ""}`)
+    .join("|");
+  const edgeKey = edges.map((edge) => `${edge.id}:${edge.source}->${edge.target}`).join("|");
+
+  return `${level}::${boundsKey}::${viewportKey}::${nodePointKey}::${nodeKey}::${edgeKey}`;
+}
+
+const VOCAB_VECTOR_HOVER_STYLE = `
+  .vocab-node-hover { transition: filter 140ms ease-out, opacity 140ms ease-out; }
+  g[data-vocabulary-node="true"]:hover .vocab-node-hover circle { filter: brightness(1.12); }
+`;
+
 function RegionVectorGraph({
   nodes,
   edges,
@@ -118,32 +159,48 @@ function RegionVectorGraph({
   nodePoints,
   viewport,
   level,
-  loadingNodeId = null,
   interactionDisabled = false,
   onNodeSelected,
 }: RegionVectorGraphProps) {
   const platformMotion = usePlatformMotion();
   const visualScale = useMemo(() => getVisualScale(level), [level]);
-  const layout = useMemo(
+  const layoutCacheKey = useMemo(
     () =>
-      buildRegionGraphLayout(
+      getRegionVectorLayoutCacheKey(
         nodes,
         edges,
         regionBounds,
         nodePoints,
         viewport,
-        (node) => getNodeRadius(node, visualScale),
+        level,
       ),
-    [edges, nodePoints, nodes, regionBounds, viewport, visualScale],
+    [edges, level, nodePoints, nodes, regionBounds, viewport],
   );
+  const layout = useMemo(() => {
+    const cachedLayout = regionVectorLayoutCache.get(layoutCacheKey);
+
+    if (cachedLayout) {
+      return cachedLayout;
+    }
+
+    const nextLayout = buildRegionGraphLayout(
+      nodes,
+      edges,
+      regionBounds,
+      nodePoints,
+      viewport,
+      (node) => getNodeRadius(node, visualScale),
+    );
+
+    regionVectorLayoutCache.set(layoutCacheKey, nextLayout);
+    return nextLayout;
+  }, [edges, layoutCacheKey, nodePoints, nodes, regionBounds, viewport, visualScale]);
 
   const svgInitial = !platformMotion.shouldAnimate
     ? false
-    : platformMotion.shouldUseLightAnimations
-      ? { opacity: 0 }
-      : { opacity: 0, scale: 0.98 };
+    : { opacity: 0 };
   const svgAnimate = platformMotion.shouldAnimate
-    ? { opacity: 1, scale: 1 }
+    ? { opacity: 1 }
     : undefined;
   const svgTransition = platformMotion.shouldAnimate
     ? {
@@ -153,32 +210,14 @@ function RegionVectorGraph({
         ease: [0.22, 1, 0.36, 1] as const,
       }
     : undefined;
-  const shouldAnimateEdgeDrawing =
-    platformMotion.motionMode === "full" && edges.length <= 10;
   const edgeElements = useMemo(() => {
-    const edgeInitial = shouldAnimateEdgeDrawing
-      ? { pathLength: 0, opacity: 0 }
-      : false;
-    const edgeShadowAnimate = shouldAnimateEdgeDrawing
-      ? { pathLength: 1, opacity: 0.92 }
-      : { opacity: 0.92 };
-    const edgeMainAnimate = shouldAnimateEdgeDrawing
-      ? { pathLength: 1, opacity: 0.98 }
-      : { opacity: 0.98 };
-    const edgeTransition = shouldAnimateEdgeDrawing
-      ? {
-          duration: 0.24 * platformMotion.durationScale,
-          ease: [0.22, 1, 0.36, 1] as const,
-        }
-      : undefined;
-
     return layout.edges.map(({ edge, from, to }) => {
       const completed = edge.data?.status === "completed";
       const curve = buildRegionGraphCurve(from, to);
 
       return (
         <g key={edge.id}>
-          <motion.path
+          <path
             d={curve}
             fill="none"
             stroke={
@@ -190,11 +229,9 @@ function RegionVectorGraph({
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
-            initial={edgeInitial}
-            animate={edgeShadowAnimate}
-            transition={edgeTransition}
+            opacity={0.92}
           />
-          <motion.path
+          <path
             d={curve}
             fill="none"
             stroke={
@@ -208,48 +245,17 @@ function RegionVectorGraph({
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
-            initial={edgeInitial}
-            animate={edgeMainAnimate}
-            transition={edgeTransition}
+            opacity={0.98}
           />
         </g>
       );
     });
   }, [
     layout.edges,
-    platformMotion.durationScale,
-    shouldAnimateEdgeDrawing,
     visualScale.completedEdgeWidth,
     visualScale.edgeWidth,
   ]);
-  const nodeInitial = !platformMotion.shouldAnimate
-    ? false
-    : platformMotion.shouldUseLightAnimations
-      ? { opacity: 0, scale: 0.92 }
-      : { opacity: 0, scale: 0.55 };
-  const nodeAnimate = platformMotion.shouldAnimate
-    ? { opacity: 1, scale: 1 }
-    : undefined;
-  const nodeHover = platformMotion.shouldUseHoverAnimations
-    ? { scale: platformMotion.shouldUseLightAnimations ? 1.08 : 1.18 }
-    : undefined;
-  const nodeTransition = platformMotion.shouldUseLightAnimations
-    ? {
-        duration: 0.1 * Math.max(platformMotion.durationScale, 0.75),
-        ease: [0.22, 1, 0.36, 1] as const,
-      }
-    : { type: "spring" as const, stiffness: 300, damping: 22 };
-  const loadingNodeAnimate = platformMotion.shouldAnimate
-    ? { opacity: [1, 0.84, 1], scale: [1, 1.08, 1] }
-    : undefined;
-  const loadingNodeTransition = platformMotion.shouldAnimate
-    ? {
-        duration: 0.92 * Math.max(platformMotion.durationScale, 0.85),
-        ease: "easeInOut" as const,
-        repeat: Number.POSITIVE_INFINITY,
-      }
-    : undefined;
-
+  const hoverEnabled = platformMotion.shouldUseHoverAnimations;
   if (!layout.nodes.length || !viewport) {
     return null;
   }
@@ -260,7 +266,7 @@ function RegionVectorGraph({
     <motion.svg
       initial={svgInitial}
       animate={svgAnimate}
-      exit={platformMotion.shouldAnimate ? { opacity: 0, scale: 0.98 } : undefined}
+      exit={platformMotion.shouldAnimate ? { opacity: 0 } : undefined}
       transition={svgTransition}
       className="region-graph-layer pointer-events-none absolute inset-0 z-30 h-full w-full overflow-visible [--vocabulary-edge-shadow:#2E26211F] [--vocabulary-edge-shadow-completed:#A73D3730] [--vocabulary-edge-default:#6D625BA8] [--vocabulary-edge-completed:#B54842E0] [--vocabulary-node-stroke:#2D251F30] [--vocabulary-label-fill:var(--surface-elevated)] [--vocabulary-label-border:var(--border-primary)] [--vocabulary-label-inner-border:rgba(255,255,255,0.55)] [--vocabulary-label-highlight:rgba(255,255,255,0.55)] [--vocabulary-label-text:var(--content-primary)] dark:[--vocabulary-edge-shadow:#00000036] dark:[--vocabulary-edge-shadow-completed:#A33C363A] dark:[--vocabulary-edge-default:#ECE4DD66] dark:[--vocabulary-edge-completed:#D9625CDE] dark:[--vocabulary-node-stroke:#FFFFFF52] dark:[--vocabulary-label-fill:var(--surface-secondary)] dark:[--vocabulary-label-border:rgba(255,255,255,0.12)] dark:[--vocabulary-label-inner-border:rgba(255,255,255,0.04)] dark:[--vocabulary-label-highlight:rgba(255,255,255,0.04)] dark:[--vocabulary-label-text:#F5F0EB]"
       viewBox={viewBox}
@@ -268,12 +274,12 @@ function RegionVectorGraph({
       aria-hidden="true"
     >
       <VocabularyGraphVisualDefs idPrefix="vocabulary-vector" />
+      <style>{VOCAB_VECTOR_HOVER_STYLE}</style>
 
       {edgeElements}
 
       {layout.nodes.map(({ node, x, y }) => {
         const label = formatNodeLabel(getNodeLabel(node));
-        const isLoadingNode = loadingNodeId === node.id;
         const nodeRadius = getNodeRadius(node, visualScale);
         const nodeFill = getNodeFill(node);
 
@@ -308,23 +314,13 @@ function RegionVectorGraph({
               fontSize={visualScale.labelFontSize}
             />
 
-            <motion.g
-              initial={nodeInitial}
-              animate={isLoadingNode ? loadingNodeAnimate : nodeAnimate}
-              whileHover={node.data.status === "locked" || isLoadingNode ? undefined : nodeHover}
-              transition={isLoadingNode ? loadingNodeTransition : nodeTransition}
-              style={{ transformBox: "fill-box", transformOrigin: "center", willChange: isLoadingNode ? "transform, opacity" : undefined }}
+            <g
+              className={
+                hoverEnabled && node.data.status !== "locked"
+                  ? "vocab-node-hover"
+                  : undefined
+              }
             >
-              {isLoadingNode ? (
-                <motion.circle
-                  r={nodeRadius + 1.04}
-                  fill="none"
-                  stroke={nodeFill}
-                  strokeWidth={0.48}
-                  animate={{ opacity: [0.18, 0.46, 0.18], scale: [1, 1.16, 1] }}
-                  transition={loadingNodeTransition}
-                />
-              ) : null}
               <circle
                 r={nodeRadius}
                 fill={nodeFill}
@@ -347,7 +343,7 @@ function RegionVectorGraph({
               >
                 {getSymbol(node).slice(0, 2)}
               </text>
-            </motion.g>
+            </g>
           </g>
         );
       })}

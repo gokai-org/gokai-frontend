@@ -6,7 +6,7 @@ import {
   useMotionValue,
   useTransform,
 } from "framer-motion";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import type { GraphEdge, GraphNode } from "@/features/graph/lib/graphTypes";
 import JapanRegionMap from "@/features/graph/vocabulary/components/JapanRegionMap";
 import RegionThemeGraph from "@/features/graph/vocabulary/components/RegionThemeGraph";
@@ -58,6 +58,10 @@ const WHEEL_ZOOM_IN_FACTOR = 1.1;
 const WHEEL_ZOOM_OUT_FACTOR = 0.91;
 const MAP_PAN_PADDING_X = 96;
 const MAP_PAN_PADDING_Y = 56;
+const REGION_OFFSCREEN_DESELECT_MARGIN = 24;
+const CAMERA_RENDER_SCALE_EPSILON = 0.02;
+const CAMERA_RENDER_SCALE_COMMIT_DELAY = 140;
+const CAMERA_AUTO_TRANSITION_DURATION = 0.38;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -141,6 +145,36 @@ function getRenderedSvgFrame(
     width,
     height,
   };
+}
+
+function isRegionOutsideViewport({
+  bounds,
+  frame,
+  transform,
+  viewportSize,
+  margin = REGION_OFFSCREEN_DESELECT_MARGIN,
+}: {
+  bounds: VocabularyRegionLayout["bounds"];
+  frame: SvgSceneFrame;
+  transform: SceneTransform;
+  viewportSize: { width: number; height: number };
+  margin?: number;
+}) {
+  const left =
+    transform.x + (frame.x + (bounds.x / 100) * frame.width) * transform.scale;
+  const top =
+    transform.y + (frame.y + (bounds.y / 100) * frame.height) * transform.scale;
+  const width = (frame.width * bounds.width * transform.scale) / 100;
+  const height = (frame.height * bounds.height * transform.scale) / 100;
+  const right = left + width;
+  const bottom = top + height;
+
+  return (
+    right <= -margin ||
+    left >= viewportSize.width + margin ||
+    bottom <= -margin ||
+    top >= viewportSize.height + margin
+  );
 }
 
 function clampAxisToFrame({
@@ -312,13 +346,16 @@ export default function Page() {
   );
   const suppressRegionClickRef = useRef(false);
   const [sceneSize, setSceneSize] = useState({ width: 0, height: 0 });
+  const [renderScale, setRenderScale] = useState(1);
 
   // Motion values: direct DOM updates during pan/zoom — no React re-renders
   const mvX = useMotionValue(0);
   const mvY = useMotionValue(0);
   const mvScale = useMotionValue(1);
-  const mvLayerWidth = useTransform(mvScale, (scale) => sceneSize.width * scale);
-  const mvLayerHeight = useTransform(mvScale, (scale) => sceneSize.height * scale);
+  const mvLayerScale = useTransform(
+    mvScale,
+    (scale) => scale / Math.max(renderScale, 0.001),
+  );
 
   // Stable refs for values consumed in event handlers (no stale closures)
   const manualTransformRef = useRef<SceneTransform>({ scale: 1, x: 0, y: 0 });
@@ -329,6 +366,9 @@ export default function Page() {
   const isNavigatingRef = useRef(false);
   const animStopRef = useRef<Array<() => void>>([]);
   const lastAutoTargetRef = useRef<SceneTransform | null>(null);
+  const preservedCameraTransformRef = useRef<SceneTransform | null>(null);
+  const renderScaleRef = useRef(1);
+  const renderScaleCommitTimeoutRef = useRef<number | null>(null);
   const subthemeLoadRequestRef = useRef(0);
 
   const [regionLayouts, setRegionLayouts] = useState<
@@ -344,6 +384,7 @@ export default function Page() {
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
   const [subthemeWords, setSubthemeWords] = useState<VocabularyWordLesson[]>([]);
   const [subthemeWordsLoading, setSubthemeWordsLoading] = useState(false);
+  const [regionThemeGraphLoading, setRegionThemeGraphLoading] = useState(false);
   const [pendingThemeId, setPendingThemeId] = useState<string | null>(null);
   const [pendingGraphNodeId, setPendingGraphNodeId] = useState<string | null>(null);
   const {
@@ -405,8 +446,15 @@ export default function Page() {
       return null;
     }
 
-    return actionPendingId || subthemeWordsLoading ? activeRegionId : null;
-  }, [actionPendingId, activeRegionId, subthemeWordsLoading]);
+    return actionPendingId || subthemeWordsLoading || regionThemeGraphLoading
+      ? activeRegionId
+      : null;
+  }, [
+    actionPendingId,
+    activeRegionId,
+    regionThemeGraphLoading,
+    subthemeWordsLoading,
+  ]);
   const graphInteractionDisabled = Boolean(
     pendingThemeId || pendingGraphNodeId || actionPendingId || subthemeWordsLoading,
   );
@@ -498,13 +546,40 @@ export default function Page() {
   );
 
   useEffect(() => {
+    renderScaleRef.current = renderScale;
+  }, [renderScale]);
+
+  useEffect(() => {
+    return () => {
+      if (renderScaleCommitTimeoutRef.current !== null) {
+        window.clearTimeout(renderScaleCommitTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
     // Reset manual transform and cancel any running animation when navigating levels
     animStopRef.current.forEach((stop) => stop());
     animStopRef.current = [];
-    manualTransformRef.current = { scale: 1, x: 0, y: 0 };
     pointersRef.current.clear();
     dragRef.current = null;
     pinchRef.current = null;
+
+    const preservedCamera = preservedCameraTransformRef.current;
+
+    if (preservedCamera) {
+      preservedCameraTransformRef.current = null;
+      manualTransformRef.current = preservedCamera;
+      lastAutoTargetRef.current = preservedCamera;
+      mvX.set(preservedCamera.x);
+      mvY.set(preservedCamera.y);
+      mvScale.set(preservedCamera.scale);
+      renderScaleRef.current = preservedCamera.scale;
+      setRenderScale(preservedCamera.scale);
+      return;
+    }
+
+    manualTransformRef.current = { scale: 1, x: 0, y: 0 };
   }, [activeRegionId, currentLevel]);
 
   useEffect(() => {
@@ -514,6 +589,34 @@ export default function Page() {
       setHidden(false);
     };
   }, [isLessonOpen, setHidden]);
+
+  useEffect(() => {
+    if (currentLevel !== "region" || !selectedRegionId) {
+      setRegionThemeGraphLoading(false);
+      return;
+    }
+
+    const hasLayout = Boolean(regionLayouts[selectedRegionId]?.nodePoints?.length);
+    const hasThemes = Boolean(selectedRegion?.themes.length);
+
+    if (!hasLayout || !hasThemes || !regionThemeGraphLoading) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setRegionThemeGraphLoading(false);
+    }, 680);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [
+    currentLevel,
+    regionLayouts,
+    regionThemeGraphLoading,
+    selectedRegion,
+    selectedRegionId,
+  ]);
 
   const graphElements = useMemo(() => {
     if (currentLevel === "subtheme" && selectedSubthemeItem) {
@@ -541,16 +644,22 @@ export default function Page() {
   const handleRegionSelect = useCallback(
     (regionId: VocabularyRegionId) => {
       subthemeLoadRequestRef.current += 1;
-      setPendingThemeId(null);
-      setPendingGraphNodeId(null);
-      setSubthemeWordsLoading(false);
-      setSubthemeWords([]);
-      setSelectedRegionId(regionId);
-      setSelectedThemeId(null);
-      setSelectedSubthemeNodeId(null);
-      setSelectedWordId(null);
-      setSelectedGraphId(null);
-      setCurrentLevel("region");
+      // Wrap level-changing state in startTransition so the click feels
+      // instant — React keeps the current frame interactive and processes
+      // the heavy region/graph re-renders concurrently.
+      setRegionThemeGraphLoading(true);
+      startTransition(() => {
+        setPendingThemeId(null);
+        setPendingGraphNodeId(null);
+        setSubthemeWordsLoading(false);
+        setSubthemeWords([]);
+        setSelectedRegionId(regionId);
+        setSelectedThemeId(null);
+        setSelectedSubthemeNodeId(null);
+        setSelectedWordId(null);
+        setSelectedGraphId(null);
+        setCurrentLevel("region");
+      });
     },
     [setSelectedGraphId],
   );
@@ -597,6 +706,76 @@ export default function Page() {
     },
     [createGraphFromTheme, setSelectedGraphId],
   );
+
+  const exitRegionSelection = useCallback(() => {
+    setRegionThemeGraphLoading(false);
+    setPendingThemeId(null);
+    setPendingGraphNodeId(null);
+    setSubthemeWords([]);
+    setSelectedThemeId(null);
+    setSelectedSubthemeNodeId(null);
+    setSelectedWordId(null);
+    setSelectedGraphId(null);
+    setCurrentLevel("map");
+  }, [setSelectedGraphId]);
+
+  const clearRegionSelectionSilently = useCallback(() => {
+    preservedCameraTransformRef.current = {
+      x: mvX.get(),
+      y: mvY.get(),
+      scale: mvScale.get(),
+    };
+
+    setRegionThemeGraphLoading(false);
+    setPendingThemeId(null);
+    setPendingGraphNodeId(null);
+    setSubthemeWords([]);
+    setSelectedThemeId(null);
+    setSelectedSubthemeNodeId(null);
+    setSelectedWordId(null);
+    setSelectedGraphId(null);
+    setSelectedRegionId(null);
+    setCurrentLevel("map");
+  }, [mvScale, mvX, mvY, setSelectedGraphId]);
+
+  const clearSelectedRegionIfOffscreen = useCallback(() => {
+    if (currentLevel !== "region" || !selectedRegionId) {
+      return;
+    }
+
+    const layout = regionLayouts[selectedRegionId];
+    const frame = mapFrameRef.current;
+    const viewportSize = sceneSizeRef.current;
+
+    if (!layout || !viewportSize.width || !viewportSize.height) {
+      return;
+    }
+
+    const currentTransform = {
+      x: mvX.get(),
+      y: mvY.get(),
+      scale: mvScale.get(),
+    };
+
+    if (
+      isRegionOutsideViewport({
+        bounds: layout.bounds,
+        frame,
+        transform: currentTransform,
+        viewportSize,
+      })
+    ) {
+      clearRegionSelectionSilently();
+    }
+  }, [
+    clearRegionSelectionSilently,
+    currentLevel,
+    mvScale,
+    mvX,
+    mvY,
+    regionLayouts,
+    selectedRegionId,
+  ]);
 
   const handleNodeSelected = useCallback(
     async (node: GraphNode) => {
@@ -658,6 +837,7 @@ export default function Page() {
     }
 
     if (currentLevel === "theme") {
+      setRegionThemeGraphLoading(false);
       setPendingThemeId(null);
       setPendingGraphNodeId(null);
       setSubthemeWords([]);
@@ -668,16 +848,9 @@ export default function Page() {
     }
 
     if (currentLevel === "region") {
-      setPendingThemeId(null);
-      setPendingGraphNodeId(null);
-      setSubthemeWords([]);
-      setSelectedThemeId(null);
-      setSelectedSubthemeNodeId(null);
-      setSelectedWordId(null);
-      setSelectedGraphId(null);
-      setCurrentLevel("map");
+      exitRegionSelection();
     }
-  }, [currentLevel, setSelectedGraphId]);
+  }, [currentLevel, exitRegionSelection]);
 
   const regionGraph =
     graphElements && (currentLevel === "theme" || currentLevel === "subtheme")
@@ -735,11 +908,15 @@ export default function Page() {
     selectedRegion,
   ]);
 
-  // Keep refs in sync with derived React values (accessed in event handlers)
-  useEffect(() => { autoTransformRef.current = autoTransform; }, [autoTransform]);
-  useEffect(() => { mapFrameRef.current = mapFrame; }, [mapFrame]);
-  useEffect(() => { sceneSizeRef.current = sceneSize; }, [sceneSize]);
-  useEffect(() => { currentLevelRef.current = currentLevel; }, [currentLevel]);
+  // Keep refs in sync with derived React values (accessed in event handlers).
+  // Consolidated into a single layout effect to avoid four separate scheduling
+  // cycles per change of any of these values.
+  useEffect(() => {
+    autoTransformRef.current = autoTransform;
+    mapFrameRef.current = mapFrame;
+    sceneSizeRef.current = sceneSize;
+    currentLevelRef.current = currentLevel;
+  }, [autoTransform, mapFrame, sceneSize, currentLevel]);
 
   // When autoTransform changes (level/region change), smoothly transition to new position
   useEffect(() => {
@@ -794,7 +971,49 @@ export default function Page() {
   const cancelTransformAnim = useCallback(() => {
     animStopRef.current.forEach((stop) => stop());
     animStopRef.current = [];
+
+    if (renderScaleCommitTimeoutRef.current !== null) {
+      window.clearTimeout(renderScaleCommitTimeoutRef.current);
+      renderScaleCommitTimeoutRef.current = null;
+    }
   }, []);
+
+  const commitRenderScale = useCallback((scale: number) => {
+    const nextScale = clamp(scale, MIN_SCENE_SCALE, MAX_SCENE_SCALE);
+
+    if (
+      !Number.isFinite(nextScale) ||
+      Math.abs(renderScaleRef.current - nextScale) <= CAMERA_RENDER_SCALE_EPSILON
+    ) {
+      return;
+    }
+
+    renderScaleRef.current = nextScale;
+    setRenderScale(nextScale);
+  }, []);
+
+  const scheduleRenderScaleCommit = useCallback(
+    (scale: number, delay = CAMERA_RENDER_SCALE_COMMIT_DELAY) => {
+      const nextScale = clamp(scale, MIN_SCENE_SCALE, MAX_SCENE_SCALE);
+
+      if (
+        !Number.isFinite(nextScale) ||
+        Math.abs(renderScaleRef.current - nextScale) <= CAMERA_RENDER_SCALE_EPSILON
+      ) {
+        return;
+      }
+
+      if (renderScaleCommitTimeoutRef.current !== null) {
+        window.clearTimeout(renderScaleCommitTimeoutRef.current);
+      }
+
+      renderScaleCommitTimeoutRef.current = window.setTimeout(() => {
+        renderScaleCommitTimeoutRef.current = null;
+        commitRenderScale(nextScale);
+      }, delay);
+    },
+    [commitRenderScale],
+  );
 
   // Helper: animate motion values to a target (smooth level transitions)
   const animateTransformTo = useCallback(
@@ -804,15 +1023,20 @@ export default function Page() {
         mvX.set(x);
         mvY.set(y);
         mvScale.set(s);
+        commitRenderScale(s);
         return;
       }
-      const opts = { duration: 0.38, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
+      const opts = { duration: CAMERA_AUTO_TRANSITION_DURATION, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
       const cX = animate(mvX, x, opts);
       const cY = animate(mvY, y, opts);
       const cS = animate(mvScale, s, opts);
       animStopRef.current = [() => cX.stop(), () => cY.stop(), () => cS.stop()];
+      scheduleRenderScaleCommit(
+        s,
+        CAMERA_AUTO_TRANSITION_DURATION * 1000 + CAMERA_RENDER_SCALE_COMMIT_DELAY,
+      );
     },
-    [cancelTransformAnim, mvX, mvY, mvScale],
+    [cancelTransformAnim, commitRenderScale, mvX, mvY, mvScale, scheduleRenderScaleCommit],
   );
 
   // Helper: apply a clamped manual transform directly to motion values
@@ -821,11 +1045,13 @@ export default function Page() {
       const clamped = clampManualPan(newManual);
       manualTransformRef.current = clamped;
       const auto = autoTransformRef.current;
+      const nextScale = auto.scale * clamped.scale;
       mvX.set(auto.x + clamped.x);
       mvY.set(auto.y + clamped.y);
-      mvScale.set(auto.scale * clamped.scale);
+      mvScale.set(nextScale);
+      scheduleRenderScaleCommit(nextScale);
     },
-    [clampManualPan, mvX, mvY, mvScale],
+    [clampManualPan, mvX, mvY, mvScale, scheduleRenderScaleCommit],
   );
 
   const zoomAt = useCallback(
@@ -866,8 +1092,12 @@ export default function Page() {
         { x: event.clientX - rect.left, y: event.clientY - rect.top },
         event.deltaY < 0 ? WHEEL_ZOOM_IN_FACTOR : WHEEL_ZOOM_OUT_FACTOR,
       );
+
+      window.requestAnimationFrame(() => {
+        clearSelectedRegionIfOffscreen();
+      });
     },
-    [handleBack, zoomAt],
+    [clearSelectedRegionIfOffscreen, handleBack, zoomAt],
   );
 
   // Add passive:false wheel listener once
@@ -1025,6 +1255,10 @@ export default function Page() {
         if (selectedRegionFromTarget && !suppressRegionClickRef.current) {
           handleRegionSelect(selectedRegionFromTarget);
           suppressRegionClickRef.current = true;
+        } else {
+          window.requestAnimationFrame(() => {
+            clearSelectedRegionIfOffscreen();
+          });
         }
 
         window.setTimeout(() => {
@@ -1043,7 +1277,7 @@ export default function Page() {
         pinchRef.current = null;
       }
     },
-    [handleRegionSelect],
+    [clearSelectedRegionIfOffscreen, handleRegionSelect],
   );
 
   const handleMapRegionSelect = useCallback(
@@ -1071,7 +1305,9 @@ export default function Page() {
       return undefined;
     }
 
-    const sampleCount = Math.min(Math.max(nodeCount * 6, 18), 56);
+    // Keep a small candidate pool to avoid recomputing a very dense region layout
+    // synchronously on selection. The SVG layout cost grows quickly with count.
+    const sampleCount = Math.min(Math.max(nodeCount + 4, nodeCount), 18);
 
     return {
       [activeRegionId]: sampleCount,
@@ -1115,12 +1351,16 @@ export default function Page() {
             style={{
               x: mvX,
               y: mvY,
-              width: mvLayerWidth,
-              height: mvLayerHeight,
-              willChange: "transform, width, height",
+              scale: mvLayerScale,
+              width: sceneSize.width * renderScale,
+              height: sceneSize.height * renderScale,
+              originX: 0,
+              originY: 0,
+              willChange: "transform",
               backfaceVisibility: "hidden",
               userSelect: "none",
               WebkitUserSelect: "none",
+              contain: "layout paint",
             }}
           >
             <JapanRegionMap
@@ -1129,20 +1369,20 @@ export default function Page() {
               loadingRegionId={loadingRegionId}
               layoutCountsByRegion={layoutCountsByRegion}
               onRegionSelect={handleMapRegionSelect}
-              onRegionHover={() => undefined}
               onLayoutChange={handleRegionLayoutsChange}
             />
 
             {selectedRegion && currentLevel === "region" ? (
-              <RegionThemeGraph
-                region={selectedRegion}
-                regionBounds={regionLayouts[selectedRegion.id]?.bounds ?? null}
-                nodePoints={regionLayouts[selectedRegion.id]?.nodePoints ?? null}
-                viewport={regionLayouts[selectedRegion.id]?.viewport ?? null}
-                loadingThemeId={pendingThemeId}
-                interactionDisabled={graphInteractionDisabled}
-                onThemeSelect={handleThemeSelected}
-              />
+              !regionThemeGraphLoading ? (
+                <RegionThemeGraph
+                  region={selectedRegion}
+                  regionBounds={regionLayouts[selectedRegion.id]?.bounds ?? null}
+                  nodePoints={regionLayouts[selectedRegion.id]?.nodePoints ?? null}
+                  viewport={regionLayouts[selectedRegion.id]?.viewport ?? null}
+                  interactionDisabled={graphInteractionDisabled}
+                  onThemeSelect={handleThemeSelected}
+                />
+              ) : null
             ) : null}
 
             {selectedRegion &&
@@ -1155,7 +1395,6 @@ export default function Page() {
                 nodePoints={regionLayouts[selectedRegion.id]?.nodePoints ?? null}
                 viewport={regionLayouts[selectedRegion.id]?.viewport ?? null}
                 level={currentLevel}
-                loadingNodeId={pendingGraphNodeId}
                 interactionDisabled={graphInteractionDisabled}
                 onNodeSelected={regionGraph.onNodeSelected}
               />

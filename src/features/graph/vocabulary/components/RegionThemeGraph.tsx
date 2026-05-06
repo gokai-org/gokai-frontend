@@ -20,12 +20,13 @@ import {
   VocabularyGraphVisualDefs,
 } from "./VocabularyGraphLabel";
 
+const themePointLayoutCache = new Map<string, { themePoints: VocabularyRegionNodePoint[] }>();
+
 type RegionThemeGraphProps = {
   region: VocabularyRegionViewModel;
   regionBounds: VocabularyRegionBounds | null;
   nodePoints: VocabularyRegionNodePoint[] | null;
   viewport: VocabularySvgViewport | null;
-  loadingThemeId?: string | null;
   interactionDisabled?: boolean;
   onThemeSelect: (theme: VocabularyRegionThemeNode) => void;
 };
@@ -210,6 +211,27 @@ function splitGraphPoints(
   return { themePoints };
 }
 
+function getThemePointLayoutCacheKey(
+  region: VocabularyRegionViewModel,
+  regionBounds: VocabularyRegionBounds | null,
+  nodePoints: VocabularyRegionNodePoint[] | null,
+) {
+  const boundsKey = regionBounds
+    ? [
+        regionBounds.x.toFixed(2),
+        regionBounds.y.toFixed(2),
+        regionBounds.width.toFixed(2),
+        regionBounds.height.toFixed(2),
+      ].join(":")
+    : "no-bounds";
+  const pointsKey = (nodePoints ?? [])
+    .map((point) => `${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+    .join("|");
+  const themeKey = region.themes.map((theme) => theme.id).join("|");
+
+  return `${region.id}::${themeKey}::${boundsKey}::${pointsKey}`;
+}
+
 function getThemeFill(theme: VocabularyRegionThemeNode) {
   if (theme.status === "locked") {
     return "var(--surface-tertiary)";
@@ -229,12 +251,16 @@ function formatThemeLabel(theme: VocabularyRegionThemeNode) {
   return trimmed.length > 12 ? `${trimmed.slice(0, 10)}...` : trimmed;
 }
 
+const VOCAB_NODE_HOVER_STYLE = `
+  .vocab-node-hover { transition: filter 140ms ease-out, opacity 140ms ease-out; }
+  g[data-vocabulary-node="true"]:hover .vocab-node-hover circle { filter: brightness(1.12); }
+`;
+
 function RegionThemeGraph({
   region,
   regionBounds,
   nodePoints,
   viewport,
-  loadingThemeId = null,
   interactionDisabled = false,
   onThemeSelect,
 }: RegionThemeGraphProps) {
@@ -242,11 +268,9 @@ function RegionThemeGraph({
 
   const svgInitial = !platformMotion.shouldAnimate
     ? false
-    : platformMotion.shouldUseLightAnimations
-      ? { opacity: 0 }
-      : { opacity: 0, scale: 0.98 };
+    : { opacity: 0 };
   const svgAnimate = platformMotion.shouldAnimate
-    ? { opacity: 1, scale: 1 }
+    ? { opacity: 1 }
     : undefined;
   const svgTransition = platformMotion.shouldAnimate
     ? {
@@ -256,30 +280,22 @@ function RegionThemeGraph({
         ease: [0.22, 1, 0.36, 1] as const,
       }
     : undefined;
-  const shouldAnimateEdgeDrawing =
-    platformMotion.motionMode === "full" && region.themes.length <= 8;
-  const { themePoints } = splitGraphPoints(
-    regionBounds,
-    nodePoints,
-    region.themes.length,
+  const themePointLayoutKey = useMemo(
+    () => getThemePointLayoutCacheKey(region, regionBounds, nodePoints),
+    [nodePoints, region, regionBounds],
   );
-  const edgeElements = useMemo(() => {
-    const edgeInitial = shouldAnimateEdgeDrawing
-      ? { pathLength: 0, opacity: 0 }
-      : false;
-    const edgeShadowAnimate = shouldAnimateEdgeDrawing
-      ? { pathLength: 1, opacity: 0.92 }
-      : { opacity: 0.92 };
-    const edgeMainAnimate = shouldAnimateEdgeDrawing
-      ? { pathLength: 1, opacity: 0.98 }
-      : { opacity: 0.98 };
-    const edgeTransition = shouldAnimateEdgeDrawing
-      ? {
-          duration: 0.22 * platformMotion.durationScale,
-          ease: [0.22, 1, 0.36, 1] as const,
-        }
-      : undefined;
+  const { themePoints } = useMemo(() => {
+    const cachedLayout = themePointLayoutCache.get(themePointLayoutKey);
 
+    if (cachedLayout) {
+      return cachedLayout;
+    }
+
+    const nextLayout = splitGraphPoints(regionBounds, nodePoints, region.themes.length);
+    themePointLayoutCache.set(themePointLayoutKey, nextLayout);
+    return nextLayout;
+  }, [nodePoints, region.themes.length, regionBounds, themePointLayoutKey]);
+  const edgeElements = useMemo(() => {
     return themePoints.map((point, index) => {
       const nextPoint = themePoints[index + 1];
 
@@ -299,7 +315,7 @@ function RegionThemeGraph({
 
       return (
         <g key={`region-theme-edge-${region.themes[index]?.id ?? index}`}>
-          <motion.path
+          <path
             d={curve}
             fill="none"
             stroke="var(--vocabulary-edge-shadow)"
@@ -307,11 +323,9 @@ function RegionThemeGraph({
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
-            initial={edgeInitial}
-            animate={edgeShadowAnimate}
-            transition={edgeTransition}
+            opacity={0.92}
           />
-          <motion.path
+          <path
             d={curve}
             fill="none"
             stroke="var(--vocabulary-edge-default)"
@@ -319,48 +333,17 @@ function RegionThemeGraph({
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
-            initial={edgeInitial}
-            animate={edgeMainAnimate}
-            transition={edgeTransition}
+            opacity={0.98}
           />
         </g>
       );
     });
   }, [
-    platformMotion.durationScale,
     region.themes,
-    shouldAnimateEdgeDrawing,
     themePoints,
     viewport,
   ]);
-  const nodeInitial = !platformMotion.shouldAnimate
-    ? false
-    : platformMotion.shouldUseLightAnimations
-      ? { opacity: 0, scale: 0.92 }
-      : { opacity: 0, scale: 0.55 };
-  const nodeAnimate = platformMotion.shouldAnimate
-    ? { opacity: 1, scale: 1 }
-    : undefined;
-  const nodeHover = platformMotion.shouldUseHoverAnimations
-    ? { scale: platformMotion.shouldUseLightAnimations ? 1.08 : 1.18 }
-    : undefined;
-  const nodeTransition = platformMotion.shouldUseLightAnimations
-    ? {
-        duration: 0.1 * Math.max(platformMotion.durationScale, 0.75),
-        ease: [0.22, 1, 0.36, 1] as const,
-      }
-    : { type: "spring" as const, stiffness: 300, damping: 22 };
-  const loadingNodeAnimate = platformMotion.shouldAnimate
-    ? { opacity: [1, 0.84, 1], scale: [1, 1.08, 1] }
-    : undefined;
-  const loadingNodeTransition = platformMotion.shouldAnimate
-    ? {
-        duration: 0.92 * Math.max(platformMotion.durationScale, 0.85),
-        ease: "easeInOut" as const,
-        repeat: Number.POSITIVE_INFINITY,
-      }
-    : undefined;
-
+  const hoverEnabled = platformMotion.shouldUseHoverAnimations;
   if (!viewport) {
     return null;
   }
@@ -378,12 +361,12 @@ function RegionThemeGraph({
       aria-hidden="true"
     >
       <VocabularyGraphVisualDefs idPrefix="vocabulary-theme" />
+      <style>{VOCAB_NODE_HOVER_STYLE}</style>
 
       {edgeElements}
 
       {region.themes.map((theme, index) => {
         const position = toSvgPoint(themePoints[index], viewport);
-        const isLoadingTheme = loadingThemeId === theme.themeId;
 
         return (
           <g
@@ -416,23 +399,13 @@ function RegionThemeGraph({
               fontSize={LABEL_FONT_SIZE}
             />
 
-            <motion.g
-              initial={nodeInitial}
-              animate={isLoadingTheme ? loadingNodeAnimate : nodeAnimate}
-              whileHover={theme.isAvailable && !isLoadingTheme ? nodeHover : undefined}
-              transition={isLoadingTheme ? loadingNodeTransition : nodeTransition}
-              style={{ transformBox: "fill-box", transformOrigin: "center", willChange: isLoadingTheme ? "transform, opacity" : undefined }}
+            <g
+              className={
+                hoverEnabled && theme.isAvailable
+                  ? "vocab-node-hover"
+                  : undefined
+              }
             >
-              {isLoadingTheme ? (
-                <motion.circle
-                  r={THEME_NODE_RADIUS + 1.12}
-                  fill="none"
-                  stroke={getThemeFill(theme)}
-                  strokeWidth={0.52}
-                  animate={{ opacity: [0.18, 0.46, 0.18], scale: [1, 1.16, 1] }}
-                  transition={loadingNodeTransition}
-                />
-              ) : null}
               <circle
                 r={THEME_NODE_RADIUS}
                 fill={getThemeFill(theme)}
@@ -454,7 +427,7 @@ function RegionThemeGraph({
                   2,
                 )}
               </text>
-            </motion.g>
+            </g>
           </g>
         );
       })}

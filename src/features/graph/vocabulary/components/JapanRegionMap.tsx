@@ -4,6 +4,7 @@ import {
   type CSSProperties,
   forwardRef,
   memo,
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -28,7 +29,7 @@ type JapanRegionMapProps = {
   loadingRegionId?: VocabularyRegionId | null;
   layoutCountsByRegion?: Partial<Record<VocabularyRegionId, number>>;
   onRegionSelect: (regionId: VocabularyRegionId) => void;
-  onRegionHover: (
+  onRegionHover?: (
     payload: { regionId: VocabularyRegionId; x: number; y: number } | null,
   ) => void;
   onLayoutChange: (
@@ -251,13 +252,12 @@ const REGION_RULE_TEMPLATE = (id: VocabularyRegionId) => `
   .japan-map-layer[data-active-region="${id}"] [data-region-path="${id}"] {
     fill: var(--vmap-region-fill-${id});
     stroke: var(--vmap-region-stroke-${id});
-    stroke-width: var(--vmap-highlight-stroke-width, 0.92);
     opacity: 1;
-    filter: var(--vmap-region-hover-filter, none);
   }
   .japan-map-layer[data-active-region="${id}"] [data-region-path="${id}"] {
     fill: var(--vmap-region-active-fill-${id});
     stroke: var(--vmap-region-stroke-${id});
+    filter: var(--vmap-region-active-filter, none);
   }
   .japan-map-layer[data-hover-region="${id}"] .vmap-icon[data-icon-region="${id}"],
   .japan-map-layer[data-active-region="${id}"] .vmap-icon[data-icon-region="${id}"] {
@@ -266,7 +266,8 @@ const REGION_RULE_TEMPLATE = (id: VocabularyRegionId) => `
   }
   .japan-map-layer[data-hover-region="${id}"] .vmap-icon-hover-layer[data-icon-layer="${id}"],
   .japan-map-layer[data-active-region="${id}"] .vmap-icon-hover-layer[data-icon-layer="${id}"] {
-    display: block;
+    color: var(--vmap-icon-hover);
+    opacity: 1;
   }
   .japan-map-layer[data-loading-region="${id}"] {
     --vmap-region-loading-pulse-current: var(--vmap-region-active-fill-${id});
@@ -274,7 +275,6 @@ const REGION_RULE_TEMPLATE = (id: VocabularyRegionId) => `
   .japan-map-layer[data-loading-region="${id}"] [data-region-path="${id}"] {
     fill: var(--vmap-region-active-fill-${id});
     stroke: var(--vmap-region-stroke-${id});
-    stroke-width: var(--vmap-highlight-stroke-width, 0.92);
     will-change: opacity;
     animation: vmap-region-pulse 920ms ease-in-out infinite;
   }
@@ -298,10 +298,10 @@ const VMAP_STYLE = `
     opacity: 0.98;
     pointer-events: auto;
     transition:
-      fill var(--vmap-transition-duration, 72ms) linear,
-      stroke var(--vmap-transition-duration, 72ms) linear,
-      opacity var(--vmap-transition-duration, 72ms) linear,
-      filter var(--vmap-transition-duration, 72ms) linear;
+      fill var(--vmap-transition-duration, 56ms) linear,
+      stroke var(--vmap-transition-duration, 56ms) linear,
+      opacity var(--vmap-transition-duration, 56ms) linear,
+      filter 120ms linear;
     cursor: pointer;
   }
   .japan-map-layer[data-active-region] .vmap-region-shape {
@@ -319,18 +319,20 @@ const VMAP_STYLE = `
     fill: var(--vmap-icon);
     opacity: 0.86;
     pointer-events: none;
-    transition: fill var(--vmap-transition-duration, 72ms) linear, opacity var(--vmap-transition-duration, 72ms) linear;
+    transition: fill var(--vmap-transition-duration, 56ms) linear, opacity var(--vmap-transition-duration, 56ms) linear;
   }
   .japan-map-layer .vmap-icon-unassigned {
     fill: var(--vmap-icon);
     opacity: 0.5;
     pointer-events: none;
-    transition: fill var(--vmap-transition-duration, 72ms) linear, opacity var(--vmap-transition-duration, 72ms) linear;
+    transition: fill var(--vmap-transition-duration, 56ms) linear, opacity var(--vmap-transition-duration, 56ms) linear;
   }
   .japan-map-layer .vmap-icon-hover-layer {
-    display: none;
+    display: block;
     color: var(--vmap-icon-hover);
+    opacity: 0;
     pointer-events: none;
+    transition: opacity var(--vmap-transition-duration, 56ms) linear;
   }
   .japan-map-layer .vmap-icon-hover-layer .vmap-icon-mask-shape {
     fill: currentColor;
@@ -381,6 +383,149 @@ const RawMapContent = memo(
 
 RawMapContent.displayName = "RawMapContent";
 
+// Static defs: grid patterns + per-region clipPaths + icon source.
+// Only depends on parsedMap → never reconciled when interaction state changes.
+const MapDefsLayer = memo(function MapDefsLayer({
+  regionCloneMarkup,
+  iconInnerHtml,
+}: {
+  regionCloneMarkup: Partial<Record<VocabularyRegionId, string>>;
+  iconInnerHtml: string;
+}) {
+  return (
+    <defs>
+      <pattern
+        id="vmapCartesianMinor"
+        width="18"
+        height="18"
+        patternUnits="userSpaceOnUse"
+      >
+        <path
+          d="M 18 0 L 0 0 0 18"
+          fill="none"
+          stroke="var(--vmap-grid-minor)"
+          strokeWidth="0.35"
+        />
+      </pattern>
+      <pattern
+        id="vmapCartesianMajor"
+        width="72"
+        height="72"
+        patternUnits="userSpaceOnUse"
+      >
+        <rect width="72" height="72" fill="url(#vmapCartesianMinor)" />
+        <path
+          d="M 72 0 L 0 0 0 72"
+          fill="none"
+          stroke="var(--vmap-grid-major)"
+          strokeWidth="0.8"
+        />
+      </pattern>
+      {REGION_ORDER.map((regionId) => (
+        <clipPath
+          key={`vmap-region-clip-${regionId}`}
+          id={`vmap-region-clip-${regionId}`}
+        >
+          <g
+            dangerouslySetInnerHTML={{
+              __html: regionCloneMarkup[regionId] ?? "",
+            }}
+          />
+        </clipPath>
+      ))}
+      {iconInnerHtml ? (
+        <g
+          id="vmap-icon-hover-source"
+          dangerouslySetInnerHTML={{ __html: iconInnerHtml }}
+        />
+      ) : null}
+    </defs>
+  );
+});
+
+// Background grid layer. Re-renders only if grid visibility/intensity changes.
+const MapGridLayer = memo(function MapGridLayer({
+  showGridOverlay,
+  heavyEffectsEnabled,
+}: {
+  showGridOverlay: boolean;
+  heavyEffectsEnabled: boolean;
+}) {
+  return (
+    <g aria-hidden="true" pointerEvents="none">
+      <rect
+        x="-5000"
+        y="-5000"
+        width="10483"
+        height="10545"
+        fill="var(--vmap-bg)"
+      />
+      {showGridOverlay ? (
+        <rect
+          x="-5000"
+          y="-5000"
+          width="10483"
+          height="10545"
+          fill="url(#vmapCartesianMajor)"
+          opacity={heavyEffectsEnabled ? 0.65 : 0.3}
+        />
+      ) : null}
+    </g>
+  );
+});
+
+// Hidden geometry used to compute bboxes / point-in-fill tests.
+// Memoized — only re-renders when parsedMap changes. Refs are forwarded via callback.
+const MapHiddenGeometryLayer = memo(function MapHiddenGeometryLayer({
+  regionCloneMarkup,
+  registerRef,
+}: {
+  regionCloneMarkup: Partial<Record<VocabularyRegionId, string>>;
+  registerRef: (regionId: VocabularyRegionId, element: SVGGElement | null) => void;
+}) {
+  return (
+    <g aria-hidden="true" pointerEvents="none" visibility="hidden" opacity={0}>
+      {REGION_ORDER.map((regionId) => (
+        <g
+          key={regionId}
+          ref={(element) => registerRef(regionId, element)}
+          data-vocabulary-region-clone={regionId}
+          dangerouslySetInnerHTML={{
+            __html: regionCloneMarkup[regionId] ?? "",
+          }}
+        />
+      ))}
+    </g>
+  );
+});
+
+// Icon hover layer: 8 clipped <use> overlays. Only depends on whether iconInnerHtml exists.
+const MapIconHoverLayer = memo(function MapIconHoverLayer({
+  hasIcons,
+}: {
+  hasIcons: boolean;
+}) {
+  if (!hasIcons) {
+    return null;
+  }
+
+  return (
+    <>
+      {REGION_ORDER.map((regionId) => (
+        <g
+          key={`vmap-icon-hover-layer-${regionId}`}
+          className="vmap-icon-hover-layer"
+          data-icon-layer={regionId}
+          clipPath={`url(#vmap-region-clip-${regionId})`}
+          pointerEvents="none"
+        >
+          <use href="#vmap-icon-hover-source" />
+        </g>
+      ))}
+    </>
+  );
+});
+
 function getParsedMap() {
   if (parsedMapCache) {
     return Promise.resolve(parsedMapCache);
@@ -411,6 +556,7 @@ function JapanRegionMap({
   const platformMotion = usePlatformMotion();
   const [parsedMap, setParsedMap] = useState<ParsedMap | null>(null);
   const [iconLayoutRevision, setIconLayoutRevision] = useState(0);
+  const [layoutCacheVersion, setLayoutCacheVersion] = useState(0);
 
   const svgRef = useRef<SVGSVGElement | null>(null);
   const contentRef = useRef<SVGGElement | null>(null);
@@ -424,12 +570,26 @@ function JapanRegionMap({
   const layoutCacheRef = useRef<
     Partial<Record<VocabularyRegionId, RegionLayoutCacheEntry>>
   >({});
+  const pendingLayoutUpgradeRef = useRef<
+    Partial<Record<VocabularyRegionId, number>>
+  >({});
+
+  // Stable ref-callback so the memoized hidden geometry layer never re-renders.
+  const registerHiddenRegionRef = useCallback(
+    (regionId: VocabularyRegionId, element: SVGGElement | null) => {
+      hiddenRegionRefs.current[regionId] = element;
+    },
+    [],
+  );
 
   const regionLookup = useMemo(
     () => Object.fromEntries(regions.map((region) => [region.id, region])),
     [regions],
   );
-  const hoverEnabled = platformMotion.shouldUseHoverAnimations;
+  // Keep region hover always available for pointer devices. The hover effect is
+  // driven by a single delegated listener + CSS data attributes, so it remains
+  // cheap even on lower motion profiles.
+  const hoverEnabled = true;
   const heavyEffectsEnabled =
     platformMotion.heavyAnimationsEnabled &&
     platformMotion.graphicsProfile.shouldUseHeavyEffects;
@@ -441,10 +601,10 @@ function JapanRegionMap({
       WebkitUserSelect: "none",
       WebkitTouchCallout: "none",
       backgroundColor: "var(--vmap-bg)",
-      ["--vmap-region-hover-filter" as const]:
-        heavyEffectsEnabled ? "drop-shadow(0 0 4px var(--vmap-glow))" : "none",
+      ["--vmap-region-active-filter" as const]:
+        heavyEffectsEnabled ? "drop-shadow(0 0 3px var(--vmap-glow))" : "none",
       ["--vmap-transition-duration" as const]:
-        hoverEnabled ? "120ms" : "80ms",
+        hoverEnabled ? "56ms" : "40ms",
     }),
     [heavyEffectsEnabled, hoverEnabled],
   );
@@ -639,6 +799,17 @@ function JapanRegionMap({
   }, [parsedMap]);
 
   useEffect(() => {
+    return () => {
+      Object.values(pendingLayoutUpgradeRef.current).forEach((handle) => {
+        if (typeof handle === "number") {
+          window.cancelAnimationFrame(handle);
+        }
+      });
+      pendingLayoutUpgradeRef.current = {};
+    };
+  }, []);
+
+  useEffect(() => {
     if (!parsedMap || !svgRef.current) {
       return;
     }
@@ -663,10 +834,48 @@ function JapanRegionMap({
 
         if (
           cachedLayout &&
-          cachedLayout.layoutCount === layoutCount &&
           cachedLayout.iconLayoutRevision === iconLayoutRevision
         ) {
           accumulator[regionId] = cachedLayout.layout;
+
+          // If the cached layout was built with fewer candidate points, reuse it
+          // immediately so the region opens without blocking the frame, then
+          // upgrade the cache in the next frame.
+          if (
+            cachedLayout.layoutCount < layoutCount &&
+            !pendingLayoutUpgradeRef.current[regionId]
+          ) {
+            pendingLayoutUpgradeRef.current[regionId] =
+              window.requestAnimationFrame(() => {
+                pendingLayoutUpgradeRef.current[regionId] = undefined;
+
+                const currentGroup = hiddenRegionRefs.current[regionId];
+                const currentSvg = svgRef.current;
+
+                if (!currentGroup || !currentSvg) {
+                  return;
+                }
+
+                const upgradedLayout = buildRegionLayout(
+                  currentGroup,
+                  currentSvg,
+                  layoutCount,
+                  iconBoxesByRegionRef.current[regionId] ?? [],
+                );
+
+                if (!upgradedLayout) {
+                  return;
+                }
+
+                layoutCacheRef.current[regionId] = {
+                  layoutCount,
+                  iconLayoutRevision,
+                  layout: upgradedLayout,
+                };
+                setLayoutCacheVersion((value) => value + 1);
+              });
+          }
+
           return accumulator;
         }
 
@@ -695,7 +904,14 @@ function JapanRegionMap({
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [iconLayoutRevision, layoutCountsByRegion, onLayoutChange, parsedMap, regionLookup]);
+  }, [
+    iconLayoutRevision,
+    layoutCacheVersion,
+    layoutCountsByRegion,
+    onLayoutChange,
+    parsedMap,
+    regionLookup,
+  ]);
 
   useEffect(() => {
     const svgElement = svgRef.current;
@@ -715,20 +931,6 @@ function JapanRegionMap({
     nextRegionId: VocabularyRegionId | null,
     event?: React.PointerEvent<SVGSVGElement>,
   ) => {
-    if (!hoverEnabled) {
-      if (hoveredRegionRef.current !== null) {
-        hoveredRegionRef.current = null;
-
-        if (svgRef.current) {
-          delete svgRef.current.dataset.hoverRegion;
-        }
-
-        onRegionHover(null);
-      }
-
-      return;
-    }
-
     if (hoveredRegionRef.current === nextRegionId) {
       return;
     }
@@ -743,6 +945,13 @@ function JapanRegionMap({
       } else {
         delete svgElement.dataset.hoverRegion;
       }
+    }
+
+    // Skip the expensive getBoundingClientRect lookup when no consumer needs the
+    // pointer coordinates. The hover styling is already driven by data-attributes
+    // mutated above, so this short-circuit avoids forced layout in every move.
+    if (!onRegionHover) {
+      return;
     }
 
     if (!nextRegionId || !event) {
@@ -865,101 +1074,24 @@ function JapanRegionMap({
     >
       <style>{VMAP_STYLE}</style>
 
-      <defs>
-        <pattern
-          id="vmapCartesianMinor"
-          width="18"
-          height="18"
-          patternUnits="userSpaceOnUse"
-        >
-          <path
-            d="M 18 0 L 0 0 0 18"
-            fill="none"
-            stroke="var(--vmap-grid-minor)"
-            strokeWidth="0.35"
-          />
-        </pattern>
-        <pattern
-          id="vmapCartesianMajor"
-          width="72"
-          height="72"
-          patternUnits="userSpaceOnUse"
-        >
-          <rect width="72" height="72" fill="url(#vmapCartesianMinor)" />
-          <path
-            d="M 72 0 L 0 0 0 72"
-            fill="none"
-            stroke="var(--vmap-grid-major)"
-            strokeWidth="0.8"
-          />
-        </pattern>
-        {REGION_ORDER.map((regionId) => (
-          <clipPath key={`vmap-region-clip-${regionId}`} id={`vmap-region-clip-${regionId}`}>
-            <g
-              dangerouslySetInnerHTML={{
-                __html: parsedMap.regionCloneMarkup[regionId] ?? "",
-              }}
-            />
-          </clipPath>
-        ))}
-        {parsedMap.iconInnerHtml ? (
-          <g
-            id="vmap-icon-hover-source"
-            dangerouslySetInnerHTML={{ __html: parsedMap.iconInnerHtml }}
-          />
-        ) : null}
-      </defs>
+      <MapDefsLayer
+        regionCloneMarkup={parsedMap.regionCloneMarkup}
+        iconInnerHtml={parsedMap.iconInnerHtml}
+      />
 
-      <g aria-hidden="true" pointerEvents="none">
-        <rect
-          x="-5000"
-          y="-5000"
-          width="10483"
-          height="10545"
-          fill="var(--vmap-bg)"
-        />
-        {showGridOverlay ? (
-          <rect
-            x="-5000"
-            y="-5000"
-            width="10483"
-            height="10545"
-            fill="url(#vmapCartesianMajor)"
-            opacity={heavyEffectsEnabled ? 0.65 : 0.3}
-          />
-        ) : null}
-      </g>
+      <MapGridLayer
+        showGridOverlay={showGridOverlay}
+        heavyEffectsEnabled={heavyEffectsEnabled}
+      />
 
-      <g aria-hidden="true" pointerEvents="none" visibility="hidden" opacity={0}>
-        {REGION_ORDER.map((regionId) => (
-          <g
-            key={regionId}
-            ref={(element) => {
-              hiddenRegionRefs.current[regionId] = element;
-            }}
-            data-vocabulary-region-clone={regionId}
-            dangerouslySetInnerHTML={{
-              __html: parsedMap.regionCloneMarkup[regionId] ?? "",
-            }}
-          />
-        ))}
-      </g>
+      <MapHiddenGeometryLayer
+        regionCloneMarkup={parsedMap.regionCloneMarkup}
+        registerRef={registerHiddenRegionRef}
+      />
 
       <RawMapContent ref={contentRef} innerHtml={parsedMap.annotatedInnerHtml} />
 
-      {parsedMap.iconInnerHtml
-        ? REGION_ORDER.map((regionId) => (
-            <g
-              key={`vmap-icon-hover-layer-${regionId}`}
-              className="vmap-icon-hover-layer"
-              data-icon-layer={regionId}
-              clipPath={`url(#vmap-region-clip-${regionId})`}
-              pointerEvents="none"
-            >
-              <use href="#vmap-icon-hover-source" />
-            </g>
-          ))
-        : null}
+      <MapIconHoverLayer hasIcons={Boolean(parsedMap.iconInnerHtml)} />
     </svg>
   );
 }
