@@ -394,3 +394,22 @@ export function buildRegionLayout(
     viewport,
   };
 }
+
+export function buildRegionBoundsLayout(
+  regionGroup: SVGGElement,
+  svgRoot: SVGSVGElement,
+): VocabularyRegionLayout | null {
+  const box = regionGroup.getBBox();
+
+  if (!box.width || !box.height) {
+    return null;
+  }
+
+  const viewport = getSvgViewport(svgRoot);
+
+  return {
+    bounds: toPercentBounds(box, viewport),
+    nodePoints: [],
+    viewport,
+  };
+}

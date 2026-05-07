@@ -1,8 +1,6 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { motion } from "framer-motion";
-import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import type {
   VocabularyRegionBounds,
   VocabularyRegionNodePoint,
@@ -251,11 +249,6 @@ function formatThemeLabel(theme: VocabularyRegionThemeNode) {
   return trimmed.length > 12 ? `${trimmed.slice(0, 10)}...` : trimmed;
 }
 
-const VOCAB_NODE_HOVER_STYLE = `
-  .vocab-node-hover { transition: filter 140ms ease-out, opacity 140ms ease-out; }
-  g[data-vocabulary-node="true"]:hover .vocab-node-hover circle { filter: brightness(1.12); }
-`;
-
 function RegionThemeGraph({
   region,
   regionBounds,
@@ -264,22 +257,6 @@ function RegionThemeGraph({
   interactionDisabled = false,
   onThemeSelect,
 }: RegionThemeGraphProps) {
-  const platformMotion = usePlatformMotion();
-
-  const svgInitial = !platformMotion.shouldAnimate
-    ? false
-    : { opacity: 0 };
-  const svgAnimate = platformMotion.shouldAnimate
-    ? { opacity: 1 }
-    : undefined;
-  const svgTransition = platformMotion.shouldAnimate
-    ? {
-        duration:
-          (platformMotion.shouldUseLightAnimations ? 0.1 : 0.16) *
-          platformMotion.durationScale,
-        ease: [0.22, 1, 0.36, 1] as const,
-      }
-    : undefined;
   const themePointLayoutKey = useMemo(
     () => getThemePointLayoutCacheKey(region, regionBounds, nodePoints),
     [nodePoints, region, regionBounds],
@@ -343,7 +320,6 @@ function RegionThemeGraph({
     themePoints,
     viewport,
   ]);
-  const hoverEnabled = platformMotion.shouldUseHoverAnimations;
   if (!viewport) {
     return null;
   }
@@ -351,17 +327,13 @@ function RegionThemeGraph({
   const viewBox = `${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}`;
 
   return (
-    <motion.svg
-      initial={svgInitial}
-      animate={svgAnimate}
-      transition={svgTransition}
-      className="region-graph-layer pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible [--vocabulary-edge-shadow:#2E26211F] [--vocabulary-edge-default:#6D625BA8] [--vocabulary-node-stroke:#2D251F30] [--vocabulary-label-fill:var(--surface-elevated)] [--vocabulary-label-border:var(--border-primary)] [--vocabulary-label-inner-border:rgba(255,255,255,0.55)] [--vocabulary-label-highlight:rgba(255,255,255,0.55)] [--vocabulary-label-text:var(--content-primary)] dark:[--vocabulary-edge-shadow:#00000036] dark:[--vocabulary-edge-default:#ECE4DD66] dark:[--vocabulary-node-stroke:#FFFFFF52] dark:[--vocabulary-label-fill:var(--surface-secondary)] dark:[--vocabulary-label-border:rgba(255,255,255,0.12)] dark:[--vocabulary-label-inner-border:rgba(255,255,255,0.04)] dark:[--vocabulary-label-highlight:rgba(255,255,255,0.04)] dark:[--vocabulary-label-text:#F5F0EB]"
+    <svg
+      className="region-graph-layer pointer-events-none absolute inset-0 z-20 h-full w-full overflow-hidden [--vocabulary-edge-shadow:#2E26211F] [--vocabulary-edge-default:#6D625BA8] [--vocabulary-node-stroke:#2D251F30] [--vocabulary-label-fill:var(--surface-elevated)] [--vocabulary-label-border:var(--border-primary)] [--vocabulary-label-inner-border:rgba(255,255,255,0.55)] [--vocabulary-label-highlight:rgba(255,255,255,0.55)] [--vocabulary-label-text:var(--content-primary)] dark:[--vocabulary-edge-shadow:#00000036] dark:[--vocabulary-edge-default:#ECE4DD66] dark:[--vocabulary-node-stroke:#FFFFFF52] dark:[--vocabulary-label-fill:var(--surface-secondary)] dark:[--vocabulary-label-border:rgba(255,255,255,0.12)] dark:[--vocabulary-label-inner-border:rgba(255,255,255,0.04)] dark:[--vocabulary-label-highlight:rgba(255,255,255,0.04)] dark:[--vocabulary-label-text:#F5F0EB]"
       viewBox={viewBox}
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
     >
       <VocabularyGraphVisualDefs idPrefix="vocabulary-theme" />
-      <style>{VOCAB_NODE_HOVER_STYLE}</style>
 
       {edgeElements}
 
@@ -399,13 +371,7 @@ function RegionThemeGraph({
               fontSize={LABEL_FONT_SIZE}
             />
 
-            <g
-              className={
-                hoverEnabled && theme.isAvailable
-                  ? "vocab-node-hover"
-                  : undefined
-              }
-            >
+            <g>
               <circle
                 r={THEME_NODE_RADIUS}
                 fill={getThemeFill(theme)}
@@ -431,7 +397,7 @@ function RegionThemeGraph({
           </g>
         );
       })}
-    </motion.svg>
+    </svg>
   );
 }
 

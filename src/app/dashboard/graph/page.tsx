@@ -1,17 +1,13 @@
 "use client";
 
-import {
-  animate,
-  motion,
-  useMotionValue,
-  useTransform,
-} from "framer-motion";
+import { animate, motion, useMotionValue } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import type { GraphEdge, GraphNode } from "@/features/graph/lib/graphTypes";
 import JapanRegionMap from "@/features/graph/vocabulary/components/JapanRegionMap";
 import RegionThemeGraph from "@/features/graph/vocabulary/components/RegionThemeGraph";
 import RegionVectorGraph from "@/features/graph/vocabulary/components/RegionVectorGraph";
 import VocabularyNodePanel from "@/features/graph/vocabulary/components/VocabularyNodePanel";
+import { useDeferredGraphMount } from "@/features/graph/vocabulary/hooks/useDeferredGraphMount";
 import { useVocabularyGraph } from "@/features/graph/vocabulary/hooks/useVocabularyGraph";
 import {
   buildVocabularySubthemeGraphElements,
@@ -59,9 +55,10 @@ const WHEEL_ZOOM_OUT_FACTOR = 0.91;
 const MAP_PAN_PADDING_X = 96;
 const MAP_PAN_PADDING_Y = 56;
 const REGION_OFFSCREEN_DESELECT_MARGIN = 24;
-const CAMERA_RENDER_SCALE_EPSILON = 0.02;
-const CAMERA_RENDER_SCALE_COMMIT_DELAY = 140;
-const CAMERA_AUTO_TRANSITION_DURATION = 0.38;
+const CAMERA_AUTO_TRANSITION_DURATION = 0.58;
+const VECTOR_GRAPH_MOUNT_DELAY = Math.round(
+  CAMERA_AUTO_TRANSITION_DURATION * 1000 + 180,
+);
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -346,23 +343,13 @@ export default function Page() {
     null,
   );
   const suppressRegionClickRef = useRef(false);
-  // Ref to the CSS transform layer. During drag we set pointer-events: none so
-  // the browser skips hit-testing SVG paths and never triggers CSS :hover state
-  // changes. Those changes force fill/stroke transitions (280ms) and a full
-  // repaint of the compositor layer on every frame — the primary source of the
-  // first-drag stutter.
   const transformLayerRef = useRef<HTMLDivElement | null>(null);
   const [sceneSize, setSceneSize] = useState({ width: 0, height: 0 });
-  const [renderScale, setRenderScale] = useState(1);
 
   // Motion values: direct DOM updates during pan/zoom — no React re-renders
   const mvX = useMotionValue(0);
   const mvY = useMotionValue(0);
   const mvScale = useMotionValue(1);
-  const mvLayerScale = useTransform(
-    mvScale,
-    (scale) => scale / Math.max(renderScale, 0.001),
-  );
 
   // Stable refs for values consumed in event handlers (no stale closures)
   const manualTransformRef = useRef<SceneTransform>({ scale: 1, x: 0, y: 0 });
@@ -374,9 +361,8 @@ export default function Page() {
   const animStopRef = useRef<Array<() => void>>([]);
   const lastAutoTargetRef = useRef<SceneTransform | null>(null);
   const preservedCameraTransformRef = useRef<SceneTransform | null>(null);
-  const renderScaleRef = useRef(1);
-  const renderScaleCommitTimeoutRef = useRef<number | null>(null);
   const subthemeLoadRequestRef = useRef(0);
+  const zoomClassTimeoutRef = useRef<number | null>(null);
 
   const [regionLayouts, setRegionLayouts] = useState<
     Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>
@@ -465,6 +451,24 @@ export default function Page() {
   const graphInteractionDisabled = Boolean(
     pendingThemeId || pendingGraphNodeId || actionPendingId || subthemeWordsLoading,
   );
+  const vectorGraphNodeCount = useMemo(() => {
+    if (currentLevel === "theme" && selectedGraph) {
+      return progressItems.length + subthemeRecommendations.length + 1;
+    }
+
+    if (currentLevel === "subtheme" && selectedSubthemeItem) {
+      return subthemeWords.length + 1;
+    }
+
+    return 0;
+  }, [
+    currentLevel,
+    progressItems.length,
+    selectedGraph,
+    selectedSubthemeItem,
+    subthemeRecommendations.length,
+    subthemeWords.length,
+  ]);
 
   useEffect(() => {
     const element = sceneRef.current;
@@ -510,6 +514,14 @@ export default function Page() {
     }
   }, [regions, selectedGraph?.themeId, selectedRegionId, selectedTheme?.regionId]);
 
+  useEffect(() => {
+    return () => {
+      if (zoomClassTimeoutRef.current !== null) {
+        window.clearTimeout(zoomClassTimeoutRef.current);
+      }
+    };
+  }, []);
+
   const loadSubthemeWordsForNode = useCallback(
     async (nodeId: string, subthemeId: string) => {
       const requestId = subthemeLoadRequestRef.current + 1;
@@ -553,18 +565,6 @@ export default function Page() {
   );
 
   useEffect(() => {
-    renderScaleRef.current = renderScale;
-  }, [renderScale]);
-
-  useEffect(() => {
-    return () => {
-      if (renderScaleCommitTimeoutRef.current !== null) {
-        window.clearTimeout(renderScaleCommitTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  useEffect(() => {
     // Reset manual transform and cancel any running animation when navigating levels
     animStopRef.current.forEach((stop) => stop());
     animStopRef.current = [];
@@ -581,8 +581,6 @@ export default function Page() {
       mvX.set(preservedCamera.x);
       mvY.set(preservedCamera.y);
       mvScale.set(preservedCamera.scale);
-      renderScaleRef.current = preservedCamera.scale;
-      setRenderScale(preservedCamera.scale);
       return;
     }
 
@@ -606,7 +604,12 @@ export default function Page() {
     const hasLayout = Boolean(regionLayouts[selectedRegionId]?.nodePoints?.length);
     const hasThemes = Boolean(selectedRegion?.themes.length);
 
-    if (!hasLayout || !hasThemes || !regionThemeGraphLoading) {
+    if (!hasThemes && regionThemeGraphLoading) {
+      setRegionThemeGraphLoading(false);
+      return;
+    }
+
+    if (!hasLayout || !regionThemeGraphLoading) {
       return;
     }
 
@@ -625,7 +628,34 @@ export default function Page() {
     selectedRegionId,
   ]);
 
+  const vectorGraphMountKey = useMemo(() => {
+    if (currentLevel === "theme" && selectedGraph) {
+      return `theme:${selectedGraph.graphId}:${progressItems.length}:${subthemeRecommendations.length}`;
+    }
+
+    if (currentLevel === "subtheme" && selectedSubthemeItem) {
+      return `subtheme:${selectedSubthemeItem.nodeId}:${subthemeWords.length}`;
+    }
+
+    return null;
+  }, [
+    currentLevel,
+    progressItems.length,
+    selectedGraph,
+    selectedSubthemeItem,
+    subthemeRecommendations.length,
+    subthemeWords.length,
+  ]);
+  const vectorGraphReady = useDeferredGraphMount(
+    vectorGraphMountKey,
+    VECTOR_GRAPH_MOUNT_DELAY,
+  );
+
   const graphElements = useMemo(() => {
+    if (!vectorGraphReady) {
+      return null;
+    }
+
     if (currentLevel === "subtheme" && selectedSubthemeItem) {
       return buildVocabularySubthemeGraphElements(selectedSubthemeItem, subthemeWords);
     }
@@ -646,6 +676,7 @@ export default function Page() {
     selectedSubthemeItem,
     subthemeRecommendations,
     subthemeWords,
+    vectorGraphReady,
   ]);
 
   const handleRegionSelect = useCallback(
@@ -655,17 +686,17 @@ export default function Page() {
       // instant — React keeps the current frame interactive and processes
       // the heavy region/graph re-renders concurrently.
       setRegionThemeGraphLoading(true);
+      setSelectedRegionId(regionId);
+      setCurrentLevel("region");
       startTransition(() => {
         setPendingThemeId(null);
         setPendingGraphNodeId(null);
         setSubthemeWordsLoading(false);
         setSubthemeWords([]);
-        setSelectedRegionId(regionId);
         setSelectedThemeId(null);
         setSelectedSubthemeNodeId(null);
         setSelectedWordId(null);
         setSelectedGraphId(null);
-        setCurrentLevel("region");
       });
     },
     [setSelectedGraphId],
@@ -673,11 +704,13 @@ export default function Page() {
 
   const handleRegionLayoutsChange = useCallback(
     (nextLayouts: Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>) => {
-      setRegionLayouts((currentLayouts) =>
-        areRegionLayoutsEquivalent(currentLayouts, nextLayouts)
+      setRegionLayouts((currentLayouts) => {
+        const mergedLayouts = { ...currentLayouts, ...nextLayouts };
+
+        return areRegionLayoutsEquivalent(currentLayouts, mergedLayouts)
           ? currentLayouts
-          : nextLayouts,
-      );
+          : mergedLayouts;
+      });
     },
     [],
   );
@@ -979,48 +1012,7 @@ export default function Page() {
     animStopRef.current.forEach((stop) => stop());
     animStopRef.current = [];
 
-    if (renderScaleCommitTimeoutRef.current !== null) {
-      window.clearTimeout(renderScaleCommitTimeoutRef.current);
-      renderScaleCommitTimeoutRef.current = null;
-    }
   }, []);
-
-  const commitRenderScale = useCallback((scale: number) => {
-    const nextScale = clamp(scale, MIN_SCENE_SCALE, MAX_SCENE_SCALE);
-
-    if (
-      !Number.isFinite(nextScale) ||
-      Math.abs(renderScaleRef.current - nextScale) <= CAMERA_RENDER_SCALE_EPSILON
-    ) {
-      return;
-    }
-
-    renderScaleRef.current = nextScale;
-    setRenderScale(nextScale);
-  }, []);
-
-  const scheduleRenderScaleCommit = useCallback(
-    (scale: number, delay = CAMERA_RENDER_SCALE_COMMIT_DELAY) => {
-      const nextScale = clamp(scale, MIN_SCENE_SCALE, MAX_SCENE_SCALE);
-
-      if (
-        !Number.isFinite(nextScale) ||
-        Math.abs(renderScaleRef.current - nextScale) <= CAMERA_RENDER_SCALE_EPSILON
-      ) {
-        return;
-      }
-
-      if (renderScaleCommitTimeoutRef.current !== null) {
-        window.clearTimeout(renderScaleCommitTimeoutRef.current);
-      }
-
-      renderScaleCommitTimeoutRef.current = window.setTimeout(() => {
-        renderScaleCommitTimeoutRef.current = null;
-        commitRenderScale(nextScale);
-      }, delay);
-    },
-    [commitRenderScale],
-  );
 
   // Helper: animate motion values to a target (smooth level transitions)
   const animateTransformTo = useCallback(
@@ -1030,20 +1022,16 @@ export default function Page() {
         mvX.set(x);
         mvY.set(y);
         mvScale.set(s);
-        commitRenderScale(s);
         return;
       }
+
       const opts = { duration: CAMERA_AUTO_TRANSITION_DURATION, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] };
       const cX = animate(mvX, x, opts);
       const cY = animate(mvY, y, opts);
       const cS = animate(mvScale, s, opts);
       animStopRef.current = [() => cX.stop(), () => cY.stop(), () => cS.stop()];
-      scheduleRenderScaleCommit(
-        s,
-        CAMERA_AUTO_TRANSITION_DURATION * 1000 + CAMERA_RENDER_SCALE_COMMIT_DELAY,
-      );
     },
-    [cancelTransformAnim, commitRenderScale, mvX, mvY, mvScale, scheduleRenderScaleCommit],
+    [cancelTransformAnim, mvX, mvY, mvScale],
   );
 
   // Helper: apply a clamped manual transform directly to motion values
@@ -1056,9 +1044,8 @@ export default function Page() {
       mvX.set(auto.x + clamped.x);
       mvY.set(auto.y + clamped.y);
       mvScale.set(nextScale);
-      scheduleRenderScaleCommit(nextScale);
     },
-    [clampManualPan, mvX, mvY, mvScale, scheduleRenderScaleCommit],
+    [clampManualPan, mvX, mvY, mvScale],
   );
 
   const zoomAt = useCallback(
@@ -1088,6 +1075,17 @@ export default function Page() {
 
       const rect = sceneRef.current?.getBoundingClientRect();
       if (!rect) return;
+
+      transformLayerRef.current?.classList.add("is-zooming");
+
+      if (zoomClassTimeoutRef.current !== null) {
+        window.clearTimeout(zoomClassTimeoutRef.current);
+      }
+
+      zoomClassTimeoutRef.current = window.setTimeout(() => {
+        transformLayerRef.current?.classList.remove("is-zooming");
+        zoomClassTimeoutRef.current = null;
+      }, 160);
 
       const totalScale = autoTransformRef.current.scale * manualTransformRef.current.scale;
       if (event.deltaY > 0 && currentLevelRef.current !== "map" && totalScale <= MIN_SCENE_SCALE + 0.04) {
@@ -1150,12 +1148,7 @@ export default function Page() {
           regionTarget: getRegionTarget(event.target),
         };
         pinchRef.current = null;
-        // Suspend hit-testing on the transform layer for the duration of this
-        // drag. The browser will no longer evaluate CSS :hover on SVG paths as
-        // the map translates, eliminating fill/stroke transition repaints.
-        if (transformLayerRef.current) {
-          transformLayerRef.current.style.pointerEvents = "none";
-        }
+        transformLayerRef.current?.classList.add("is-dragging");
         return;
       }
 
@@ -1249,9 +1242,7 @@ export default function Page() {
           pinchRef.current = null;
           isNavigatingRef.current = false;
           if (sceneRef.current) sceneRef.current.style.cursor = "grab";
-          if (transformLayerRef.current) {
-            transformLayerRef.current.style.pointerEvents = "";
-          }
+          transformLayerRef.current?.classList.remove("is-dragging");
         }
 
         return;
@@ -1276,9 +1267,7 @@ export default function Page() {
         pinchRef.current = null;
         isNavigatingRef.current = false;
         if (sceneRef.current) sceneRef.current.style.cursor = "grab";
-        if (transformLayerRef.current) {
-          transformLayerRef.current.style.pointerEvents = "";
-        }
+        transformLayerRef.current?.classList.remove("is-dragging");
 
         if (selectedRegionFromTarget && !suppressRegionClickRef.current) {
           handleRegionSelect(selectedRegionFromTarget);
@@ -1376,7 +1365,7 @@ export default function Page() {
     const nodeCount =
       currentLevel === "region"
         ? (selectedRegion?.themes.length ?? 0)
-        : regionGraph?.nodes.length;
+        : vectorGraphNodeCount;
 
     if (!nodeCount) {
       return undefined;
@@ -1392,15 +1381,15 @@ export default function Page() {
   }, [
     activeRegionId,
     currentLevel,
-    regionGraph?.nodes.length,
     selectedRegion?.themes.length,
+    vectorGraphNodeCount,
   ]);
 
   return (
     <div
       ref={sceneRef}
       data-help-target="graph-canvas"
-      className="absolute inset-0 z-0 cursor-grab overflow-hidden touch-none select-none bg-[#0B0B0D]"
+      className="map-scene absolute inset-0 z-0 cursor-grab overflow-hidden touch-none select-none kanji-bg-base"
       style={{
         overscrollBehavior: "contain",
         userSelect: "none",
@@ -1421,20 +1410,15 @@ export default function Page() {
           <motion.div
             ref={transformLayerRef}
             data-map-transform-layer="true"
-            className="map-transform-layer absolute left-0 top-0 z-10 bg-transparent"
+            className="map-transform-layer absolute inset-0 z-10 bg-transparent"
             style={{
               x: mvX,
               y: mvY,
-              scale: mvLayerScale,
-              width: sceneSize.width * renderScale,
-              height: sceneSize.height * renderScale,
+              scale: mvScale,
               originX: 0,
               originY: 0,
-              willChange: "transform",
-              backfaceVisibility: "hidden",
               userSelect: "none",
               WebkitUserSelect: "none",
-              contain: "layout paint",
             }}
           >
             <JapanRegionMap

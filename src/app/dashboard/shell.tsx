@@ -74,7 +74,8 @@ export default function ContentShell({
     return (
       <main
         className={[
-          "relative h-dvh bg-surface-primary overflow-hidden",
+          "relative h-dvh overflow-hidden",
+          isGraph ? "bg-[#d9d7d6] dark:bg-[#111113]" : "bg-surface-primary",
           padMd,
           padDesktop,
         ].join(" ")}

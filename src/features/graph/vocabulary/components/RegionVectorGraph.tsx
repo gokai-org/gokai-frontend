@@ -1,8 +1,6 @@
 "use client";
 
 import { memo, useMemo } from "react";
-import { motion } from "framer-motion";
-import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import type {
   GraphEdge,
   GraphNode as FlowGraphNode,
@@ -147,11 +145,6 @@ function getRegionVectorLayoutCacheKey(
   return `${level}::${boundsKey}::${viewportKey}::${nodePointKey}::${nodeKey}::${edgeKey}`;
 }
 
-const VOCAB_VECTOR_HOVER_STYLE = `
-  .vocab-node-hover { transition: filter 140ms ease-out, opacity 140ms ease-out; }
-  g[data-vocabulary-node="true"]:hover .vocab-node-hover circle { filter: brightness(1.12); }
-`;
-
 function RegionVectorGraph({
   nodes,
   edges,
@@ -162,7 +155,6 @@ function RegionVectorGraph({
   interactionDisabled = false,
   onNodeSelected,
 }: RegionVectorGraphProps) {
-  const platformMotion = usePlatformMotion();
   const visualScale = useMemo(() => getVisualScale(level), [level]);
   const layoutCacheKey = useMemo(
     () =>
@@ -196,20 +188,6 @@ function RegionVectorGraph({
     return nextLayout;
   }, [edges, layoutCacheKey, nodePoints, nodes, regionBounds, viewport, visualScale]);
 
-  const svgInitial = !platformMotion.shouldAnimate
-    ? false
-    : { opacity: 0 };
-  const svgAnimate = platformMotion.shouldAnimate
-    ? { opacity: 1 }
-    : undefined;
-  const svgTransition = platformMotion.shouldAnimate
-    ? {
-        duration:
-          (platformMotion.shouldUseLightAnimations ? 0.1 : 0.16) *
-          platformMotion.durationScale,
-        ease: [0.22, 1, 0.36, 1] as const,
-      }
-    : undefined;
   const edgeElements = useMemo(() => {
     return layout.edges.map(({ edge, from, to }) => {
       const completed = edge.data?.status === "completed";
@@ -255,7 +233,6 @@ function RegionVectorGraph({
     visualScale.completedEdgeWidth,
     visualScale.edgeWidth,
   ]);
-  const hoverEnabled = platformMotion.shouldUseHoverAnimations;
   if (!layout.nodes.length || !viewport) {
     return null;
   }
@@ -263,18 +240,13 @@ function RegionVectorGraph({
   const viewBox = `${viewport.x} ${viewport.y} ${viewport.width} ${viewport.height}`;
 
   return (
-    <motion.svg
-      initial={svgInitial}
-      animate={svgAnimate}
-      exit={platformMotion.shouldAnimate ? { opacity: 0 } : undefined}
-      transition={svgTransition}
-      className="region-graph-layer pointer-events-none absolute inset-0 z-30 h-full w-full overflow-visible [--vocabulary-edge-shadow:#2E26211F] [--vocabulary-edge-shadow-completed:#A73D3730] [--vocabulary-edge-default:#6D625BA8] [--vocabulary-edge-completed:#B54842E0] [--vocabulary-node-stroke:#2D251F30] [--vocabulary-label-fill:var(--surface-elevated)] [--vocabulary-label-border:var(--border-primary)] [--vocabulary-label-inner-border:rgba(255,255,255,0.55)] [--vocabulary-label-highlight:rgba(255,255,255,0.55)] [--vocabulary-label-text:var(--content-primary)] dark:[--vocabulary-edge-shadow:#00000036] dark:[--vocabulary-edge-shadow-completed:#A33C363A] dark:[--vocabulary-edge-default:#ECE4DD66] dark:[--vocabulary-edge-completed:#D9625CDE] dark:[--vocabulary-node-stroke:#FFFFFF52] dark:[--vocabulary-label-fill:var(--surface-secondary)] dark:[--vocabulary-label-border:rgba(255,255,255,0.12)] dark:[--vocabulary-label-inner-border:rgba(255,255,255,0.04)] dark:[--vocabulary-label-highlight:rgba(255,255,255,0.04)] dark:[--vocabulary-label-text:#F5F0EB]"
+    <svg
+      className="region-graph-layer pointer-events-none absolute inset-0 z-30 h-full w-full overflow-hidden [--vocabulary-edge-shadow:#2E26211F] [--vocabulary-edge-shadow-completed:#A73D3730] [--vocabulary-edge-default:#6D625BA8] [--vocabulary-edge-completed:#B54842E0] [--vocabulary-node-stroke:#2D251F30] [--vocabulary-label-fill:var(--surface-elevated)] [--vocabulary-label-border:var(--border-primary)] [--vocabulary-label-inner-border:rgba(255,255,255,0.55)] [--vocabulary-label-highlight:rgba(255,255,255,0.55)] [--vocabulary-label-text:var(--content-primary)] dark:[--vocabulary-edge-shadow:#00000036] dark:[--vocabulary-edge-shadow-completed:#A33C363A] dark:[--vocabulary-edge-default:#ECE4DD66] dark:[--vocabulary-edge-completed:#D9625CDE] dark:[--vocabulary-node-stroke:#FFFFFF52] dark:[--vocabulary-label-fill:var(--surface-secondary)] dark:[--vocabulary-label-border:rgba(255,255,255,0.12)] dark:[--vocabulary-label-inner-border:rgba(255,255,255,0.04)] dark:[--vocabulary-label-highlight:rgba(255,255,255,0.04)] dark:[--vocabulary-label-text:#F5F0EB]"
       viewBox={viewBox}
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
     >
       <VocabularyGraphVisualDefs idPrefix="vocabulary-vector" />
-      <style>{VOCAB_VECTOR_HOVER_STYLE}</style>
 
       {edgeElements}
 
@@ -314,13 +286,7 @@ function RegionVectorGraph({
               fontSize={visualScale.labelFontSize}
             />
 
-            <g
-              className={
-                hoverEnabled && node.data.status !== "locked"
-                  ? "vocab-node-hover"
-                  : undefined
-              }
-            >
+            <g>
               <circle
                 r={nodeRadius}
                 fill={nodeFill}
@@ -347,7 +313,7 @@ function RegionVectorGraph({
           </g>
         );
       })}
-    </motion.svg>
+    </svg>
   );
 }
 

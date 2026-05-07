@@ -1500,18 +1500,221 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   );
 }
 
+.map-scene {
+  overscroll-behavior: contain;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  background: #d9d7d6;
+}
+
+.dark .map-scene {
+  background: #111113;
+}
+
+.map-transform-layer {
+  width: 100%;
+  height: 100%;
+  transform-origin: 0 0;
+  contain: layout paint style;
+  isolation: isolate;
+}
+
+.map-transform-layer.is-dragging,
+.map-transform-layer.is-zooming {
+  will-change: transform;
+}
+
+.map-transform-layer.is-dragging .vmap-hit-layer,
+.map-transform-layer.is-dragging .region-graph-layer,
+.map-transform-layer.is-dragging .region-graph-layer * {
+  pointer-events: none !important;
+}
+
+/* ── Japan map stage background ── */
+.japan-map-stage {
+  background-color: transparent;
+  background-image: none;
+}
+.dark .japan-map-stage {
+  background-color: transparent;
+  background-image: none;
+}
+
+/* ── Static map image ── */
+.vmap-static-base {
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: 0.26;
+}
+.dark .vmap-static-base {
+  filter: none;
+  mix-blend-mode: normal;
+  opacity: 0.72;
+}
+
+.vmap-static-svg {
+  display: block;
+  overflow: visible;
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+}
+
+.vmap-static-svg,
+.vmap-static-svg * {
+  pointer-events: none;
+}
+
+/* ── Japan map selection dim overlay ── */
+.vmap-dim-overlay {
+  background-color: rgba(20, 8, 8, 0.16);
+}
+.dark .vmap-dim-overlay {
+  background-color: rgba(5, 5, 8, 0.46);
+}
+
+.vmap-hit-layer {
+  contain: layout paint style;
+  isolation: isolate;
+}
+
+.vmap-hit-layer .vmap-hit-region {
+  fill: transparent;
+  stroke: rgba(255, 241, 235, 0.16);
+  stroke-width: 0.45;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  transition: none;
+}
+
+.vmap-hit-layer .vmap-hit-region > * {
+  fill: inherit;
+  stroke: inherit;
+  stroke-width: inherit;
+  pointer-events: auto;
+  transition: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.vmap-hit-layer .vmap-hit-region[data-status="locked"] {
+  fill: rgba(110, 82, 76, 0.16);
+  fill-opacity: 1;
+  cursor: not-allowed;
+}
+
+.vmap-hit-layer .vmap-hit-region[data-status="available"] {
+  fill: rgba(196, 52, 48, 0.34);
+  fill-opacity: 1;
+}
+
+.vmap-hit-layer .vmap-hit-region[data-status="completed"] {
+  fill: rgba(142, 24, 24, 0.58);
+  fill-opacity: 1;
+  stroke: rgba(232, 190, 180, 0.34);
+}
+
+.vmap-hit-layer .vmap-hit-region[data-active="true"] {
+  fill-opacity: 0;
+  stroke-opacity: 0;
+}
+
+@media (hover: hover) {
+  .vmap-hit-layer .vmap-hit-region:not([data-status="locked"]):not([data-active="true"]):hover {
+    fill: rgba(215, 48, 48, 0.76);
+    stroke: rgba(248, 229, 220, 0.42);
+  }
+
+  .vmap-hit-layer .vmap-hit-region[data-status="locked"]:hover {
+    fill: rgba(126, 100, 95, 0.24);
+    stroke: rgba(255, 255, 255, 0.14);
+  }
+}
+
+.vmap-hit-layer[data-has-selection="true"] .vmap-hit-region:not([data-active="true"]) {
+  opacity: 0.28;
+}
+
+html:not(.dark) .vmap-hit-layer .vmap-hit-region {
+  stroke: rgba(140, 30, 30, 0.20);
+}
+
+html:not(.dark) .vmap-hit-layer .vmap-hit-region[data-status="locked"] {
+  fill: rgba(150, 140, 136, 0.14);
+}
+
+html:not(.dark) .vmap-hit-layer .vmap-hit-region[data-status="available"] {
+  fill: rgba(190, 30, 30, 0.20);
+}
+
+html:not(.dark) .vmap-hit-layer .vmap-hit-region[data-status="completed"] {
+  fill: rgba(148, 20, 20, 0.62);
+  stroke: rgba(100, 12, 12, 0.42);
+}
+
+@media (hover: hover) {
+  html:not(.dark) .vmap-hit-layer .vmap-hit-region:not([data-status="locked"]):not([data-active="true"]):hover {
+    fill: rgba(204, 31, 31, 0.78);
+    stroke: rgba(170, 20, 20, 0.72);
+  }
+
+  html:not(.dark) .vmap-hit-layer .vmap-hit-region[data-status="locked"]:hover {
+    fill: rgba(150, 130, 125, 0.22);
+    stroke: rgba(100, 40, 40, 0.16);
+  }
+}
+
+html:not(.dark) .vmap-hit-layer[data-has-selection="true"] .vmap-hit-region:not([data-active="true"]) {
+  opacity: 0.24;
+}
+
+.vmap-active-region {
+  pointer-events: none;
+  filter: none;
+}
+
+.vmap-active-region g[data-active-region-paths] > * {
+  fill: var(--vmap-active-fill);
+  fill-opacity: 0.92;
+  stroke: var(--vmap-active-stroke);
+  stroke-width: 0.7;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+  transition: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.vmap-active-region.is-loading {
+  opacity: 0.96;
+}
+
+.region-graph-layer {
+  contain: layout paint style;
+  overflow: hidden;
+}
+
 /* ── Writing board loading: theme-aware node glass colors ── */
 :root {
   --writing-loading-center-stop: rgba(218, 212, 226, 0.92);
   --writing-loading-node-border: rgba(0, 0, 0, 0.10);
   --writing-loading-node-inner: rgba(0, 0, 0, 0.04);
   --writing-loading-side-bg: linear-gradient(180deg, rgba(0, 0, 0, 0.07), rgba(0, 0, 0, 0.04));
+  /* Japan map active region overlay colors — light mode */
+  --vmap-ar-fill-available: #CC1F1F;
+  --vmap-ar-fill-completed: #8B1818;
+  --vmap-ar-stroke-available: rgba(160, 20, 20, 0.65);
+  --vmap-ar-stroke-completed: rgba(100, 12, 12, 0.48);
 }
 .dark {
   --writing-loading-center-stop: rgba(24, 24, 28, 0.98);
   --writing-loading-node-border: rgba(255, 255, 255, 0.08);
   --writing-loading-node-inner: rgba(255, 255, 255, 0.05);
   --writing-loading-side-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.06));
+  /* Japan map active region overlay colors — dark mode */
+  --vmap-ar-fill-available: #E03535;
+  --vmap-ar-fill-completed: #7A1A1A;
+  --vmap-ar-stroke-available: rgba(241, 244, 248, 0.60);
+  --vmap-ar-stroke-completed: rgba(170, 176, 184, 0.38);
 }
 
 /* ── Shared board node label pill ───────────────────────────── */

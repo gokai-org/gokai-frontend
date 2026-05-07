@@ -15,14 +15,14 @@ export const JAPAN_MAP_PALETTE = {
   // without imposing a red tint. Color only enters on interaction or progress.
   regionIdle: "#0C0C0F",
   regionAvailable: "#150A0A",
-  regionHover: "#AA2C2C",
-  regionActive: "#C83C3C",
-  regionCompleted: "#601717",
+  regionHover: "#D42828",
+  regionActive: "#E03535",
+  regionCompleted: "#7A1A1A",
 
   // Region-boundary strokes sit visually above the internal prefecture lines
   // baked into the static SVG (which are muted by brightness(0.34)).
   strokeIdle: "rgba(255, 255, 255, 0.12)",
-  strokeHover: "rgba(255, 200, 200, 0.52)",
+  strokeHover: "rgba(255, 165, 165, 0.68)",
   strokeActive: "rgba(241, 244, 248, 0.60)",
   strokeCompleted: "rgba(170, 176, 184, 0.38)",
 

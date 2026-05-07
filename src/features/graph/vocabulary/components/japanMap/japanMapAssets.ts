@@ -10,8 +10,8 @@ const DEFAULT_VIEW_BOX = "0 0 483 545";
 
 export type ParsedJapanMap = {
   viewBox: string;
+  svgInnerMarkup: string;
   regionMarkupById: Record<VocabularyRegionId, string>;
-  iconMarkup: string;
 };
 
 let cache: ParsedJapanMap | null = null;
@@ -49,15 +49,6 @@ function normalizeHex(value?: string | null) {
   return (value ?? "").trim().toUpperCase();
 }
 
-function isWhiteFill(value?: string | null) {
-  if (!value) {
-    return false;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  return normalized === "white" || normalized === "#ffffff" || normalized === "#fff";
-}
-
 function isStructuralShape(element: Element) {
   return Boolean(element.closest(STRUCTURAL_PARENT_SELECTOR));
 }
@@ -73,9 +64,11 @@ function parseJapanMap(svgText: string): ParsedJapanMap {
     },
     {} as Record<VocabularyRegionId, string[]>,
   );
-  const iconMarkupParts: string[] = [];
-
   if (svg) {
+    svg.querySelectorAll("script, foreignObject").forEach((element) => {
+      element.remove();
+    });
+
     svg.querySelectorAll(SVG_REGION_SHAPE_SELECTOR).forEach((shape) => {
       if (!(shape instanceof Element) || isStructuralShape(shape)) {
         return;
@@ -94,16 +87,6 @@ function parseJapanMap(svgText: string): ParsedJapanMap {
         clone.removeAttribute("data-region-path");
         clone.removeAttribute("data-vocabulary-region");
         regionMarkupBuckets[regionId].push(clone.outerHTML);
-        return;
-      }
-
-      if (isWhiteFill(fill)) {
-        const clone = shape.cloneNode(true) as Element;
-        clone.removeAttribute("class");
-        clone.removeAttribute("style");
-        clone.removeAttribute("fill");
-        clone.removeAttribute("stroke");
-        iconMarkupParts.push(clone.outerHTML);
       }
     });
   }
@@ -115,7 +98,7 @@ function parseJapanMap(svgText: string): ParsedJapanMap {
 
   return {
     viewBox: svg?.getAttribute("viewBox") || DEFAULT_VIEW_BOX,
+    svgInnerMarkup: svg?.innerHTML ?? "",
     regionMarkupById,
-    iconMarkup: iconMarkupParts.join(""),
   };
 }
