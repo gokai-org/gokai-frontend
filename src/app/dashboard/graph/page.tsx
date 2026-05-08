@@ -49,7 +49,7 @@ type SvgSceneFrame = {
 };
 
 const MIN_SCENE_SCALE = 1;
-const MAX_SCENE_SCALE = 7.2;
+const MAX_SCENE_SCALE = 10.0;
 const WHEEL_ZOOM_IN_FACTOR = 1.1;
 const WHEEL_ZOOM_OUT_FACTOR = 0.91;
 const MAP_PAN_PADDING_X = 96;
@@ -326,6 +326,10 @@ function toWordLesson(
     meanings: word.meanings?.filter(Boolean) ?? [],
     audio: audioByWordId.get(word.id),
     icon: word.icon ?? null,
+    order: word.order ?? null,
+    unlockedAt: word.unlockedAt ?? null,
+    completedAt: word.completedAt ?? null,
+    score: word.score ?? null,
   };
 }
 
@@ -453,11 +457,11 @@ export default function Page() {
   );
   const vectorGraphNodeCount = useMemo(() => {
     if (currentLevel === "theme" && selectedGraph) {
-      return progressItems.length + subthemeRecommendations.length + 1;
+      return progressItems.length + subthemeRecommendations.length;
     }
 
     if (currentLevel === "subtheme" && selectedSubthemeItem) {
-      return subthemeWords.length + 1;
+      return subthemeWords.length;
     }
 
     return 0;
@@ -916,10 +920,11 @@ export default function Page() {
     const svgFrame = getRenderedSvgFrame(sceneSize, layout.viewport);
     const regionWidth = Math.max((bounds.width / 100) * svgFrame.width, 1);
     const regionHeight = Math.max((bounds.height / 100) * svgFrame.height, 1);
-    const viewportFill = currentLevel === "region" ? 0.78 : 0.72;
+    const viewportFill = currentLevel === "region" ? 0.92 : 0.85;
+    const maxAutoScale = Math.min(MAX_SCENE_SCALE, 9.5);
     const scale = clamp(
       Math.min(
-        6.4,
+        maxAutoScale,
         Math.max(
           2,
           Math.min(
@@ -929,7 +934,7 @@ export default function Page() {
         ),
       ),
       1.8,
-      6.4,
+      maxAutoScale,
     );
     const centerX = svgFrame.x + (bounds.centerX / 100) * svgFrame.width;
     const centerY = svgFrame.y + (bounds.centerY / 100) * svgFrame.height;
@@ -1384,6 +1389,15 @@ export default function Page() {
     selectedRegion?.themes.length,
     vectorGraphNodeCount,
   ]);
+  const selectedRegionLayout = selectedRegion
+    ? regionLayouts[selectedRegion.id]
+    : null;
+  const vectorGraphLayoutReady = Boolean(
+    selectedRegionLayout?.bounds &&
+      selectedRegionLayout.viewport &&
+      vectorGraphNodeCount > 0 &&
+      (selectedRegionLayout.nodePoints?.length ?? 0) >= vectorGraphNodeCount,
+  );
 
   return (
     <div
@@ -1434,9 +1448,9 @@ export default function Page() {
               !regionThemeGraphLoading ? (
                 <RegionThemeGraph
                   region={selectedRegion}
-                  regionBounds={regionLayouts[selectedRegion.id]?.bounds ?? null}
-                  nodePoints={regionLayouts[selectedRegion.id]?.nodePoints ?? null}
-                  viewport={regionLayouts[selectedRegion.id]?.viewport ?? null}
+                  regionBounds={selectedRegionLayout?.bounds ?? null}
+                  nodePoints={selectedRegionLayout?.nodePoints ?? null}
+                  viewport={selectedRegionLayout?.viewport ?? null}
                   interactionDisabled={graphInteractionDisabled}
                   onThemeSelect={handleThemeSelected}
                 />
@@ -1445,13 +1459,14 @@ export default function Page() {
 
             {selectedRegion &&
             regionGraph &&
+            vectorGraphLayoutReady &&
             (currentLevel === "theme" || currentLevel === "subtheme") ? (
               <RegionVectorGraph
                 nodes={regionGraph.nodes}
                 edges={regionGraph.edges as GraphEdge[]}
-                regionBounds={regionLayouts[selectedRegion.id]?.bounds ?? null}
-                nodePoints={regionLayouts[selectedRegion.id]?.nodePoints ?? null}
-                viewport={regionLayouts[selectedRegion.id]?.viewport ?? null}
+                regionBounds={selectedRegionLayout?.bounds ?? null}
+                nodePoints={selectedRegionLayout?.nodePoints ?? null}
+                viewport={selectedRegionLayout?.viewport ?? null}
                 level={currentLevel}
                 interactionDisabled={graphInteractionDisabled}
                 onNodeSelected={regionGraph.onNodeSelected}

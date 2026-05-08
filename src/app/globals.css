@@ -1505,11 +1505,11 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   user-select: none;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
-  background: #d9d7d6;
+  background: transparent;
 }
 
 .dark .map-scene {
-  background: #111113;
+  background: transparent;
 }
 
 .map-transform-layer {
@@ -1523,6 +1523,43 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 .map-transform-layer.is-dragging,
 .map-transform-layer.is-zooming {
   will-change: transform;
+}
+
+@keyframes vocabulary-graph-node-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes vocabulary-graph-edge-enter {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.vocabulary-graph-node-enter {
+  animation: vocabulary-graph-node-enter 160ms ease-out both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.vocabulary-graph-edge-enter {
+  animation: vocabulary-graph-edge-enter 150ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vocabulary-graph-node-enter,
+  .vocabulary-graph-edge-enter {
+    animation: none;
+  }
 }
 
 .map-transform-layer.is-dragging .vmap-hit-layer,
@@ -1545,7 +1582,7 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 .vmap-static-base {
   filter: none;
   mix-blend-mode: normal;
-  opacity: 0.26;
+  opacity: 0.82;
 }
 .dark .vmap-static-base {
   filter: none;
@@ -1567,10 +1604,10 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 
 /* ── Japan map selection dim overlay ── */
 .vmap-dim-overlay {
-  background-color: rgba(20, 8, 8, 0.16);
+  background-color: transparent;
 }
 .dark .vmap-dim-overlay {
-  background-color: rgba(5, 5, 8, 0.46);
+  background-color: transparent;
 }
 
 .vmap-hit-layer {

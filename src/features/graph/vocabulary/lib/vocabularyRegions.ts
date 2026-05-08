@@ -124,6 +124,14 @@ function getThemeProgress(graph?: VocabularyGraphSummary) {
   return Math.min(100, Math.max(8, graph.nodesCount * 10));
 }
 
+function isThemeUnlocked(theme?: VocabularyThemeContent) {
+  if (!theme) {
+    return false;
+  }
+
+  return theme.isUnlocked === true;
+}
+
 export function buildVocabularyRegionViewModels(
   themeCatalog: VocabularyThemeContent[],
   graphs: VocabularyGraphSummary[],
@@ -149,7 +157,9 @@ export function buildVocabularyRegionViewModels(
           : "locked"
         : graph && graph.nodesCount > 0
           ? "completed"
-          : "available";
+          : isThemeUnlocked(theme)
+            ? "available"
+            : "locked";
 
       return {
         id:
@@ -164,7 +174,7 @@ export function buildVocabularyRegionViewModels(
         kana: theme?.kana ?? graph?.kana,
         status,
         progress: getThemeProgress(graph),
-        isAvailable: Boolean(theme || graph),
+        isAvailable: Boolean(graph || isThemeUnlocked(theme)),
       };
     });
 

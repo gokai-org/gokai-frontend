@@ -189,12 +189,16 @@ function RegionVectorGraph({
   }, [edges, layoutCacheKey, nodePoints, nodes, regionBounds, viewport, visualScale]);
 
   const edgeElements = useMemo(() => {
-    return layout.edges.map(({ edge, from, to }) => {
+    return layout.edges.map(({ edge, from, to }, index) => {
       const completed = edge.data?.status === "completed";
       const curve = buildRegionGraphCurve(from, to);
 
       return (
-        <g key={edge.id}>
+        <g
+          key={edge.id}
+          className="vocabulary-graph-edge-enter"
+          style={{ animationDelay: `${Math.min(index * 24, 120)}ms` }}
+        >
           <path
             d={curve}
             fill="none"
@@ -207,7 +211,7 @@ function RegionVectorGraph({
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
-            opacity={0.92}
+            opacity={0.68}
           />
           <path
             d={curve}
@@ -223,7 +227,7 @@ function RegionVectorGraph({
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
-            opacity={0.98}
+            opacity={completed ? 0.9 : 0.76}
           />
         </g>
       );
@@ -250,7 +254,7 @@ function RegionVectorGraph({
 
       {edgeElements}
 
-      {layout.nodes.map(({ node, x, y }) => {
+      {layout.nodes.map(({ node, x, y }, index) => {
         const label = formatNodeLabel(getNodeLabel(node));
         const nodeRadius = getNodeRadius(node, visualScale);
         const nodeFill = getNodeFill(node);
@@ -276,39 +280,44 @@ function RegionVectorGraph({
             }}
             aria-label={node.data.label}
           >
-            <VocabularyGraphLabel
-              idPrefix="vocabulary-vector"
-              text={label}
-              y={visualScale.labelOffset}
-              width={visualScale.labelWidth}
-              height={visualScale.labelHeight}
-              radius={visualScale.labelRadius}
-              fontSize={visualScale.labelFontSize}
-            />
-
-            <g>
-              <circle
-                r={nodeRadius}
-                fill={nodeFill}
-                stroke="var(--vocabulary-node-stroke)"
-                strokeWidth={node.id === "home" ? 0.82 : 0.72}
-                vectorEffect="non-scaling-stroke"
+            <g
+              className="vocabulary-graph-node-enter"
+              style={{ animationDelay: `${Math.min(index * 28, 140)}ms` }}
+            >
+              <VocabularyGraphLabel
+                idPrefix="vocabulary-vector"
+                text={label}
+                y={visualScale.labelOffset}
+                width={visualScale.labelWidth}
+                height={visualScale.labelHeight}
+                radius={visualScale.labelRadius}
+                fontSize={visualScale.labelFontSize}
               />
-              <text
-                y={visualScale.textOffset}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="white"
-                fontSize={
-                  node.id === "home"
-                    ? visualScale.homeFontSize
-                    : visualScale.nodeFontSize
-                }
-                fontWeight={900}
-                style={{ pointerEvents: "none" }}
-              >
-                {getSymbol(node).slice(0, 2)}
-              </text>
+
+              <g>
+                <circle
+                  r={nodeRadius}
+                  fill={nodeFill}
+                  stroke="var(--vocabulary-node-stroke)"
+                  strokeWidth={node.id === "home" ? 0.82 : 0.72}
+                  vectorEffect="non-scaling-stroke"
+                />
+                <text
+                  y={visualScale.textOffset}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="white"
+                  fontSize={
+                    node.id === "home"
+                      ? visualScale.homeFontSize
+                      : visualScale.nodeFontSize
+                  }
+                  fontWeight={900}
+                  style={{ pointerEvents: "none" }}
+                >
+                  {getSymbol(node).slice(0, 2)}
+                </text>
+              </g>
             </g>
           </g>
         );

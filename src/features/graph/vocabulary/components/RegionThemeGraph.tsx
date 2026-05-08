@@ -273,8 +273,15 @@ function RegionThemeGraph({
     return nextLayout;
   }, [nodePoints, region.themes.length, regionBounds, themePointLayoutKey]);
   const edgeElements = useMemo(() => {
-    return themePoints.map((point, index) => {
-      const nextPoint = themePoints[index + 1];
+    const availableThemeIndexes = region.themes
+      .map((theme, index) => ({ theme, index }))
+      .filter(({ theme }) => theme.isAvailable && theme.status !== "locked")
+      .map(({ index }) => index);
+
+    return availableThemeIndexes.slice(0, -1).map((themeIndex, index) => {
+      const nextThemeIndex = availableThemeIndexes[index + 1];
+      const point = themePoints[themeIndex];
+      const nextPoint = themePoints[nextThemeIndex];
 
       if (!nextPoint || !viewport) {
         return null;
@@ -291,26 +298,30 @@ function RegionThemeGraph({
       const curve = buildRegionGraphCurve(connection.from, connection.to);
 
       return (
-        <g key={`region-theme-edge-${region.themes[index]?.id ?? index}`}>
+        <g
+          key={`region-theme-edge-${region.themes[themeIndex]?.id ?? themeIndex}`}
+          className="vocabulary-graph-edge-enter"
+          style={{ animationDelay: `${Math.min(index * 24, 120)}ms` }}
+        >
           <path
             d={curve}
             fill="none"
             stroke="var(--vocabulary-edge-shadow)"
-            strokeWidth={1.72}
+            strokeWidth={1.46}
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
-            opacity={0.92}
+            opacity={0.74}
           />
           <path
             d={curve}
             fill="none"
             stroke="var(--vocabulary-edge-default)"
-            strokeWidth={1}
+            strokeWidth={0.82}
             strokeLinecap="round"
             strokeLinejoin="round"
             vectorEffect="non-scaling-stroke"
-            opacity={0.98}
+            opacity={0.84}
           />
         </g>
       );
@@ -361,38 +372,43 @@ function RegionThemeGraph({
             }}
             aria-label={theme.label}
           >
-            <VocabularyGraphLabel
-              idPrefix="vocabulary-theme"
-              text={formatThemeLabel(theme)}
-              y={LABEL_OFFSET}
-              width={LABEL_WIDTH}
-              height={LABEL_HEIGHT}
-              radius={LABEL_RADIUS}
-              fontSize={LABEL_FONT_SIZE}
-            />
-
-            <g>
-              <circle
-                r={THEME_NODE_RADIUS}
-                fill={getThemeFill(theme)}
-                stroke="var(--vocabulary-node-stroke)"
-                strokeWidth={0.8}
-                vectorEffect="non-scaling-stroke"
+            <g
+              className="vocabulary-graph-node-enter"
+              style={{ animationDelay: `${Math.min(index * 28, 140)}ms` }}
+            >
+              <VocabularyGraphLabel
+                idPrefix="vocabulary-theme"
+                text={formatThemeLabel(theme)}
+                y={LABEL_OFFSET}
+                width={LABEL_WIDTH}
+                height={LABEL_HEIGHT}
+                radius={LABEL_RADIUS}
+                fontSize={LABEL_FONT_SIZE}
               />
-              <text
-                y={0.72}
-                textAnchor="middle"
-                dominantBaseline="middle"
-                fill="white"
-                fontSize={2.3}
-                fontWeight={900}
-                style={{ pointerEvents: "none" }}
-              >
-                {(theme.kanji || theme.kana || theme.label.slice(0, 1)).slice(
-                  0,
-                  2,
-                )}
-              </text>
+
+              <g>
+                <circle
+                  r={THEME_NODE_RADIUS}
+                  fill={getThemeFill(theme)}
+                  stroke="var(--vocabulary-node-stroke)"
+                  strokeWidth={0.8}
+                  vectorEffect="non-scaling-stroke"
+                />
+                <text
+                  y={0.72}
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  fill="white"
+                  fontSize={2.3}
+                  fontWeight={900}
+                  style={{ pointerEvents: "none" }}
+                >
+                  {(theme.kanji || theme.kana || theme.label.slice(0, 1)).slice(
+                    0,
+                    2,
+                  )}
+                </text>
+              </g>
             </g>
           </g>
         );

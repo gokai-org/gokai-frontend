@@ -6,7 +6,11 @@ import type {
   VocabularyRecommendation,
   VocabularyWordLesson,
 } from "../types";
-import { createCustomGraph, generateConnections } from "./graphBuilder";
+import { createCustomGraph } from "./graphBuilder";
+import {
+  buildProgressiveConnections,
+  compareProgressiveNodes,
+} from "./progressiveGraph";
 
 export type VocabularyNodeDefinition = {
   id: string;
@@ -14,6 +18,10 @@ export type VocabularyNodeDefinition = {
   label: string;
   description?: string;
   status: NodeStatus;
+  order?: number | null;
+  selectedAt?: string | null;
+  createdAt?: string | null;
+  unlockedAt?: string | null;
   entityKind?: "theme" | "subtheme" | "word";
   entityId?: string;
   graphId?: string;
@@ -98,6 +106,16 @@ function getSubthemeProgressKey(item: VocabularyGraphProgressItem) {
   return item.subthemeId || [item.meaning, item.kanji, item.kana].map(normalizeText).join("|");
 }
 
+function getSubthemeContentKey(
+  item: Pick<VocabularyGraphProgressItem | VocabularyRecommendation, "meaning" | "kanji" | "kana"> & {
+    description?: string;
+  },
+) {
+  return [item.meaning || item.description, item.kanji, item.kana]
+    .map(normalizeText)
+    .join("|");
+}
+
 function getRecommendationKey(recommendation: VocabularyRecommendation) {
   return recommendation.entityId || [recommendation.meaning, recommendation.kanji, recommendation.kana, recommendation.description]
     .map(normalizeText)
@@ -108,11 +126,24 @@ function compareProgressItems(
   a: VocabularyGraphProgressItem,
   b: VocabularyGraphProgressItem,
 ) {
-  const timeA = a.selectedAt ? new Date(a.selectedAt).getTime() : Number.MAX_SAFE_INTEGER;
-  const timeB = b.selectedAt ? new Date(b.selectedAt).getTime() : Number.MAX_SAFE_INTEGER;
+  const progressiveResult = compareProgressiveNodes({
+    id: a.nodeId,
+    status: getNodeStatus(a),
+    order: a.order,
+    selectedAt: a.selectedAt,
+    createdAt: a.createdAt,
+    unlockedAt: a.unlockedAt,
+  }, {
+    id: b.nodeId,
+    status: getNodeStatus(b),
+    order: b.order,
+    selectedAt: b.selectedAt,
+    createdAt: b.createdAt,
+    unlockedAt: b.unlockedAt,
+  });
 
-  if (timeA !== timeB) {
-    return timeA - timeB;
+  if (progressiveResult !== 0) {
+    return progressiveResult;
   }
 
   return `${a.meaning}|${a.kanji}|${a.kana}`.localeCompare(
@@ -120,6 +151,91 @@ function compareProgressItems(
     "es",
     { sensitivity: "base" },
   );
+}
+
+function getWordOrder(word: VocabularyWordLesson, fallbackIndex: number) {
+  const metadata = word as VocabularyWordLesson & {
+    order?: number | null;
+    unlockedAt?: string | null;
+    completedAt?: string | null;
+    score?: number | null;
+  };
+
+  return {
+    order: metadata.order ?? fallbackIndex,
+    unlockedAt: metadata.unlockedAt ?? null,
+    completedAt: metadata.completedAt ?? null,
+    score: metadata.score ?? null,
+  };
+}
+
+function getUnlockedWordCount(
+  item: VocabularyGraphProgressItem,
+  words: VocabularyWordLesson[],
+) {
+  if (words.length === 0) {
+    return 0;
+  }
+
+  if (item.unlockedWordIds?.length) {
+    return Math.min(words.length, item.unlockedWordIds.length);
+  }
+
+  const mastery = getVocabularyNodeMastery(item);
+  const byAverage = Math.ceil((words.length * mastery.average) / 100);
+  const byCompletedTypes = mastery.completedTypes + 1;
+
+  return Math.min(words.length, Math.max(1, byAverage, byCompletedTypes));
+}
+
+function getProgressiveWords(
+  item: VocabularyGraphProgressItem,
+  words: VocabularyWordLesson[],
+) {
+  const seenWordIds = new Set<string>();
+  const wordProgressById = new Map(
+    (item.wordProgress ?? []).map((progress) => [progress.wordId, progress]),
+  );
+  const uniqueWords = words
+    .filter((word) => {
+      if (seenWordIds.has(word.wordId)) return false;
+      seenWordIds.add(word.wordId);
+      return true;
+    })
+    .map((word, index) => {
+      const progress = wordProgressById.get(word.wordId);
+
+      return {
+        ...word,
+        order: progress?.order ?? getWordOrder(word, index).order,
+        unlockedAt: progress?.unlockedAt ?? getWordOrder(word, index).unlockedAt,
+        completedAt: progress?.completedAt ?? getWordOrder(word, index).completedAt,
+        score: progress?.score ?? getWordOrder(word, index).score,
+      };
+    })
+    .sort((a, b) =>
+      compareProgressiveNodes(
+        {
+          id: a.wordId,
+          status: "available",
+          order: a.order,
+          unlockedAt: a.unlockedAt,
+        },
+        {
+          id: b.wordId,
+          status: "available",
+          order: b.order,
+          unlockedAt: b.unlockedAt,
+        },
+      ),
+    );
+
+  if (item.unlockedWordIds?.length) {
+    const unlockedIds = new Set(item.unlockedWordIds);
+    return uniqueWords.filter((word) => unlockedIds.has(word.wordId));
+  }
+
+  return uniqueWords.slice(0, getUnlockedWordCount(item, uniqueWords));
 }
 
 function compareRecommendations(
@@ -143,9 +259,12 @@ export function buildVocabularyThemeGraphElements(
   subthemeRecommendations: VocabularyRecommendation[],
 ) {
   const sortedItems = [...items].sort(compareProgressItems);
-  const selectedSubthemeKeys = new Set(
-    sortedItems.map((item) => getSubthemeProgressKey(item)),
-  );
+  const selectedSubthemeKeys = new Set<string>();
+
+  sortedItems.forEach((item) => {
+    selectedSubthemeKeys.add(getSubthemeProgressKey(item));
+    selectedSubthemeKeys.add(getSubthemeContentKey(item));
+  });
   const definitions: VocabularyNodeDefinition[] = [];
 
   sortedItems.forEach((item) => {
@@ -157,8 +276,12 @@ export function buildVocabularyThemeGraphElements(
       label: item.meaning,
       description: item.meaning,
       status: getNodeStatus(item),
+      order: item.order,
+      selectedAt: item.selectedAt,
+      createdAt: item.createdAt,
+      unlockedAt: item.unlockedAt,
       entityKind: "subtheme",
-      entityId: item.nodeId,
+      entityId: item.subthemeId ?? item.nodeId,
       graphId: graph.graphId,
       symbol: item.kanji || item.kana,
       progress: mastery.average,
@@ -169,7 +292,8 @@ export function buildVocabularyThemeGraphElements(
     .sort(compareRecommendations)
     .filter(
       (recommendation) =>
-        !selectedSubthemeKeys.has(getRecommendationKey(recommendation)),
+        !selectedSubthemeKeys.has(getRecommendationKey(recommendation)) &&
+        !selectedSubthemeKeys.has(getSubthemeContentKey(recommendation)),
     )
     .slice(0, 10)
     .forEach((recommendation, index) => {
@@ -179,6 +303,7 @@ export function buildVocabularyThemeGraphElements(
         label: recommendation.meaning || recommendation.description,
         description: recommendation.meaning || recommendation.description,
         status: "available",
+        order: sortedItems.length + index,
         entityKind: "subtheme",
         entityId: recommendation.entityId,
         graphId: graph.graphId,
@@ -190,7 +315,7 @@ export function buildVocabularyThemeGraphElements(
       });
     });
 
-  const connections = generateConnections(definitions);
+  const connections = buildProgressiveConnections(definitions);
   return createCustomGraph(definitions, connections, {
     centerX: 480,
     centerY: 320,
@@ -205,22 +330,23 @@ export function buildVocabularySubthemeGraphElements(
   item: VocabularyGraphProgressItem,
   words: VocabularyWordLesson[],
 ) {
-  const seenWordIds = new Set<string>();
-  const uniqueWords = words.filter((word) => {
-    if (seenWordIds.has(word.wordId)) return false;
-    seenWordIds.add(word.wordId);
-    return true;
-  }).sort((a, b) => getWordLabel(a).localeCompare(getWordLabel(b), "es", { sensitivity: "base" }));
+  const visibleWords = getProgressiveWords(item, words);
+  const mastery = getVocabularyNodeMastery(item);
+  const isSubthemeCompleted = mastery.completedTypes === mastery.total;
 
   const definitions: VocabularyNodeDefinition[] = [];
 
-  uniqueWords.forEach((word, index) => {
+  visibleWords.forEach((word, index) => {
+    const wordMetadata = getWordOrder(word, index);
+
     definitions.push({
       id: `word-${word.wordId}`,
       type: pickNodeType(index),
       label: getWordLabel(word),
       description: getWordLabel(word),
-      status: "available",
+      status: isSubthemeCompleted || index < visibleWords.length - 1 ? "completed" : "available",
+      order: wordMetadata.order,
+      unlockedAt: wordMetadata.unlockedAt,
       entityKind: "word",
       entityId: word.wordId,
       graphId: item.graphId,
@@ -228,7 +354,7 @@ export function buildVocabularySubthemeGraphElements(
     });
   });
 
-  const connections = generateConnections(definitions);
+  const connections = buildProgressiveConnections(definitions);
   return createCustomGraph(definitions, connections, {
     centerX: 480,
     centerY: 320,

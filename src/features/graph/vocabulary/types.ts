@@ -29,11 +29,26 @@ export type VocabularyGraphProgressItem = {
   kanji: string;
   kana: string;
   nodeId: string;
+  order?: number | null;
+  createdAt?: string | null;
+  unlockedAt?: string | null;
+  completedAt?: string | null;
+  currentWordId?: string | null;
+  unlockedWordIds?: string[] | null;
+  wordProgress?: VocabularyWordProgress[] | null;
   speakingScore: number;
   listeningScore: number;
   meaningScore: number;
   writingScore: number;
   selectedAt: string | null;
+};
+
+export type VocabularyWordProgress = {
+  wordId: string;
+  order?: number | null;
+  unlockedAt?: string | null;
+  completedAt?: string | null;
+  score?: number | null;
 };
 
 export type VocabularyGraphProgress = {
@@ -86,6 +101,9 @@ export type VocabularyThemeContent = {
   kana: string;
   meaning: string;
   released: boolean;
+  isUnlocked?: boolean | null;
+  selectedAt?: string | null;
+  order?: number | null;
 };
 
 export type VocabularySubthemeContent = {
@@ -103,6 +121,10 @@ export type VocabularyWordContent = {
   hiragana?: string | null;
   icon?: string | null;
   meanings?: string[] | null;
+  order?: number | null;
+  unlockedAt?: string | null;
+  completedAt?: string | null;
+  score?: number | null;
 };
 
 export type VocabularyWordLesson = {
@@ -112,6 +134,10 @@ export type VocabularyWordLesson = {
   meanings?: string[];
   audio?: string;
   icon?: string | null;
+  order?: number | null;
+  unlockedAt?: string | null;
+  completedAt?: string | null;
+  score?: number | null;
 };
 
 export type VocabularyRegionId =

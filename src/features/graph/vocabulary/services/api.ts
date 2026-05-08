@@ -80,6 +80,12 @@ export async function listVocabularySubthemeRecommendations(
   );
 }
 
+export async function listVocabularyThemeRecommendations(limit = 24) {
+  return apiFetch<VocabularyRecommendation[]>(
+    `/api/content/recommendations/themes?limit=${limit}`,
+  );
+}
+
 export async function listVocabularyThemes() {
   return apiFetch<VocabularyThemeContent[]>("/api/content/themes");
 }

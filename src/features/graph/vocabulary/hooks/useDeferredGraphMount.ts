@@ -4,11 +4,9 @@ import { startTransition, useEffect, useState } from "react";
 import { scheduleMapIdleWork } from "../lib/japanMapPerformance";
 
 export function useDeferredGraphMount(activeKey: string | null, delay = 520) {
-  const [ready, setReady] = useState(false);
+  const [mountedKey, setMountedKey] = useState<string | null>(null);
 
   useEffect(() => {
-    setReady(false);
-
     if (!activeKey) {
       return;
     }
@@ -16,13 +14,13 @@ export function useDeferredGraphMount(activeKey: string | null, delay = 520) {
     return scheduleMapIdleWork(
       () => {
         startTransition(() => {
-          setReady(true);
+          setMountedKey(activeKey);
         });
       },
       { delay, timeout: delay + 500 },
     );
   }, [activeKey, delay]);
 
-  return ready;
+  return Boolean(activeKey && mountedKey === activeKey);
 }
 

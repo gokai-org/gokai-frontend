@@ -5,6 +5,7 @@ import {
   listVocabularyGraphs,
   listVocabularySubthemesByThemeId,
   listVocabularySubthemeRecommendations,
+  listVocabularyThemeRecommendations,
   listVocabularyThemes,
   selectVocabularySubtheme,
 } from "../services/api";
@@ -60,6 +61,31 @@ function sortGraphs(graphs: VocabularyGraphSummary[]) {
     (a, b) =>
       new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
   );
+}
+
+function enrichThemeAvailability(
+  themes: VocabularyThemeContent[] | null | undefined,
+  graphs: VocabularyGraphSummary[] | null | undefined,
+  recommendations: VocabularyRecommendation[] | null | undefined,
+) {
+  const safeThemes = Array.isArray(themes) ? themes : [];
+  const safeGraphs = Array.isArray(graphs) ? graphs : [];
+  const safeRecommendations = Array.isArray(recommendations)
+    ? recommendations
+    : [];
+  const unlockedThemeIds = new Set([
+    ...safeGraphs.map((graph) => graph.themeId),
+    ...safeRecommendations.map((recommendation) => recommendation.entityId),
+  ]);
+  const recommendationOrderByThemeId = new Map(
+    safeRecommendations.map((recommendation, index) => [recommendation.entityId, index]),
+  );
+
+  return safeThemes.map((theme) => ({
+    ...theme,
+    isUnlocked: unlockedThemeIds.has(theme.id),
+    order: recommendationOrderByThemeId.get(theme.id) ?? null,
+  }));
 }
 
 export function useVocabularyGraph() {
@@ -120,13 +146,22 @@ export function useVocabularyGraph() {
     return nextGraphs;
   }, []);
 
-  const loadThemeCatalog = useCallback(async () => {
+  const loadThemeCatalog = useCallback(async (currentGraphs: VocabularyGraphSummary[]) => {
     try {
-      const themes = await listVocabularyThemes();
-      setThemeCatalog(themes);
+      const [themes, recommendations] = await Promise.all([
+        listVocabularyThemes(),
+        listVocabularyThemeRecommendations(24),
+      ]);
+
+      setThemeCatalog(enrichThemeAvailability(themes, currentGraphs, recommendations));
     } catch (catalogError) {
       console.error("Error cargando catalogo de temas:", catalogError);
-      setThemeCatalog([]);
+      try {
+        const themes = await listVocabularyThemes();
+        setThemeCatalog(enrichThemeAvailability(themes, currentGraphs, []));
+      } catch {
+        setThemeCatalog([]);
+      }
     }
   }, []);
 
@@ -134,7 +169,8 @@ export function useVocabularyGraph() {
     let alive = true;
 
     setLoading(true);
-    Promise.all([loadGraphs(), loadThemeCatalog()])
+    loadGraphs()
+      .then((nextGraphs) => loadThemeCatalog(nextGraphs))
       .catch((loadError) => {
         console.error("Error cargando grafo de vocabulario:", loadError);
       })
@@ -216,7 +252,7 @@ export function useVocabularyGraph() {
           nextGraphs.find((graph) => graph.themeId === themeId)?.graphId ||
           null;
         setSelectedGraphId(nextGraphId);
-        await loadThemeCatalog();
+        await loadThemeCatalog(nextGraphs);
         return nextGraphId;
       } catch (actionError) {
         console.error("Error creando grafo de vocabulario:", actionError);
