@@ -1,8 +1,7 @@
 ﻿"use client";
 
 import { motion } from "framer-motion";
-import { Fragment, useMemo } from "react";
-import { LockKeyhole } from "lucide-react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
 import type { Kana } from "@/features/kana/types";
 import { ScriptCard } from "@/features/library/components/ScriptCard";
@@ -67,11 +66,127 @@ const ROW_SHORT: Record<string, string> = {
 export interface KanaPhoneticGridProps {
   kanas: Kana[];
   variant: "hiragana" | "katakana";
+  highlightedSymbol?: string | null;
   lockedIds: ReadonlySet<string>;
   newlyUnlockedIds: ReadonlySet<string>;
   favoriteIds: ReadonlySet<string>;
   onKanaClick: (kana: Kana) => void;
   onFavoriteToggle: (id: string) => void;
+}
+
+function HighlightFrame({
+  highlighted,
+  pulse,
+  open,
+  onAccept,
+  onReturn,
+  title,
+  description,
+  children,
+  registerRef,
+}: {
+  highlighted: boolean;
+  pulse: boolean;
+  open: boolean;
+  onAccept: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  onReturn: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+  registerRef?: (element: HTMLDivElement | null) => void;
+}) {
+  return (
+    <motion.div
+      ref={registerRef}
+      tabIndex={highlighted ? -1 : undefined}
+      initial={false}
+      animate={pulse ? { scale: [1, 1.02, 1] } : { scale: 1 }}
+      transition={pulse ? { duration: 1.2, repeat: Infinity, ease: "easeInOut" } : { duration: 0.18 }}
+      className={`relative outline-none ${highlighted ? "z-40" : "z-0"}`}
+    >
+      {highlighted ? (
+        <>
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none absolute -inset-2 rounded-[28px] border-2"
+            animate={pulse ? {
+              borderColor: [
+                "rgba(var(--kana-highlight-rgb),0.32)",
+                "rgba(var(--kana-highlight-rgb),0.7)",
+                "rgba(var(--kana-highlight-rgb),0.32)",
+              ],
+              boxShadow: [
+                "0 0 0 0 rgba(var(--kana-highlight-rgb),0.16)",
+                "0 0 0 6px rgba(var(--kana-highlight-rgb),0.08)",
+                "0 0 0 0 rgba(var(--kana-highlight-rgb),0.16)",
+              ],
+            } : {
+              borderColor: "rgba(var(--kana-highlight-rgb),0.55)",
+              boxShadow: "0 0 0 3px rgba(var(--kana-highlight-rgb),0.12)",
+            }}
+            transition={pulse ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
+          />
+          <motion.div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 rounded-[26px]"
+            animate={pulse ? { opacity: [0.12, 0.24, 0.12] } : { opacity: 0.14 }}
+            transition={pulse ? { duration: 1.6, repeat: Infinity, ease: "easeInOut" } : { duration: 0.2 }}
+            style={{ background: "rgba(var(--kana-highlight-rgb),0.12)" }}
+          />
+
+          {open ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="absolute left-1/2 top-[calc(100%+1rem)] z-50 w-[min(19rem,calc(100vw-2rem))] -translate-x-1/2 lg:top-auto lg:bottom-[calc(100%+1rem)]"
+            >
+              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.22)] ring-1 ring-black/5 dark:border-slate-700 dark:bg-[#15161c] dark:shadow-[0_28px_70px_rgba(0,0,0,0.45)] dark:ring-white/10">
+                <div className="relative overflow-hidden border-b border-slate-200 bg-white px-4 py-4 dark:border-slate-700 dark:bg-[#15161c]">
+                  <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-0 top-0 h-full"
+                    style={{
+                      background: "linear-gradient(145deg, rgba(var(--kana-highlight-rgb),0.22), rgba(var(--kana-highlight-rgb),0.1) 45%, transparent 100%)",
+                    }}
+                  />
+                  <div className="relative">
+                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
+                    Tabla fonética
+                    </p>
+                    <p className="mt-1 text-base font-black text-slate-950 dark:text-slate-50">
+                      {title}
+                    </p>
+                    <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                      {description}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 bg-slate-50 px-4 py-3 dark:bg-[#111219]">
+                  <button
+                    type="button"
+                    onClick={onAccept}
+                    className="flex-1 rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-400 dark:border-slate-600 dark:bg-[#1a1c24] dark:text-slate-200 dark:hover:bg-[#222531] dark:focus-visible:ring-slate-500 dark:focus-visible:ring-offset-[#111219]"
+                  >
+                    Aceptar
+                  </button>
+                  <button
+                    type="button"
+                    onClick={onReturn}
+                    className="flex-1 rounded-2xl border border-transparent bg-[color:var(--kana-highlight-accent)] px-3 py-2.5 text-sm font-black text-white transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--kana-highlight-accent)] dark:focus-visible:ring-offset-[#111219]"
+                  >
+                    Regresar
+                  </button>
+                </div>
+              </div>
+              <div className="pointer-events-none absolute left-1/2 top-0 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45 border-l border-t border-slate-200 bg-white lg:top-auto lg:bottom-0 lg:translate-y-1/2 lg:border-l-0 lg:border-t-0 lg:border-r lg:border-b dark:border-slate-700 dark:bg-[#15161c]" />
+            </motion.div>
+          ) : null}
+        </>
+      ) : null}
+      <div className="relative z-10">{children}</div>
+    </motion.div>
+  );
 }
 
 // ─── Desktop sub-components ───────────────────────────────────────────────────
@@ -194,17 +309,17 @@ function MiniCell({
   kana,
   c,
   isLocked,
+  highlighted = false,
   animationsEnabled,
   unlocking = false,
-  sequenceIndex = 0,
   onClick,
 }: {
   kana: Kana;
   c: VariantColors;
   isLocked: boolean;
+  highlighted?: boolean;
   animationsEnabled: boolean;
   unlocking?: boolean;
-  sequenceIndex?: number;
   onClick?: () => void;
 }) {
   const effectiveLocked = isLocked && !unlocking;
@@ -285,7 +400,9 @@ function MiniCell({
         "group relative flex w-full flex-col items-center justify-center gap-0.5 rounded-2xl border py-2 text-center transition-all duration-150 select-none",
         effectiveLocked
           ? "cursor-default border-border-subtle/40 bg-surface-secondary/50 opacity-55"
-          : "active:scale-95",
+          : highlighted
+            ? "active:scale-95"
+            : "active:scale-95",
       ].join(" ")}
       style={
         !effectiveLocked
@@ -364,6 +481,7 @@ function MDakutenDivider() {
 export function KanaPhoneticGrid({
   kanas,
   variant,
+  highlightedSymbol,
   lockedIds,
   newlyUnlockedIds,
   favoriteIds,
@@ -371,22 +489,98 @@ export function KanaPhoneticGrid({
   onFavoriteToggle,
 }: KanaPhoneticGridProps) {
   const table = useMemo(() => buildPhoneticTable(kanas), [kanas]);
+  const cellRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const toScriptCard = variant === "hiragana" ? hiraganaToScriptCard : katakanaToScriptCard;
   const mastered = useMasteredModules();
   const platformMotion = usePlatformMotion();
   const isMastered = mastered.has(variant);
   const c = isMastered ? GOLD_COLORS : VARIANT_COLORS[variant];
+  const [highlightPromptOpen, setHighlightPromptOpen] = useState(Boolean(highlightedSymbol));
+  const highlightedKana = useMemo(
+    () => highlightedSymbol
+      ? kanas.find((kana) => kana.symbol === highlightedSymbol) ?? null
+      : null,
+    [highlightedSymbol, kanas],
+  );
+
+  useEffect(() => {
+    setHighlightPromptOpen(Boolean(highlightedSymbol));
+  }, [highlightedSymbol]);
+
+  useEffect(() => {
+    if (!highlightedKana) {
+      return;
+    }
+
+    const target = cellRefs.current[highlightedKana.id];
+    if (!target) {
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      const targetRect = target.getBoundingClientRect();
+      const nextTop = Math.max(
+        0,
+        window.scrollY + targetRect.top - ((window.innerHeight - targetRect.height) / 2),
+      );
+
+      window.scrollTo({ top: nextTop, behavior: "smooth" });
+
+      window.setTimeout(() => {
+        target.focus({ preventScroll: true });
+      }, 420);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [highlightedKana]);
 
   const presentRows = useMemo(
     () => PHONETIC_ROWS.filter((row) => table.has(row.key)),
     [table],
   );
 
+  const highlightAccent = c.accent;
+  const highlightRgb = c.unlockRgba;
+  const highlightTitle = highlightedKana
+    ? `${highlightedKana.symbol} · ${variant === "hiragana" ? "Hiragana" : "Katakana"}`
+    : "Punto de aprendizaje";
+  const highlightDescription = highlightedKana
+    ? `En este punto se aprende ${highlightedKana.symbol}. Aquí queda ubicado dentro de la tabla fonética para que lo reconozcas y lo repases más rápido.`
+    : "En este punto se aprende este kana dentro de la tabla fonética.";
+
+  const handleAcceptHighlight = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+    setHighlightPromptOpen(false);
+  };
+
+  const handleReturn = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (window.history.length > 1) {
+      window.history.back();
+      return;
+    }
+
+    window.location.assign("/dashboard/graph");
+  };
+
   let cardIndex = 0;
   let mobileCellIndex = 0;
 
   return (
-    <div className="w-full">
+    <div
+      className="w-full"
+      style={{
+        ["--kana-highlight-accent" as string]: highlightAccent,
+        ["--kana-highlight-rgb" as string]: highlightRgb,
+      }}
+    >
       {/* ══════════════════════════════════════════════════════════════
           DESKTOP (lg+): full-width CSS grid, full ScriptCard
       ══════════════════════════════════════════════════════════════ */}
@@ -421,17 +615,31 @@ export function KanaPhoneticGrid({
                   const kana = table.get(row.key)?.get(colIndex);
                   if (!kana) return <DEmptyCell key={colIndex} />;
                   const isLocked = lockedIds.has(kana.id);
+                  const isHighlighted = highlightedKana?.id === kana.id;
                   const idx = cardIndex++;
                   return (
-                    <ScriptCard
+                    <HighlightFrame
                       key={kana.id}
-                      {...toScriptCard(kana, favoriteIds.has(kana.id))}
-                      index={idx}
-                      locked={isLocked}
-                      unlocking={newlyUnlockedIds.has(kana.id)}
-                      onClick={isLocked ? undefined : () => onKanaClick(kana)}
-                      onFavoriteToggle={isLocked ? undefined : onFavoriteToggle}
-                    />
+                      highlighted={isHighlighted && highlightPromptOpen}
+                      pulse={isHighlighted && highlightPromptOpen}
+                      open={isHighlighted && highlightPromptOpen}
+                      onAccept={handleAcceptHighlight}
+                      onReturn={handleReturn}
+                      title={highlightTitle}
+                      description={highlightDescription}
+                      registerRef={(element) => {
+                        cellRefs.current[kana.id] = element;
+                      }}
+                    >
+                      <ScriptCard
+                        {...toScriptCard(kana, favoriteIds.has(kana.id))}
+                        index={idx}
+                        locked={isLocked}
+                        unlocking={newlyUnlockedIds.has(kana.id)}
+                        onClick={isLocked ? undefined : () => onKanaClick(kana)}
+                        onFavoriteToggle={isLocked ? undefined : onFavoriteToggle}
+                      />
+                    </HighlightFrame>
                   );
                 })}
               </Fragment>
@@ -472,18 +680,32 @@ export function KanaPhoneticGrid({
                   if (!kana)
                     return <MEmptyCell key={`empty-${row.key}-${colIndex}`} />;
                   const isLocked = lockedIds.has(kana.id);
+                  const isHighlighted = highlightedKana?.id === kana.id;
                   const idx = mobileCellIndex++;
                   return (
-                    <MiniCell
+                    <HighlightFrame
                       key={kana.id}
-                      kana={kana}
-                      c={c}
-                      isLocked={isLocked}
-                      animationsEnabled={platformMotion.shouldAnimate}
-                      unlocking={newlyUnlockedIds.has(kana.id)}
-                      sequenceIndex={idx}
-                      onClick={isLocked ? undefined : () => onKanaClick(kana)}
-                    />
+                      highlighted={isHighlighted && highlightPromptOpen}
+                      pulse={isHighlighted && highlightPromptOpen}
+                      open={isHighlighted && highlightPromptOpen}
+                      onAccept={handleAcceptHighlight}
+                      onReturn={handleReturn}
+                      title={highlightTitle}
+                      description={highlightDescription}
+                      registerRef={(element) => {
+                        cellRefs.current[kana.id] = element;
+                      }}
+                    >
+                      <MiniCell
+                        kana={kana}
+                        c={c}
+                        isLocked={isLocked}
+                        highlighted={isHighlighted}
+                        animationsEnabled={platformMotion.shouldAnimate}
+                        unlocking={newlyUnlockedIds.has(kana.id)}
+                        onClick={isLocked ? undefined : () => onKanaClick(kana)}
+                      />
+                    </HighlightFrame>
                   );
                 })}
               </Fragment>

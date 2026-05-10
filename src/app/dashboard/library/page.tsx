@@ -1,6 +1,7 @@
 "use client";
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
@@ -57,6 +58,7 @@ type QuizCompletionResult = {
 };
 
 export default function LibraryPage() {
+  const searchParams = useSearchParams();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [drawerEntity, setDrawerEntity] = useState<{
@@ -502,6 +504,19 @@ export default function LibraryPage() {
       resetVocabularyView();
     }
   };
+
+  const requestedCategory = searchParams.get("category");
+  const highlightedKanaSymbol = searchParams.get("symbol");
+
+  useEffect(() => {
+    if (requestedCategory !== "hiragana" && requestedCategory !== "katakana") {
+      return;
+    }
+
+    setSelectedCategory(requestedCategory);
+    setSearchQuery("");
+    resetVocabularyView();
+  }, [requestedCategory, resetVocabularyView]);
 
   useEffect(() => {
     const resetGuideState = () => {
@@ -976,6 +991,7 @@ export default function LibraryPage() {
                   <KanaPhoneticGrid
                     kanas={katakanas}
                     variant="katakana"
+                    highlightedSymbol={selectedCategory === "katakana" ? highlightedKanaSymbol : null}
                     lockedIds={lockedKatakanaIds}
                     newlyUnlockedIds={newlyUnlockedKanaIds}
                     favoriteIds={favoriteKatakanas}
@@ -1005,6 +1021,7 @@ export default function LibraryPage() {
                   <KanaPhoneticGrid
                     kanas={hiraganas}
                     variant="hiragana"
+                    highlightedSymbol={selectedCategory === "hiragana" ? highlightedKanaSymbol : null}
                     lockedIds={lockedHiraganaIds}
                     newlyUnlockedIds={newlyUnlockedKanaIds}
                     favoriteIds={favoriteHiraganas}

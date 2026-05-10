@@ -21,7 +21,7 @@ export default function ContentShell({
   const isLibrary = pathname === "/dashboard/library";
   const isReviews = pathname === "/dashboard/reviews";
   const isGraph = pathname.startsWith("/dashboard/graph");
-  const isGraphExplore = pathname === "/dashboard/graph";
+  const isVocabularyGraph = pathname === "/dashboard/graph";
   const isGrammarBoard = pathname === "/dashboard/graph/grammar";
   const isKanjiBoard =
     pathname === "/dashboard/graph/kanjis" ||
@@ -34,7 +34,7 @@ export default function ContentShell({
   const shouldShowMiniProfile =
     isChatbot ||
     isReviews ||
-    isGraphExplore ||
+    isVocabularyGraph ||
     isGrammarBoard ||
     isKanjiBoard ||
     (isLibrary && showLibraryMiniDock);
@@ -74,7 +74,8 @@ export default function ContentShell({
     return (
       <main
         className={[
-          "relative h-dvh bg-surface-primary overflow-hidden",
+          "relative h-dvh overflow-hidden",
+          isGraph ? "bg-white dark:bg-[#111113]" : "bg-surface-primary",
           padMd,
           padDesktop,
         ].join(" ")}

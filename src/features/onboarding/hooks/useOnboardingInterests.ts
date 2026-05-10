@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { hydrateOnboardingInterestSections } from "@/features/onboarding/data/interestSections";
+import { saveOnboardingInterestThemeIds } from "@/features/onboarding/lib/interestThemeStorage";
 import {
+  ensureOnboardingVocabularyGraphs,
   getOnboardingThemes,
   saveOnboardingInterests,
 } from "@/features/onboarding/services/api";
@@ -100,7 +102,11 @@ export function useOnboardingInterests() {
     setError(null);
 
     try {
-      return await saveOnboardingInterests(selectedThemeIds);
+      const response = await saveOnboardingInterests(selectedThemeIds);
+      const savedThemeIds = response.themes?.length ? response.themes : selectedThemeIds;
+      saveOnboardingInterestThemeIds(savedThemeIds);
+      await ensureOnboardingVocabularyGraphs(savedThemeIds);
+      return response;
     } catch (saveError) {
       console.error("Error guardando intereses:", saveError);
       setError("No se pudieron guardar tus intereses. Inténtalo de nuevo.");

@@ -14,7 +14,7 @@ import WritingSubMenu, { type WritingTab } from "@/features/graph/writing/compon
 const MotionLink = motion(Link);
 
 const TABS = [
-  { label: "Explorar", href: "/dashboard/graph" },
+  { label: "Vocabulario", href: "/dashboard/graph" },
   { label: "Gramática", href: "/dashboard/graph/grammar" },
   { label: "Escritura", href: "/dashboard/graph/writing" },
 ] as const;

@@ -211,7 +211,12 @@ export const KazuSvgMascot = memo(function KazuSvgMascot({
         </filter>
       </defs>
 
-      <motion.g id="kazu-root" variants={kazuRootVariants} animate={animateState}>
+      <motion.g
+        id="kazu-root"
+        variants={kazuRootVariants}
+        initial={animateState}
+        animate={animateState}
+      >
         <motion.ellipse
           cx="627"
           cy="1112"

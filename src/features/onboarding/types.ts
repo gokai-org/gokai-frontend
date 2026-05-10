@@ -39,4 +39,6 @@ export type SaveOnboardingInterestsResponse = {
   id: string;
   userId: string;
   themes: string[];
+  embeddingUpdated?: boolean;
+  embeddingWarning?: string;
 };
