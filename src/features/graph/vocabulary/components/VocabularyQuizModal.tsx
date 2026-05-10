@@ -3,9 +3,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Check, RotateCcw, Undo2, X } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { getCurrentUser } from "@/features/auth";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
+import { KanaWritingCanvas, type DrawnStroke } from "@/features/kana/components/KanaWritingCanvas";
+import {
+  getFeedbackColor,
+  getFeedbackLabel,
+  getPointsForFeedback,
+  validateStroke,
+  type StrokeValidationResult,
+} from "@/features/kana/lib/strokeValidation";
+import { getMockKanaStrokes } from "@/features/kana/mock/mockStrokeData";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
@@ -18,6 +27,12 @@ import {
   getVocabularyQuiz,
   saveVocabularyNodeAnswers,
 } from "../services/api";
+import {
+  VOCABULARY_QUIZ_TYPES,
+  VOCABULARY_QUIZ_TYPE_LABELS,
+  getQuizTypeProgress,
+  getWordQuizProgressPercent,
+} from "../lib/vocabularyQuizProgress";
 import type {
   VocabularyAnswerType,
   VocabularyGraphProgressItem,
@@ -25,12 +40,17 @@ import type {
   VocabularyQuizQuestion,
   VocabularyWordAnswer,
   VocabularyWordLesson,
+  VocabularyWritingOptionUnit,
 } from "../types";
+
+const VOCABULARY_WRITING_PASS_SCORE = 70;
+const VOCABULARY_WRITING_BASE_STROKE_POINTS = 10;
 
 type VocabularyQuizModalProps = {
   open: boolean;
   item: VocabularyGraphProgressItem;
   question: VocabularyWordLesson;
+  initialType: VocabularyAnswerType;
   onClose: () => void;
   onSaved: () => void;
 };
@@ -49,20 +69,6 @@ type RoundResult = {
   duration: number;
   perfectAnswers: number;
   totalAnswers: number;
-};
-
-const QUIZ_ROUNDS: VocabularyAnswerType[] = [
-  "meaning",
-  "listening",
-  "speaking",
-  "writing",
-];
-
-const QUIZ_TYPE_LABELS: Record<VocabularyAnswerType, string> = {
-  meaning: "Significado",
-  listening: "Audio",
-  speaking: "Habla",
-  writing: "Escritura",
 };
 
 function getWordTitle(
@@ -89,8 +95,8 @@ function getQuizPromptTitle(
     return "Escucha y responde";
   }
 
-  if (type === "writing" && question.meanings?.[0]) {
-    return question.meanings[0];
+  if (type === "writing") {
+    return question.kanji || "語";
   }
 
   return getWordTitle(question);
@@ -108,10 +114,43 @@ function getQuizPromptSupport(
     case "speaking":
       return question.meanings?.join(" · ") || question.hiragana || "Pronuncia la palabra y autoevalua tu intento.";
     case "writing":
-      return question.kanji
-        ? question.kanji
-        : "Construye la lectura con las fichas disponibles.";
+      return question.meanings?.[0]
+        ? question.meanings[0]
+        : "Selecciona la lectura en hiragana y trázala.";
   }
+}
+
+function getMeaningPromptWriting(question: VocabularyQuizQuestion) {
+  return question.kanji || question.hiragana || "語";
+}
+
+function getMeaningPromptPrimaryLabel(question: VocabularyQuizQuestion) {
+  return question.kanji ? "Kanji" : "Kana";
+}
+
+function getMeaningPromptReading(question: VocabularyQuizQuestion) {
+  if (!question.hiragana) {
+    return null;
+  }
+
+  if (!question.kanji) {
+    return question.hiragana;
+  }
+
+  return question.kanji.trim() === question.hiragana.trim()
+    ? null
+    : question.hiragana;
+}
+
+function getQuizPromptEyebrow(
+  question: VocabularyQuizQuestion | VocabularyWordLesson,
+  type: VocabularyAnswerType,
+) {
+  if (type === "meaning") {
+    return VOCABULARY_QUIZ_TYPE_LABELS[type];
+  }
+
+  return `${VOCABULARY_QUIZ_TYPE_LABELS[type]} · ${getWordTitle(question)}`;
 }
 
 function getOptionLabel(option: VocabularyQuizOption | string) {
@@ -121,7 +160,8 @@ function getOptionLabel(option: VocabularyQuizOption | string) {
 
   return (
     option.option ||
-    [option.kanji, option.hiragana].filter(Boolean).join(" · ") ||
+    option.kanji ||
+    option.hiragana ||
     "Opcion"
   );
 }
@@ -131,11 +171,31 @@ function getOptionSecondary(option: VocabularyQuizOption | string) {
     return null;
   }
 
-  return option.hiragana || null;
+  if (option.kanji && option.hiragana) {
+    return option.hiragana;
+  }
+
+  return null;
 }
 
 function getOptionCorrect(option: VocabularyQuizOption | string) {
   return typeof option !== "string" && Boolean(option.correct);
+}
+
+function WritingSymbolText({
+  text,
+  className,
+}: {
+  text: string;
+  className?: string;
+}) {
+  return (
+    <span className={className}>
+      {Array.from(text).map((symbol, index) => (
+        <span key={`${symbol}-${index}`}>{symbol}</span>
+      ))}
+    </span>
+  );
 }
 
 function buildAudioSrc(audio?: string) {
@@ -157,27 +217,16 @@ function getRoundInstruction(type: VocabularyAnswerType) {
   }
 }
 
-function getScoreTone(score: number) {
-  if (score === 100) return "text-emerald-600";
-  if (score >= 50) return "text-amber-600";
-  return "text-accent";
+function getVocabularyResultTitle(type: VocabularyAnswerType) {
+  return `${VOCABULARY_QUIZ_TYPE_LABELS[type]} completado`;
 }
 
-function getAverageScore(answers: VocabularyWordAnswer[]) {
-  if (answers.length === 0) {
-    return 0;
-  }
-
-  const total = answers.reduce((sum, answer) => sum + answer.score, 0);
-  return Math.round(total / answers.length);
-}
-
-function getTotalDuration(answers: VocabularyWordAnswer[]) {
-  return answers.reduce((sum, answer) => sum + answer.duration, 0);
+function getVocabularyReaffirmedTitle(type: VocabularyAnswerType) {
+  return `${VOCABULARY_QUIZ_TYPE_LABELS[type]} reforzado`;
 }
 
 function normalizeRoundResults(results: RoundResult[]) {
-  return QUIZ_ROUNDS.flatMap((type) => {
+  return VOCABULARY_QUIZ_TYPES.flatMap((type) => {
     const result = results.find((entry) => entry.type === type);
     return result ? [result] : [];
   });
@@ -187,6 +236,7 @@ export default function VocabularyQuizModal({
   open,
   item,
   question,
+  initialType,
   onClose,
   onSaved,
 }: VocabularyQuizModalProps) {
@@ -200,7 +250,8 @@ export default function VocabularyQuizModal({
   const [roundQuestions, setRoundQuestions] = useState<VocabularyQuizQuestion[]>([]);
   const [roundAnswers, setRoundAnswers] = useState<VocabularyWordAnswer[]>([]);
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
-  const [selectedWritingTileIndices, setSelectedWritingTileIndices] = useState<number[]>([]);
+  const [selectedWritingOptionIndex, setSelectedWritingOptionIndex] = useState<number | null>(null);
+  const [writingTraceScore, setWritingTraceScore] = useState<number | null>(null);
   const [manualScore, setManualScore] = useState<number | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -212,9 +263,10 @@ export default function VocabularyQuizModal({
   const roundStartRef = useRef(0);
   const startingPointsRef = useRef<number | null>(null);
   const currentPointsRef = useRef<number | null>(null);
+  const completedBeforeSessionRef = useRef(false);
+  const wasOpenRef = useRef(false);
 
-  const currentType = QUIZ_ROUNDS[roundIndex] ?? "meaning";
-  const totalRounds = QUIZ_ROUNDS.length;
+  const currentType = VOCABULARY_QUIZ_TYPES[roundIndex] ?? initialType;
   const activeQuestion = roundQuestions[questionIndex] ?? null;
 
   const overlayVariants = useMemo(
@@ -266,23 +318,24 @@ export default function VocabularyQuizModal({
 
   const resetQuestionAnswer = useCallback(() => {
     setSelectedOptionIndex(null);
-    setSelectedWritingTileIndices([]);
+    setSelectedWritingOptionIndex(null);
+    setWritingTraceScore(null);
     setManualScore(null);
     setIsConfirmDialogOpen(false);
   }, []);
 
   const loadRound = useCallback(
     async (nextRoundIndex: number) => {
-      const nextType = QUIZ_ROUNDS[nextRoundIndex] ?? "meaning";
+      const nextType = VOCABULARY_QUIZ_TYPES[nextRoundIndex] ?? initialType;
       setStep("loading");
       setError(null);
       resetQuestionAnswer();
 
       try {
-        const quiz = await getVocabularyQuiz(item.nodeId, nextType);
+        const quiz = await getVocabularyQuiz(item.nodeId, nextType, question.wordId);
 
         if (!quiz.questions.length) {
-          throw new Error("El backend devolvio un bloque vacio para este tipo de quiz.");
+          throw new Error("El backend no devolvio preguntas para este bloque de quiz.");
         }
 
         setRoundQuestions(quiz.questions);
@@ -303,7 +356,7 @@ export default function VocabularyQuizModal({
         setStep("error");
       }
     },
-    [item.nodeId, resetQuestionAnswer],
+    [initialType, item.nodeId, question.wordId, resetQuestionAnswer],
   );
 
   const resetQuiz = useCallback(() => {
@@ -318,14 +371,24 @@ export default function VocabularyQuizModal({
       const nextPoints = typeof user?.points === "number" ? user.points : null;
       startingPointsRef.current = nextPoints;
       currentPointsRef.current = nextPoints;
-      void loadRound(0);
+      void loadRound(Math.max(0, VOCABULARY_QUIZ_TYPES.indexOf(initialType)));
     })();
-  }, [loadRound]);
+  }, [initialType, loadRound]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      wasOpenRef.current = false;
+      return;
+    }
+
+    if (wasOpenRef.current) {
+      return;
+    }
+
+    wasOpenRef.current = true;
+    completedBeforeSessionRef.current = getQuizTypeProgress(question, initialType).completed;
     resetQuiz();
-  }, [open, resetQuiz]);
+  }, [initialType, item, open, question, resetQuiz]);
 
   const choiceOptions = useMemo(() => {
     if (!activeQuestion?.options || currentType === "writing") return [];
@@ -337,14 +400,16 @@ export default function VocabularyQuizModal({
   const writingOptions = useMemo(() => {
     if (!activeQuestion?.options || currentType !== "writing") return [];
     return activeQuestion.options.filter(
-      (option): option is string => typeof option === "string",
+      (option): option is VocabularyQuizOption => typeof option !== "string",
     );
   }, [activeQuestion?.options, currentType]);
 
-  const writingAnswer = useMemo(
-    () => selectedWritingTileIndices.map((index) => writingOptions[index] ?? "").join(""),
-    [selectedWritingTileIndices, writingOptions],
-  );
+  const selectedWritingOption = selectedWritingOptionIndex === null
+    ? null
+    : writingOptions[selectedWritingOptionIndex] ?? null;
+  const selectedWritingOptionIsCorrect = selectedWritingOption
+    ? getOptionCorrect(selectedWritingOption)
+    : false;
 
   const currentScore = useMemo(() => {
     if (!activeQuestion) return null;
@@ -354,14 +419,19 @@ export default function VocabularyQuizModal({
     }
 
     if (currentType === "writing") {
-      if (!writingAnswer) return null;
-      return writingAnswer === activeQuestion.hiragana ? 100 : 0;
+      if (!selectedWritingOption) return null;
+      if (!selectedWritingOptionIsCorrect) return 0;
+      if (step === "exercise") return 100;
+      if (writingTraceScore === null) return null;
+      return writingTraceScore >= VOCABULARY_WRITING_PASS_SCORE
+        ? 100
+        : 0;
     }
 
     if (selectedOptionIndex === null) return null;
 
     return getOptionCorrect(choiceOptions[selectedOptionIndex]) ? 100 : 0;
-  }, [activeQuestion, choiceOptions, currentType, manualScore, selectedOptionIndex, writingAnswer]);
+  }, [activeQuestion, choiceOptions, currentType, manualScore, selectedOptionIndex, selectedWritingOption, selectedWritingOptionIsCorrect, step, writingTraceScore]);
 
   const audioSrc = buildAudioSrc(activeQuestion?.audio);
   const questionProgress = roundQuestions.length
@@ -376,6 +446,12 @@ export default function VocabularyQuizModal({
 
   const confirmCurrentAnswer = useCallback(() => {
     if (!activeQuestion || currentScore === null) return;
+
+    if (currentType === "writing" && selectedWritingOptionIsCorrect && writingTraceScore === null) {
+      setIsConfirmDialogOpen(false);
+      setStep("feedback");
+      return;
+    }
 
     const duration = roundStartRef.current
       ? Math.max(1, Math.round((Date.now() - roundStartRef.current) / 1000))
@@ -393,7 +469,7 @@ export default function VocabularyQuizModal({
     ]);
     setIsConfirmDialogOpen(false);
     setStep("feedback");
-  }, [activeQuestion, currentScore]);
+  }, [activeQuestion, currentScore, currentType, selectedWritingOptionIsCorrect, writingTraceScore]);
 
   const requestConfirmAnswer = useCallback(() => {
     if (currentScore === null) return;
@@ -435,20 +511,32 @@ export default function VocabularyQuizModal({
       setStep("saving");
       setError(null);
 
+      const questionWordIds = new Set(roundQuestions.map((roundQuestion) => roundQuestion.wordId));
+      const answersToSave = answers.filter((answer) => questionWordIds.has(answer.wordId));
+
+      if (answersToSave.length !== roundQuestions.length) {
+        setError("No se completaron todas las respuestas de este quiz.");
+        setStep("error");
+        return;
+      }
+
       try {
         const response = await saveVocabularyNodeAnswers(item.nodeId, {
           answerType: currentType,
-          answers,
+          answers: answersToSave,
         });
 
         applyPointsSync(response.userPoints);
 
+        const totalScore = answersToSave.reduce((sum, answer) => sum + answer.score, 0);
+        const averageScore = Math.round(totalScore / answersToSave.length);
+
         const nextRoundResult: RoundResult = {
           type: currentType,
-          score: getAverageScore(answers),
-          duration: getTotalDuration(answers),
-          perfectAnswers: answers.filter((answer) => answer.score === 100).length,
-          totalAnswers: answers.length,
+          score: averageScore,
+          duration: answersToSave.reduce((sum, answer) => sum + answer.duration, 0),
+          perfectAnswers: answersToSave.filter((answer) => answer.score === 100).length,
+          totalAnswers: answersToSave.length,
         };
 
         setRoundResults((current) =>
@@ -458,20 +546,15 @@ export default function VocabularyQuizModal({
           ]),
         );
 
-        if (roundIndex >= totalRounds - 1) {
-          onSaved();
-          setStep("summary");
-          return;
-        }
-
-        void loadRound(roundIndex + 1);
+        onSaved();
+        setStep("summary");
       } catch (saveError) {
         console.error("Error guardando quiz de vocabulario:", saveError);
         setError("No se pudo guardar este bloque del quiz.");
         setStep("error");
       }
     },
-    [applyPointsSync, currentType, item.nodeId, loadRound, onSaved, roundIndex, totalRounds],
+    [applyPointsSync, currentType, item.nodeId, onSaved, roundQuestions],
   );
 
   const handleNextQuestion = useCallback(() => {
@@ -479,8 +562,27 @@ export default function VocabularyQuizModal({
       return;
     }
 
+    let nextRoundAnswers = roundAnswers;
+    if (
+      currentScore !== null &&
+      !nextRoundAnswers.some((answer) => answer.wordId === activeQuestion.wordId)
+    ) {
+      const duration = roundStartRef.current
+        ? Math.max(1, Math.round((Date.now() - roundStartRef.current) / 1000))
+        : 1;
+      nextRoundAnswers = [
+        ...nextRoundAnswers.filter((answer) => answer.wordId !== activeQuestion.wordId),
+        {
+          wordId: activeQuestion.wordId,
+          score: currentScore,
+          duration,
+        },
+      ];
+      setRoundAnswers(nextRoundAnswers);
+    }
+
     if (questionIndex >= roundQuestions.length - 1) {
-      void saveCurrentRound(roundAnswers);
+      void saveCurrentRound(nextRoundAnswers);
       return;
     }
 
@@ -488,7 +590,24 @@ export default function VocabularyQuizModal({
     setQuestionIndex((current) => current + 1);
     roundStartRef.current = Date.now();
     setStep("exercise");
-  }, [activeQuestion, questionIndex, resetQuestionAnswer, roundAnswers, roundQuestions.length, saveCurrentRound]);
+  }, [activeQuestion, currentScore, questionIndex, resetQuestionAnswer, roundAnswers, roundQuestions.length, saveCurrentRound]);
+
+  const retryCurrentQuestion = useCallback(() => {
+    if (!activeQuestion) {
+      return;
+    }
+
+    setRoundAnswers((current) =>
+      current.filter((answer) => answer.wordId !== activeQuestion.wordId),
+    );
+    resetQuestionAnswer();
+    roundStartRef.current = Date.now();
+    setStep("exercise");
+  }, [activeQuestion, resetQuestionAnswer]);
+
+  const retryCurrentQuiz = useCallback(() => {
+    resetQuiz();
+  }, [resetQuiz]);
 
   const handleStayInQuiz = useCallback(
     (event?: ReactMouseEvent<HTMLDivElement> | ReactMouseEvent<HTMLButtonElement>) => {
@@ -538,8 +657,10 @@ export default function VocabularyQuizModal({
 
   if (!open) return null;
 
-  const shouldShowRewardSequence = step === "summary" && pointsDelta > 0;
-  const shouldShowReaffirmedResult = step === "summary" && pointsDelta === 0 && finalScore === 100;
+  const isPerfectSummary = step === "summary" && finalScore === 100;
+  const shouldShowRewardSequence =
+    isPerfectSummary && !completedBeforeSessionRef.current && pointsDelta > 0;
+  const shouldShowReaffirmedResult = isPerfectSummary && completedBeforeSessionRef.current;
 
   return (
     <AnimatePresence>
@@ -553,8 +674,8 @@ export default function VocabularyQuizModal({
         className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
         onClick={handleRequestClose}
         onWheelCapture={(event) => event.stopPropagation()}
-        onPointerDownCapture={(event) => event.stopPropagation()}
-        onPointerMoveCapture={(event) => event.stopPropagation()}
+        onPointerDown={(event) => event.stopPropagation()}
+        onPointerMove={(event) => event.stopPropagation()}
       >
         <motion.div
           variants={panelVariants}
@@ -580,13 +701,13 @@ export default function VocabularyQuizModal({
                 <p className="text-xs font-medium text-white/70">
                   {step === "summary" || step === "error"
                     ? getNodeTitle(item)
-                    : `${QUIZ_TYPE_LABELS[currentType]} · ${getNodeTitle(item)}`}
+                    : `${VOCABULARY_QUIZ_TYPE_LABELS[currentType]} · ${getNodeTitle(item)}`}
                 </p>
               </div>
 
               <div className="flex items-center gap-3">
                 {step !== "summary" && step !== "error" ? (
-                  <RoundDots current={roundIndex + 1} results={roundResults} />
+                  <RoundDots current={currentType} question={question} results={roundResults} />
                 ) : null}
 
                 <button
@@ -625,7 +746,7 @@ export default function VocabularyQuizModal({
                 </div>
                 <p className="text-sm font-medium text-content-muted">
                   {step === "saving"
-                    ? `Guardando ${QUIZ_TYPE_LABELS[currentType].toLowerCase()}...`
+                    ? `Guardando ${VOCABULARY_QUIZ_TYPE_LABELS[currentType].toLowerCase()}...`
                     : "Preparando quiz..."}
                 </p>
               </motion.div>
@@ -677,15 +798,44 @@ export default function VocabularyQuizModal({
                 >
                   <div className="rounded-3xl border border-border-subtle bg-surface-secondary/70 p-4 text-center">
                     <p className="text-[11px] font-bold uppercase tracking-wide text-content-tertiary">
-                      {QUIZ_TYPE_LABELS[currentType]} · palabra {questionIndex + 1} de {roundQuestions.length}
+                      {getQuizPromptEyebrow(activeQuestion, currentType)}
                     </p>
-                    <p className="mt-2 text-4xl font-black leading-none text-content-primary">
-                      {getQuizPromptTitle(activeQuestion, currentType)}
-                    </p>
+                    {currentType === "meaning" ? (
+                      <div className="mt-3 space-y-2.5">
+                        <div className="rounded-2xl border border-border-subtle bg-surface-primary px-4 py-3">
+                          <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-content-tertiary">
+                            {getMeaningPromptPrimaryLabel(activeQuestion)}
+                          </p>
+                          <p className="mt-2 text-4xl font-black leading-none text-content-primary">
+                            {getMeaningPromptWriting(activeQuestion)}
+                          </p>
+                        </div>
+
+                        {getMeaningPromptReading(activeQuestion) ? (
+                          <div className="rounded-2xl border border-border-subtle bg-surface-primary/75 px-4 py-2.5">
+                            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-content-tertiary">
+                              Hiragana
+                            </p>
+                            <p className="mt-1.5 text-lg font-bold leading-tight text-content-secondary">
+                              {getMeaningPromptReading(activeQuestion)}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                    ) : currentType === "writing" ? (
+                      <WritingSymbolText
+                        text={getQuizPromptTitle(activeQuestion, currentType)}
+                        className="mt-2 block text-4xl font-black leading-none text-content-primary jp-text"
+                      />
+                    ) : (
+                      <p className="mt-2 text-4xl font-black leading-none text-content-primary">
+                        {getQuizPromptTitle(activeQuestion, currentType)}
+                      </p>
+                    )}
                     <p className="mt-3 text-sm font-medium text-content-secondary">
                       {getRoundInstruction(currentType)}
                     </p>
-                    {getQuizPromptSupport(activeQuestion, currentType) ? (
+                    {currentType !== "meaning" && getQuizPromptSupport(activeQuestion, currentType) ? (
                       <p className="mt-2 text-xs font-medium text-content-tertiary">
                         {getQuizPromptSupport(activeQuestion, currentType)}
                       </p>
@@ -737,62 +887,65 @@ export default function VocabularyQuizModal({
 
                   {currentType === "writing" && (
                     <div className="space-y-3">
-                      <div className="rounded-2xl border border-border-subtle bg-surface-secondary/70 p-3 text-center">
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-content-tertiary">
-                          Lectura esperada
-                        </p>
-                        <p className="mt-2 text-lg font-black text-content-primary">
-                          {activeQuestion.hiragana || "-"}
-                        </p>
-                      </div>
-
-                      <div className="min-h-14 rounded-2xl border border-border-subtle bg-surface-primary p-3 text-center text-2xl font-black text-content-primary">
-                        {writingAnswer || "..."}
-                      </div>
-
-                      <div className="grid grid-cols-4 gap-2">
-                        {writingOptions.map((tile, index) => {
-                          const used = selectedWritingTileIndices.includes(index);
+                      <div className="grid gap-2 sm:grid-cols-2">
+                        {writingOptions.map((option, index) => {
+                          const selected = selectedWritingOptionIndex === index;
+                          const answered = step === "feedback";
+                          const correct = getOptionCorrect(option);
 
                           return (
                             <button
-                              key={`${tile}-${index}`}
+                              key={`${activeQuestion.wordId}-writing-${getOptionLabel(option)}-${index}`}
                               type="button"
-                              disabled={step === "feedback" || used}
-                              onClick={() =>
-                                setSelectedWritingTileIndices((current) => [...current, index])
-                              }
-                              className="min-h-11 rounded-xl border border-border-subtle bg-surface-primary text-lg font-black text-content-primary transition hover:bg-surface-secondary disabled:cursor-default disabled:opacity-45"
+                              disabled={answered}
+                              onClick={() => {
+                                setSelectedWritingOptionIndex(index);
+                                setWritingTraceScore(null);
+                              }}
+                              className={`min-h-14 rounded-2xl border px-3 py-2 text-left transition disabled:cursor-default ${
+                                selected && answered
+                                  ? correct
+                                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-700"
+                                    : "border-accent bg-accent/10 text-accent"
+                                  : answered && correct
+                                    ? "border-emerald-400 bg-emerald-500/5 text-emerald-700"
+                                    : selected
+                                      ? "border-accent bg-accent/8 text-accent"
+                                      : "border-border-subtle bg-surface-primary text-content-primary hover:bg-surface-secondary"
+                              }`}
                             >
-                              {tile}
+                              <WritingSymbolText
+                                text={getOptionLabel(option)}
+                                className="block text-lg font-black leading-tight jp-text"
+                              />
+                              <span className="mt-0.5 block text-[11px] font-bold uppercase tracking-wide text-content-tertiary">
+                                Hiragana
+                              </span>
                             </button>
                           );
                         })}
                       </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <button
-                          type="button"
-                          disabled={step === "feedback" || selectedWritingTileIndices.length === 0}
-                          onClick={() =>
-                            setSelectedWritingTileIndices((current) => current.slice(0, -1))
-                          }
-                          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border-subtle px-3 py-2 text-xs font-bold text-content-secondary transition hover:bg-surface-secondary disabled:cursor-default disabled:opacity-70"
-                        >
-                          <Undo2 size={14} />
-                          Deshacer
-                        </button>
-
-                        <button
-                          type="button"
-                          disabled={step === "feedback" || selectedWritingTileIndices.length === 0}
-                          onClick={() => setSelectedWritingTileIndices([])}
-                          className="flex w-full items-center justify-center gap-2 rounded-xl border border-border-subtle px-3 py-2 text-xs font-bold text-content-secondary transition hover:bg-surface-secondary disabled:cursor-default disabled:opacity-70"
-                        >
-                          <RotateCcw size={14} />
-                          Reiniciar
-                        </button>
-                      </div>
+                      {step === "feedback" && selectedWritingOption && getOptionCorrect(selectedWritingOption) ? (
+                        <VocabularyWritingTraceExercise
+                          key={`${activeQuestion.wordId}-${getOptionLabel(selectedWritingOption)}`}
+                          option={selectedWritingOption}
+                          disabled={false}
+                          onComplete={setWritingTraceScore}
+                        />
+                      ) : step === "feedback" && selectedWritingOption ? (
+                        <div className="rounded-2xl border border-border-subtle bg-surface-secondary/70 px-4 py-5 text-center text-sm font-semibold text-content-muted">
+                          La lectura seleccionada no coincide con esta palabra.
+                        </div>
+                      ) : selectedWritingOption ? (
+                        <div className="rounded-2xl border border-border-subtle bg-surface-secondary/70 px-4 py-5 text-center text-sm font-semibold text-content-muted">
+                          Revisa tu respuesta para continuar.
+                        </div>
+                      ) : (
+                        <div className="rounded-2xl border border-dashed border-border-subtle bg-surface-secondary/70 px-4 py-6 text-center text-sm font-semibold text-content-muted">
+                          Elige una lectura en hiragana.
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -831,14 +984,15 @@ export default function VocabularyQuizModal({
                     </div>
                   )}
 
-                  {step === "exercise" && (
+                  {step === "exercise" && currentScore !== null && (
                     <motion.button
                       type="button"
-                      whileHover={currentScore !== null ? { scale: 1.02 } : undefined}
-                      whileTap={currentScore !== null ? { scale: 0.98 } : undefined}
-                      disabled={currentScore === null}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
                       onClick={requestConfirmAnswer}
-                      className="w-full rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/15 transition-all disabled:cursor-not-allowed disabled:opacity-50"
+                      className="w-full rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/15 transition-all"
                     >
                       Revisar respuesta
                     </motion.button>
@@ -850,22 +1004,51 @@ export default function VocabularyQuizModal({
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-3"
                     >
-                      <div className="rounded-2xl border border-border-subtle bg-surface-primary p-3 text-center text-sm font-bold text-content-secondary">
-                        Resultado de esta palabra:{" "}
-                        <span className={getScoreTone(currentScore)}>{currentScore}%</span>
-                      </div>
+                      {currentType === "writing" && selectedWritingOptionIsCorrect && currentScore < 100 ? (
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={retryCurrentQuestion}
+                          className="w-full rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/15 transition-all"
+                        >
+                          Reintentar escritura
+                        </motion.button>
+                      ) : null}
 
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        onClick={handleNextQuestion}
-                        className="w-full rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/15 transition-all"
-                      >
-                        {questionIndex >= roundQuestions.length - 1
-                          ? `Guardar ${QUIZ_TYPE_LABELS[currentType].toLowerCase()}`
-                          : "Siguiente palabra"}
-                      </motion.button>
+                      {(!selectedWritingOptionIsCorrect || currentType !== "writing") && currentScore < 100 ? (
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={retryCurrentQuiz}
+                          className="w-full rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/15 transition-all"
+                        >
+                          Repetir quiz
+                        </motion.button>
+                      ) : null}
+
+                      {currentType !== "writing" || currentScore === 100 || !selectedWritingOptionIsCorrect ? (
+                        <motion.button
+                          type="button"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={handleNextQuestion}
+                          className={
+                            currentScore < 100
+                              ? "w-full rounded-2xl border border-border-subtle bg-surface-secondary px-4 py-3.5 text-sm font-bold text-content-secondary transition hover:bg-surface-tertiary"
+                              : "w-full rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/15 transition-all"
+                          }
+                        >
+                          {currentScore < 100
+                            ? questionIndex >= roundQuestions.length - 1
+                              ? "Ver resumen"
+                              : "Siguiente palabra"
+                            : questionIndex >= roundQuestions.length - 1
+                              ? `Guardar ${VOCABULARY_QUIZ_TYPE_LABELS[currentType].toLowerCase()}`
+                              : "Siguiente palabra"}
+                        </motion.button>
+                      ) : null}
                     </motion.div>
                   )}
                 </motion.div>
@@ -874,16 +1057,8 @@ export default function VocabularyQuizModal({
 
             {step === "summary" && shouldShowRewardSequence ? (
               <UnlockedMasterySequence
-                title={
-                  finalScore === 100
-                    ? "Nodo de vocabulario completado con premio"
-                    : "Ganaste puntos en vocabulario"
-                }
-                subtitle={
-                  finalScore === 100
-                    ? `Cerraste ${getNodeTitle(item).toLowerCase()} con todas las rondas guardadas y desbloqueaste progreso nuevo.`
-                    : `Completaste una o mas rondas perfectas en ${getNodeTitle(item).toLowerCase()} y el sistema ya acreditó tus puntos.`
-                }
+                title={getVocabularyResultTitle(currentType)}
+                subtitle={`Resolviste los ${roundQuestions.length} ejercicios de ${VOCABULARY_QUIZ_TYPE_LABELS[currentType].toLowerCase()} con resultado perfecto.`}
                 score={finalScore}
                 symbol={getCelebrationSymbol(item)}
                 pointsDelta={pointsDelta}
@@ -893,11 +1068,11 @@ export default function VocabularyQuizModal({
 
             {step === "summary" && shouldShowReaffirmedResult ? (
               <ReaffirmedMasteryResult
-                title="Vocabulario reforzado"
-                subtitle={`Completaste ${getNodeTitle(item).toLowerCase()} con score perfecto. Este intento no sumó puntos nuevos porque ese progreso ya estaba acreditado.`}
+                title={getVocabularyReaffirmedTitle(currentType)}
+                subtitle={`Volviste a resolver los ${roundQuestions.length} ejercicios de ${VOCABULARY_QUIZ_TYPE_LABELS[currentType].toLowerCase()} con dominio total.`}
                 score={finalScore}
                 primaryActionLabel="Repetir quiz"
-                onRetry={resetQuiz}
+                onRetry={retryCurrentQuiz}
                 onClose={onClose}
               />
             ) : null}
@@ -910,7 +1085,7 @@ export default function VocabularyQuizModal({
                 results={roundResults}
                 userPoints={resultingUserPoints}
                 pointsDelta={pointsDelta}
-                onRetry={resetQuiz}
+                onRetry={retryCurrentQuiz}
                 onClose={onClose}
               />
             ) : null}
@@ -985,21 +1160,314 @@ export default function VocabularyQuizModal({
   );
 }
 
+type VocabularyWritingStrokeUnit = {
+  symbol: string;
+  traceable: boolean;
+  sourceIndex: number;
+  viewBox: string;
+  strokes: string[];
+};
+
+type VocabularyWritingStrokeResult = {
+  validation: StrokeValidationResult;
+  pointsDelta: number;
+};
+
+function useVocabularyCanvasSize(max: number, padding = 96) {
+  const [size, setSize] = useState(max);
+
+  useEffect(() => {
+    const update = () => setSize(Math.min(max, Math.max(180, window.innerWidth - padding)));
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [max, padding]);
+
+  return size;
+}
+
+function normalizeWritingStrokeUnits(
+  units: VocabularyWritingOptionUnit[] | null | undefined,
+) {
+  return (units ?? []).map((unit, index): VocabularyWritingStrokeUnit => {
+    if (unit.viewBox && unit.strokes?.length) {
+      return {
+        symbol: unit.symbol,
+        traceable: unit.traceable ?? true,
+        sourceIndex: index,
+        viewBox: unit.viewBox,
+        strokes: unit.strokes,
+      };
+    }
+
+    const fallbackSymbol = getWritableKanaFallbackSymbol(unit.symbol);
+    const fallback = getFallbackWritingStrokeData(unit.symbol) ??
+      getMockKanaStrokes(unit.kanaId ?? unit.symbol, fallbackSymbol);
+    return {
+      symbol: unit.symbol,
+      traceable: Boolean(fallback?.strokes?.length),
+      sourceIndex: index,
+      viewBox: fallback?.viewBox ?? "0 0 109 109",
+      strokes: fallback?.strokes ?? [],
+    };
+  });
+}
+
+function getFallbackWritingStrokeData(symbol: string) {
+  if (["ー", "ｰ", "─", "—", "―"].includes(symbol)) {
+    return {
+      viewBox: "0 0 109 109",
+      strokes: ["M20,54.5C38,54.5 71,54.5 89,54.5"],
+    };
+  }
+
+  return null;
+}
+
+function getWritableKanaFallbackSymbol(symbol: string) {
+  const smallKanaFallbacks: Record<string, string> = {
+    "ぁ": "あ",
+    "ぃ": "い",
+    "ぅ": "う",
+    "ぇ": "え",
+    "ぉ": "お",
+    "っ": "つ",
+    "ゃ": "や",
+    "ゅ": "ゆ",
+    "ょ": "よ",
+    "ゎ": "わ",
+    "ァ": "ア",
+    "ィ": "イ",
+    "ゥ": "ウ",
+    "ェ": "エ",
+    "ォ": "オ",
+    "ッ": "ツ",
+    "ャ": "ヤ",
+    "ュ": "ユ",
+    "ョ": "ヨ",
+    "ヮ": "ワ",
+  };
+
+  return smallKanaFallbacks[symbol] ?? symbol;
+}
+
+function VocabularyWritingTraceExercise({
+  option,
+  disabled,
+  onComplete,
+}: {
+  option: VocabularyQuizOption;
+  disabled: boolean;
+  onComplete: (score: number) => void;
+}) {
+  const canvasSize = useVocabularyCanvasSize(220);
+  const displayUnits = useMemo(() => normalizeWritingStrokeUnits(option.units), [option.units]);
+  const units = useMemo(
+    () => displayUnits.filter((unit) => unit.traceable && unit.strokes.length > 0),
+    [displayUnits],
+  );
+  const [unitIndex, setUnitIndex] = useState(0);
+  const [strokeIndex, setStrokeIndex] = useState(0);
+  const [strokeResults, setStrokeResults] = useState<VocabularyWritingStrokeResult[]>([]);
+  const [lastFeedback, setLastFeedback] = useState<VocabularyWritingStrokeResult | null>(null);
+  const [flashError, setFlashError] = useState(false);
+  const [traceCompleted, setTraceCompleted] = useState(false);
+  const feedbackTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const completionScheduledRef = useRef(false);
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimeout.current) {
+        clearTimeout(feedbackTimeout.current);
+      }
+    };
+  }, []);
+
+  const activeUnit = units[unitIndex] ?? null;
+  const totalStrokes = units.reduce((sum, unit) => sum + unit.strokes.length, 0);
+  const completedStrokes = strokeResults.length;
+  const missingStrokeData = units.length === 0 || totalStrokes === 0;
+
+  const handleStrokeDrawn = useCallback(
+    (stroke: DrawnStroke) => {
+      if (!activeUnit || disabled) return;
+
+      const refPath = activeUnit.strokes[strokeIndex];
+      if (!refPath) return;
+
+      const validation = validateStroke(stroke.points, refPath, activeUnit.viewBox);
+      const pointsDelta = getPointsForFeedback(
+        validation.feedback,
+        VOCABULARY_WRITING_BASE_STROKE_POINTS,
+      );
+      const result: VocabularyWritingStrokeResult = { validation, pointsDelta };
+      const nextResults = [...strokeResults, result];
+
+      setStrokeResults(nextResults);
+      setLastFeedback(result);
+
+      if (validation.feedback === "poor" || validation.feedback === "miss") {
+        setFlashError(true);
+        if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
+        feedbackTimeout.current = setTimeout(() => setFlashError(false), 400);
+      }
+
+      if (feedbackTimeout.current) clearTimeout(feedbackTimeout.current);
+      feedbackTimeout.current = setTimeout(() => setLastFeedback(null), 1200);
+
+      const nextStrokeIndex = strokeIndex + 1;
+      if (nextStrokeIndex < activeUnit.strokes.length) {
+        setStrokeIndex(nextStrokeIndex);
+        return;
+      }
+
+      const nextUnitIndex = unitIndex + 1;
+      if (nextUnitIndex < units.length) {
+        setUnitIndex(nextUnitIndex);
+        setStrokeIndex(0);
+        return;
+      }
+
+      if (completionScheduledRef.current) {
+        return;
+      }
+
+      completionScheduledRef.current = true;
+      setTraceCompleted(true);
+      const totalScore = nextResults.reduce((sum, entry) => sum + entry.pointsDelta, 0);
+      const maxScore = totalStrokes * VOCABULARY_WRITING_BASE_STROKE_POINTS;
+      const scorePercent = maxScore > 0
+        ? Math.round((Math.max(0, totalScore) / maxScore) * 100)
+        : 0;
+
+      setTimeout(() => onComplete(scorePercent), 350);
+    },
+    [activeUnit, disabled, onComplete, strokeIndex, strokeResults, totalStrokes, unitIndex, units.length],
+  );
+
+  if (missingStrokeData) {
+    return (
+      <div className="rounded-2xl border border-amber-500/20 bg-amber-500/8 px-4 py-5 text-center">
+        <p className="text-sm font-bold text-amber-700 dark:text-amber-300">
+          Trazos no disponibles para esta opción
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-content-muted">
+          El backend necesita enviar los trazos de cada kana para poder evaluar escritura.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-2xl border border-border-subtle bg-surface-secondary/70 p-3">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-content-tertiary">
+            Traza la lectura seleccionada
+          </p>
+          <p className="mt-1 text-lg font-black leading-none text-content-primary jp-text">
+            <WritingSymbolText text={getOptionLabel(option)} />
+          </p>
+        </div>
+        <div className="rounded-full border border-border-subtle bg-surface-primary px-3 py-1 text-xs font-bold text-content-secondary">
+          {completedStrokes}/{totalStrokes} trazos
+        </div>
+      </div>
+
+      <div className="flex flex-col items-center gap-3">
+        <p className="text-xs font-semibold text-content-muted">
+          Kana activo:{" "}
+          <span className="text-content-primary jp-text">
+            {activeUnit?.symbol}
+          </span>
+        </p>
+
+        <div className={`relative rounded-2xl border-2 transition-colors ${flashError ? "border-red-400" : "border-border-subtle"}`}>
+          {activeUnit ? (
+            <KanaWritingCanvas
+              key={`${getOptionLabel(option)}-${unitIndex}-${activeUnit.symbol}`}
+              viewBox={activeUnit.viewBox}
+              guideStrokes={activeUnit.strokes}
+              activeStrokeIndex={strokeIndex}
+              size={canvasSize}
+              disabled={disabled || traceCompleted}
+              flashError={flashError}
+              hideActiveGuide
+              onStrokeDrawn={handleStrokeDrawn}
+            />
+          ) : null}
+
+          <AnimatePresence>
+            {lastFeedback ? (
+              <motion.div
+                initial={{ opacity: 0, y: -12, scale: 0.85 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -12, scale: 0.85 }}
+                transition={{ duration: 0.2 }}
+                className="pointer-events-none absolute left-1/2 top-3 z-10 -translate-x-1/2"
+              >
+                <div className={`flex items-center gap-2 rounded-2xl px-4 py-2 shadow-lg backdrop-blur-md ${getFeedbackColor(lastFeedback.validation.feedback)}`}>
+                  <span className="text-sm font-bold">
+                    {getFeedbackLabel(lastFeedback.validation.feedback)}
+                  </span>
+                  <span className="text-sm font-bold opacity-70">
+                    +{lastFeedback.pointsDelta}
+                  </span>
+                </div>
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
+
+        <div className="flex flex-wrap justify-center gap-1.5">
+          {displayUnits.map((unit) => {
+            const traceableIndex = units.findIndex(
+              (candidate) => candidate.sourceIndex === unit.sourceIndex,
+            );
+            const isTraceable = traceableIndex >= 0;
+            const isCompleted = isTraceable && traceableIndex < unitIndex;
+            const isActive = isTraceable && traceableIndex === unitIndex;
+
+            return (
+              <span
+                key={`${unit.symbol}-${unit.sourceIndex}`}
+                className={`flex h-7 min-w-7 items-center justify-center rounded-lg border px-1.5 text-sm font-black jp-text ${
+                  isCompleted
+                    ? "border-emerald-400 bg-emerald-500/10 text-emerald-700"
+                    : isActive
+                      ? "border-accent bg-accent/10 text-accent"
+                      : isTraceable
+                        ? "border-border-subtle bg-surface-primary text-content-muted"
+                        : "border-dashed border-border-subtle bg-surface-secondary text-content-tertiary"
+                }`}
+              >
+                {unit.symbol}
+              </span>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function RoundDots({
   current,
+  question,
   results,
 }: {
-  current: number;
+  current: VocabularyAnswerType;
+  question: VocabularyWordLesson;
   results: RoundResult[];
 }) {
   return (
     <div className="flex items-center gap-1.5">
-      {QUIZ_ROUNDS.map((type, index) => {
-        const roundNumber = index + 1;
+      {VOCABULARY_QUIZ_TYPES.map((type, index) => {
         const result = results.find((entry) => entry.type === type);
-        const isDone = Boolean(result);
-        const isCurrent = !isDone && roundNumber === current;
-        const isPerfect = (result?.score ?? 0) === 100;
+        const persisted = getQuizTypeProgress(question, type);
+        const isDone = Boolean(result) || persisted.completed;
+        const isCurrent = type === current;
+        const isPerfect = (result?.score ?? persisted.score ?? 0) === 100;
 
         return (
           <motion.div
@@ -1060,6 +1528,64 @@ function QuizProgress({
   );
 }
 
+function VocabularyRoundResultCard({
+  type,
+  score,
+  delay,
+}: {
+  type: VocabularyAnswerType;
+  score: number | null;
+  delay: number;
+}) {
+  const isPerfect = score === 100;
+  const isDone = score !== null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 8, scale: 0.92 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ delay, type: "spring", stiffness: 220, damping: 18 }}
+      className={[
+        "flex flex-col items-center gap-1.5 rounded-2xl border px-2 py-3 transition-all",
+        isPerfect
+          ? "bg-surface-primary"
+          : isDone
+            ? "border-border-subtle bg-surface-secondary"
+            : "border-border-subtle bg-surface-tertiary opacity-40",
+      ].join(" ")}
+      style={
+        isPerfect
+          ? {
+              borderColor: "var(--accent-muted)",
+              background:
+                "linear-gradient(135deg, var(--accent-subtle), transparent 72%)",
+            }
+          : undefined
+      }
+    >
+      <span
+        className={`text-[0.625rem] font-bold uppercase tracking-wider ${isPerfect ? "" : "text-content-muted"}`}
+        style={isPerfect ? { color: "var(--accent)" } : undefined}
+      >
+        {VOCABULARY_QUIZ_TYPE_LABELS[type]}
+      </span>
+      {isDone ? (
+        <span
+          className="text-xl font-extrabold text-content-primary"
+          style={isPerfect ? { color: "var(--accent)" } : undefined}
+        >
+          {score}%
+        </span>
+      ) : (
+        <span className="text-xl font-extrabold text-content-muted">-</span>
+      )}
+      <span className="text-[0.6875rem] text-content-muted">
+        {isPerfect ? "Perfecta" : isDone ? "Por mejorar" : "Pendiente"}
+      </span>
+    </motion.div>
+  );
+}
+
 function VocabularyQuizSummary({
   finalScore,
   item,
@@ -1079,83 +1605,160 @@ function VocabularyQuizSummary({
   onRetry: () => void;
   onClose: () => void;
 }) {
-  const success = finalScore >= 80;
+  const success = finalScore === 100;
+  const completedTypes = VOCABULARY_QUIZ_TYPES.filter((type) => {
+    const result = results.find((round) => round.type === type);
+    const persisted = getQuizTypeProgress(question, type);
+    return (result?.score ?? persisted.score ?? 0) === 100;
+  }).length;
+  const totalQuizProgress = Math.max(
+    getWordQuizProgressPercent(question),
+    completedTypes * 25,
+  );
+  const earnedPoints = pointsDelta > 0 && typeof userPoints === "number";
+  const statusLabel = success ? "Aprobada" : "Requiere reintento";
+  const subtitle = success
+    ? `Completaste ${getNodeTitle(item).toLowerCase()} con todos los ejercicios correctos.`
+    : `Este intento se guardo, pero necesitas 100 para completar ${getNodeTitle(item).toLowerCase()}.`;
+  const scoreStyle = success ? { color: "var(--accent)" } : undefined;
+  const accentPanelStyle = {
+    backgroundColor: "var(--accent-subtle)",
+    borderColor: "var(--accent-muted)",
+    color: "var(--accent)",
+  };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="space-y-5 py-4 text-center"
+      className="mx-auto flex w-full max-w-xl flex-col gap-4 py-4"
     >
-      <div
-        className={`mx-auto flex h-20 w-20 items-center justify-center rounded-3xl ${
-          success ? "bg-emerald-500/12 text-emerald-600" : "bg-accent/10 text-accent"
-        }`}
-      >
-        <span className="text-3xl font-black">{finalScore}%</span>
-      </div>
+      <div className="mt-4 space-y-4">
+        <div className="space-y-1.5">
+          <p className="text-3xl font-black text-content-primary" style={scoreStyle}>
+            {success ? "Quiz guardado correctamente" : "Resumen del intento"}
+          </p>
+          <p className="text-sm leading-6 text-content-secondary">
+            {subtitle}
+          </p>
+        </div>
 
-      <div className="space-y-1">
-        <h3 className="text-lg font-black text-content-primary">
-          {success ? "Nodo guardado correctamente" : "Intento guardado"}
-        </h3>
-        <p className="text-sm leading-relaxed text-content-secondary">
-          {getNodeTitle(item)} · {getWordTitle(question)}
-        </p>
-      </div>
-
-      <div className="grid gap-2 text-left">
-        {QUIZ_ROUNDS.map((type) => {
-          const result = results.find((round) => round.type === type);
-
-          return (
-            <div
-              key={type}
-              className="flex items-center justify-between rounded-2xl border border-border-subtle bg-surface-secondary/70 px-3 py-2.5"
-            >
-              <div>
-                <span className="block text-sm font-bold text-content-primary">
-                  {QUIZ_TYPE_LABELS[type]}
-                </span>
-                <span className="block text-xs text-content-tertiary">
-                  {result?.perfectAnswers ?? 0}/{result?.totalAnswers ?? 0} perfectas
-                </span>
-              </div>
-              <span className={`text-sm font-black ${getScoreTone(result?.score ?? 0)}`}>
-                {result?.score ?? 0}%
+        <div className="flex flex-wrap items-end justify-between gap-4 border-t border-border-subtle pt-4">
+          <div>
+            <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
+              Resultado
+            </p>
+            <p className="mt-1 text-4xl font-black text-content-primary" style={scoreStyle}>
+              {finalScore}
+              <span className="ml-1 text-base font-semibold text-content-muted">
+                /100
               </span>
+            </p>
+          </div>
+
+          <div className="text-left sm:text-right">
+            <p className="text-[0.625rem] font-black uppercase tracking-[0.2em] text-content-muted">
+              Estado
+            </p>
+            <p className="mt-1 text-sm font-bold text-content-primary" style={scoreStyle}>
+              {statusLabel}
+            </p>
+            <p className="mt-1 text-sm text-content-secondary">
+              {completedTypes} de {VOCABULARY_QUIZ_TYPES.length} tipos perfectos
+            </p>
+          </div>
+        </div>
+
+        <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
+          {VOCABULARY_QUIZ_TYPES.map((type, index) => {
+            const result = results.find((round) => round.type === type);
+            const persisted = getQuizTypeProgress(question, type);
+            const score = result?.score ?? persisted.score;
+
+            return (
+              <VocabularyRoundResultCard
+                key={type}
+                type={type}
+                score={score}
+                delay={0.12 + index * 0.05}
+              />
+            );
+          })}
+        </div>
+
+        <div className="rounded-2xl border border-border-subtle bg-surface-secondary/70 px-4 py-3">
+          <div className="flex items-center justify-between text-[11px] font-bold text-content-tertiary">
+            <span>Progreso total del quiz</span>
+            <span>{totalQuizProgress}%</span>
+          </div>
+          <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-tertiary">
+            <motion.div
+              className="h-full rounded-full bg-gradient-to-r from-accent to-accent-hover"
+              initial={{ width: 0 }}
+              animate={{ width: `${totalQuizProgress}%` }}
+              transition={{ duration: 0.25 }}
+            />
+          </div>
+        </div>
+
+        {earnedPoints ? (
+          <div
+            className="flex items-center gap-2.5 rounded-2xl border px-4 py-3"
+            style={accentPanelStyle}
+          >
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-accent to-accent-hover text-white shadow-lg shadow-accent/15">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2.5}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2"
+                />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 3v2m0 14v2"
+                />
+              </svg>
             </div>
-          );
-        })}
-      </div>
+            <div className="text-left">
+              <p className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+                +{pointsDelta} puntos obtenidos
+              </p>
+              <p className="text-xs text-content-secondary">
+                Total actual: {userPoints} pts
+              </p>
+            </div>
+          </div>
+        ) : null}
 
-      {pointsDelta > 0 ? (
-        <div className="rounded-2xl border border-emerald-500/18 bg-emerald-500/8 px-4 py-3 text-sm font-semibold text-emerald-700">
-          Ganaste +{pointsDelta} puntos en este quiz.
+        {!earnedPoints && typeof userPoints === "number" ? (
+          <div className="rounded-2xl border border-border-subtle bg-surface-secondary/70 px-4 py-3 text-sm font-semibold text-content-primary">
+            Puntos actuales: {userPoints}
+          </div>
+        ) : null}
+
+        <div className="flex flex-col gap-2.5 pt-1 sm:flex-row">
+          <button
+            type="button"
+            onClick={onRetry}
+            className="flex-1 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3 text-sm font-black text-content-inverted shadow-lg shadow-accent/15 transition hover:shadow-xl hover:shadow-accent/20"
+          >
+            Repetir quiz
+          </button>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-2xl border border-border-subtle bg-surface-secondary px-4 py-3 text-sm font-semibold text-content-secondary transition hover:bg-surface-tertiary sm:min-w-32"
+          >
+            Cerrar
+          </button>
         </div>
-      ) : null}
-
-      {typeof userPoints === "number" ? (
-        <div className="rounded-2xl border border-border-subtle bg-surface-secondary/70 px-4 py-3 text-sm font-semibold text-content-primary">
-          Puntos actuales: {userPoints}
-        </div>
-      ) : null}
-
-      <div className="flex flex-col gap-2 sm:flex-row">
-        <button
-          type="button"
-          onClick={onRetry}
-          className="flex-1 rounded-2xl border border-accent/20 bg-accent/5 px-4 py-3 text-sm font-bold text-accent transition hover:bg-accent/10"
-        >
-          Reintentar
-        </button>
-        <button
-          type="button"
-          onClick={onClose}
-          className="flex-1 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-3 text-sm font-bold text-content-inverted transition hover:brightness-110"
-        >
-          Terminar
-        </button>
       </div>
     </motion.div>
   );

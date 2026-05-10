@@ -4,6 +4,7 @@ import {
   NodeType,
   NodeStatus,
   GraphLayoutConfig,
+  GraphNodeVisualVariant,
 } from "@/features/graph/lib/graphTypes";
 import { GRAPH_CONFIG } from "./graphConfig";
 
@@ -13,15 +14,17 @@ interface NodeDefinition {
   label: string;
   status: NodeStatus;
   description?: string;
+  imageUrl?: string | null;
+  visualVariant?: GraphNodeVisualVariant;
 
   entityKind?: "kanji" | "theme" | "subtheme" | "word" | "grammar";
   entityId?: string;
   graphId?: string;
-  recommendationId?: string;
-  similarity?: number;
-  isRecommendation?: boolean;
   symbol?: string;
   progress?: number;
+  isAiRecommended?: boolean;
+  recommendationRank?: number;
+  recommendationSimilarity?: number;
 }
 
 type PositionedNodeDefinition = NodeDefinition & {
@@ -213,14 +216,16 @@ export function createCustomGraph(
         type: node.type,
         status: node.status,
         icon: null,
+        imageUrl: node.imageUrl ?? null,
+        visualVariant: node.visualVariant,
         entityKind: node.entityKind,
         entityId: node.entityId,
         graphId: node.graphId,
-        recommendationId: node.recommendationId,
-        similarity: node.similarity,
-        isRecommendation: node.isRecommendation,
         symbol: node.symbol,
         progress: node.progress,
+        isAiRecommended: node.isAiRecommended,
+        recommendationRank: node.recommendationRank,
+        recommendationSimilarity: node.recommendationSimilarity,
       },
     };
   });

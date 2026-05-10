@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, type MouseEvent } from "react";
+import { memo, useCallback, type PointerEvent as ReactPointerEvent } from "react";
 import { REGION_ORDER } from "../../lib/vocabularyRegions";
 import type { VocabularyRegionId } from "../../types";
 import type { ParsedJapanMap } from "./japanMapAssets";
@@ -8,10 +8,19 @@ import type { RegionVisualStatus } from "./japanMapTheme";
 
 export type { RegionVisualStatus };
 
+export type RegionHoverState = {
+  regionId: VocabularyRegionId | null;
+  clientX: number;
+  clientY: number;
+  pointerType: string;
+};
+
 type Props = {
   parsedMap: ParsedJapanMap;
   regionStatusByRegion: Partial<Record<VocabularyRegionId, RegionVisualStatus>>;
   activeRegionId: VocabularyRegionId | null;
+  disabled?: boolean;
+  onRegionHoverChange?: (state: RegionHoverState | null) => void;
   onRegionSelect: (regionId: VocabularyRegionId) => void;
 };
 
@@ -27,12 +36,14 @@ function InteractiveRegionLayer({
   parsedMap,
   regionStatusByRegion,
   activeRegionId,
+  disabled = false,
+  onRegionHoverChange,
   onRegionSelect,
 }: Props) {
   const hasSelection = activeRegionId !== null;
 
   const handleClick = useCallback(
-    (event: MouseEvent<SVGSVGElement>) => {
+    (event: ReactPointerEvent<SVGSVGElement>) => {
       const target = event.target;
 
       if (!(target instanceof Element)) {
@@ -51,6 +62,34 @@ function InteractiveRegionLayer({
     [onRegionSelect],
   );
 
+  const handlePointerChange = useCallback(
+    (event: ReactPointerEvent<SVGSVGElement>) => {
+      if (!onRegionHoverChange) {
+        return;
+      }
+
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        onRegionHoverChange(null);
+        return;
+      }
+
+      const regionElement = target.closest<SVGElement>("[data-vocabulary-region]");
+      const regionId = regionElement?.getAttribute("data-vocabulary-region") as
+        | VocabularyRegionId
+        | null;
+
+      onRegionHoverChange({
+        regionId: regionId ?? null,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        pointerType: event.pointerType,
+      });
+    },
+    [onRegionHoverChange],
+  );
+
   return (
     <svg
       viewBox={parsedMap.viewBox}
@@ -59,9 +98,14 @@ function InteractiveRegionLayer({
       role="presentation"
       aria-hidden="false"
       shapeRendering="auto"
-      onClick={handleClick}
+      onPointerUp={disabled ? undefined : handleClick}
+      onPointerMove={disabled ? undefined : handlePointerChange}
+      onPointerDown={disabled ? undefined : handlePointerChange}
+      onMouseLeave={disabled ? undefined : () => onRegionHoverChange?.(null)}
+      onPointerCancel={disabled ? undefined : () => onRegionHoverChange?.(null)}
       data-has-selection={hasSelection ? "true" : undefined}
       style={{
+        pointerEvents: disabled ? "none" : "auto",
         WebkitUserSelect: "none",
         userSelect: "none",
         WebkitTouchCallout: "none",

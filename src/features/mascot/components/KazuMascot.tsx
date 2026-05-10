@@ -1,7 +1,6 @@
 "use client";
 
 import { memo, useEffect } from "react";
-import { motion } from "framer-motion";
 
 import { useKazuMascot } from "../hooks/useKazuMascot";
 import type { KazuMascotProps } from "../types/kazuMascot.types";
@@ -57,9 +56,7 @@ export const KazuMascot = memo(function KazuMascot({
   };
 
   return (
-    <motion.div
-      initial={false}
-      animate={{ opacity: 1, y: 0 }}
+    <div
       className={className}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
@@ -74,7 +71,7 @@ export const KazuMascot = memo(function KazuMascot({
         />
         <div className="pointer-events-none absolute inset-x-8 bottom-4 h-4 rounded-full bg-accent/10 blur-md dark:bg-[#F7D77A]/10" />
       </div>
-    </motion.div>
+    </div>
   );
 });
 

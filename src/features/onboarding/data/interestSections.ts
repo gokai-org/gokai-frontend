@@ -9,102 +9,9 @@ export const MAX_ONBOARDING_SELECTIONS = 8;
 
 export const ONBOARDING_INTEREST_SECTIONS: OnboardingInterestSectionDefinition[] = [
   {
-    id: "cultura-entretenimiento",
-    title: "Cultura y entretenimiento",
-    description: "Anime, manga y pasatiempos",
-    interests: [
-      {
-        id: "anime-manga",
-        kanji: "アニメ・マンガ",
-        meaning: "Anime y Manga",
-      },
-      {
-        id: "hobbies",
-        kanji: "趣味",
-        meaning: "Hobbies",
-      },
-    ],
-  },
-  {
-    id: "vida-diaria-contexto",
-    title: "Vida diaria y contexto",
-    description: "Rutina, relaciones e interacción social",
-    interests: [
-      {
-        id: "vida-diaria",
-        kanji: "日常生活",
-        meaning: "Vida diaria",
-      },
-      {
-        id: "familia",
-        kanji: "家族と人間関係",
-        meaning: "Familia y relaciones",
-      },
-      {
-        id: "interaccion-social",
-        kanji: "対人交流",
-        meaning: "Interacción social",
-      },
-      {
-        id: "sentidos-emociones",
-        kanji: "五感と感情",
-        meaning: "Sentidos y emociones",
-      },
-    ],
-  },
-  {
-    id: "aprendizaje-lenguaje",
-    title: "Aprendizaje y lenguaje",
-    description: "Temas académicos y bases de comunicación",
-    interests: [
-      {
-        id: "educacion",
-        kanji: "教育",
-        meaning: "Educación",
-      },
-      {
-        id: "numeros",
-        kanji: "数字と数量",
-        meaning: "Números y cantidades",
-      },
-      {
-        id: "fechas",
-        kanji: "日付と時刻",
-        meaning: "Fechas y horario",
-      },
-    ],
-  },
-  {
-    id: "estilo-vida",
-    title: "Estilo de vida",
-    description: "Cocina, salud, ropa y apariencia",
-    interests: [
-      {
-        id: "cocinar",
-        kanji: "料理",
-        meaning: "Cocinar",
-      },
-      {
-        id: "ropa-moda",
-        kanji: "服とファッション",
-        meaning: "Ropa y moda",
-      },
-      {
-        id: "colores-apariencia",
-        kanji: "色と外見",
-        meaning: "Colores y apariencia",
-      },
-      {
-        id: "medicina-salud",
-        kanji: "医療と健康",
-        meaning: "Medicina y salud",
-      },
-    ],
-  },
-  {
-    id: "entorno-naturaleza",
-    title: "Entorno y naturaleza",
-    description: "Clima y mundo natural",
+    id: "hokkaido",
+    title: "Hokkaidō",
+    description: "Naturaleza, nieve, clima, paisajes abiertos y fauna",
     interests: [
       {
         id: "clima-naturaleza",
@@ -114,43 +21,136 @@ export const ONBOARDING_INTEREST_SECTIONS: OnboardingInterestSectionDefinition[]
     ],
   },
   {
-    id: "actividades",
-    title: "Actividades",
-    description: "Movimiento, deportes y acción",
+    id: "tohoku",
+    title: "Tōhoku",
+    description: "Tradición, festivales, estaciones, calma y sensibilidad",
+    interests: [
+      {
+        id: "fechas",
+        kanji: "日付と時刻",
+        meaning: "Fechas y horario",
+      },
+      {
+        id: "sentidos-emociones",
+        kanji: "五感と感情",
+        meaning: "Sentidos y emociones",
+      },
+    ],
+  },
+  {
+    id: "kanto",
+    title: "Kantō",
+    description: "Tokio, ciudad, tecnología, educación, oficinas y ritmo moderno",
+    interests: [
+      {
+        id: "tecnologia",
+        kanji: "技術",
+        meaning: "Tecnología",
+      },
+      {
+        id: "educacion",
+        kanji: "教育",
+        meaning: "Educación",
+      },
+      {
+        id: "trabajo-negocios",
+        kanji: "仕事とビジネス",
+        meaning: "Trabajo y Negocios",
+      },
+    ],
+  },
+  {
+    id: "chubu",
+    title: "Chūbu",
+    description: "Monte Fuji, montañas, industria, precisión y descripción visual",
+    interests: [
+      {
+        id: "numeros",
+        kanji: "数字と数量",
+        meaning: "Números y cantidades",
+      },
+      {
+        id: "colores-apariencia",
+        kanji: "色と外見",
+        meaning: "Colores y apariencia",
+      },
+    ],
+  },
+  {
+    id: "kansai",
+    title: "Kansai",
+    description: "Osaka, Kyoto, Nara, comida, convivencia y vida cotidiana",
+    interests: [
+      {
+        id: "cocinar",
+        kanji: "料理",
+        meaning: "Cocinar",
+      },
+      {
+        id: "vida-diaria",
+        kanji: "日常生活",
+        meaning: "Vida diaria",
+      },
+      {
+        id: "interaccion-social",
+        kanji: "対人交流",
+        meaning: "Interacción social",
+      },
+    ],
+  },
+  {
+    id: "chugoku",
+    title: "Chūgoku",
+    description: "Historia, rutas culturales, paisajes y ocio",
+    interests: [
+      {
+        id: "viajes-turismo",
+        kanji: "旅行と観光",
+        meaning: "Viajes y turismo",
+      },
+      {
+        id: "hobbies",
+        kanji: "趣味",
+        meaning: "Hobbies",
+      },
+    ],
+  },
+  {
+    id: "shikoku",
+    title: "Shikoku",
+    description: "Peregrinaje, calma, cuidado personal, salud y vínculos humanos",
+    interests: [
+      {
+        id: "medicina-salud",
+        kanji: "医療と健康",
+        meaning: "Medicina y salud",
+      },
+      {
+        id: "familia",
+        kanji: "家族と人間関係",
+        meaning: "Familia y relaciones",
+      },
+    ],
+  },
+  {
+    id: "kyushu",
+    title: "Kyūshū/Okinawa",
+    description: "Playas, energía, cultura popular, movimiento y estilo",
     interests: [
       {
         id: "deportes",
         kanji: "スポーツ",
         meaning: "Deportes",
       },
-    ],
-  },
-  {
-    id: "profesional-tecnico",
-    title: "Profesional y técnico",
-    description: "Trabajo, negocios y tecnología",
-    interests: [
       {
-        id: "trabajo-negocios",
-        kanji: "仕事とビジネス",
-        meaning: "Trabajo y Negocios",
+        id: "ropa-moda",
+        kanji: "服とファッション",
+        meaning: "Ropa y moda",
       },
       {
-        id: "tecnologia",
-        kanji: "技術",
-        meaning: "Tecnología",
-      },
-    ],
-  },
-  {
-    id: "experiencias",
-    title: "Experiencias",
-    description: "Viajes, turismo y vivencias",
-    interests: [
-      {
-        id: "viajes-turismo",
-        kanji: "旅行と観光",
-        meaning: "Viajes y turismo",
+        id: "anime-manga",
+        kanji: "アニメ・マンガ",
+        meaning: "Anime y Manga",
       },
     ],
   },

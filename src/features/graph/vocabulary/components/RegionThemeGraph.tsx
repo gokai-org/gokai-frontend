@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useMemo } from "react";
+import type { GraphNodeVisualVariant } from "@/features/graph/lib/graphTypes";
 import type {
   VocabularyRegionBounds,
   VocabularyRegionNodePoint,
@@ -25,6 +26,7 @@ type RegionThemeGraphProps = {
   regionBounds: VocabularyRegionBounds | null;
   nodePoints: VocabularyRegionNodePoint[] | null;
   viewport: VocabularySvgViewport | null;
+  shakingThemeId?: string | null;
   interactionDisabled?: boolean;
   onThemeSelect: (theme: VocabularyRegionThemeNode) => void;
 };
@@ -40,106 +42,54 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-const NODE_LAYOUTS: Record<number, Array<{ x: number; y: number }>> = {
-  1: [{ x: 0.5, y: 0.52 }],
-  2: [
-    { x: 0.24, y: 0.3 },
-    { x: 0.76, y: 0.68 },
-  ],
-  3: [
-    { x: 0.18, y: 0.22 },
-    { x: 0.84, y: 0.28 },
-    { x: 0.42, y: 0.78 },
-  ],
-  4: [
-    { x: 0.14, y: 0.18 },
-    { x: 0.86, y: 0.18 },
-    { x: 0.22, y: 0.8 },
-    { x: 0.8, y: 0.8 },
-  ],
-  5: [
-    { x: 0.12, y: 0.26 },
-    { x: 0.5, y: 0.1 },
-    { x: 0.88, y: 0.28 },
-    { x: 0.2, y: 0.82 },
-    { x: 0.8, y: 0.82 },
-  ],
-  6: [
-    { x: 0.12, y: 0.22 },
-    { x: 0.5, y: 0.08 },
-    { x: 0.88, y: 0.22 },
-    { x: 0.16, y: 0.76 },
-    { x: 0.5, y: 0.9 },
-    { x: 0.84, y: 0.76 },
-  ],
-};
+function chunkSymbolText(symbol: string) {
+  const normalized = symbol.trim();
 
-function projectPoint(
-  regionBounds: VocabularyRegionBounds,
-  point: { x: number; y: number },
-) {
-  const labelPaddingX = Math.max(
-    3.2,
-    Math.min(6.6, regionBounds.width * 0.1),
-  );
-  const labelPaddingTop = Math.max(2.2, Math.min(4.8, regionBounds.height * 0.05));
-  const labelPaddingBottom = Math.max(4.6, Math.min(9.2, regionBounds.height * 0.14));
-  const insetX = Math.max(labelPaddingX, regionBounds.width * 0.07);
-  const insetY = Math.max(labelPaddingTop, regionBounds.height * 0.05);
-  const minX = regionBounds.x + insetX;
-  const maxX = regionBounds.x + regionBounds.width - insetX;
-  const minY = regionBounds.y + insetY;
-  const maxY = regionBounds.y + regionBounds.height - labelPaddingBottom;
+  if (!normalized) {
+    return ["?"];
+  }
 
-  return {
-    x: clamp(
-      minX + (maxX - minX) * point.x,
-      regionBounds.x + labelPaddingX,
-      regionBounds.x + regionBounds.width - labelPaddingX,
-    ),
-    y: clamp(
-      minY + (maxY - minY) * point.y,
-      regionBounds.y + labelPaddingTop,
-      regionBounds.y + regionBounds.height - labelPaddingBottom,
-    ),
-  };
+  if (/\s/.test(normalized)) {
+    return normalized.split(/\s+/).filter(Boolean);
+  }
+
+  const characters = Array.from(normalized);
+  const maxCharsPerLine = characters.length <= 4 ? 2 : 3;
+  const lines: string[] = [];
+
+  for (let index = 0; index < characters.length; index += maxCharsPerLine) {
+    lines.push(characters.slice(index, index + maxCharsPerLine).join(""));
+  }
+
+  return lines;
 }
 
-function buildNodePositions(
-  regionBounds: VocabularyRegionBounds | null,
-  count: number,
-) {
-  if (!regionBounds) {
-    return Array.from({ length: count }).map((_, index) => ({
-      x: 34 + (index % 3) * 14,
-      y: 42 + Math.floor(index / 3) * 16,
-    }));
-  }
+function getCircleTextLayout(symbol: string, radius: number, preferredFontSize: number) {
+  const lines = chunkSymbolText(symbol);
+  const longestLineLength = lines.reduce(
+    (maxLength, line) => Math.max(maxLength, Array.from(line).length),
+    1,
+  );
+  const availableWidth = radius * 1.34;
+  const availableHeight = radius * 1.28;
+  const lineHeightRatio = 1.04;
+  const widthLimitedFontSize = availableWidth / (longestLineLength * 0.96);
+  const heightLimitedFontSize =
+    availableHeight / (1 + (lines.length - 1) * lineHeightRatio);
+  const fontSize = clamp(
+    Math.min(preferredFontSize, widthLimitedFontSize, heightLimitedFontSize),
+    0.44,
+    preferredFontSize,
+  );
+  const lineHeight = fontSize * lineHeightRatio;
+  const firstLineY = -((lines.length - 1) * lineHeight) / 2;
 
-  const layout = NODE_LAYOUTS[count];
-
-  if (layout) {
-    return layout.map((point) => projectPoint(regionBounds, point));
-  }
-
-  const columns = count <= 4 ? 2 : 3;
-  const rows = Math.max(1, Math.ceil(count / columns));
-
-  return Array.from({ length: count }).map((_, index) => {
-    const row = Math.floor(index / columns);
-    const column = index % columns;
-
-    if (count === 1) {
-      return { x: regionBounds.centerX, y: regionBounds.centerY };
-    }
-
-    const normalizedPoint = {
-      x: 0.12 + (0.76 / Math.max(columns - 1, 1)) * column,
-      y: rows === 1 ? 0.5 : 0.15 + (0.7 / Math.max(rows - 1, 1)) * row,
-    };
-
-    return projectPoint(regionBounds, normalizedPoint);
-  });
+  return {
+    lines,
+    fontSize,
+    firstLineY,
+    lineHeight,
+  };
 }
 
 function getDistance(
@@ -149,32 +99,97 @@ function getDistance(
   return Math.hypot(a.x - b.x, a.y - b.y);
 }
 
-function shouldFallbackToExplicitLayout(
-  regionBounds: VocabularyRegionBounds | null,
-  points: VocabularyRegionNodePoint[] | null,
-  expectedCount: number,
+function getNearestDistance(
+  point: VocabularyRegionNodePoint,
+  points: VocabularyRegionNodePoint[],
 ) {
-  if (!regionBounds || !points || points.length < expectedCount) {
-    return true;
+  if (!points.length) {
+    return Number.POSITIVE_INFINITY;
   }
 
-  let minPairDistance = Number.POSITIVE_INFINITY;
-  let minX = Number.POSITIVE_INFINITY;
-  let maxX = Number.NEGATIVE_INFINITY;
+  return Math.min(...points.map((candidate) => getDistance(point, candidate)));
+}
 
-  points.forEach((point, index) => {
-    minX = Math.min(minX, point.x);
-    maxX = Math.max(maxX, point.x);
+function getThemeAnchorPoints(
+  regionBounds: VocabularyRegionBounds | null,
+  themeCount: number,
+) {
+  if (!regionBounds) {
+    return [];
+  }
 
-    points.slice(index + 1).forEach((candidate) => {
-      minPairDistance = Math.min(minPairDistance, getDistance(point, candidate));
-    });
+  const center = {
+    x: regionBounds.centerX,
+    y: regionBounds.centerY,
+  };
+
+  if (themeCount <= 1) {
+    return [center];
+  }
+
+  const aspectRatio = regionBounds.width / Math.max(regionBounds.height, 1);
+  const radiusX = regionBounds.width * (aspectRatio > 1.22 ? 0.42 : 0.34);
+  const radiusY = regionBounds.height * (aspectRatio < 0.82 ? 0.42 : 0.34);
+  const startAngle = -Math.PI / 2;
+
+  return Array.from({ length: themeCount }).map((_, index) => {
+    const angle = startAngle + (Math.PI * 2 * index) / themeCount;
+
+    return {
+      x: center.x + Math.cos(angle) * radiusX,
+      y: center.y + Math.sin(angle) * radiusY,
+    };
   });
+}
 
-  const minRequiredGap = Math.max(Math.min(regionBounds.width, regionBounds.height) * 0.16, 6);
-  const minRequiredSpanX = expectedCount >= 3 ? Math.max(regionBounds.width * 0.22, 7) : 0;
+function selectSpreadThemePoints(
+  regionBounds: VocabularyRegionBounds | null,
+  nodePoints: VocabularyRegionNodePoint[],
+  themeCount: number,
+) {
+  const center = regionBounds
+    ? { x: regionBounds.centerX, y: regionBounds.centerY }
+    : nodePoints[0];
+  const anchors = getThemeAnchorPoints(regionBounds, themeCount);
+  const regionScale = regionBounds
+    ? Math.max(regionBounds.width, regionBounds.height)
+    : 100;
+  const selected: VocabularyRegionNodePoint[] = [];
+  const remaining = [...nodePoints].sort(
+    (a, b) => getDistance(a, center) - getDistance(b, center),
+  );
 
-  return minPairDistance < minRequiredGap || maxX - minX < minRequiredSpanX;
+  while (selected.length < themeCount && remaining.length > 0) {
+    const anchor = anchors[selected.length] ?? center;
+    let bestIndex = 0;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    remaining.forEach((candidate, index) => {
+      const nearestDistance = getNearestDistance(candidate, selected);
+      const anchorDistance = getDistance(candidate, anchor);
+      const centerDistance = getDistance(candidate, center);
+      const spacingScore = Number.isFinite(nearestDistance)
+        ? nearestDistance * 1.72
+        : regionScale * 0.4;
+      const score =
+        spacingScore -
+        anchorDistance * 0.62 -
+        Math.max(0, centerDistance - regionScale * 0.48) * 0.38;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+
+    selected.push(remaining.splice(bestIndex, 1)[0]);
+  }
+
+  return selected.sort(
+    (a, b) =>
+      Math.atan2(a.y - center.y, a.x - center.x) -
+      Math.atan2(b.y - center.y, b.x - center.x),
+  );
 }
 
 function splitGraphPoints(
@@ -182,31 +197,30 @@ function splitGraphPoints(
   nodePoints: VocabularyRegionNodePoint[] | null,
   themeCount: number,
 ) {
-  const fallbackPoints = buildNodePositions(regionBounds, themeCount);
+  if (themeCount <= 0) {
+    return { themePoints: [] };
+  }
+
+  if (!nodePoints || nodePoints.length < themeCount) {
+    return { themePoints: [] };
+  }
 
   const center = regionBounds
     ? { x: regionBounds.centerX, y: regionBounds.centerY }
-    : fallbackPoints[0];
-  const points = shouldFallbackToExplicitLayout(
+    : nodePoints[0];
+  const themePoints = selectSpreadThemePoints(
     regionBounds,
     nodePoints,
     themeCount,
-  )
-    ? fallbackPoints
-    : [...(nodePoints ?? fallbackPoints)];
-  const themePoints = points
-    .sort(
+  );
+
+  return {
+    themePoints: themePoints.sort(
       (a, b) =>
         Math.atan2(a.y - center.y, a.x - center.x) -
         Math.atan2(b.y - center.y, b.x - center.x),
-    )
-    .slice(0, themeCount);
-
-  while (themePoints.length < themeCount) {
-    themePoints.push(fallbackPoints[themePoints.length] ?? center);
-  }
-
-  return { themePoints };
+    ),
+  };
 }
 
 function getThemePointLayoutCacheKey(
@@ -230,23 +244,158 @@ function getThemePointLayoutCacheKey(
   return `${region.id}::${themeKey}::${boundsKey}::${pointsKey}`;
 }
 
-function getThemeFill(theme: VocabularyRegionThemeNode) {
-  if (theme.status === "locked") {
-    return "var(--surface-tertiary)";
+function splitThemeLabel(theme: VocabularyRegionThemeNode) {
+  const normalized = theme.label.trim();
+
+  if (!normalized) {
+    return [theme.label];
   }
 
-  if (theme.status === "completed") {
-    return "var(--accent-hover)";
+  const words = normalized.split(/\s+/).filter(Boolean);
+
+  if (words.length <= 3) {
+    return words.length ? words : [theme.label];
   }
 
-  return "var(--accent)";
+  const lines: string[] = [];
+  let startIndex = 0;
+
+  for (let lineIndex = 0; lineIndex < 3; lineIndex += 1) {
+    const remainingWords = words.length - startIndex;
+    const remainingLines = 3 - lineIndex;
+    const wordsForLine = Math.ceil(remainingWords / remainingLines);
+
+    lines.push(words.slice(startIndex, startIndex + wordsForLine).join(" "));
+    startIndex += wordsForLine;
+  }
+
+  return lines;
 }
 
-function formatThemeLabel(theme: VocabularyRegionThemeNode) {
-  const source = theme.label;
-  const trimmed = source.trim();
+function getThemeVariant(index: number): GraphNodeVisualVariant {
+  const variants: GraphNodeVisualVariant[] = ["red", "black"];
+  return variants[index % variants.length] ?? "red";
+}
 
-  return trimmed.length > 12 ? `${trimmed.slice(0, 10)}...` : trimmed;
+function getThemePalette(
+  theme: VocabularyRegionThemeNode,
+  variant: GraphNodeVisualVariant,
+  idPrefix: string,
+) {
+  if (theme.status === "locked" || !theme.isAvailable) {
+    return {
+      fill: `url(#${idPrefix}-node-locked-gradient)`,
+      text: "var(--vocabulary-node-locked-text)",
+      stroke: "var(--vocabulary-node-stroke)",
+      shadow: "var(--vocabulary-node-shadow-locked)",
+    };
+  }
+
+  if (variant === "black") {
+    return {
+      fill: `url(#${idPrefix}-node-black-gradient)`,
+      text: "var(--vocabulary-node-black-text)",
+      stroke: "var(--vocabulary-node-stroke)",
+      shadow: "var(--vocabulary-node-shadow-black)",
+    };
+  }
+
+  return {
+    fill: `url(#${idPrefix}-node-red-gradient)`,
+    text: "var(--vocabulary-node-red-text)",
+    stroke: "var(--vocabulary-node-stroke)",
+    shadow: "var(--vocabulary-node-shadow-red)",
+  };
+}
+
+function renderLockedNodeBadge(nodeRadius: number) {
+  const badgeRadius = Math.max(nodeRadius * 0.34, 0.78);
+  const bodyWidth = badgeRadius * 0.74;
+  const bodyHeight = badgeRadius * 0.56;
+  const bodyY = -bodyHeight * 0.12;
+  const shackleRadius = badgeRadius * 0.26;
+  const iconOffsetY = -badgeRadius * 0.06;
+
+  return (
+    <g transform={`translate(${nodeRadius * 0.6} ${nodeRadius * 0.6})`}>
+      <circle
+        r={badgeRadius}
+        fill="var(--vocabulary-lock-badge-fill)"
+        stroke="var(--vocabulary-lock-badge-stroke)"
+        strokeWidth={0.12}
+        vectorEffect="non-scaling-stroke"
+      />
+      <g transform={`translate(0 ${iconOffsetY})`}>
+        <path
+          d={`M ${-shackleRadius} ${bodyY + badgeRadius * 0.06} v ${-badgeRadius * 0.08} a ${shackleRadius} ${shackleRadius} 0 0 1 ${shackleRadius * 2} 0 v ${badgeRadius * 0.08}`}
+          fill="none"
+          stroke="var(--vocabulary-lock-badge-icon)"
+          strokeWidth={0.12}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
+        <rect
+          x={-bodyWidth / 2}
+          y={bodyY}
+          width={bodyWidth}
+          height={bodyHeight}
+          rx={badgeRadius * 0.14}
+          fill="none"
+          stroke="var(--vocabulary-lock-badge-icon)"
+          strokeWidth={0.12}
+          vectorEffect="non-scaling-stroke"
+        />
+        <circle
+          cx={0}
+          cy={bodyY + bodyHeight * 0.48}
+          r={badgeRadius * 0.08}
+          fill="var(--vocabulary-lock-badge-icon)"
+        />
+      </g>
+    </g>
+  );
+}
+
+function renderThemeEdge(curve: string, key: string, index: number) {
+  return (
+    <g
+      key={key}
+      className="vocabulary-graph-edge-enter"
+      style={{ animationDelay: `${Math.min(index * 24, 120)}ms` }}
+    >
+      <path
+        d={curve}
+        fill="none"
+        stroke="var(--vocabulary-edge-shadow)"
+        strokeWidth={1.12}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        opacity={0.24}
+      />
+      <path
+        d={curve}
+        fill="none"
+        stroke="var(--vocabulary-edge-rail)"
+        strokeWidth={0.74}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        opacity={0.5}
+      />
+      <path
+        d={curve}
+        fill="none"
+        stroke="url(#vocabulary-theme-edge-default)"
+        strokeWidth={0.52}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke"
+        opacity={0.56}
+      />
+    </g>
+  );
 }
 
 function RegionThemeGraph({
@@ -254,9 +403,11 @@ function RegionThemeGraph({
   regionBounds,
   nodePoints,
   viewport,
+  shakingThemeId = null,
   interactionDisabled = false,
   onThemeSelect,
 }: RegionThemeGraphProps) {
+  const idPrefix = "vocabulary-theme";
   const themePointLayoutKey = useMemo(
     () => getThemePointLayoutCacheKey(region, regionBounds, nodePoints),
     [nodePoints, region, regionBounds],
@@ -273,13 +424,14 @@ function RegionThemeGraph({
     return nextLayout;
   }, [nodePoints, region.themes.length, regionBounds, themePointLayoutKey]);
   const edgeElements = useMemo(() => {
-    const availableThemeIndexes = region.themes
-      .map((theme, index) => ({ theme, index }))
-      .filter(({ theme }) => theme.isAvailable && theme.status !== "locked")
-      .map(({ index }) => index);
+    const themeIndexes = region.themes.map((_, index) => index);
 
-    return availableThemeIndexes.slice(0, -1).map((themeIndex, index) => {
-      const nextThemeIndex = availableThemeIndexes[index + 1];
+    if (themeIndexes.length <= 1) {
+      return [];
+    }
+
+    return themeIndexes.slice(0, -1).map((themeIndex, index) => {
+      const nextThemeIndex = themeIndexes[index + 1];
       const point = themePoints[themeIndex];
       const nextPoint = themePoints[nextThemeIndex];
 
@@ -297,33 +449,10 @@ function RegionThemeGraph({
       );
       const curve = buildRegionGraphCurve(connection.from, connection.to);
 
-      return (
-        <g
-          key={`region-theme-edge-${region.themes[themeIndex]?.id ?? themeIndex}`}
-          className="vocabulary-graph-edge-enter"
-          style={{ animationDelay: `${Math.min(index * 24, 120)}ms` }}
-        >
-          <path
-            d={curve}
-            fill="none"
-            stroke="var(--vocabulary-edge-shadow)"
-            strokeWidth={1.46}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-            opacity={0.74}
-          />
-          <path
-            d={curve}
-            fill="none"
-            stroke="var(--vocabulary-edge-default)"
-            strokeWidth={0.82}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            vectorEffect="non-scaling-stroke"
-            opacity={0.84}
-          />
-        </g>
+      return renderThemeEdge(
+        curve,
+        `region-theme-edge-${region.themes[themeIndex]?.id ?? themeIndex}`,
+        index,
       );
     });
   }, [
@@ -331,7 +460,7 @@ function RegionThemeGraph({
     themePoints,
     viewport,
   ]);
-  if (!viewport) {
+  if (!viewport || themePoints.length < region.themes.length) {
     return null;
   }
 
@@ -339,18 +468,41 @@ function RegionThemeGraph({
 
   return (
     <svg
-      className="region-graph-layer pointer-events-none absolute inset-0 z-20 h-full w-full overflow-hidden [--vocabulary-edge-shadow:#2E26211F] [--vocabulary-edge-default:#6D625BA8] [--vocabulary-node-stroke:#2D251F30] [--vocabulary-label-fill:var(--surface-elevated)] [--vocabulary-label-border:var(--border-primary)] [--vocabulary-label-inner-border:rgba(255,255,255,0.55)] [--vocabulary-label-highlight:rgba(255,255,255,0.55)] [--vocabulary-label-text:var(--content-primary)] dark:[--vocabulary-edge-shadow:#00000036] dark:[--vocabulary-edge-default:#ECE4DD66] dark:[--vocabulary-node-stroke:#FFFFFF52] dark:[--vocabulary-label-fill:var(--surface-secondary)] dark:[--vocabulary-label-border:rgba(255,255,255,0.12)] dark:[--vocabulary-label-inner-border:rgba(255,255,255,0.04)] dark:[--vocabulary-label-highlight:rgba(255,255,255,0.04)] dark:[--vocabulary-label-text:#F5F0EB]"
+      className="region-graph-layer vocabulary-graph-layer pointer-events-none absolute inset-0 z-20 h-full w-full overflow-hidden"
       viewBox={viewBox}
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
     >
-      <VocabularyGraphVisualDefs idPrefix="vocabulary-theme" />
+      <VocabularyGraphVisualDefs idPrefix={idPrefix} />
 
       {edgeElements}
 
       {region.themes.map((theme, index) => {
         const position = toSvgPoint(themePoints[index], viewport);
+        const isLockedTheme = theme.status === "locked" || !theme.isAvailable;
+        const isInteractive = !isLockedTheme && !interactionDisabled;
+        const variant = getThemeVariant(index);
+        const palette = getThemePalette(theme, variant, idPrefix);
+        const labelLines = splitThemeLabel(theme);
+        const labelFontSize = labelLines.length >= 3 ? LABEL_FONT_SIZE * 0.92 : LABEL_FONT_SIZE;
+        const labelWidth = clamp(
+          labelLines.reduce((maxLength, line) => Math.max(maxLength, Array.from(line).length), 0) * labelFontSize * 0.69 + 1.18,
+          LABEL_WIDTH,
+          LABEL_WIDTH * 2.12,
+        );
+        const symbolLayout = getCircleTextLayout(
+          theme.kanji || theme.kana || theme.label,
+          THEME_NODE_RADIUS,
+          1.26,
+        );
+        const labelHeight = Math.max(LABEL_HEIGHT, labelLines.length * labelFontSize * 1.22 + 0.7);
+        const activateTheme = () => {
+          if (!isInteractive) {
+            return;
+          }
 
+          onThemeSelect(theme);
+        };
         return (
           <g
             key={theme.id}
@@ -360,54 +512,68 @@ function RegionThemeGraph({
                 ? "pointer-events-auto cursor-pointer"
                 : interactionDisabled && theme.isAvailable
                   ? "cursor-progress"
-                  : "cursor-default"
+                  : "pointer-events-auto cursor-not-allowed"
             }
             transform={`translate(${position.x} ${position.y})`}
-            onClick={() => {
-              if (!theme.isAvailable || interactionDisabled) {
-                return;
-              }
-
-              onThemeSelect(theme);
-            }}
+            onClick={activateTheme}
             aria-label={theme.label}
           >
             <g
-              className="vocabulary-graph-node-enter"
+              className={`vocabulary-graph-node-enter ${theme.status === "completed" ? "vocabulary-node-completed-enter" : ""} ${shakingThemeId === theme.id ? "kanji-node-shaking" : ""}`}
               style={{ animationDelay: `${Math.min(index * 28, 140)}ms` }}
             >
               <VocabularyGraphLabel
-                idPrefix="vocabulary-theme"
-                text={formatThemeLabel(theme)}
+                idPrefix={idPrefix}
+                text={theme.label}
+                lines={labelLines}
                 y={LABEL_OFFSET}
-                width={LABEL_WIDTH}
-                height={LABEL_HEIGHT}
+                width={labelWidth}
+                height={labelHeight}
                 radius={LABEL_RADIUS}
-                fontSize={LABEL_FONT_SIZE}
+                fontSize={labelFontSize}
               />
 
               <g>
                 <circle
+                  r={THEME_NODE_RADIUS + 0.28}
+                  fill={palette.shadow}
+                  opacity={isLockedTheme ? 0.24 : 0.42}
+                />
+                <circle
                   r={THEME_NODE_RADIUS}
-                  fill={getThemeFill(theme)}
-                  stroke="var(--vocabulary-node-stroke)"
+                  fill={palette.fill}
+                  stroke={palette.stroke}
                   strokeWidth={0.8}
                   vectorEffect="non-scaling-stroke"
                 />
+                <circle
+                  r={THEME_NODE_RADIUS - 0.14}
+                  fill="none"
+                  stroke="var(--vocabulary-node-inner-stroke)"
+                  strokeWidth={0.14}
+                  opacity={isLockedTheme ? 0.4 : 0.72}
+                  vectorEffect="non-scaling-stroke"
+                />
                 <text
-                  y={0.72}
                   textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill="white"
-                  fontSize={2.3}
+                  dominantBaseline="central"
+                  fill={palette.text}
+                  fontSize={symbolLayout.fontSize}
                   fontWeight={900}
+                  letterSpacing={0}
                   style={{ pointerEvents: "none" }}
                 >
-                  {(theme.kanji || theme.kana || theme.label.slice(0, 1)).slice(
-                    0,
-                    2,
-                  )}
+                  {symbolLayout.lines.map((line, lineIndex) => (
+                    <tspan
+                      key={`${theme.id}-${line}-${lineIndex}`}
+                      x={0}
+                      y={symbolLayout.firstLineY + lineIndex * symbolLayout.lineHeight}
+                    >
+                      {line}
+                    </tspan>
+                  ))}
                 </text>
+                {isLockedTheme ? renderLockedNodeBadge(THEME_NODE_RADIUS) : null}
               </g>
             </g>
           </g>

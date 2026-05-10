@@ -1,9 +1,13 @@
-import type { NodeStatus, NodeType } from "@/features/graph/lib/graphTypes";
+import type {
+  GraphNodeVisualVariant,
+  NodeStatus,
+  NodeType,
+} from "@/features/graph/lib/graphTypes";
 import type {
   VocabularyGraphProgressItem,
   VocabularyGraphSummary,
   VocabularyNodeMastery,
-  VocabularyRecommendation,
+  VocabularySubthemeContent,
   VocabularyWordLesson,
 } from "../types";
 import { createCustomGraph } from "./graphBuilder";
@@ -11,6 +15,12 @@ import {
   buildProgressiveConnections,
   compareProgressiveNodes,
 } from "./progressiveGraph";
+import {
+  findWordProgress,
+  getWordQuizProgressPercent,
+  isWordFullyCompleted,
+  mergeWordProgress,
+} from "./vocabularyQuizProgress";
 
 export type VocabularyNodeDefinition = {
   id: string;
@@ -18,6 +28,8 @@ export type VocabularyNodeDefinition = {
   label: string;
   description?: string;
   status: NodeStatus;
+  imageUrl?: string | null;
+  visualVariant?: GraphNodeVisualVariant;
   order?: number | null;
   selectedAt?: string | null;
   createdAt?: string | null;
@@ -25,11 +37,16 @@ export type VocabularyNodeDefinition = {
   entityKind?: "theme" | "subtheme" | "word";
   entityId?: string;
   graphId?: string;
-  recommendationId?: string;
-  similarity?: number;
-  isRecommendation?: boolean;
   symbol?: string;
   progress?: number;
+  isAiRecommended?: boolean;
+  recommendationRank?: number;
+  recommendationSimilarity?: number;
+};
+
+export type VocabularySubthemeRecommendationMeta = {
+  rank: number;
+  similarity: number;
 };
 
 const answerTypeOrder: NodeType[] = [
@@ -38,6 +55,12 @@ const answerTypeOrder: NodeType[] = [
   "reading",
   "writing",
 ];
+
+const visualVariantOrder: GraphNodeVisualVariant[] = ["red", "black", "white"];
+
+function getVisualVariant(index: number): GraphNodeVisualVariant {
+  return visualVariantOrder[index % visualVariantOrder.length] ?? "red";
+}
 
 export function getVocabularyNodeMastery(
   item: VocabularyGraphProgressItem,
@@ -107,17 +130,9 @@ function getSubthemeProgressKey(item: VocabularyGraphProgressItem) {
 }
 
 function getSubthemeContentKey(
-  item: Pick<VocabularyGraphProgressItem | VocabularyRecommendation, "meaning" | "kanji" | "kana"> & {
-    description?: string;
-  },
+  item: Pick<VocabularyGraphProgressItem | VocabularySubthemeContent, "meaning" | "kanji" | "kana">,
 ) {
-  return [item.meaning || item.description, item.kanji, item.kana]
-    .map(normalizeText)
-    .join("|");
-}
-
-function getRecommendationKey(recommendation: VocabularyRecommendation) {
-  return recommendation.entityId || [recommendation.meaning, recommendation.kanji, recommendation.kana, recommendation.description]
+  return [item.meaning, item.kanji, item.kana]
     .map(normalizeText)
     .join("|");
 }
@@ -169,25 +184,6 @@ function getWordOrder(word: VocabularyWordLesson, fallbackIndex: number) {
   };
 }
 
-function getUnlockedWordCount(
-  item: VocabularyGraphProgressItem,
-  words: VocabularyWordLesson[],
-) {
-  if (words.length === 0) {
-    return 0;
-  }
-
-  if (item.unlockedWordIds?.length) {
-    return Math.min(words.length, item.unlockedWordIds.length);
-  }
-
-  const mastery = getVocabularyNodeMastery(item);
-  const byAverage = Math.ceil((words.length * mastery.average) / 100);
-  const byCompletedTypes = mastery.completedTypes + 1;
-
-  return Math.min(words.length, Math.max(1, byAverage, byCompletedTypes));
-}
-
 function getProgressiveWords(
   item: VocabularyGraphProgressItem,
   words: VocabularyWordLesson[],
@@ -203,10 +199,11 @@ function getProgressiveWords(
       return true;
     })
     .map((word, index) => {
+      const mergedWord = mergeWordProgress(word, findWordProgress(item, word.wordId));
       const progress = wordProgressById.get(word.wordId);
 
       return {
-        ...word,
+        ...mergedWord,
         order: progress?.order ?? getWordOrder(word, index).order,
         unlockedAt: progress?.unlockedAt ?? getWordOrder(word, index).unlockedAt,
         completedAt: progress?.completedAt ?? getWordOrder(word, index).completedAt,
@@ -230,33 +227,36 @@ function getProgressiveWords(
       ),
     );
 
-  if (item.unlockedWordIds?.length) {
-    const unlockedIds = new Set(item.unlockedWordIds);
-    return uniqueWords.filter((word) => unlockedIds.has(word.wordId));
+  const firstIncompleteIndex = uniqueWords.findIndex(
+    (word) => !isWordFullyCompleted(word),
+  );
+
+  if (firstIncompleteIndex === -1) {
+    return uniqueWords;
   }
 
-  return uniqueWords.slice(0, getUnlockedWordCount(item, uniqueWords));
+  return uniqueWords.slice(0, firstIncompleteIndex + 1);
 }
 
-function compareRecommendations(
-  a: VocabularyRecommendation,
-  b: VocabularyRecommendation,
-) {
-  if (a.similarity !== b.similarity) {
-    return b.similarity - a.similarity;
+function getWordNodeStatus(words: VocabularyWordLesson[], index: number): NodeStatus {
+  const currentWord = words[index];
+
+  if (isWordFullyCompleted(currentWord)) {
+    return "completed";
   }
 
-  return `${a.meaning || a.description}|${a.kanji || ""}|${a.kana || ""}`.localeCompare(
-    `${b.meaning || b.description}|${b.kanji || ""}|${b.kana || ""}`,
-    "es",
-    { sensitivity: "base" },
-  );
+  if (index === 0 || isWordFullyCompleted(words[index - 1])) {
+    return "available";
+  }
+
+  return "locked";
 }
 
 export function buildVocabularyThemeGraphElements(
   graph: VocabularyGraphSummary,
   items: VocabularyGraphProgressItem[],
-  subthemeRecommendations: VocabularyRecommendation[],
+  themeSubthemes: VocabularySubthemeContent[],
+  recommendedSubthemes: Partial<Record<string, VocabularySubthemeRecommendationMeta>> = {},
 ) {
   const sortedItems = [...items].sort(compareProgressItems);
   const selectedSubthemeKeys = new Set<string>();
@@ -267,7 +267,7 @@ export function buildVocabularyThemeGraphElements(
   });
   const definitions: VocabularyNodeDefinition[] = [];
 
-  sortedItems.forEach((item) => {
+  sortedItems.forEach((item, index) => {
     const mastery = getVocabularyNodeMastery(item);
 
     definitions.push({
@@ -285,33 +285,41 @@ export function buildVocabularyThemeGraphElements(
       graphId: graph.graphId,
       symbol: item.kanji || item.kana,
       progress: mastery.average,
+      visualVariant: getVisualVariant(index),
+      isAiRecommended: Boolean(item.subthemeId && recommendedSubthemes[item.subthemeId]),
+      recommendationRank: item.subthemeId
+        ? recommendedSubthemes[item.subthemeId]?.rank
+        : undefined,
+      recommendationSimilarity: item.subthemeId
+        ? recommendedSubthemes[item.subthemeId]?.similarity
+        : undefined,
     });
   });
 
-  [...subthemeRecommendations]
-    .sort(compareRecommendations)
+  themeSubthemes
     .filter(
-      (recommendation) =>
-        !selectedSubthemeKeys.has(getRecommendationKey(recommendation)) &&
-        !selectedSubthemeKeys.has(getSubthemeContentKey(recommendation)),
+      (subtheme) =>
+        !selectedSubthemeKeys.has(getSubthemeContentKey(subtheme)) &&
+        !selectedSubthemeKeys.has(subtheme.id),
     )
-    .slice(0, 10)
-    .forEach((recommendation, index) => {
+    .forEach((subtheme, index) => {
+      const recommendation = recommendedSubthemes[subtheme.id];
+
       definitions.push({
-        id: `subtheme-rec-${recommendation.entityId}`,
+        id: `subtheme-${subtheme.id}`,
         type: pickNodeType(sortedItems.length + index),
-        label: recommendation.meaning || recommendation.description,
-        description: recommendation.meaning || recommendation.description,
+        label: subtheme.meaning,
+        description: subtheme.meaning,
         status: "available",
         order: sortedItems.length + index,
         entityKind: "subtheme",
-        entityId: recommendation.entityId,
+        entityId: subtheme.id,
         graphId: graph.graphId,
-        recommendationId: recommendation.id,
-        similarity: recommendation.similarity,
-        isRecommendation: true,
-        symbol:
-          recommendation.kanji || recommendation.kana || recommendation.description.slice(0, 1),
+        symbol: subtheme.kanji || subtheme.kana || subtheme.meaning.slice(0, 1),
+        visualVariant: getVisualVariant(sortedItems.length + index),
+        isAiRecommended: Boolean(recommendation),
+        recommendationRank: recommendation?.rank,
+        recommendationSimilarity: recommendation?.similarity,
       });
     });
 
@@ -338,19 +346,23 @@ export function buildVocabularySubthemeGraphElements(
 
   visibleWords.forEach((word, index) => {
     const wordMetadata = getWordOrder(word, index);
+    const progressPercent = getWordQuizProgressPercent(word);
 
     definitions.push({
       id: `word-${word.wordId}`,
       type: pickNodeType(index),
       label: getWordLabel(word),
       description: getWordLabel(word),
-      status: isSubthemeCompleted || index < visibleWords.length - 1 ? "completed" : "available",
+      status: isSubthemeCompleted ? "completed" : getWordNodeStatus(visibleWords, index),
+      imageUrl: word.icon ?? null,
       order: wordMetadata.order,
       unlockedAt: wordMetadata.unlockedAt,
       entityKind: "word",
       entityId: word.wordId,
       graphId: item.graphId,
       symbol: getWordSymbol(word),
+      progress: isSubthemeCompleted ? 100 : progressPercent,
+      visualVariant: getVisualVariant(index),
     });
   });
 

@@ -23,12 +23,18 @@ export async function GET(
 
   const { id } = await params;
   const type = req.nextUrl.searchParams.get("type") ?? "meaning";
+  const wordId = req.nextUrl.searchParams.get("wordId");
 
   if (!allowedQuizTypes.has(type)) {
     return NextResponse.json({ error: "Invalid quiz type" }, { status: 400 });
   }
 
-  const upstreamPath = `/vocabulary/quiz/${id}?type=${encodeURIComponent(type)}`;
+  const upstreamQuery = new URLSearchParams({ type });
+  if (wordId) {
+    upstreamQuery.set("wordId", wordId);
+  }
+
+  const upstreamPath = `/vocabulary/quiz/${id}?${upstreamQuery.toString()}`;
   const upstreamUrl = buildStudyUrl(upstreamPath);
 
   try {

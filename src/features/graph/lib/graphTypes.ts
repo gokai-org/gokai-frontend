@@ -8,24 +8,28 @@ export type NodeType =
   | "speaking";
 
 export type NodeStatus = "completed" | "available" | "locked";
+export type GraphNodeVisualVariant = "red" | "black" | "white";
+
 export interface GraphNodeData {
   label: string;
   type: NodeType;
   status: NodeStatus;
   icon: React.ReactNode;
+  imageUrl?: string | null;
+  visualVariant?: GraphNodeVisualVariant;
 
   entityKind?: "kanji" | "theme" | "subtheme" | "word" | "grammar";
   entityId?: string;
   graphId?: string;
-  recommendationId?: string;
-  similarity?: number;
-  isRecommendation?: boolean;
   symbol?: string;
 
   description?: string;
   displayLabel?: string;
   progress?: number;
   userId?: string;
+  isAiRecommended?: boolean;
+  recommendationRank?: number;
+  recommendationSimilarity?: number;
 }
 
 export type GraphNode = Node<GraphNodeData>;

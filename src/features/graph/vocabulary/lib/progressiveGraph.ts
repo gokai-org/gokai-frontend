@@ -3,7 +3,6 @@ import type { NodeStatus } from "@/features/graph/lib/graphTypes";
 export type ProgressiveNodeLike = {
   id: string;
   status: NodeStatus;
-  isRecommendation?: boolean;
   order?: number | null;
   selectedAt?: string | null;
   createdAt?: string | null;
@@ -58,7 +57,7 @@ export function buildProgressiveConnections<T extends ProgressiveNodeLike>(
   nodes: T[],
 ) {
   const routeNodes = nodes
-    .filter((node) => !node.isRecommendation && node.status !== "locked")
+    .filter((node) => node.status !== "locked")
     .sort(compareProgressiveNodes);
 
   return routeNodes.slice(0, -1).map<ProgressiveConnection>((node, index) => {

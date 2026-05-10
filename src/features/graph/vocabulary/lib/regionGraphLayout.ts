@@ -30,7 +30,6 @@ const DEFAULT_NODE_RADIUS = 2.8;
 const EDGE_NODE_GAP = 0.08;
 const BOARD_HOME_NODE_SIZE = 112;
 const BOARD_REGULAR_NODE_SIZE = 80;
-const layoutPointCache = new Map<string, Map<string, VocabularyRegionNodePoint>>();
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -195,41 +194,6 @@ function getUniquePoints(points: VocabularyRegionNodePoint[]) {
   );
 }
 
-function getStableHash(value: string) {
-  let hash = 2166136261;
-
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index);
-    hash = Math.imul(hash, 16777619);
-  }
-
-  return hash >>> 0;
-}
-
-function getBoundsKey(bounds: VocabularyRegionBounds, viewport: VocabularySvgViewport) {
-  return [
-    bounds.x.toFixed(2),
-    bounds.y.toFixed(2),
-    bounds.width.toFixed(2),
-    bounds.height.toFixed(2),
-    viewport.x.toFixed(2),
-    viewport.y.toFixed(2),
-    viewport.width.toFixed(2),
-    viewport.height.toFixed(2),
-  ].join(":");
-}
-
-function getLayoutScopeKey(
-  nodes: GraphNode[],
-  bounds: VocabularyRegionBounds,
-  viewport: VocabularySvgViewport,
-) {
-  const graphKey = nodes.find((node) => node.data.graphId)?.data.graphId ?? "no-graph";
-  const kindKey = nodes.find((node) => node.data.entityKind)?.data.entityKind ?? "node";
-
-  return `${graphKey}:${kindKey}:${getBoundsKey(bounds, viewport)}`;
-}
-
 function isPointInsideBounds(
   point: VocabularyRegionNodePoint,
   bounds: VocabularyRegionBounds,
@@ -239,6 +203,15 @@ function isPointInsideBounds(
     point.x <= bounds.x + bounds.width &&
     point.y >= bounds.y &&
     point.y <= bounds.y + bounds.height
+  );
+}
+
+function getSafeNodePoints(
+  bounds: VocabularyRegionBounds,
+  nodePoints: VocabularyRegionNodePoint[] | null,
+) {
+  return getUniquePoints([...(nodePoints ?? [])]).filter((point) =>
+    isPointInsideBounds(point, bounds),
   );
 }
 
@@ -272,9 +245,11 @@ function buildCandidatePointPool(
   nodePoints: VocabularyRegionNodePoint[] | null,
   total: number,
 ) {
-  const providedPoints = getUniquePoints([...(nodePoints ?? [])]).filter((point) =>
-    isPointInsideBounds(point, bounds),
-  );
+  const providedPoints = getSafeNodePoints(bounds, nodePoints);
+
+  if (providedPoints.length >= total) {
+    return providedPoints;
+  }
 
   const fallbackPoints = Array.from({ length: total }).map((_, index) =>
     getFallbackPoint(bounds, index, total),
@@ -285,6 +260,97 @@ function buildCandidatePointPool(
     ...buildGoldenFallbackPoints(bounds, total),
     ...fallbackPoints,
   ]);
+}
+
+function buildRouteAnchors(
+  bounds: VocabularyRegionBounds,
+  total: number,
+) {
+  if (total <= 0) {
+    return [];
+  }
+
+  if (total === 1) {
+    return [{ x: bounds.centerX, y: bounds.centerY }];
+  }
+
+  const aspectRatio = bounds.width / Math.max(bounds.height, 1);
+  const radiusX = bounds.width * (aspectRatio > 1.24 ? 0.43 : aspectRatio < 0.78 ? 0.28 : 0.37);
+  const radiusY = bounds.height * (aspectRatio < 0.78 ? 0.43 : aspectRatio > 1.24 ? 0.28 : 0.37);
+  const startAngle = -Math.PI / 2;
+
+  return Array.from({ length: total }).map((_, index) => {
+    const angle = startAngle + (Math.PI * 2 * index) / total;
+
+    return {
+      x: bounds.centerX + Math.cos(angle) * radiusX,
+      y: bounds.centerY + Math.sin(angle) * radiusY,
+    };
+  });
+}
+
+function selectSpreadRoutePoints(
+  candidates: VocabularyRegionNodePoint[],
+  bounds: VocabularyRegionBounds,
+  total: number,
+  minimumSpacing: number,
+) {
+  if (total <= 0) {
+    return [];
+  }
+
+  if (candidates.length <= total) {
+    return candidates.slice(0, total);
+  }
+
+  const anchors = buildRouteAnchors(bounds, total);
+  const center = { x: bounds.centerX, y: bounds.centerY };
+  const regionScale = Math.max(bounds.width, bounds.height);
+  const selected: VocabularyRegionNodePoint[] = [];
+  const remaining = [...candidates];
+
+  while (selected.length < total && remaining.length > 0) {
+    const anchor = anchors[selected.length] ?? center;
+    const eligibleCandidates = selected.length === 0
+      ? remaining
+      : remaining.filter(
+          (candidate) => getNearestDistance(candidate, selected) >= minimumSpacing,
+        );
+    const scoringCandidates = eligibleCandidates.length > 0
+      ? eligibleCandidates
+      : remaining;
+    let bestIndex = 0;
+    let bestScore = Number.NEGATIVE_INFINITY;
+
+    scoringCandidates.forEach((candidate, index) => {
+      const nearestDistance = getNearestDistance(candidate, selected);
+      const anchorDistance = distance(candidate, anchor);
+      const centerDistance = distance(candidate, center);
+      const spacingScore = Number.isFinite(nearestDistance)
+        ? nearestDistance * 2.45
+        : regionScale * 0.56;
+      const outerRouteBonus = Math.min(centerDistance, regionScale * 0.52) * 0.3;
+      const score =
+        spacingScore +
+        outerRouteBonus -
+        anchorDistance * 0.5 -
+        Math.max(0, centerDistance - regionScale * 0.62) * 0.28;
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    });
+
+    const selectedCandidate = scoringCandidates[bestIndex];
+    const remainingIndex = remaining.findIndex(
+      (candidate) => candidate === selectedCandidate,
+    );
+
+    selected.push(remaining.splice(Math.max(remainingIndex, 0), 1)[0]);
+  }
+
+  return selected;
 }
 
 function getProgressiveNodeOrder(nodes: GraphNode[], edges: GraphEdge[]) {
@@ -318,35 +384,6 @@ function getProgressiveNodeOrder(nodes: GraphNode[], edges: GraphEdge[]) {
   ];
 }
 
-function getRouteAnchor(
-  previousPoint: VocabularyRegionNodePoint | null,
-  preferredPoint: VocabularyRegionNodePoint,
-  index: number,
-  bounds: VocabularyRegionBounds,
-  desiredSpacing: number,
-) {
-  if (!previousPoint) {
-    return preferredPoint;
-  }
-
-  const angle = -Math.PI / 2 + index * (Math.PI * (3 - Math.sqrt(5)));
-  const routeDistance = desiredSpacing * (1.05 + (index % 3) * 0.12);
-  const padding = getSafeBoundsPadding(bounds, index + 1);
-
-  return {
-    x: clamp(
-      previousPoint.x + Math.cos(angle) * routeDistance,
-      bounds.x + padding.side,
-      bounds.x + bounds.width - padding.side,
-    ),
-    y: clamp(
-      previousPoint.y + Math.sin(angle) * routeDistance,
-      bounds.y + padding.top,
-      bounds.y + bounds.height - padding.bottom,
-    ),
-  };
-}
-
 function getNearestDistance(
   point: VocabularyRegionNodePoint,
   points: VocabularyRegionNodePoint[],
@@ -358,69 +395,125 @@ function getNearestDistance(
   return Math.min(...points.map((candidate) => distance(point, candidate)));
 }
 
-function isUsableCachedPoint(
+function getNearestDistanceExcept(
   point: VocabularyRegionNodePoint,
-  bounds: VocabularyRegionBounds,
-  assignedPoints: VocabularyRegionNodePoint[],
-  desiredSpacing: number,
+  points: VocabularyRegionNodePoint[],
+  excludedIndex: number,
 ) {
-  return (
-    isPointInsideBounds(point, bounds) &&
-    getNearestDistance(point, assignedPoints) >= desiredSpacing * 0.82
-  );
+  const otherPoints = points.filter((_, index) => index !== excludedIndex);
+
+  return getNearestDistance(point, otherPoints);
 }
 
-function chooseCandidatePoint({
-  candidates,
-  assignedPoints,
-  bounds,
-  node,
-  routeAnchor,
-  preferredPoint,
-  previousPoint,
-  desiredSpacing,
-}: {
-  candidates: VocabularyRegionNodePoint[];
-  assignedPoints: VocabularyRegionNodePoint[];
-  bounds: VocabularyRegionBounds;
-  node: GraphNode;
-  routeAnchor: VocabularyRegionNodePoint;
-  preferredPoint: VocabularyRegionNodePoint;
-  previousPoint: VocabularyRegionNodePoint | null;
-  desiredSpacing: number;
-}) {
-  let bestIndex = 0;
-  let bestScore = Number.POSITIVE_INFINITY;
-  const nodeSeed = getStableHash(node.id);
+function isSamePoint(
+  a: VocabularyRegionNodePoint,
+  b: VocabularyRegionNodePoint,
+) {
+  return distance(a, b) < 0.001;
+}
 
-  candidates.forEach((candidate, index) => {
-    const nearestDistance = getNearestDistance(candidate, assignedPoints);
-    const routeDistance = distance(candidate, routeAnchor);
-    const preferredDistance = distance(candidate, preferredPoint);
-    const previousDistance = previousPoint ? distance(candidate, previousPoint) : desiredSpacing;
-    const centerDistance = distance(candidate, {
-      x: bounds.centerX,
-      y: bounds.centerY,
+type ClosestPointPair = {
+  leftIndex: number;
+  rightIndex: number;
+  distance: number;
+};
+
+type BestReplacement = {
+  pointIndex: number;
+  point: VocabularyRegionNodePoint;
+  score: number;
+};
+
+function getClosestPointPair(
+  points: VocabularyRegionNodePoint[],
+): ClosestPointPair | null {
+  let closest: ClosestPointPair | null = null;
+
+  points.forEach((point, leftIndex) => {
+    points.slice(leftIndex + 1).forEach((candidate, offsetIndex) => {
+      const pairDistance = distance(point, candidate);
+
+      if (!closest || pairDistance < closest.distance) {
+        closest = {
+          leftIndex,
+          rightIndex: leftIndex + offsetIndex + 1,
+          distance: pairDistance,
+        };
+      }
     });
-    const spacingPenalty = Math.max(0, desiredSpacing - nearestDistance) * 5.4;
-    const previousPenalty = Math.max(0, desiredSpacing * 0.74 - previousDistance) * 2.6;
-    const edgeBonus = Math.min(centerDistance, desiredSpacing * 1.4) * 0.1;
-    const deterministicJitter = ((nodeSeed + index * 131) % 997) / 9970;
-    const score =
-      routeDistance * 0.68 +
-      preferredDistance * 0.2 +
-      spacingPenalty +
-      previousPenalty -
-      edgeBonus +
-      deterministicJitter;
-
-    if (score < bestScore) {
-      bestScore = score;
-      bestIndex = index;
-    }
   });
 
-  return candidates.splice(bestIndex, 1)[0];
+  return closest;
+}
+
+function refineSpreadRoutePoints(
+  selected: VocabularyRegionNodePoint[],
+  candidates: VocabularyRegionNodePoint[],
+  anchors: VocabularyRegionNodePoint[],
+  bounds: VocabularyRegionBounds,
+  minimumSpacing: number,
+) {
+  const refined = [...selected];
+  const center = { x: bounds.centerX, y: bounds.centerY };
+  const regionScale = Math.max(bounds.width, bounds.height);
+
+  for (let iteration = 0; iteration < refined.length * 4; iteration += 1) {
+    const closestPair = getClosestPointPair(refined);
+
+    if (!closestPair || closestPair.distance >= minimumSpacing) {
+      break;
+    }
+
+    let bestReplacement: BestReplacement | null = null;
+
+    for (const pointIndex of [closestPair.leftIndex, closestPair.rightIndex]) {
+      const currentNearestDistance = getNearestDistanceExcept(
+        refined[pointIndex],
+        refined,
+        pointIndex,
+      );
+
+      for (const candidate of candidates) {
+        const alreadySelected = refined.some(
+          (point, index) => index !== pointIndex && isSamePoint(point, candidate),
+        );
+
+        if (alreadySelected) {
+          continue;
+        }
+
+        const nearestDistance = getNearestDistanceExcept(
+          candidate,
+          refined,
+          pointIndex,
+        );
+
+        if (nearestDistance <= currentNearestDistance + 0.08) {
+          continue;
+        }
+
+        const anchor = anchors[pointIndex] ?? center;
+        const anchorDistance = distance(candidate, anchor);
+        const centerDistance = distance(candidate, center);
+        const score =
+          nearestDistance * 3.4 +
+          Math.min(centerDistance, regionScale * 0.54) * 0.22 -
+          anchorDistance * 0.34;
+
+        if (!bestReplacement || score > bestReplacement.score) {
+          bestReplacement = { pointIndex, point: candidate, score };
+        }
+      }
+    }
+
+    if (!bestReplacement) {
+      break;
+    }
+
+    refined[bestReplacement.pointIndex] = bestReplacement.point;
+  }
+
+  return refined;
 }
 
 function getOrderedPoints(
@@ -428,70 +521,35 @@ function getOrderedPoints(
   edges: GraphEdge[],
   bounds: VocabularyRegionBounds,
   nodePoints: VocabularyRegionNodePoint[] | null,
-  viewport: VocabularySvgViewport,
 ) {
   const candidatePool = buildCandidatePointPool(bounds, nodePoints, nodes.length);
-  const preferredPoints = nodes.map((node) =>
-    buildPreferredRegionPoint(node, bounds, nodes.length),
-  );
   const orderedPoints: VocabularyRegionNodePoint[] = Array.from({ length: nodes.length });
-  const remainingCandidates = [...candidatePool];
-  const assignedPoints: VocabularyRegionNodePoint[] = [];
-  const desiredSpacing = Math.max(
-    Math.min(bounds.width, bounds.height) * 0.18,
-    nodes.length <= 6 ? 7.4 : 6.2,
-  );
   const assignmentOrder = getProgressiveNodeOrder(nodes, edges);
-  const scopeKey = getLayoutScopeKey(nodes, bounds, viewport);
-  const cachedPoints = layoutPointCache.get(scopeKey) ?? new Map<string, VocabularyRegionNodePoint>();
-  layoutPointCache.set(scopeKey, cachedPoints);
-  let previousRoutePoint: VocabularyRegionNodePoint | null = null;
+  const minimumRouteSpacing = Math.max(
+    Math.min(bounds.width, bounds.height) * (nodes.length >= 8 ? 0.3 : 0.22),
+    nodes.length >= 8 ? 3.25 : 2.45,
+  );
+  const routePoints = selectSpreadRoutePoints(
+    candidatePool,
+    bounds,
+    nodes.length,
+    minimumRouteSpacing,
+  );
+  const refinedRoutePoints = refineSpreadRoutePoints(
+    routePoints,
+    candidatePool,
+    buildRouteAnchors(bounds, nodes.length),
+    bounds,
+    minimumRouteSpacing,
+  );
 
   assignmentOrder.forEach((node, routeIndex) => {
     const index = nodes.findIndex((candidate) => candidate.id === node.id);
-    const target = preferredPoints[index] ?? getFallbackPoint(bounds, index, nodes.length);
-    const cachedPoint = cachedPoints.get(node.id);
+    const target = refinedRoutePoints[routeIndex] ?? buildPreferredRegionPoint(node, bounds, nodes.length);
 
-    if (
-      cachedPoint &&
-      isUsableCachedPoint(cachedPoint, bounds, assignedPoints, desiredSpacing)
-    ) {
-      orderedPoints[index] = cachedPoint;
-      assignedPoints.push(cachedPoint);
-      previousRoutePoint = cachedPoint;
-      return;
-    }
-
-    if (remainingCandidates.length === 0) {
-      orderedPoints[index] = getFallbackPoint(bounds, index, nodes.length);
-      assignedPoints.push(orderedPoints[index]);
-      cachedPoints.set(node.id, orderedPoints[index]);
-      previousRoutePoint = orderedPoints[index];
-      return;
-    }
-
-    const routeAnchor = getRouteAnchor(
-      previousRoutePoint,
-      target,
-      routeIndex,
-      bounds,
-      desiredSpacing,
-    );
-    const nextPoint = chooseCandidatePoint({
-      candidates: remainingCandidates,
-      assignedPoints,
-      bounds,
-      node,
-      routeAnchor,
-      preferredPoint: target,
-      previousPoint: previousRoutePoint,
-      desiredSpacing,
-    });
+    const nextPoint = target;
 
     orderedPoints[index] = nextPoint;
-    assignedPoints.push(nextPoint);
-    cachedPoints.set(node.id, nextPoint);
-    previousRoutePoint = nextPoint;
   });
 
   return orderedPoints.map(
@@ -511,7 +569,13 @@ export function buildRegionGraphLayout(
     return { nodes: [], edges: [] };
   }
 
-  const orderedPoints = getOrderedPoints(nodes, edges, bounds, nodePoints, viewport);
+  const safeNodePoints = getSafeNodePoints(bounds, nodePoints);
+
+  if (safeNodePoints.length < nodes.length) {
+    return { nodes: [], edges: [] };
+  }
+
+  const orderedPoints = getOrderedPoints(nodes, edges, bounds, safeNodePoints);
   const layoutNodes = nodes.map((node, index) => ({
     node,
     radius: resolveNodeRadius(node),

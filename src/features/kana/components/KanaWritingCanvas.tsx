@@ -40,6 +40,7 @@ export function KanaWritingCanvas({
   const isDrawingRef = useRef(false);
   const currentPoints = useRef<{ x: number; y: number }[]>([]);
   const completedStrokes = useRef<DrawnStroke[]>([]);
+  const guideKeyRef = useRef("");
   const rafId = useRef(0);
 
   const vbParts = viewBox.split(/\s+/).map(Number);
@@ -151,9 +152,14 @@ export function KanaWritingCanvas({
   }, [redraw]);
 
   useEffect(() => {
-    completedStrokes.current = [];
+    const guideKey = `${viewBox}|${guideStrokes.join("|")}`;
+    if (guideKeyRef.current !== guideKey) {
+      completedStrokes.current = [];
+      currentPoints.current = [];
+      guideKeyRef.current = guideKey;
+    }
     scheduleRedraw();
-  }, [activeStrokeIndex, scheduleRedraw]);
+  }, [guideStrokes, scheduleRedraw, viewBox]);
 
   useEffect(() => {
     scheduleRedraw();

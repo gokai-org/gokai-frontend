@@ -18,8 +18,14 @@ import type {
   VocabularyRegionLayout,
   VocabularyRegionViewModel,
 } from "../types";
+import GraphHoverCard from "@/features/graph/components/GraphHoverCard";
+import { KazuMascot } from "@/features/mascot";
 import ActiveRegionOverlay from "./japanMap/ActiveRegionOverlay";
+import CartographicLabelLayer, {
+  REGION_JP_LABELS,
+} from "./japanMap/CartographicLabelLayer";
 import InteractiveRegionLayer, {
+  type RegionHoverState,
   type RegionVisualStatus,
 } from "./japanMap/InteractiveRegionLayer";
 import MeasurementLayer, {
@@ -37,6 +43,8 @@ type JapanRegionMapProps = {
   selectedRegionId: VocabularyRegionId | null;
   loadingRegionId?: VocabularyRegionId | null;
   layoutCountsByRegion?: Partial<Record<VocabularyRegionId, number>>;
+  hoverResetToken?: number;
+  interactionDisabled?: boolean;
   onRegionSelect: (regionId: VocabularyRegionId) => void;
   onLayoutChange: (
     layout: Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>,
@@ -49,6 +57,17 @@ type RegionLayoutCacheEntry = {
 };
 
 const REGION_LAYOUT_POINTS_DELAY = 420;
+
+const REGION_KAZU_DESCRIPTIONS: Record<VocabularyRegionId, string> = {
+  hokkaido: "La isla más septentrional de Japón. Famosa por su naturaleza virgen, gastronomía única y los espectaculares festivales de nieve. ¡Un mundo aparte!",
+  tohoku: "El norte de Honshu entre montañas y costas salvajes. Rica en onsen termales, artesanía tradicional y festivales centenarios llenos de color.",
+  kanto: "Hogar de Tokio, la metrópolis más grande del mundo. La región más dinámica de Japón: economía, cultura pop, anime y modernidad en un solo lugar.",
+  chubu: "El corazón geográfico de Japón. Aquí viven el majestuoso Monte Fuji, los Alpes japoneses y ciudades históricas como Nagoya y Kanazawa.",
+  kansai: "El alma cultural y gastronómica de Japón. Kioto, Osaka y Nara condensan siglos de historia, templos sagrados, teatro Noh y cocina incomparable.",
+  chugoku: "El extremo occidental de Honshu. Tierra de Hiroshima, el Mar Interior de Seto y paisajes de serena y conmovedora belleza.",
+  shikoku: "La isla del gran peregrinaje budista: 88 templos que rodean una isla de espíritu ancestral, naturaleza exuberante y hospitalidad legendaria.",
+  kyushu: "La isla más meridional de las principales. Volcanes activos, onsen extraordinarios y puerta histórica de Japón hacia el continente asiático.",
+};
 
 /**
  * Composes the Japan map view as a stack of independent layers:
@@ -66,13 +85,21 @@ function JapanRegionMap({
   selectedRegionId,
   loadingRegionId = null,
   layoutCountsByRegion,
+  hoverResetToken = 0,
+  interactionDisabled = false,
   onRegionSelect,
   onLayoutChange,
 }: JapanRegionMapProps) {
   const [parsedMap, setParsedMap] = useState<ParsedJapanMap | null>(() =>
     getCachedJapanMap(),
   );
+  const [hoveredRegion, setHoveredRegion] = useState<{
+    id: VocabularyRegionId;
+    x: number;
+    y: number;
+  } | null>(null);
 
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const measurementRef = useRef<MeasurementLayerHandle | null>(null);
   const layoutCacheRef = useRef<
     Partial<Record<VocabularyRegionId, RegionLayoutCacheEntry>>
@@ -82,6 +109,18 @@ function JapanRegionMap({
     () => Object.fromEntries(regions.map((region) => [region.id, region])),
     [regions],
   );
+  const hoveredRegionData = hoveredRegion ? regionLookup[hoveredRegion.id] ?? null : null;
+  const hoveredRegionJpLabel = hoveredRegion ? REGION_JP_LABELS[hoveredRegion.id] : null;
+
+  useEffect(() => {
+    setHoveredRegion(null);
+  }, [hoverResetToken]);
+
+  useEffect(() => {
+    if (interactionDisabled) {
+      setHoveredRegion(null);
+    }
+  }, [interactionDisabled]);
 
   const regionStatusByRegion = useMemo(() => {
     const result: Partial<Record<VocabularyRegionId, RegionVisualStatus>> = {};
@@ -133,6 +172,41 @@ function JapanRegionMap({
     },
     [onRegionSelect],
   );
+
+  const handleRegionHoverChange = useCallback((state: RegionHoverState | null) => {
+    if (!state?.regionId) {
+      setHoveredRegion(null);
+      return;
+    }
+
+    const container = containerRef.current;
+    const transformLayer = container?.closest(".map-transform-layer");
+    const rect = container?.getBoundingClientRect();
+
+    if (
+      transformLayer?.classList.contains("is-zooming") ||
+      transformLayer?.classList.contains("is-dragging")
+    ) {
+      setHoveredRegion(null);
+      return;
+    }
+
+    if (!rect) {
+      setHoveredRegion(null);
+      return;
+    }
+
+    const pointerX = state.clientX - rect.left;
+    const pointerY = state.clientY - rect.top;
+    const x = Math.min(Math.max(pointerX, 84), Math.max(rect.width - 84, 84));
+    const y = Math.min(Math.max(pointerY - 14, 52), Math.max(rect.height - 24, 52));
+
+    setHoveredRegion({
+      id: state.regionId,
+      x,
+      y,
+    });
+  }, []);
 
   // Build node-placement layout for the active region only.
   // Deferring until a region is selected means the initial map view
@@ -241,6 +315,7 @@ function JapanRegionMap({
 
   return (
     <div
+      ref={containerRef}
       className="japan-map-stage absolute inset-0"
       style={{ contain: "layout paint style", isolation: "isolate" }}
     >
@@ -264,8 +339,34 @@ function JapanRegionMap({
         parsedMap={parsedMap}
         regionStatusByRegion={regionStatusByRegion}
         activeRegionId={selectedRegionId}
+        disabled={interactionDisabled}
+        onRegionHoverChange={handleRegionHoverChange}
         onRegionSelect={handleRegionSelect}
       />
+      <CartographicLabelLayer
+        parsedMap={parsedMap}
+        activeRegionId={selectedRegionId}
+      />
+      {hoveredRegionData && hoveredRegionJpLabel && hoveredRegion ? (
+        <GraphHoverCard
+          variant="kazu"
+          x={hoveredRegion.x}
+          y={hoveredRegion.y}
+          eyebrow="Guía KAZU"
+          title={hoveredRegionData.label}
+          subtitle={hoveredRegionJpLabel}
+          subtitleLang="ja"
+          caption={REGION_KAZU_DESCRIPTIONS[hoveredRegion.id]}
+          mascot={
+            <KazuMascot
+              state="focus"
+              size={120}
+              focusOnHover={false}
+              ariaLabel={`Kazu explica la región ${hoveredRegionData.label}`}
+            />
+          }
+        />
+      ) : null}
       {/* MeasurementLayer hosts the full SVG for getBBox/isPointInFill.
           Mounting it only when a region is active avoids adding thousands of
           DOM nodes during the map overview and the first-drag path. */}

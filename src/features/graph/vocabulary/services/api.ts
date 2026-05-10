@@ -6,8 +6,8 @@ import type {
   SelectVocabularySubthemeResponse,
   VocabularyGraphProgress,
   VocabularyGraphsResponse,
-  VocabularyQuiz,
   VocabularyRecommendation,
+  VocabularyQuiz,
   VocabularyAnswerType,
   VocabularySubthemeContent,
   VocabularyThemeContent,
@@ -71,27 +71,26 @@ export async function selectVocabularySubtheme(
   return response;
 }
 
-export async function listVocabularySubthemeRecommendations(
-  themeId: string,
-  limit = 12,
-) {
-  return apiFetch<VocabularyRecommendation[]>(
-    `/api/content/recommendations/subthemes?themeId=${encodeURIComponent(themeId)}&limit=${limit}`,
-  );
-}
-
-export async function listVocabularyThemeRecommendations(limit = 24) {
-  return apiFetch<VocabularyRecommendation[]>(
-    `/api/content/recommendations/themes?limit=${limit}`,
-  );
-}
-
 export async function listVocabularyThemes() {
   return apiFetch<VocabularyThemeContent[]>("/api/content/themes");
 }
 
 export async function listVocabularySubthemesByThemeId(themeId: string) {
   return apiFetch<VocabularySubthemeContent[]>(`/api/content/subthemes/${themeId}`);
+}
+
+export async function listVocabularyRecommendedSubthemesByThemeId(
+  themeId: string,
+  limit = 40,
+) {
+  const query = new URLSearchParams({
+    themeId,
+    limit: String(limit),
+  });
+
+  return apiFetch<VocabularyRecommendation[]>(
+    `/api/content/recommendations/subthemes?${query.toString()}`,
+  );
 }
 
 export async function listVocabularyWordsBySubthemeId(subthemeId: string) {
@@ -101,9 +100,15 @@ export async function listVocabularyWordsBySubthemeId(subthemeId: string) {
 export async function getVocabularyQuiz(
   nodeId: string,
   type: VocabularyAnswerType,
+  wordId?: string,
 ) {
+  const query = new URLSearchParams({ type });
+  if (wordId) {
+    query.set("wordId", wordId);
+  }
+
   return apiFetch<VocabularyQuiz>(
-    `/api/study/vocabulary/quiz/${nodeId}?type=${type}`,
+    `/api/study/vocabulary/quiz/${nodeId}?${query.toString()}`,
   );
 }
 

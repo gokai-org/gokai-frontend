@@ -9,18 +9,28 @@ import RegionVectorGraph from "@/features/graph/vocabulary/components/RegionVect
 import VocabularyNodePanel from "@/features/graph/vocabulary/components/VocabularyNodePanel";
 import { useDeferredGraphMount } from "@/features/graph/vocabulary/hooks/useDeferredGraphMount";
 import { useVocabularyGraph } from "@/features/graph/vocabulary/hooks/useVocabularyGraph";
+import { buildRegionGraphLayout } from "@/features/graph/vocabulary/lib/regionGraphLayout";
 import {
   buildVocabularySubthemeGraphElements,
   buildVocabularyThemeGraphElements,
 } from "@/features/graph/vocabulary/lib/vocabularyGraphBuilder";
 import {
+  findWordProgress,
+  mergeWordProgress,
+} from "@/features/graph/vocabulary/lib/vocabularyQuizProgress";
+import {
   buildVocabularyRegionViewModels,
 } from "@/features/graph/vocabulary/lib/vocabularyRegions";
+import {
+  LESSON_DRAWER_DESKTOP_WIDTH,
+  LESSON_DRAWER_MAX_VIEWPORT_RATIO,
+} from "@/features/lessons/lib/drawerLayout";
 import {
   getVocabularyQuiz,
   listVocabularyWordsBySubthemeId,
 } from "@/features/graph/vocabulary/services/api";
 import { useSidebar } from "@/shared/components/SidebarContext";
+import { useShakeFeedback } from "@/shared/hooks/useShakeFeedback";
 import type {
   VocabularyRegionId,
   VocabularyRegionLayout,
@@ -49,9 +59,9 @@ type SvgSceneFrame = {
 };
 
 const MIN_SCENE_SCALE = 1;
-const MAX_SCENE_SCALE = 10.0;
-const WHEEL_ZOOM_IN_FACTOR = 1.1;
-const WHEEL_ZOOM_OUT_FACTOR = 0.91;
+const MAX_SCENE_SCALE = 16.0;
+const WHEEL_ZOOM_IN_FACTOR = 1.15;
+const WHEEL_ZOOM_OUT_FACTOR = 0.87;
 const MAP_PAN_PADDING_X = 96;
 const MAP_PAN_PADDING_Y = 56;
 const REGION_OFFSCREEN_DESELECT_MARGIN = 24;
@@ -59,6 +69,18 @@ const CAMERA_AUTO_TRANSITION_DURATION = 0.58;
 const VECTOR_GRAPH_MOUNT_DELAY = Math.round(
   CAMERA_AUTO_TRANSITION_DURATION * 1000 + 180,
 );
+const AUTO_REGION_VIEWPORT_FILL = 0.84;
+const AUTO_REGION_MIN_SCALE = 2.9;
+const AUTO_REGION_BASE_SCALE = 3.45;
+const AUTO_REGION_MAX_SCALE = 11.6;
+const AUTO_REGION_EDGE_MAX_SCALE = 13.2;
+const AUTO_NODE_FOCUS_SCALE = 1.58;
+const AUTO_WORD_FOCUS_SCALE = 2.55;
+const AUTO_NODE_MAX_SCALE = 14.4;
+const AUTO_WORD_MAX_SCALE = 16;
+const LOCKED_THEME_SHAKE_DURATION_MS = 640;
+const REGION_EDGE_ZOOM_BONUS = 0.18;
+const REGION_FOCUS_OVERSCAN_RATIO = 0.28;
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -179,6 +201,7 @@ function clampAxisToFrame({
   scale,
   frameStart,
   frameSize,
+  viewportStart,
   viewportSize,
   padding,
 }: {
@@ -186,6 +209,7 @@ function clampAxisToFrame({
   scale: number;
   frameStart: number;
   frameSize: number;
+  viewportStart: number;
   viewportSize: number;
   padding: number;
 }) {
@@ -198,7 +222,7 @@ function clampAxisToFrame({
 
   if (transformedSize <= viewportSize) {
     const centeredPosition =
-      (viewportSize - transformedSize) / 2 - frameStart * scale;
+      viewportStart + (viewportSize - transformedSize) / 2 - frameStart * scale;
 
     return clamp(
       position,
@@ -208,8 +232,8 @@ function clampAxisToFrame({
   }
 
   const minPosition =
-    viewportSize - (frameStart + frameSize) * scale - safePadding;
-  const maxPosition = -frameStart * scale + safePadding;
+    viewportStart + viewportSize - (frameStart + frameSize) * scale - safePadding;
+  const maxPosition = viewportStart - frameStart * scale + safePadding;
 
   return clamp(position, minPosition, maxPosition);
 }
@@ -218,12 +242,21 @@ function clampSceneToFrame(
   transform: SceneTransform,
   frame: SvgSceneFrame,
   sceneSize: { width: number; height: number },
+  paddingOverride?: { x?: number; y?: number },
+  viewportArea?: { x?: number; y?: number; width?: number; height?: number },
 ): SceneTransform {
   const horizontalPadding = Math.min(
-    MAP_PAN_PADDING_X,
+    Math.max(0, paddingOverride?.x ?? MAP_PAN_PADDING_X),
     sceneSize.width * 0.16,
   );
-  const verticalPadding = Math.min(MAP_PAN_PADDING_Y, sceneSize.height * 0.1);
+  const verticalPadding = Math.min(
+    Math.max(0, paddingOverride?.y ?? MAP_PAN_PADDING_Y),
+    sceneSize.height * 0.1,
+  );
+  const viewportX = viewportArea?.x ?? 0;
+  const viewportY = viewportArea?.y ?? 0;
+  const viewportWidth = viewportArea?.width ?? sceneSize.width;
+  const viewportHeight = viewportArea?.height ?? sceneSize.height;
 
   return {
     ...transform,
@@ -232,7 +265,8 @@ function clampSceneToFrame(
       scale: transform.scale,
       frameStart: frame.x,
       frameSize: frame.width,
-      viewportSize: sceneSize.width,
+      viewportStart: viewportX,
+      viewportSize: viewportWidth,
       padding: horizontalPadding,
     }),
     y: clampAxisToFrame({
@@ -240,7 +274,8 @@ function clampSceneToFrame(
       scale: transform.scale,
       frameStart: frame.y,
       frameSize: frame.height,
-      viewportSize: sceneSize.height,
+      viewportStart: viewportY,
+      viewportSize: viewportHeight,
       padding: verticalPadding,
     }),
   };
@@ -315,11 +350,86 @@ function areRegionLayoutsEquivalent(
   return true;
 }
 
+function getVectorGraphNodeRadius(
+  level: Extract<VocabularyViewLevel, "theme" | "subtheme">,
+  nodeCount: number,
+  node: GraphNode,
+) {
+  const dense = nodeCount >= 8;
+
+  if (node.data.entityKind === "word") {
+    if (level === "subtheme") {
+      return dense ? 1.74 : 2.72;
+    }
+
+    return dense ? 1.8 : 3.04;
+  }
+
+  if (node.id === "home") {
+    if (level === "subtheme") {
+      return dense ? 2.18 : 3.25;
+    }
+
+    return dense ? 2.2 : 3.65;
+  }
+
+  if (level === "subtheme") {
+    return dense ? 1.46 : 2.32;
+  }
+
+  return dense ? 1.48 : 2.68;
+}
+
+function toFramePoint(
+  x: number,
+  y: number,
+  viewport: VocabularyRegionLayout["viewport"],
+  frame: SvgSceneFrame,
+) {
+  return {
+    x: frame.x + ((x - viewport.x) / viewport.width) * frame.width,
+    y: frame.y + ((y - viewport.y) / viewport.height) * frame.height,
+  };
+}
+
+function getRegionEdgeBias(bounds: VocabularyRegionLayout["bounds"]) {
+  const horizontalEdgeDistance = Math.min(bounds.centerX, 100 - bounds.centerX);
+  const verticalEdgeDistance = Math.min(bounds.centerY, 100 - bounds.centerY);
+  const horizontalBias = 1 - clamp(horizontalEdgeDistance / 50, 0, 1);
+  const verticalBias = 1 - clamp(verticalEdgeDistance / 50, 0, 1);
+
+  return Math.max(horizontalBias * 0.82, verticalBias);
+}
+
+function getRegionFocusFrame(
+  frame: SvgSceneFrame,
+  bounds: VocabularyRegionLayout["bounds"],
+) {
+  const regionX = frame.x + (bounds.x / 100) * frame.width;
+  const regionY = frame.y + (bounds.y / 100) * frame.height;
+  const regionWidth = Math.max((bounds.width / 100) * frame.width, 1);
+  const regionHeight = Math.max((bounds.height / 100) * frame.height, 1);
+  const extraX = Math.min(frame.width * 0.18, Math.max(regionWidth * REGION_FOCUS_OVERSCAN_RATIO, 36));
+  const extraY = Math.min(frame.height * 0.18, Math.max(regionHeight * REGION_FOCUS_OVERSCAN_RATIO, 30));
+  const focusWidth = Math.min(regionWidth + extraX * 2, frame.width);
+  const focusHeight = Math.min(regionHeight + extraY * 2, frame.height);
+  const centerX = regionX + regionWidth / 2;
+  const centerY = regionY + regionHeight / 2;
+
+  return {
+    x: clamp(centerX - focusWidth / 2, frame.x, frame.x + frame.width - focusWidth),
+    y: clamp(centerY - focusHeight / 2, frame.y, frame.y + frame.height - focusHeight),
+    width: focusWidth,
+    height: focusHeight,
+  };
+}
+
 function toWordLesson(
   word: VocabularyWordContent,
   audioByWordId: Map<string, string | undefined>,
+  progress?: ReturnType<typeof findWordProgress>,
 ): VocabularyWordLesson {
-  return {
+  return mergeWordProgress({
     wordId: word.id,
     kanji: word.kanji ?? undefined,
     hiragana: word.hiragana ?? undefined,
@@ -330,7 +440,7 @@ function toWordLesson(
     unlockedAt: word.unlockedAt ?? null,
     completedAt: word.completedAt ?? null,
     score: word.score ?? null,
-  };
+  }, progress);
 }
 
 export default function Page() {
@@ -359,6 +469,7 @@ export default function Page() {
   const manualTransformRef = useRef<SceneTransform>({ scale: 1, x: 0, y: 0 });
   const autoTransformRef = useRef<SceneTransform>({ scale: 1, x: 0, y: 0 });
   const mapFrameRef = useRef<SvgSceneFrame>({ x: 0, y: 0, width: 0, height: 0 });
+  const selectedRegionLayoutRef = useRef<VocabularyRegionLayout | null>(null);
   const sceneSizeRef = useRef({ width: 0, height: 0 });
   const currentLevelRef = useRef<VocabularyViewLevel>("map");
   const isNavigatingRef = useRef(false);
@@ -367,6 +478,11 @@ export default function Page() {
   const preservedCameraTransformRef = useRef<SceneTransform | null>(null);
   const subthemeLoadRequestRef = useRef(0);
   const zoomClassTimeoutRef = useRef<number | null>(null);
+  const [hoverResetToken, setHoverResetToken] = useState(0);
+
+  const dismissGraphHovers = useCallback(() => {
+    setHoverResetToken((current) => current + 1);
+  }, []);
 
   const [regionLayouts, setRegionLayouts] = useState<
     Partial<Record<VocabularyRegionId, VocabularyRegionLayout>>
@@ -385,11 +501,17 @@ export default function Page() {
   const [pendingThemeId, setPendingThemeId] = useState<string | null>(null);
   const [pendingGraphNodeId, setPendingGraphNodeId] = useState<string | null>(null);
   const {
+    shakingKey: shakingThemeId,
+    triggerShake: triggerThemeShake,
+    clearShake: clearThemeShake,
+  } = useShakeFeedback<string>(LOCKED_THEME_SHAKE_DURATION_MS);
+  const {
     graphs,
     selectedGraph,
     progress,
     themeCatalog,
-    subthemeRecommendations,
+    themeSubthemes,
+    recommendedSubthemeMetaById,
     loading,
     actionPendingId,
     setSelectedGraphId,
@@ -438,26 +560,12 @@ export default function Page() {
         : { x: 0, y: 0, width: sceneSize.width, height: sceneSize.height },
     [mapViewport, sceneSize],
   );
-  const loadingRegionId = useMemo(() => {
-    if (!activeRegionId) {
-      return null;
-    }
-
-    return actionPendingId || subthemeWordsLoading || regionThemeGraphLoading
-      ? activeRegionId
-      : null;
-  }, [
-    actionPendingId,
-    activeRegionId,
-    regionThemeGraphLoading,
-    subthemeWordsLoading,
-  ]);
   const graphInteractionDisabled = Boolean(
     pendingThemeId || pendingGraphNodeId || actionPendingId || subthemeWordsLoading,
   );
   const vectorGraphNodeCount = useMemo(() => {
     if (currentLevel === "theme" && selectedGraph) {
-      return progressItems.length + subthemeRecommendations.length;
+      return themeSubthemes.length;
     }
 
     if (currentLevel === "subtheme" && selectedSubthemeItem) {
@@ -467,10 +575,9 @@ export default function Page() {
     return 0;
   }, [
     currentLevel,
-    progressItems.length,
     selectedGraph,
     selectedSubthemeItem,
-    subthemeRecommendations.length,
+    themeSubthemes.length,
     subthemeWords.length,
   ]);
 
@@ -549,7 +656,12 @@ export default function Page() {
             quizQuestion.audio,
           ]),
         );
-        setSubthemeWords(words.map((word) => toWordLesson(word, audioByWordId)));
+        const matchedItem = progressItems.find((item) => item.nodeId === nodeId);
+        setSubthemeWords(
+          words.map((word) =>
+            toWordLesson(word, audioByWordId, findWordProgress(matchedItem, word.id)),
+          ),
+        );
         return true;
       } catch (quizError) {
         console.error("Error cargando palabras del subtema:", quizError);
@@ -565,8 +677,20 @@ export default function Page() {
         }
       }
     },
-    [],
+    [progressItems],
   );
+
+  useEffect(() => {
+    if (!selectedSubthemeItem || subthemeWords.length === 0) {
+      return;
+    }
+
+    setSubthemeWords((currentWords) =>
+      currentWords.map((word) =>
+        mergeWordProgress(word, findWordProgress(selectedSubthemeItem, word.wordId)),
+      ),
+    );
+  }, [selectedSubthemeItem, subthemeWords.length]);
 
   useEffect(() => {
     // Reset manual transform and cancel any running animation when navigating levels
@@ -589,7 +713,7 @@ export default function Page() {
     }
 
     manualTransformRef.current = { scale: 1, x: 0, y: 0 };
-  }, [activeRegionId, currentLevel]);
+  }, [activeRegionId, currentLevel, mvScale, mvX, mvY]);
 
   useEffect(() => {
     setHidden(isLessonOpen);
@@ -605,8 +729,10 @@ export default function Page() {
       return;
     }
 
-    const hasLayout = Boolean(regionLayouts[selectedRegionId]?.nodePoints?.length);
-    const hasThemes = Boolean(selectedRegion?.themes.length);
+    const themeCount = selectedRegion?.themes.length ?? 0;
+    const hasLayout =
+      (regionLayouts[selectedRegionId]?.nodePoints?.length ?? 0) >= themeCount;
+    const hasThemes = themeCount > 0;
 
     if (!hasThemes && regionThemeGraphLoading) {
       setRegionThemeGraphLoading(false);
@@ -634,7 +760,7 @@ export default function Page() {
 
   const vectorGraphMountKey = useMemo(() => {
     if (currentLevel === "theme" && selectedGraph) {
-      return `theme:${selectedGraph.graphId}:${progressItems.length}:${subthemeRecommendations.length}`;
+      return `theme:${selectedGraph.graphId}:${progressItems.length}:${themeSubthemes.length}:${Object.keys(recommendedSubthemeMetaById).length}`;
     }
 
     if (currentLevel === "subtheme" && selectedSubthemeItem) {
@@ -645,9 +771,10 @@ export default function Page() {
   }, [
     currentLevel,
     progressItems.length,
+    recommendedSubthemeMetaById,
     selectedGraph,
     selectedSubthemeItem,
-    subthemeRecommendations.length,
+    themeSubthemes.length,
     subthemeWords.length,
   ]);
   const vectorGraphReady = useDeferredGraphMount(
@@ -668,7 +795,8 @@ export default function Page() {
       return buildVocabularyThemeGraphElements(
         selectedGraph,
         progressItems,
-        subthemeRecommendations,
+        themeSubthemes,
+        recommendedSubthemeMetaById,
       );
     }
 
@@ -676,9 +804,10 @@ export default function Page() {
   }, [
     currentLevel,
     progressItems,
+    recommendedSubthemeMetaById,
     selectedGraph,
     selectedSubthemeItem,
-    subthemeRecommendations,
+    themeSubthemes,
     subthemeWords,
     vectorGraphReady,
   ]);
@@ -686,10 +815,13 @@ export default function Page() {
   const handleRegionSelect = useCallback(
     (regionId: VocabularyRegionId) => {
       subthemeLoadRequestRef.current += 1;
+      const nextRegion = regions.find((region) => region.id === regionId) ?? null;
+      const hasUnlockedThemes = nextRegion?.themes.some((theme) => theme.isAvailable) ?? false;
       // Wrap level-changing state in startTransition so the click feels
       // instant — React keeps the current frame interactive and processes
       // the heavy region/graph re-renders concurrently.
-      setRegionThemeGraphLoading(true);
+      clearThemeShake();
+      setRegionThemeGraphLoading(hasUnlockedThemes);
       setSelectedRegionId(regionId);
       setCurrentLevel("region");
       startTransition(() => {
@@ -703,7 +835,7 @@ export default function Page() {
         setSelectedGraphId(null);
       });
     },
-    [setSelectedGraphId],
+    [clearThemeShake, regions, setSelectedGraphId],
   );
 
   const handleRegionLayoutsChange = useCallback(
@@ -722,9 +854,11 @@ export default function Page() {
   const handleThemeSelected = useCallback(
     async (theme: VocabularyRegionThemeNode) => {
       if (!theme.isAvailable || !theme.themeId) {
+        triggerThemeShake(theme.id);
         return;
       }
 
+      clearThemeShake();
       setSelectedRegionId(theme.regionId);
       setSelectedThemeId(theme.themeId);
       setSelectedSubthemeNodeId(null);
@@ -748,7 +882,7 @@ export default function Page() {
         setCurrentLevel("theme");
       }
     },
-    [createGraphFromTheme, setSelectedGraphId],
+    [clearThemeShake, createGraphFromTheme, setSelectedGraphId, triggerThemeShake],
   );
 
   const exitRegionSelection = useCallback(() => {
@@ -826,26 +960,11 @@ export default function Page() {
       if (node.data.entityKind === "subtheme") {
         setSelectedWordId(null);
         setPendingGraphNodeId(node.id);
-
-        if (node.data.isRecommendation && node.data.entityId) {
-          const subthemeId = node.data.entityId;
-          const nodeId = await addSubthemeToGraph(subthemeId);
-
-          if (nodeId) {
-            setSelectedSubthemeNodeId(nodeId);
-            const ready = await loadSubthemeWordsForNode(nodeId, subthemeId);
-
-            if (ready) {
-              setCurrentLevel("subtheme");
-            }
-          }
-
-          setPendingGraphNodeId(null);
-          return;
-        }
-
-        setSelectedSubthemeNodeId(node.id);
-        const matchedItem = progressItems.find((item) => item.nodeId === node.id);
+        const matchedItem = progressItems.find(
+          (item) =>
+            item.nodeId === node.id ||
+            (node.data.entityId ? item.subthemeId === node.data.entityId : false),
+        );
 
         if (matchedItem?.subthemeId) {
           const ready = await loadSubthemeWordsForNode(
@@ -854,8 +973,29 @@ export default function Page() {
           );
 
           if (ready) {
+            setSelectedSubthemeNodeId(matchedItem.nodeId);
             setCurrentLevel("subtheme");
           }
+
+          setPendingGraphNodeId(null);
+          return;
+        }
+
+        if (node.data.entityId) {
+          const subthemeId = node.data.entityId;
+          const nodeId = await addSubthemeToGraph(subthemeId);
+
+          if (nodeId) {
+            const ready = await loadSubthemeWordsForNode(nodeId, subthemeId);
+
+            if (ready) {
+              setSelectedSubthemeNodeId(nodeId);
+              setCurrentLevel("subtheme");
+            }
+          }
+
+          setPendingGraphNodeId(null);
+          return;
         }
 
         setPendingGraphNodeId(null);
@@ -904,6 +1044,77 @@ export default function Page() {
           onNodeSelected: handleNodeSelected,
         }
       : undefined;
+  const selectedRegionLayout = selectedRegion
+    ? regionLayouts[selectedRegion.id]
+    : null;
+  const focusedVectorNodeId = useMemo(() => {
+    if (
+      (currentLevel === "theme" && (pendingThemeId || pendingGraphNodeId || subthemeWordsLoading || !vectorGraphReady)) ||
+      (currentLevel === "subtheme" && (subthemeWordsLoading || !vectorGraphReady))
+    ) {
+      return null;
+    }
+
+    if (currentLevel === "subtheme" && selectedWordId) {
+      return `word-${selectedWordId}`;
+    }
+
+    if (currentLevel === "subtheme") {
+      return "home";
+    }
+
+    if (currentLevel === "theme") {
+      return selectedSubthemeNodeId ?? "home";
+    }
+
+    return null;
+  }, [
+    currentLevel,
+    pendingGraphNodeId,
+    pendingThemeId,
+    selectedSubthemeNodeId,
+    selectedWordId,
+    subthemeWordsLoading,
+    vectorGraphReady,
+  ]);
+  const vectorGraphLayout = useMemo(() => {
+    if (
+      !regionGraph ||
+      currentLevel === "region" ||
+      !selectedRegionLayout?.bounds ||
+      !selectedRegionLayout.viewport
+    ) {
+      return null;
+    }
+
+    const vectorGraphLevel: Extract<VocabularyViewLevel, "theme" | "subtheme"> =
+      currentLevel === "theme" ? "theme" : "subtheme";
+
+    return buildRegionGraphLayout(
+      regionGraph.nodes,
+      regionGraph.edges as GraphEdge[],
+      selectedRegionLayout.bounds,
+      selectedRegionLayout.nodePoints ?? null,
+      selectedRegionLayout.viewport,
+      (node) => getVectorGraphNodeRadius(vectorGraphLevel, regionGraph.nodes.length, node),
+    );
+  }, [
+    currentLevel,
+    regionGraph,
+    selectedRegionLayout?.bounds,
+    selectedRegionLayout?.nodePoints,
+    selectedRegionLayout?.viewport,
+  ]);
+  const focusedVectorNode = useMemo(() => {
+    if (!focusedVectorNodeId || !vectorGraphLayout) {
+      return null;
+    }
+
+    return (
+      vectorGraphLayout.nodes.find((layoutNode) => layoutNode.node.id === focusedVectorNodeId) ??
+      null
+    );
+  }, [focusedVectorNodeId, vectorGraphLayout]);
 
   const autoTransform = useMemo(() => {
     if (!selectedRegion || currentLevel === "map") {
@@ -914,40 +1125,101 @@ export default function Page() {
     const bounds = layout?.bounds;
 
     if (!bounds || !layout?.viewport || !sceneSize.width || !sceneSize.height) {
-      return { scale: 1.45, x: 0, y: 0 };
+      return { scale: 1.8, x: 0, y: 0 };
     }
 
     const svgFrame = getRenderedSvgFrame(sceneSize, layout.viewport);
     const regionWidth = Math.max((bounds.width / 100) * svgFrame.width, 1);
     const regionHeight = Math.max((bounds.height / 100) * svgFrame.height, 1);
-    const viewportFill = currentLevel === "region" ? 0.92 : 0.85;
-    const maxAutoScale = Math.min(MAX_SCENE_SCALE, 9.5);
+    const viewportFill = AUTO_REGION_VIEWPORT_FILL;
+    const edgeBias = getRegionEdgeBias(bounds);
+    const maxAutoScale = Math.min(
+      MAX_SCENE_SCALE,
+      AUTO_REGION_MAX_SCALE + (AUTO_REGION_EDGE_MAX_SCALE - AUTO_REGION_MAX_SCALE) * edgeBias,
+    );
     const scale = clamp(
-      Math.min(
-        maxAutoScale,
-        Math.max(
-          2,
+      Math.max(
+        AUTO_REGION_BASE_SCALE,
+        Math.min(
+          maxAutoScale,
           Math.min(
             (sceneSize.width * viewportFill) / regionWidth,
             (sceneSize.height * viewportFill) / regionHeight,
-          ),
+          ) * (1 + edgeBias * REGION_EDGE_ZOOM_BONUS),
         ),
       ),
-      1.8,
+      AUTO_REGION_MIN_SCALE,
       maxAutoScale,
     );
     const centerX = svgFrame.x + (bounds.centerX / 100) * svgFrame.width;
     const centerY = svgFrame.y + (bounds.centerY / 100) * svgFrame.height;
-    const targetX = sceneSize.width / 2;
-    const targetY = sceneSize.height / 2;
-
-    return {
+    let targetX = sceneSize.width / 2;
+    let targetY = sceneSize.height / 2;
+    let targetScale = scale;
+    const centeredRegionTransform = {
       scale,
       x: targetX - centerX * scale,
       y: targetY - centerY * scale,
     };
+
+    if (currentLevel === "region") {
+      return centeredRegionTransform;
+    }
+
+    if (focusedVectorNode) {
+      const isWordFocus = focusedVectorNode.node.data.entityKind === "word";
+      const isPortrait = sceneSize.height > sceneSize.width;
+      const focusedPoint = toFramePoint(
+        focusedVectorNode.x,
+        focusedVectorNode.y,
+        layout.viewport,
+        svgFrame,
+      );
+
+      targetScale = clamp(
+        scale * (isWordFocus ? AUTO_WORD_FOCUS_SCALE : AUTO_NODE_FOCUS_SCALE),
+        isWordFocus ? 4.8 : 3.45,
+        isWordFocus ? AUTO_WORD_MAX_SCALE : AUTO_NODE_MAX_SCALE,
+      );
+
+      if (isWordFocus && isLessonOpen && !isPortrait) {
+        const lessonDrawerWidth = Math.min(
+          LESSON_DRAWER_DESKTOP_WIDTH,
+          Math.round(sceneSize.width * LESSON_DRAWER_MAX_VIEWPORT_RATIO),
+        );
+        const availableWidth = Math.max(sceneSize.width - lessonDrawerWidth, sceneSize.width * 0.42);
+        targetX = availableWidth / 2;
+
+        return clampSceneToFrame(
+          {
+            scale: targetScale,
+            x: targetX - focusedPoint.x * targetScale,
+            y: targetY - focusedPoint.y * targetScale,
+          },
+          svgFrame,
+          sceneSize,
+          { x: 0, y: 0 },
+          { x: 0, y: 0, width: availableWidth, height: sceneSize.height },
+        );
+      }
+
+      return clampSceneToFrame(
+        {
+          scale: targetScale,
+          x: targetX - focusedPoint.x * targetScale,
+          y: targetY - focusedPoint.y * targetScale,
+        },
+        svgFrame,
+        sceneSize,
+        { x: 0, y: 0 },
+      );
+    }
+
+    return centeredRegionTransform;
   }, [
     currentLevel,
+    focusedVectorNode,
+    isLessonOpen,
     regionLayouts,
     sceneSize,
     selectedRegion,
@@ -959,9 +1231,10 @@ export default function Page() {
   useEffect(() => {
     autoTransformRef.current = autoTransform;
     mapFrameRef.current = mapFrame;
+    selectedRegionLayoutRef.current = selectedRegionLayout ?? null;
     sceneSizeRef.current = sceneSize;
     currentLevelRef.current = currentLevel;
-  }, [autoTransform, mapFrame, sceneSize, currentLevel]);
+  }, [autoTransform, currentLevel, mapFrame, sceneSize, selectedRegionLayout]);
 
   // When autoTransform changes (level/region change), smoothly transition to new position
   useEffect(() => {
@@ -1004,9 +1277,14 @@ export default function Page() {
     const frame = mapFrameRef.current;
     const size = sceneSizeRef.current;
     const finalScale = auto.scale * transform.scale;
+    const regionLayout = selectedRegionLayoutRef.current;
+    const frameForClamp =
+      currentLevelRef.current === "region" && regionLayout?.bounds
+        ? getRegionFocusFrame(frame, regionLayout.bounds)
+        : frame;
     const clamped = clampSceneToFrame(
       { scale: finalScale, x: auto.x + transform.x, y: auto.y + transform.y },
-      frame,
+      frameForClamp,
       size,
     );
     return { ...transform, x: clamped.x - auto.x, y: clamped.y - auto.y };
@@ -1098,6 +1376,8 @@ export default function Page() {
         return;
       }
 
+      dismissGraphHovers();
+
       zoomAt(
         { x: event.clientX - rect.left, y: event.clientY - rect.top },
         event.deltaY < 0 ? WHEEL_ZOOM_IN_FACTOR : WHEEL_ZOOM_OUT_FACTOR,
@@ -1107,7 +1387,7 @@ export default function Page() {
         clearSelectedRegionIfOffscreen();
       });
     },
-    [clearSelectedRegionIfOffscreen, handleBack, zoomAt],
+    [clearSelectedRegionIfOffscreen, dismissGraphHovers, handleBack, zoomAt],
   );
 
   // Add passive:false wheel listener once
@@ -1191,6 +1471,7 @@ export default function Page() {
 
         if (previous && previous.distance > 0) {
           const rect = sceneRef.current?.getBoundingClientRect();
+          dismissGraphHovers();
           zoomAt(
             rect ? { x: center.x - rect.left, y: center.y - rect.top } : center,
             clamp(distance / previous.distance, 0.82, 1.22),
@@ -1219,6 +1500,9 @@ export default function Page() {
       const deltaY = position.y - drag.last.y;
 
       if (distance > 4) {
+        if (!drag.dragged) {
+          dismissGraphHovers();
+        }
         drag.dragged = true;
         suppressRegionClickRef.current = true;
       }
@@ -1230,7 +1514,7 @@ export default function Page() {
         applyManualTransform({ ...current, x: current.x + deltaX, y: current.y + deltaY });
       }
     },
-    [applyManualTransform, zoomAt],
+    [applyManualTransform, dismissGraphHovers, zoomAt],
   );
 
   const handlePointerEnd = useCallback(
@@ -1376,9 +1660,9 @@ export default function Page() {
       return undefined;
     }
 
-    // Keep a small candidate pool to avoid recomputing a very dense region layout
-    // synchronously on selection. The SVG layout cost grows quickly with count.
-    const sampleCount = Math.min(Math.max(nodeCount + 4, nodeCount), 18);
+    const sampleCount = currentLevel === "region"
+      ? Math.min(Math.max(nodeCount * 4, nodeCount + 8, 12), 28)
+      : Math.min(Math.max(nodeCount * 4, nodeCount + 10, 18), 42);
 
     return {
       [activeRegionId]: sampleCount,
@@ -1389,15 +1673,39 @@ export default function Page() {
     selectedRegion?.themes.length,
     vectorGraphNodeCount,
   ]);
-  const selectedRegionLayout = selectedRegion
-    ? regionLayouts[selectedRegion.id]
-    : null;
+  const regionThemeNodeCount = selectedRegion?.themes.length ?? 0;
+  const selectedRegionLayoutPointCount = selectedRegionLayout?.nodePoints?.length ?? 0;
+  const vectorGraphTargetPointCount = selectedRegion
+    ? layoutCountsByRegion?.[selectedRegion.id] ?? vectorGraphNodeCount
+    : vectorGraphNodeCount;
+  const regionThemeLayoutReady = Boolean(
+    selectedRegionLayout?.bounds &&
+      selectedRegionLayout.viewport &&
+      regionThemeNodeCount > 0 &&
+      selectedRegionLayoutPointCount >= regionThemeNodeCount,
+  );
   const vectorGraphLayoutReady = Boolean(
     selectedRegionLayout?.bounds &&
       selectedRegionLayout.viewport &&
       vectorGraphNodeCount > 0 &&
-      (selectedRegionLayout.nodePoints?.length ?? 0) >= vectorGraphNodeCount,
+      selectedRegionLayoutPointCount >= vectorGraphTargetPointCount,
   );
+  const graphTransitionLoading = Boolean(
+    actionPendingId ||
+      pendingThemeId ||
+      pendingGraphNodeId ||
+      subthemeWordsLoading ||
+      regionThemeGraphLoading ||
+      (currentLevel === "region" &&
+        regionThemeNodeCount > 0 &&
+        !regionThemeLayoutReady) ||
+      ((currentLevel === "theme" || currentLevel === "subtheme") &&
+        vectorGraphNodeCount > 0 &&
+        (!vectorGraphReady || !graphElements || !vectorGraphLayoutReady)),
+  );
+  const loadingRegionId = activeRegionId && graphTransitionLoading
+    ? activeRegionId
+    : null;
 
   return (
     <div
@@ -1440,17 +1748,20 @@ export default function Page() {
               selectedRegionId={activeRegionId}
               loadingRegionId={loadingRegionId}
               layoutCountsByRegion={layoutCountsByRegion}
+              hoverResetToken={hoverResetToken}
+              interactionDisabled={currentLevel !== "map"}
               onRegionSelect={handleMapRegionSelect}
               onLayoutChange={handleRegionLayoutsChange}
             />
 
             {selectedRegion && currentLevel === "region" ? (
-              !regionThemeGraphLoading ? (
+              !graphTransitionLoading && regionThemeLayoutReady ? (
                 <RegionThemeGraph
                   region={selectedRegion}
                   regionBounds={selectedRegionLayout?.bounds ?? null}
                   nodePoints={selectedRegionLayout?.nodePoints ?? null}
                   viewport={selectedRegionLayout?.viewport ?? null}
+                  shakingThemeId={shakingThemeId}
                   interactionDisabled={graphInteractionDisabled}
                   onThemeSelect={handleThemeSelected}
                 />
@@ -1459,6 +1770,7 @@ export default function Page() {
 
             {selectedRegion &&
             regionGraph &&
+            !graphTransitionLoading &&
             vectorGraphLayoutReady &&
             (currentLevel === "theme" || currentLevel === "subtheme") ? (
               <RegionVectorGraph
@@ -1469,6 +1781,7 @@ export default function Page() {
                 viewport={selectedRegionLayout?.viewport ?? null}
                 level={currentLevel}
                 interactionDisabled={graphInteractionDisabled}
+                hoverResetToken={hoverResetToken}
                 onNodeSelected={regionGraph.onNodeSelected}
               />
             ) : null}

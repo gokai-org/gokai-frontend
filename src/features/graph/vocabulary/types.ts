@@ -49,6 +49,17 @@ export type VocabularyWordProgress = {
   unlockedAt?: string | null;
   completedAt?: string | null;
   score?: number | null;
+  progress?: number | null;
+  completedQuizTypes?: VocabularyAnswerType[] | null;
+  meaningCompleted?: boolean | null;
+  listeningCompleted?: boolean | null;
+  speakingCompleted?: boolean | null;
+  writingCompleted?: boolean | null;
+  meaningScore?: number | null;
+  listeningScore?: number | null;
+  speakingScore?: number | null;
+  writingScore?: number | null;
+  updatedAt?: string | null;
 };
 
 export type VocabularyGraphProgress = {
@@ -71,11 +82,20 @@ export type SelectVocabularySubthemeResponse = {
   nodeId: string;
 };
 
+export type VocabularyWritingOptionUnit = {
+  symbol: string;
+  kanaId?: string;
+  traceable?: boolean;
+  viewBox?: string;
+  strokes?: string[];
+};
+
 export type VocabularyQuizOption = {
   option?: string;
   kanji?: string;
   hiragana?: string;
   correct?: boolean;
+  units?: VocabularyWritingOptionUnit[];
 };
 
 export type VocabularyQuizQuestion = {
@@ -138,6 +158,17 @@ export type VocabularyWordLesson = {
   unlockedAt?: string | null;
   completedAt?: string | null;
   score?: number | null;
+  progress?: number | null;
+  completedQuizTypes?: VocabularyAnswerType[] | null;
+  meaningCompleted?: boolean | null;
+  listeningCompleted?: boolean | null;
+  speakingCompleted?: boolean | null;
+  writingCompleted?: boolean | null;
+  meaningScore?: number | null;
+  listeningScore?: number | null;
+  speakingScore?: number | null;
+  writingScore?: number | null;
+  updatedAt?: string | null;
 };
 
 export type VocabularyRegionId =
@@ -217,6 +248,7 @@ export type SaveVocabularyNodeAnswerRequest = {
 export type SaveVocabularyNodeAnswerResponse = {
   success: boolean;
   userPoints?: number;
+  pointsAwarded?: number;
 };
 
 export type VocabularyNodeMastery = {

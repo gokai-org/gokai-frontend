@@ -1525,6 +1525,12 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   will-change: transform;
 }
 
+.map-transform-layer.is-dragging .graph-hover-card,
+.map-transform-layer.is-zooming .graph-hover-card {
+  opacity: 0;
+  visibility: hidden;
+}
+
 @keyframes vocabulary-graph-node-enter {
   from {
     opacity: 0;
@@ -1555,9 +1561,69 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   animation: vocabulary-graph-edge-enter 150ms ease-out both;
 }
 
+@keyframes vocabulary-node-recommendation-pulse {
+  0%,
+  100% {
+    transform: scale(0.92);
+    opacity: calc(var(--vocabulary-recommendation-opacity, 0.34) * 0.72);
+  }
+
+  50% {
+    transform: scale(1.16);
+    opacity: var(--vocabulary-recommendation-opacity, 0.34);
+  }
+}
+
+@keyframes vocabulary-node-recommendation-breathe {
+  0%,
+  100% {
+    transform: scale(0.96);
+    opacity: calc(var(--vocabulary-recommendation-glow-opacity, 0.22) * 0.72);
+  }
+
+  50% {
+    transform: scale(1.08);
+    opacity: var(--vocabulary-recommendation-glow-opacity, 0.22);
+  }
+}
+
+.vocabulary-node-recommendation-halo {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.vocabulary-node-recommendation-halo__ring {
+  fill: none;
+  stroke: var(--vocabulary-recommendation-ring);
+  stroke-width: 0.22;
+  vector-effect: non-scaling-stroke;
+}
+
+.vocabulary-node-recommendation-halo__ring--outer {
+  animation: vocabulary-node-recommendation-pulse 2200ms ease-in-out infinite;
+}
+
+.vocabulary-node-recommendation-halo__ring--inner {
+  animation: vocabulary-node-recommendation-pulse 1700ms ease-in-out infinite;
+  animation-delay: 180ms;
+}
+
+.vocabulary-node-recommendation-halo__glow {
+  fill: var(--vocabulary-recommendation-glow);
+  opacity: var(--vocabulary-recommendation-glow-opacity, 0.22);
+  animation: vocabulary-node-recommendation-breathe 2400ms ease-in-out infinite;
+}
+
+.vocabulary-node-recommendation-halo[data-rank="1"] .vocabulary-node-recommendation-halo__ring {
+  stroke: var(--vocabulary-recommendation-ring-strong);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .vocabulary-graph-node-enter,
-  .vocabulary-graph-edge-enter {
+  .vocabulary-graph-edge-enter,
+  .vocabulary-node-recommendation-halo__ring--outer,
+  .vocabulary-node-recommendation-halo__ring--inner,
+  .vocabulary-node-recommendation-halo__glow {
     animation: none;
   }
 }
@@ -1600,6 +1666,328 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 .vmap-static-svg,
 .vmap-static-svg * {
   pointer-events: none;
+}
+
+.vmap-cartography-layer,
+.vmap-cartography-layer * {
+  pointer-events: none;
+  vector-effect: non-scaling-stroke;
+}
+
+.vmap-cartography-layer {
+  overflow: visible;
+}
+
+.vmap-cartography-water-label,
+.vmap-cartography-water {
+  transition: opacity 180ms ease;
+}
+
+.vmap-cartography-text--water {
+  font-family: "Baskerville", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  fill: var(--vmap-cartography-water-fill);
+  font-style: italic;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.vmap-cartography-water-label textPath {
+  dominant-baseline: middle;
+}
+
+.vmap-cartography-water.is-muted {
+  opacity: 0.24;
+}
+
+.graph-hover-card {
+  max-width: min(320px, calc(100vw - 24px));
+  will-change: transform, left, top;
+}
+
+.graph-hover-card__surface {
+  position: relative;
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at top right, rgba(247, 215, 122, 0.16), transparent 34%),
+    linear-gradient(180deg, rgba(27, 24, 28, 0.96), rgba(18, 16, 20, 0.94));
+  padding: 0.82rem 0.95rem 0.8rem;
+  box-shadow:
+    0 12px 30px rgba(0, 0, 0, 0.26),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.graph-hover-card__surface::after {
+  content: "";
+  position: absolute;
+  inset: auto -12% -24% auto;
+  width: 140px;
+  height: 140px;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(255, 222, 120, 0.16), transparent 68%);
+  opacity: 0.72;
+  pointer-events: none;
+}
+
+.graph-hover-card__meta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.graph-hover-card__eyebrow {
+  color: rgba(215, 201, 186, 0.72);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.graph-hover-card__badge {
+  border-radius: 999px;
+  border: 1px solid rgba(247, 215, 122, 0.28);
+  background: rgba(247, 215, 122, 0.12);
+  padding: 0.24rem 0.48rem;
+  color: rgba(255, 236, 183, 0.92);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.graph-hover-card__body {
+  position: relative;
+  z-index: 1;
+  display: block;
+}
+
+.graph-hover-card__body.has-mascot {
+  display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.4rem;
+}
+
+.graph-hover-card__mascot {
+  align-self: end;
+}
+
+.graph-hover-card__content {
+  min-width: 0;
+}
+
+.graph-hover-card__title {
+  min-width: 118px;
+  color: rgba(248, 239, 232, 0.94);
+  font-family: "Baskerville", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  font-size: 0.96rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1.1;
+}
+
+.graph-hover-card__subtitle {
+  margin-top: 0.22rem;
+  color: rgba(215, 201, 186, 0.72);
+  font-family: var(--font-noto-serif-jp, "Noto Serif JP"), "Yu Mincho", serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: 0.12em;
+}
+
+.graph-hover-card__caption {
+  margin-top: 0.46rem;
+  color: rgba(233, 223, 210, 0.82);
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.graph-hover-card--region {
+  min-width: 118px;
+}
+
+.graph-hover-card--kazu {
+  min-width: 300px;
+}
+
+.graph-hover-card--region .graph-hover-card__surface {
+  padding: 0.7rem 0.95rem 0.62rem;
+}
+
+.graph-hover-card--region .graph-hover-card__surface::after {
+  display: none;
+}
+
+.graph-hover-card--region .graph-hover-card__title {
+  min-width: 0;
+}
+
+.graph-hover-card--region .graph-hover-card__subtitle {
+  letter-spacing: 0.12em;
+}
+
+/* ── KAZU variant — minimal panel ── */
+.graph-hover-card--kazu .graph-hover-card__surface {
+  background: rgba(14, 9, 17, 0.92);
+  border-color: rgba(153, 51, 49, 0.22);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.34);
+  border-left-width: 2px;
+  border-left-color: rgba(153, 51, 49, 0.72);
+  padding: 0.8rem 1rem 0.76rem;
+}
+
+.graph-hover-card--kazu .graph-hover-card__surface::after {
+  display: none;
+}
+
+.graph-hover-card--kazu .graph-hover-card__meta {
+  margin-bottom: 0.5rem;
+}
+
+.graph-hover-card--kazu .graph-hover-card__body.has-mascot {
+  grid-template-columns: 116px minmax(0, 1fr);
+  align-items: center;
+  gap: 0.68rem;
+}
+
+.graph-hover-card--kazu .graph-hover-card__mascot {
+  align-self: center;
+  justify-self: center;
+  margin-left: -0.4rem;
+}
+
+.graph-hover-card--kazu .graph-hover-card__eyebrow {
+  font-size: 0.6rem;
+  color: rgba(153, 51, 49, 0.9);
+  letter-spacing: 0.18em;
+}
+
+.graph-hover-card--kazu .graph-hover-card__badge {
+  font-size: 0.58rem;
+  border-color: rgba(153, 51, 49, 0.36);
+  background: rgba(153, 51, 49, 0.14);
+  color: rgba(255, 185, 175, 0.92);
+}
+
+.graph-hover-card--kazu .graph-hover-card__title {
+  min-width: 0;
+  font-size: 1rem;
+  color: rgba(255, 242, 236, 0.96);
+  line-height: 1.15;
+}
+
+.graph-hover-card--kazu .graph-hover-card__subtitle {
+  margin-top: 0.2rem;
+  font-family: "Montserrat", var(--font-noto-sans-jp, "Noto Sans JP"), sans-serif;
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  color: rgba(200, 170, 165, 0.62);
+}
+
+.graph-hover-card--kazu .graph-hover-card__caption {
+  margin-top: 0.52rem;
+  padding-top: 0.44rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: rgba(230, 200, 190, 0.8);
+  font-size: 0.7rem;
+  font-weight: 400;
+  line-height: 1.48;
+}
+
+.graph-hover-card__footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.64rem;
+}
+
+.graph-hover-card__more-btn {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(153, 51, 49, 0.82);
+  border: 1px solid rgba(153, 51, 49, 0.3);
+  border-radius: 999px;
+  padding: 0.2rem 0.58rem;
+  background: transparent;
+  cursor: default;
+}
+
+html:not(.dark) .graph-hover-card--kazu .graph-hover-card__surface {
+  background: rgba(255, 250, 248, 0.96);
+  border-color: rgba(153, 51, 49, 0.14);
+  border-left-color: rgba(153, 51, 49, 0.58);
+  box-shadow: 0 6px 18px rgba(80, 20, 20, 0.14);
+}
+
+html:not(.dark) .graph-hover-card--kazu .graph-hover-card__eyebrow {
+  color: rgba(153, 51, 49, 0.82);
+}
+
+html:not(.dark) .graph-hover-card--kazu .graph-hover-card__badge {
+  border-color: rgba(153, 51, 49, 0.3);
+  background: rgba(153, 51, 49, 0.08);
+  color: rgba(130, 30, 30, 0.9);
+}
+
+html:not(.dark) .graph-hover-card--kazu .graph-hover-card__title {
+  color: rgba(40, 14, 14, 0.94);
+}
+
+html:not(.dark) .graph-hover-card--kazu .graph-hover-card__subtitle {
+  color: rgba(110, 58, 50, 0.6);
+}
+
+html:not(.dark) .graph-hover-card--kazu .graph-hover-card__caption {
+  color: rgba(90, 48, 42, 0.78);
+  border-top-color: rgba(0, 0, 0, 0.06);
+}
+
+html:not(.dark) .graph-hover-card--kazu .graph-hover-card__more-btn {
+  color: rgba(153, 51, 49, 0.74);
+  border-color: rgba(153, 51, 49, 0.26);
+}
+
+html:not(.dark) .graph-hover-card__surface {
+  border-color: rgba(100, 60, 54, 0.16);
+  background:
+    radial-gradient(circle at top right, rgba(214, 182, 88, 0.18), transparent 32%),
+    linear-gradient(180deg, rgba(255, 251, 247, 0.96), rgba(247, 239, 233, 0.94));
+  box-shadow:
+    0 12px 24px rgba(80, 54, 46, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.52);
+}
+
+html:not(.dark) .graph-hover-card__eyebrow {
+  color: rgba(120, 88, 77, 0.76);
+}
+
+html:not(.dark) .graph-hover-card__badge {
+  border-color: rgba(160, 120, 56, 0.24);
+  background: rgba(214, 182, 88, 0.12);
+  color: rgba(122, 76, 38, 0.92);
+}
+
+html:not(.dark) .graph-hover-card__title {
+  color: rgba(78, 54, 49, 0.92);
+}
+
+html:not(.dark) .graph-hover-card__subtitle {
+  color: rgba(120, 88, 77, 0.76);
+}
+
+html:not(.dark) .graph-hover-card__caption {
+  color: rgba(118, 84, 64, 0.84);
 }
 
 /* ── Japan map selection dim overlay ── */
@@ -1725,6 +2113,32 @@ html:not(.dark) .vmap-hit-layer[data-has-selection="true"] .vmap-hit-region:not(
   opacity: 0.96;
 }
 
+.vmap-active-region.is-loading g[data-active-region-paths] > * {
+  animation: vmap-active-region-loading-pulse 820ms ease-in-out infinite;
+}
+
+@keyframes vmap-active-region-loading-pulse {
+  0%, 100% {
+    fill: var(--vmap-active-fill);
+    fill-opacity: 0.86;
+    stroke-opacity: 0.78;
+  }
+
+  50% {
+    fill: var(--vmap-active-fill-loading);
+    fill-opacity: 0.98;
+    stroke-opacity: 0.96;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vmap-active-region.is-loading g[data-active-region-paths] > * {
+    animation: none;
+    fill: var(--vmap-active-fill-loading);
+    fill-opacity: 0.94;
+  }
+}
+
 .region-graph-layer {
   contain: layout paint style;
   overflow: hidden;
@@ -1739,8 +2153,10 @@ html:not(.dark) .vmap-hit-layer[data-has-selection="true"] .vmap-hit-region:not(
   /* Japan map active region overlay colors — light mode */
   --vmap-ar-fill-available: #CC1F1F;
   --vmap-ar-fill-completed: #8B1818;
+  --vmap-active-fill-loading: #F04444;
   --vmap-ar-stroke-available: rgba(160, 20, 20, 0.65);
   --vmap-ar-stroke-completed: rgba(100, 12, 12, 0.48);
+  --vmap-cartography-water-fill: rgba(138, 138, 146, 0.62);
 }
 .dark {
   --writing-loading-center-stop: rgba(24, 24, 28, 0.98);
@@ -1750,8 +2166,10 @@ html:not(.dark) .vmap-hit-layer[data-has-selection="true"] .vmap-hit-region:not(
   /* Japan map active region overlay colors — dark mode */
   --vmap-ar-fill-available: #E03535;
   --vmap-ar-fill-completed: #7A1A1A;
+  --vmap-active-fill-loading: #FF5757;
   --vmap-ar-stroke-available: rgba(241, 244, 248, 0.60);
   --vmap-ar-stroke-completed: rgba(170, 176, 184, 0.38);
+  --vmap-cartography-water-fill: rgba(146, 146, 154, 0.58);
 }
 
 /* ── Shared board node label pill ───────────────────────────── */
@@ -1899,6 +2317,105 @@ html:not(.dark) .vmap-hit-layer[data-has-selection="true"] .vmap-hit-region:not(
   box-shadow:
     0 4px 12px rgba(0, 0, 0, 0.22),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+/* ── Vocabulary graph: Kanji-board inspired SVG nodes ─────────────────── */
+:root {
+  --vocabulary-node-red-fill: #8f1f22;
+  --vocabulary-node-red-fill-end: #b12a2e;
+  --vocabulary-node-black-fill: #171315;
+  --vocabulary-node-black-fill-end: #2b2528;
+  --vocabulary-node-white-fill: #FFFDF9;
+  --vocabulary-node-white-fill-end: #EFE7DE;
+  --vocabulary-node-locked-fill: #e5e7eb;
+  --vocabulary-node-locked-fill-end: #d1d5db;
+  --vocabulary-node-red-text: #FFFFFF;
+  --vocabulary-node-black-text: #FFFFFF;
+  --vocabulary-node-white-text: #221B17;
+  --vocabulary-node-locked-text: #6b7280;
+  --vocabulary-node-stroke: rgba(28, 25, 23, 0.28);
+  --vocabulary-node-white-stroke: rgba(80, 65, 55, 0.34);
+  --vocabulary-node-shadow-red: rgba(143, 31, 34, 0.18);
+  --vocabulary-node-shadow-black: rgba(23, 19, 21, 0.18);
+  --vocabulary-node-shadow-white: rgba(92, 70, 50, 0.18);
+  --vocabulary-node-shadow-locked: rgba(107, 114, 128, 0.14);
+  --vocabulary-node-inner-stroke: rgba(255, 255, 255, 0.16);
+  --vocabulary-recommendation-ring: rgba(130, 136, 145, 0.42);
+  --vocabulary-recommendation-ring-strong: rgba(156, 163, 175, 0.56);
+  --vocabulary-recommendation-glow: rgba(148, 163, 184, 0.12);
+  --vocabulary-edge-shadow: rgba(46, 38, 33, 0.10);
+  --vocabulary-edge-shadow-completed: rgba(167, 61, 55, 0.14);
+  --vocabulary-edge-rail: rgba(247, 239, 231, 0.54);
+  --vocabulary-edge-default: rgba(73, 65, 61, 0.42);
+  --vocabulary-edge-highlight: rgba(177, 42, 46, 0.52);
+  --vocabulary-edge-completed: rgba(177, 42, 46, 0.6);
+  --vocabulary-edge-completed-highlight: rgba(214, 74, 78, 0.68);
+  --vocabulary-label-fill: rgba(255, 251, 247, 0.96);
+  --vocabulary-label-border: rgba(28, 25, 23, 0.14);
+  --vocabulary-label-inner-border: rgba(255, 255, 255, 0.52);
+  --vocabulary-label-highlight: rgba(255, 255, 255, 0.48);
+  --vocabulary-label-text: var(--content-primary);
+  --vocabulary-lock-badge-fill: var(--surface-tertiary);
+  --vocabulary-lock-badge-stroke: rgba(17, 24, 39, 0.06);
+  --vocabulary-lock-badge-icon: #6b7280;
+}
+
+.dark {
+  --vocabulary-node-red-fill: #9e2327;
+  --vocabulary-node-red-fill-end: #c43438;
+  --vocabulary-node-black-fill: #121012;
+  --vocabulary-node-black-fill-end: #272226;
+  --vocabulary-node-white-fill: #FAF4EC;
+  --vocabulary-node-white-fill-end: #D8CEC2;
+  --vocabulary-node-locked-fill: #2d2a31;
+  --vocabulary-node-locked-fill-end: #1f1b24;
+  --vocabulary-node-stroke: rgba(255, 255, 255, 0.28);
+  --vocabulary-node-white-stroke: rgba(255, 255, 255, 0.56);
+  --vocabulary-node-shadow-red: rgba(196, 52, 56, 0.24);
+  --vocabulary-node-shadow-black: rgba(0, 0, 0, 0.28);
+  --vocabulary-node-shadow-white: rgba(255, 244, 232, 0.22);
+  --vocabulary-node-shadow-locked: rgba(0, 0, 0, 0.18);
+  --vocabulary-node-inner-stroke: rgba(255, 255, 255, 0.1);
+  --vocabulary-recommendation-ring: rgba(148, 163, 184, 0.38);
+  --vocabulary-recommendation-ring-strong: rgba(203, 213, 225, 0.5);
+  --vocabulary-recommendation-glow: rgba(148, 163, 184, 0.1);
+  --vocabulary-edge-shadow: rgba(0, 0, 0, 0.18);
+  --vocabulary-edge-shadow-completed: rgba(163, 60, 54, 0.20);
+  --vocabulary-edge-rail: rgba(33, 27, 24, 0.42);
+  --vocabulary-edge-default: rgba(233, 226, 220, 0.28);
+  --vocabulary-edge-highlight: rgba(255, 116, 120, 0.44);
+  --vocabulary-edge-completed: rgba(232, 96, 100, 0.54);
+  --vocabulary-edge-completed-highlight: rgba(255, 138, 142, 0.6);
+  --vocabulary-label-fill: rgba(23, 20, 26, 0.94);
+  --vocabulary-label-border: rgba(255, 255, 255, 0.1);
+  --vocabulary-label-inner-border: rgba(255, 255, 255, 0.04);
+  --vocabulary-label-highlight: rgba(255, 255, 255, 0.04);
+  --vocabulary-label-text: #F5F0EB;
+  --vocabulary-lock-badge-fill: #1f1b24;
+  --vocabulary-lock-badge-stroke: rgba(255, 255, 255, 0.08);
+  --vocabulary-lock-badge-icon: #d1d5db;
+}
+
+.vocabulary-graph-layer {
+  --vocabulary-progress-track: rgba(120, 112, 126, 0.22);
+  --vocabulary-progress-fill: rgba(186, 72, 66, 0.82);
+}
+
+@keyframes vocabulary-node-complete-pop {
+  0% { transform: scale(0.985); opacity: 0.92; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.vocabulary-node-completed-enter {
+  animation: vocabulary-node-complete-pop 180ms ease-out both;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vocabulary-node-completed-enter {
+    animation: none;
+  }
 }
 
 /* ── Lesson drawer scrollbar (accent-aware: purple/blue per kana type) ── */

@@ -3,18 +3,28 @@
 import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
+import Image, { type ImageLoaderProps } from "next/image";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 import {
   LESSON_DRAWER_DESKTOP_WIDTH,
   LESSON_DRAWER_MAX_VIEWPORT_RATIO,
 } from "@/features/lessons/lib/drawerLayout";
+import { RED_ICON_FILTER } from "@/features/library/utils/vocabularyCardConfig";
 import type {
+  VocabularyAnswerType,
   VocabularyGraphProgressItem,
   VocabularyWordLesson,
 } from "../types";
 import { getVocabularyNodeMastery } from "../lib/vocabularyGraphBuilder";
+import {
+  findWordProgress,
+  getWordQuizProgressPercent,
+  mergeWordProgress,
+} from "../lib/vocabularyQuizProgress";
 import VocabularyQuizModal from "./VocabularyQuizModal";
 import VocabularyWordGuide from "./VocabularyWordGuide";
+
+const passthroughImageLoader = ({ src }: ImageLoaderProps) => src;
 
 type VocabularyNodePanelProps = {
   item: VocabularyGraphProgressItem | null;
@@ -31,6 +41,10 @@ function getQuestionSubtitle(question: VocabularyWordLesson) {
   return question.meanings?.join(", ") || question.hiragana || "Vocabulario";
 }
 
+function isDisplayableImageSrc(value?: string | null) {
+  return Boolean(value && (/^https?:\/\//i.test(value) || value.startsWith("data:image/")));
+}
+
 export default function VocabularyNodePanel({
   item,
   question,
@@ -41,9 +55,22 @@ export default function VocabularyNodePanel({
   useMiniDockBlocker(open);
 
   const [quizOpen, setQuizOpen] = useState(false);
+  const [quizType, setQuizType] = useState<VocabularyAnswerType>("meaning");
   const [screen, setScreen] = useState<"mobile" | "tablet" | "desktop">("desktop");
 
   const mastery = useMemo(() => (item ? getVocabularyNodeMastery(item) : null), [item]);
+  const questionWithProgress = useMemo(
+    () => question && item
+      ? mergeWordProgress(question, findWordProgress(item, question.wordId))
+      : question,
+    [item, question],
+  );
+  const wordProgress = item
+    ? getWordQuizProgressPercent(questionWithProgress)
+    : 0;
+  const wordImageSrc = isDisplayableImageSrc(questionWithProgress?.icon)
+    ? questionWithProgress?.icon
+    : null;
 
   useEffect(() => {
     if (!open) {
@@ -94,7 +121,7 @@ export default function VocabularyNodePanel({
 
   return (
     <AnimatePresence>
-      {item && question && mastery && (
+      {item && questionWithProgress && mastery && (
         <>
           <motion.button
             data-vocabulary-overlay="true"
@@ -128,10 +155,24 @@ export default function VocabularyNodePanel({
                 <div className="bg-gradient-to-r from-accent to-accent-hover px-4 py-3 sm:px-5 sm:py-4">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 shadow-inner backdrop-blur-sm sm:h-14 sm:w-14 sm:rounded-2xl">
-                        <span className="select-none text-[22px] font-black leading-none text-white sm:text-[28px]">
-                          {getQuestionTitle(question)}
-                        </span>
+                      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-white p-1.5 shadow-inner ring-1 ring-white/35 sm:h-14 sm:w-14 sm:rounded-2xl sm:p-2">
+                        {wordImageSrc ? (
+                          <Image
+                            loader={passthroughImageLoader}
+                            unoptimized
+                            src={wordImageSrc}
+                            alt=""
+                            width={40}
+                            height={40}
+                            className="h-full w-full object-contain"
+                            style={{ filter: RED_ICON_FILTER }}
+                            draggable={false}
+                          />
+                        ) : (
+                          <span className="select-none text-[22px] font-black leading-none text-accent sm:text-[28px]">
+                            {getQuestionTitle(questionWithProgress)}
+                          </span>
+                        )}
                       </div>
 
                       <div className="min-w-0">
@@ -140,12 +181,12 @@ export default function VocabularyNodePanel({
                             Palabra
                           </span>
                           <span className="rounded-full bg-white/15 px-2 py-0.5 text-[10px] font-bold text-white sm:text-[11px]">
-                            Nodo {mastery.average}%
+                            Quiz {wordProgress}%
                           </span>
                         </div>
 
                         <h2 className="mt-0.5 truncate text-sm font-extrabold leading-tight text-white sm:text-base">
-                          {getQuestionSubtitle(question)}
+                          {getQuestionSubtitle(questionWithProgress)}
                         </h2>
                         <p className="mt-0.5 truncate text-[11px] font-medium text-white/70 sm:text-xs">
                           {item.meaning}
@@ -166,9 +207,12 @@ export default function VocabularyNodePanel({
 
               <div className="lesson-drawer-body flex-1 overflow-y-auto px-3 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4 lg:px-6 lg:pb-6 lg:pt-5">
                 <VocabularyWordGuide
-                  question={question}
+                  question={questionWithProgress}
                   subthemeMeaning={item.meaning}
-                  onStartQuiz={() => setQuizOpen(true)}
+                  onStartQuiz={(type) => {
+                    setQuizType(type);
+                    setQuizOpen(true);
+                  }}
                 />
               </div>
             </motion.aside>
@@ -177,7 +221,8 @@ export default function VocabularyNodePanel({
           <VocabularyQuizModal
             open={quizOpen}
             item={item}
-            question={question}
+            question={questionWithProgress}
+            initialType={quizType}
             onClose={() => setQuizOpen(false)}
             onSaved={onSaved}
           />
