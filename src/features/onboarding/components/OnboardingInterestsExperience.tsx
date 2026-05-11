@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ChevronLeft,
+  CheckCircle2,
+  Crown,
   RotateCcw,
+  Sparkles,
 } from "lucide-react";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
 import {
@@ -17,26 +20,46 @@ import {
   InitialExperienceSettings,
   type SettingStep,
 } from "./InitialExperienceSettings";
+import { OnboardingKanaAssessmentStep } from "./OnboardingKanaAssessmentStep";
 import {
   DesktopInterestRow,
   MobileInterestCarousel,
 } from "@/features/onboarding/components/OnboardingInterestOptions";
-import type { OnboardingInterest } from "@/features/onboarding/types";
+import type {
+  OnboardingInterest,
+  OnboardingKanaAssessmentSelections,
+} from "@/features/onboarding/types";
 import { getCurrentUser } from "@/features/auth/services/api";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { ThemeModeToggle } from "@/shared/components";
-import { ScreenTransitionOverlay } from "@/shared/ui";
+import { hasPremiumAccess } from "@/shared/lib/userAccess";
+import { KanaExamModal } from "@/features/kana/components/quiz";
+import type { KanaExamResult, KanaType } from "@/features/kana/types";
 
-type OnboardingStep = "interests" | "settings";
+type OnboardingStep = "interests" | "settings" | "kana-assessment";
 type PlanVariant = "free" | "premium";
+
+const INITIAL_KANA_ASSESSMENT: OnboardingKanaAssessmentSelections = {
+  hiragana: null,
+  katakana: null,
+};
+
+const KANA_EXAM_ORDER: KanaType[] = ["hiragana", "katakana"];
 
 type OnboardingInterestsExperienceProps = {
   initialPlanVariant?: PlanVariant;
 };
 
-type ScreenTransitionState = {
-  title: string;
-  description: string;
+type CompletionTransitionState = {
+  passedKanaTypes: KanaType[];
+};
+
+type CompletionCopy = {
+  celebrationTitle: string;
+  celebrationDescription: string;
+  readyTitle: string;
+  readyDescription: string;
+  badges: string[];
 };
 
 export function OnboardingInterestsExperience({
@@ -50,11 +73,18 @@ export function OnboardingInterestsExperience({
   const [sectionDirection, setSectionDirection] = useState<1 | -1>(1);
   const [currentSettingsStep, setCurrentSettingsStep] =
     useState<SettingStep>("appearance");
+  const [userKanaPoints, setUserKanaPoints] = useState(0);
+  const [kanaAssessmentSelections, setKanaAssessmentSelections] =
+    useState<OnboardingKanaAssessmentSelections>(INITIAL_KANA_ASSESSMENT);
+  const [kanaAssessmentResults, setKanaAssessmentResults] = useState<
+    Partial<Record<KanaType, KanaExamResult>>
+  >({});
+  const [activeKanaExamType, setActiveKanaExamType] = useState<KanaType | null>(null);
   const [planVariant, setPlanVariant] =
     useState<PlanVariant>(initialPlanVariant);
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
-  const [screenTransition, setScreenTransition] =
-    useState<ScreenTransitionState | null>(null);
+  const [completionTransition, setCompletionTransition] =
+    useState<CompletionTransitionState | null>(null);
   const transitionTimeoutRef = useRef<number | null>(null);
   const {
     sections,
@@ -69,7 +99,7 @@ export function OnboardingInterestsExperience({
   } = useOnboardingInterests();
 
   const routeTransitionDelayMs = platformMotion.shouldAnimate
-    ? Math.max(170, Math.round(360 * platformMotion.durationScale))
+    ? Math.max(5200, Math.round(6200 * platformMotion.durationScale))
     : 0;
 
   useEffect(() => {
@@ -89,9 +119,8 @@ export function OnboardingInterestsExperience({
 
     getCurrentUser().then((user) => {
       if (!mounted || !user) return;
-      const isPremium =
-        user.subscribed || user.plan === "premium" || user.plan === "pro";
-      setPlanVariant(isPremium ? "premium" : "free");
+      setPlanVariant(hasPremiumAccess(user) ? "premium" : "free");
+      setUserKanaPoints(typeof user.kanaPoints === "number" ? user.kanaPoints : 0);
     });
 
     return () => {
@@ -138,11 +167,10 @@ export function OnboardingInterestsExperience({
     }
   };
 
-  const handleCompleteSettings = () => {
-    setScreenTransition({
-      title: "Entrando a tu dashboard",
-      description: "Aplicando tus preferencias y preparando tu ruta de aprendizaje.",
-    });
+  useEffect(() => {
+    if (!completionTransition) {
+      return;
+    }
 
     if (transitionTimeoutRef.current !== null) {
       window.clearTimeout(transitionTimeoutRef.current);
@@ -156,6 +184,93 @@ export function OnboardingInterestsExperience({
     transitionTimeoutRef.current = window.setTimeout(() => {
       router.push("/dashboard/graph");
     }, routeTransitionDelayMs);
+
+    return () => {
+      if (transitionTimeoutRef.current !== null) {
+        window.clearTimeout(transitionTimeoutRef.current);
+      }
+    };
+  }, [completionTransition, routeTransitionDelayMs, router]);
+
+  const completeOnboarding = (
+    results: Partial<Record<KanaType, KanaExamResult>> = kanaAssessmentResults,
+  ) => {
+    const passedKanaTypes = KANA_EXAM_ORDER.filter(
+      (kanaType) => results[kanaType]?.passed === true,
+    );
+
+    setCompletionTransition({ passedKanaTypes });
+  };
+
+  const getPendingKanaExams = (
+    selections: OnboardingKanaAssessmentSelections,
+    results: Partial<Record<KanaType, KanaExamResult>>,
+  ) => KANA_EXAM_ORDER.filter(
+    (kanaType) => selections[kanaType] === "exam" && !results[kanaType],
+  );
+
+  const handleCompleteSettings = () => {
+    setStepDirection(1);
+    setStep("kana-assessment");
+  };
+
+  const handleKanaAssessmentChoice = (
+    kanaType: KanaType,
+    choice: OnboardingKanaAssessmentSelections[KanaType],
+  ) => {
+    setKanaAssessmentSelections((current) => ({
+      ...current,
+      [kanaType]: choice,
+    }));
+  };
+
+  const handleStartKanaAssessment = () => {
+    const pendingExamTypes = getPendingKanaExams(
+      kanaAssessmentSelections,
+      kanaAssessmentResults,
+    );
+
+    if (pendingExamTypes.length === 0) {
+      completeOnboarding(kanaAssessmentResults);
+      return;
+    }
+
+    setActiveKanaExamType(pendingExamTypes[0]);
+  };
+
+  const handleCloseKanaExam = (result?: KanaExamResult) => {
+    const completedKanaType = activeKanaExamType;
+    setActiveKanaExamType(null);
+
+    if (!completedKanaType || !result) {
+      return;
+    }
+
+    const nextResults = {
+      ...kanaAssessmentResults,
+      [completedKanaType]: result,
+    };
+    setKanaAssessmentResults(nextResults);
+
+    if (result.passed) {
+      setUserKanaPoints((current) =>
+        completedKanaType === "katakana"
+          ? Math.max(current, 705)
+          : Math.max(current, 350),
+      );
+    }
+
+    const pendingExamTypes = getPendingKanaExams(
+      kanaAssessmentSelections,
+      nextResults,
+    );
+
+    if (pendingExamTypes.length > 0) {
+      setActiveKanaExamType(pendingExamTypes[0]);
+      return;
+    }
+
+    completeOnboarding(nextResults);
   };
 
   return (
@@ -270,6 +385,37 @@ export function OnboardingInterestsExperience({
                 }}
                 onComplete={handleCompleteSettings}
                 onStepChange={setCurrentSettingsStep}
+              />
+            </motion.div>
+          ) : step === "kana-assessment" ? (
+            <motion.div
+              key="kana-assessment"
+              custom={stepDirection}
+              initial={{
+                opacity: 0,
+                x: stepDirection > 0 ? 42 : -42,
+                filter: "blur(8px)",
+              }}
+              animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
+              exit={{
+                opacity: 0,
+                x: stepDirection > 0 ? -30 : 30,
+                filter: "blur(8px)",
+              }}
+              transition={{ duration: 0.44, ease: [0.22, 1, 0.36, 1] }}
+              className="flex-1"
+            >
+              <OnboardingKanaAssessmentStep
+                selections={kanaAssessmentSelections}
+                results={kanaAssessmentResults}
+                currentKanaPoints={userKanaPoints}
+                busy={activeKanaExamType !== null}
+                onBack={() => {
+                  setStepDirection(-1);
+                  setStep("settings");
+                }}
+                onContinue={handleStartKanaAssessment}
+                onSelect={handleKanaAssessmentChoice}
               />
             </motion.div>
           ) : (
@@ -495,11 +641,331 @@ export function OnboardingInterestsExperience({
         </AnimatePresence>
       </div>
 
-      <ScreenTransitionOverlay
-        active={screenTransition !== null}
-        title={screenTransition?.title ?? ""}
-        description={screenTransition?.description}
-      />
+      {completionTransition ? (
+        <OnboardingCompletionTransitionOverlay
+          passedKanaTypes={completionTransition.passedKanaTypes}
+        />
+      ) : null}
+
+      {activeKanaExamType ? (
+        <KanaExamModal
+          kanaType={activeKanaExamType}
+          onClose={handleCloseKanaExam}
+        />
+      ) : null}
     </main>
+  );
+}
+
+type CompletionPhase = "celebrating" | "ready";
+
+function OnboardingCompletionTransitionOverlay({
+  passedKanaTypes,
+}: {
+  passedKanaTypes: KanaType[];
+}) {
+  const platformMotion = usePlatformMotion();
+  const [phase, setPhase] = useState<CompletionPhase>(
+    platformMotion.shouldAnimate ? "celebrating" : "ready",
+  );
+  const copy = useMemo(() => getCompletionCopy(passedKanaTypes), [passedKanaTypes]);
+
+  useEffect(() => {
+    if (!platformMotion.shouldAnimate || phase === "ready") {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPhase("ready");
+    }, Math.max(2400, Math.round(3100 * platformMotion.durationScale)));
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [phase, platformMotion.durationScale, platformMotion.shouldAnimate]);
+
+  return (
+    <div className="fixed inset-0 z-[90] overflow-hidden bg-surface-secondary">
+      <AnimatedGraphBackground variant="dimmed" density={0.00006} maxDist={200} speed={0.18} />
+      <TransitionGlow />
+      <TransitionParticles />
+      <div className="absolute inset-0 bg-gradient-to-b from-surface-primary/36 via-surface-primary/18 to-surface-primary/50" />
+
+      <div className="relative z-10 flex min-h-screen flex-col items-center justify-center px-4 py-10 sm:px-6">
+        <AnimatePresence mode="wait">
+          {phase === "celebrating" ? (
+            <motion.div
+              key="celebrating"
+              className="flex w-full max-w-2xl flex-col items-center text-center"
+              initial={{ opacity: 0, scale: 0.96, filter: "blur(10px)" }}
+              animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+              exit={{ opacity: 0, scale: 0.94, y: -20, filter: "blur(8px)" }}
+              transition={{ duration: 1.25, ease: [0.22, 1, 0.36, 1] }}
+            >
+              <TransitionSeal passedCount={passedKanaTypes.length} />
+              <motion.span
+                className="mt-7 inline-flex items-center gap-2 rounded-full border border-accent/10 bg-surface-primary/80 px-4 py-2 text-xs font-black uppercase tracking-[0.22em] text-accent shadow-sm backdrop-blur-md"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.7 }}
+              >
+                Transición final
+              </motion.span>
+              <motion.h1
+                className="mt-5 text-3xl font-extrabold tracking-tight text-content-primary sm:text-4xl"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.9 }}
+              >
+                {copy.celebrationTitle}
+              </motion.h1>
+              <motion.p
+                className="mt-3 max-w-xl text-sm leading-relaxed text-content-tertiary sm:text-base"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.55, duration: 0.95 }}
+              >
+                {copy.celebrationDescription}
+              </motion.p>
+
+              {copy.badges.length > 0 ? (
+                <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                  {copy.badges.map((badge, index) => (
+                    <motion.span
+                      key={badge}
+                      className="inline-flex items-center rounded-full border border-accent/10 bg-surface-primary/82 px-4 py-2 text-sm font-semibold text-content-primary shadow-sm backdrop-blur-md"
+                      initial={{ opacity: 0, y: 14, scale: 0.96 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ delay: 0.85 + index * 0.14, duration: 0.6 }}
+                    >
+                      {badge}
+                    </motion.span>
+                  ))}
+                </div>
+              ) : null}
+            </motion.div>
+          ) : (
+            <motion.div
+              key="ready"
+              className="flex w-full max-w-xl flex-col items-center text-center"
+              initial={{ opacity: 0, y: 34, filter: "blur(10px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ duration: 1.4, ease: "easeOut" }}
+            >
+              <motion.div
+                className="relative"
+                initial={{ opacity: 0, scale: 0.72 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ type: "spring", damping: 16, stiffness: 110, duration: 1.2 }}
+              >
+                <motion.div
+                  className="absolute inset-0 rounded-full bg-accent/12 blur-2xl"
+                  animate={{ scale: [1, 1.18, 1], opacity: [0.28, 0.52, 0.28] }}
+                  transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
+                />
+                <motion.div
+                  animate={{ y: [0, -5, 0], rotate: [0, 1.5, -1.5, 0] }}
+                  transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
+                >
+                  <Image
+                    src="/logos/gokai-logo.svg"
+                    alt="Gokai"
+                    width={92}
+                    height={92}
+                    priority
+                    className="dark:hidden"
+                  />
+                  <Image
+                    src="/logos/gokai-logo-dark.svg"
+                    alt=""
+                    width={92}
+                    height={92}
+                    priority
+                    className="hidden dark:block"
+                  />
+                </motion.div>
+              </motion.div>
+
+              <motion.span
+                className="mt-6 inline-flex items-center gap-2 rounded-full border border-accent/10 bg-surface-primary/80 px-4 py-2 text-xs font-bold text-accent shadow-sm backdrop-blur-md"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.8 }}
+              >
+                Dashboard listo
+              </motion.span>
+
+              <motion.h1
+                className="mt-5 text-4xl font-extrabold tracking-tight text-content-primary sm:text-5xl"
+                initial={{ opacity: 0, y: 18 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6, duration: 1 }}
+              >
+                {copy.readyTitle}
+              </motion.h1>
+
+              <motion.p
+                className="mt-3 max-w-lg text-sm leading-relaxed text-content-tertiary sm:text-base"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.95, duration: 1.1 }}
+              >
+                {copy.readyDescription}
+              </motion.p>
+
+              <motion.div
+                className="mt-8 flex items-center gap-3"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 1.25, duration: 0.7 }}
+              >
+                {[0, 1, 2].map((index) => (
+                  <motion.div
+                    key={index}
+                    className="h-3 w-3 rounded-full bg-accent shadow-[0_0_16px_rgba(153,51,49,0.22)]"
+                    animate={{
+                      y: [0, -8, 0],
+                      scale: [1, 1.45, 1],
+                      opacity: [0.3, 1, 0.3],
+                    }}
+                    transition={{
+                      duration: 2.1,
+                      repeat: Infinity,
+                      delay: index * 0.24,
+                      ease: "easeInOut",
+                    }}
+                  />
+                ))}
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </div>
+  );
+}
+
+function getCompletionCopy(passedKanaTypes: KanaType[]): CompletionCopy {
+  if (passedKanaTypes.length === 2) {
+    return {
+      celebrationTitle: "Aprobaste Hiragana y Katakana",
+      celebrationDescription: "Entraste al onboarding con ambos alfabetos validados y tu progreso inicial ya quedó registrado.",
+      readyTitle: "Bienvenido a tu dashboard",
+      readyDescription: "Tu ruta ya empieza con Hiragana y Katakana aprobados. Estamos preparando tu panel principal.",
+      badges: ["Hiragana aprobado", "Katakana aprobado"],
+    };
+  }
+
+  if (passedKanaTypes[0] === "hiragana") {
+    return {
+      celebrationTitle: "Aprobaste Hiragana",
+      celebrationDescription: "Tu base fonética ya quedó validada. Continuarás con tu progreso guardado desde el primer momento.",
+      readyTitle: "Tu dashboard ya te espera",
+      readyDescription: "Vamos a abrir tu panel principal con Hiragana aprobado y el resto de tu ruta listo para continuar.",
+      badges: ["Hiragana aprobado"],
+    };
+  }
+
+  if (passedKanaTypes[0] === "katakana") {
+    return {
+      celebrationTitle: "Aprobaste Katakana",
+      celebrationDescription: "Tu evaluación registró Katakana como aprobado y ahora entraremos a tu dashboard con ese avance guardado.",
+      readyTitle: "Tu dashboard ya te espera",
+      readyDescription: "Vamos a abrir tu panel principal con Katakana aprobado y tu ruta inicial preparada para seguir aprendiendo.",
+      badges: ["Katakana aprobado"],
+    };
+  }
+
+  return {
+    celebrationTitle: "Tu onboarding ya está listo",
+    celebrationDescription: "Terminaste la configuración inicial. Ahora abriremos tu dashboard para seguir con tu ruta de aprendizaje.",
+    readyTitle: "Bienvenido a tu dashboard",
+    readyDescription: "Estamos preparando tu panel principal para que continúes desde tu punto de partida elegido.",
+    badges: [],
+  };
+}
+
+function TransitionParticles() {
+  const particles = Array.from({ length: 14 }).map((_, index) => ({
+    id: index,
+    size: 6 + (index % 4) * 4,
+    left: `${6 + ((index * 9) % 84)}%`,
+    top: `${8 + ((index * 13) % 76)}%`,
+    duration: 8 + (index % 4) * 1.4,
+    delay: index * 0.24,
+  }));
+
+  return (
+    <div className="pointer-events-none absolute inset-0 overflow-hidden">
+      {particles.map((particle) => (
+        <motion.div
+          key={particle.id}
+          className="absolute rounded-full bg-surface-primary/18 blur-[1px] dark:bg-surface-primary/10"
+          style={{
+            width: particle.size,
+            height: particle.size,
+            left: particle.left,
+            top: particle.top,
+          }}
+          animate={{
+            y: [0, -18, 0, 14, 0],
+            x: [0, 8, -5, 3, 0],
+            opacity: [0.14, 0.42, 0.18, 0.35, 0.14],
+            scale: [1, 1.14, 0.96, 1.08, 1],
+          }}
+          transition={{
+            duration: particle.duration,
+            repeat: Infinity,
+            delay: particle.delay,
+            ease: "easeInOut",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function TransitionGlow() {
+  return (
+    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+      <motion.div
+        className="absolute h-[520px] w-[520px] rounded-full bg-surface-primary/10 blur-3xl"
+        animate={{ scale: [1, 1.08, 0.98, 1], opacity: [0.12, 0.18, 0.12, 0.12] }}
+        transition={{ duration: 9, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute h-[300px] w-[300px] rounded-full bg-surface-primary/8 blur-3xl"
+        animate={{ scale: [1, 1.16, 1], opacity: [0.08, 0.14, 0.08] }}
+        transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+      />
+    </div>
+  );
+}
+
+function TransitionSeal({ passedCount }: { passedCount: number }) {
+  const Icon = passedCount >= 2 ? Crown : passedCount === 1 ? CheckCircle2 : Sparkles;
+
+  return (
+    <div className="relative flex h-[190px] w-[190px] items-center justify-center">
+      <motion.div
+        className="absolute inset-0 rounded-full bg-accent/12 blur-3xl"
+        animate={{ scale: [1, 1.18, 1], opacity: [0.24, 0.46, 0.24] }}
+        transition={{ duration: 5.2, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="absolute h-[156px] w-[156px] rounded-full border border-accent/15"
+        animate={{ rotate: 360 }}
+        transition={{ duration: 18, repeat: Infinity, ease: "linear" }}
+      >
+        <div className="absolute left-1/2 top-0 h-3 w-3 -translate-x-1/2 rounded-full bg-accent shadow-[0_0_16px_rgba(153,51,49,0.28)]" />
+      </motion.div>
+      <motion.div
+        className="relative flex h-24 w-24 items-center justify-center rounded-[30px] bg-gradient-to-br from-accent via-[#A83F3A] to-accent-hover shadow-[0_20px_60px_rgba(153,51,49,0.28)]"
+        animate={{ y: [0, -5, 0], rotate: [0, 4, -4, 0] }}
+        transition={{ duration: 5.6, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Icon className="h-10 w-10 text-content-inverted" />
+      </motion.div>
+    </div>
   );
 }

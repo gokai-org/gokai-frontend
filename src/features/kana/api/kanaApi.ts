@@ -3,10 +3,11 @@ import type {
   Kana,
   KanaExamResponse,
   KanaExamResponseRaw,
+  KanaExamSubmitRequest,
+  KanaExamSubmitResponse,
   KanaStrokeData,
   KanaType,
   KanaListResponse,
-  SaveKanaQuizResponseRequest,
   UserKanaProgressDetailedResponse,
 } from "@/features/kana/types";
 import { normalizeKanaQuizQuestion } from "@/features/kana/utils/quizParser";
@@ -16,10 +17,19 @@ const KANA_PROGRESS_CACHE_TTL_MS = 30_000;
 
 /* ── Funciones unificadas ──────────────────────────────── */
 
-function normalizeKanaExamResponse(raw: KanaExamResponseRaw): KanaExamResponse {
+function normalizeKanaExamResponse(
+  raw: KanaExamResponseRaw,
+  kanaType: KanaType,
+): KanaExamResponse {
   const questions = Array.isArray(raw) ? raw : raw.questions ?? [];
+  const alphabet = Array.isArray(raw) ? kanaType : raw.alphabet ?? kanaType;
+  const totalQuestions = Array.isArray(raw)
+    ? questions.length
+    : raw.totalQuestions ?? questions.length;
 
   return {
+    alphabet,
+    totalQuestions,
     questions: questions.map(normalizeKanaQuizQuestion),
   };
 }
@@ -81,14 +91,14 @@ export async function getKanaExam(kanaType: KanaType) {
     },
   );
 
-  return normalizeKanaExamResponse(raw);
+  return normalizeKanaExamResponse(raw, kanaType);
 }
 
 export function submitKanaExam(
   kanaType: KanaType,
-  body: SaveKanaQuizResponseRequest,
+  body: KanaExamSubmitRequest,
 ) {
-  return apiFetch<{ success: boolean }>(`/api/content/kana/exam/${kanaType}`, {
+  return apiFetch<KanaExamSubmitResponse>(`/api/content/kana/exam/${kanaType}`, {
     method: "POST",
     body: JSON.stringify(body),
   });

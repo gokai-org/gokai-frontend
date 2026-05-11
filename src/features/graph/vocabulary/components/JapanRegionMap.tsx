@@ -179,6 +179,11 @@ function JapanRegionMap({
       return;
     }
 
+    if (state.pointerType !== "mouse") {
+      setHoveredRegion(null);
+      return;
+    }
+
     const container = containerRef.current;
     const transformLayer = container?.closest(".map-transform-layer");
     const rect = container?.getBoundingClientRect();

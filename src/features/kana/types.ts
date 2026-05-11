@@ -49,13 +49,42 @@ export type UserKanaProgressDetailedResponse = {
 
 export type KanaExamResponseRaw =
   | KanaQuizQuestionItemRaw[]
-  | { questions?: KanaQuizQuestionItemRaw[] };
+  | {
+      alphabet?: KanaType;
+      totalQuestions?: number;
+      questions?: KanaQuizQuestionItemRaw[];
+    };
 
 export type KanaExamResponse = {
+  alphabet: KanaType;
+  totalQuestions: number;
   questions: KanaQuizQuestionItem[];
 };
 
 export type SaveKanaQuizResponseRequest = KanaQuizSubmitBody;
+
+export type KanaExamSubmitRequest = {
+  score: number;
+  duration: number;
+};
+
+export type KanaExamSubmitResponse = {
+  success: boolean;
+  message?: string;
+  awardedPoints?: number;
+};
+
+export type KanaExamResult = {
+  kanaType: KanaType;
+  score: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  totalQuestions: number;
+  duration: number;
+  passed: boolean;
+  awardedPoints: number;
+  message?: string | null;
+};
 
 export type KanaExerciseType = "writing" | "reading";
 

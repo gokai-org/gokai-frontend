@@ -68,6 +68,11 @@ function InteractiveRegionLayer({
         return;
       }
 
+      if (event.pointerType !== "mouse") {
+        onRegionHoverChange(null);
+        return;
+      }
+
       const target = event.target;
 
       if (!(target instanceof Element)) {

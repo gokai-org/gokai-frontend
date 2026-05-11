@@ -1,6 +1,9 @@
 export type {
   Kana,
   KanaExamResponse,
+  KanaExamSubmitRequest,
+  KanaExamSubmitResponse,
+  KanaExamResult,
   KanaType,
   KanaStrokeData,
   KanaExerciseType,
@@ -47,6 +50,7 @@ export {
 
 // Quiz hook
 export { useKanaQuiz } from "./hooks/useKanaQuiz";
+export { useKanaExam } from "./hooks/useKanaExam";
 
 // Stroke validation (re-exported from shared logic)
 export {
@@ -77,6 +81,7 @@ export { KanaWritingPracticeModal } from "./components/KanaWritingPracticeModal"
 
 // Quiz components
 export {
+  KanaExamModal,
   KanaQuizModal,
   KanaQuizCanvasExercise,
   KanaFromKanaExercise,

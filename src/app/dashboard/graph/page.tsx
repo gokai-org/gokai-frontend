@@ -9,6 +9,7 @@ import RegionVectorGraph from "@/features/graph/vocabulary/components/RegionVect
 import VocabularyNodePanel from "@/features/graph/vocabulary/components/VocabularyNodePanel";
 import { useDeferredGraphMount } from "@/features/graph/vocabulary/hooks/useDeferredGraphMount";
 import { useVocabularyGraph } from "@/features/graph/vocabulary/hooks/useVocabularyGraph";
+import { loadJapanMapAssets } from "@/features/graph/vocabulary/components/japanMap/japanMapAssets";
 import { buildRegionGraphLayout } from "@/features/graph/vocabulary/lib/regionGraphLayout";
 import {
   buildVocabularySubthemeGraphElements,
@@ -603,6 +604,10 @@ export default function Page() {
 
     observer.observe(element);
     return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    void loadJapanMapAssets().catch(() => null);
   }, []);
 
   useEffect(() => {
@@ -1277,14 +1282,9 @@ export default function Page() {
     const frame = mapFrameRef.current;
     const size = sceneSizeRef.current;
     const finalScale = auto.scale * transform.scale;
-    const regionLayout = selectedRegionLayoutRef.current;
-    const frameForClamp =
-      currentLevelRef.current === "region" && regionLayout?.bounds
-        ? getRegionFocusFrame(frame, regionLayout.bounds)
-        : frame;
     const clamped = clampSceneToFrame(
       { scale: finalScale, x: auto.x + transform.x, y: auto.y + transform.y },
-      frameForClamp,
+      frame,
       size,
     );
     return { ...transform, x: clamped.x - auto.x, y: clamped.y - auto.y };
