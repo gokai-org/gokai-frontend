@@ -11,6 +11,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { getUnlockVisualVars } from "@/shared/lib/unlockVisuals";
 import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
 import { getGrammarBoardArtworkPreset } from "../../constants/grammarBoardBackgrounds";
@@ -120,6 +121,7 @@ export function GrammarLibraryCard({
   onPressUnlock,
 }: GrammarLibraryCardProps) {
   const { motionProps, hoverTransition, cardTransition } = useCardAnimation(index);
+  const masteredModules = useMasteredModules();
   const holdTimerRef = useRef<number | null>(null);
   const shakeTimerRef = useRef<number | null>(null);
   const holdTriggeredRef = useRef(false);
@@ -127,6 +129,7 @@ export function GrammarLibraryCard({
   const [isLockedShakeActive, setIsLockedShakeActive] = useState(false);
 
   const isComingSoon = lesson.isMock;
+  const isGrammarMastered = masteredModules.has("grammar");
   const isLockedCard = lesson.status === "locked" && !isComingSoon;
   const pressUnlockEnabled = isLockedCard && lesson.canUnlock && typeof onPressUnlock === "function";
   const showLockedIndicator = isLockedCard && !lesson.canUnlock;
@@ -274,16 +277,21 @@ export function GrammarLibraryCard({
         .filter(Boolean)
         .join(" ")}
       style={unlockVisualVars}
+      data-library-mastery-card="grammar"
+      data-library-mastered={isGrammarMastered ? "true" : "false"}
+      data-grammar-mastered={isGrammarMastered ? "true" : "false"}
     >
       <div
+        data-grammar-library-surface="true"
+        data-grammar-art-tone={variant.artTone}
         className={[
           "relative flex h-full min-h-[190px] w-full flex-col overflow-hidden rounded-[24px] border text-left select-none",
           variant.bg,
           variant.border,
           variant.text,
-            surfaceHoverClass,
+          surfaceHoverClass,
           isLockedCard
-                ? ""
+            ? ""
             : CARD_STATE_ACCENTS[lesson.status],
         ].join(" ")}
       >
@@ -295,19 +303,27 @@ export function GrammarLibraryCard({
           onPointerUp={handlePointerUp}
           onPointerCancel={handlePointerCancel}
           onPointerLeave={handlePointerCancel}
+          data-grammar-art-tone={variant.artTone}
           className="relative h-full w-full rounded-[24px] p-5 text-left"
           aria-disabled={isLockedCard || !onSelect ? true : undefined}
           aria-label={lesson.title}
         >
-          <div className="pointer-events-none absolute inset-[1px] rounded-[23px] border border-black/6 dark:border-white/8" />
+          <div
+            className={[
+              "pointer-events-none absolute inset-[1px] rounded-[23px] border",
+              "border-black/6 dark:border-white/8",
+            ].join(" ")}
+          />
 
           {pressUnlockEnabled ? (
             <>
               <div
+                data-grammar-unlock-overlay="true"
                 className={`pointer-events-none absolute inset-0 z-[1] rounded-[24px] bg-[linear-gradient(135deg,rgba(153,51,49,0.08),rgba(186,81,73,0.18),rgba(255,255,255,0.04))] transition-opacity duration-200 ${unlockHoldVisualActive ? "opacity-100" : "opacity-0"}`}
               />
               <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1.5 overflow-hidden rounded-b-[24px] bg-black/6 dark:bg-white/8">
                 <div
+                  data-grammar-unlock-bar="true"
                   className={`h-full origin-left rounded-full bg-gradient-to-r from-accent via-[#C5544D] to-accent-hover ${unlockPending ? "animate-pulse" : ""}`}
                   style={{
                     transform: `scaleX(${unlockPending ? 1 : unlockHoldVisualActive ? 1 : 0})`,

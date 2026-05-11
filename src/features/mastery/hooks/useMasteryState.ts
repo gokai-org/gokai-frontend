@@ -12,15 +12,12 @@ import {
 // ---------------------------------------------------------------------------
 
 function resolveMasteryState(
-  currentPoints: number,
-  threshold: number,
+  isMastered: boolean,
   totalItems: number,
   completedItems: number,
   wasCelebrated: boolean,
 ): MasteryState {
   if (totalItems === 0) return "locked";
-
-  const isMastered = currentPoints >= threshold;
 
   if (isMastered && !wasCelebrated) return "celebrating_mastery";
   if (isMastered) return "mastered";
@@ -35,10 +32,10 @@ function resolveMasteryState(
 // ---------------------------------------------------------------------------
 
 /**
- * Detects the mastery state of a specific writing module based on user points.
+ * Detects the mastery state of a module based on the backend mastery flag.
  *
  * @param moduleId - Which module to evaluate.
- * @param currentPoints - The user's current points for this module.
+ * @param isMasteredFromBackend - Boolean flag sent by the backend.
  * @param totalItems - Total items in the module (e.g., total kana count).
  * @param completedItems - Number of items the user has completed.
  *
@@ -46,7 +43,7 @@ function resolveMasteryState(
  */
 export function useMasteryState(
   moduleId: MasteryModuleId,
-  currentPoints: number,
+  isMasteredFromBackend: boolean,
   totalItems: number,
   completedItems: number,
   /** When true the module was already mastered before this session started
@@ -69,7 +66,7 @@ export function useMasteryState(
   });
 
   const effectiveWasCelebrated = wasCelebrated || alreadyKnownMastered;
-  const isNewMastery = currentPoints >= threshold && !effectiveWasCelebrated;
+  const isNewMastery = isMasteredFromBackend && !effectiveWasCelebrated;
 
   /** Call after the celebration finishes to persist the flag. */
   const markCelebrated = useCallback(() => {
@@ -82,8 +79,7 @@ export function useMasteryState(
   }, [moduleId]);
 
   const state = resolveMasteryState(
-    currentPoints,
-    threshold,
+    isMasteredFromBackend,
     totalItems,
     completedItems,
     effectiveWasCelebrated,
@@ -91,7 +87,12 @@ export function useMasteryState(
 
   return useMemo(
     () => {
-      const progress = threshold > 0 ? Math.min(currentPoints / threshold, 1) : 0;
+      const currentPoints = isMasteredFromBackend ? threshold : completedItems;
+      const progress = isMasteredFromBackend
+        ? 1
+        : totalItems > 0
+          ? Math.min(completedItems / totalItems, 1)
+          : 0;
       const isMastered =
         state === "mastered" || state === "celebrating_mastery";
       return {
@@ -104,6 +105,6 @@ export function useMasteryState(
         markCelebrated,
       };
     },
-    [state, currentPoints, threshold, isNewMastery, markCelebrated],
+    [completedItems, isMasteredFromBackend, isNewMastery, markCelebrated, state, threshold, totalItems],
   );
 }

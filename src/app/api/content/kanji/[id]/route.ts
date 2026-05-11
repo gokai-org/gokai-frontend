@@ -12,7 +12,6 @@ export const dynamic = "force-dynamic";
 const KANJI_QUIZ_POST_TIMEOUT_MS = 60000;
 const KANJI_QUIZ_GET_TIMEOUT_MS = 3500;
 const KANJI_DETAIL_TIMEOUT_MS = 6000;
-const USER_POINTS_TIMEOUT_MS = 5000;
 
 type KanjiQuizType = "kanji" | "meaning" | "reading" | "writing";
 
@@ -198,36 +197,6 @@ async function fetchKanjiCatalog(token: string): Promise<NormalizedKanji[]> {
   }
 
   return normalizeKanjiCatalogUnlockCosts(payload).map(normalizeKanji);
-}
-
-async function fetchCurrentUserPoints(token: string): Promise<number> {
-  const userId = decodeUserIdFromToken(token);
-  if (!userId) {
-    return 0;
-  }
-
-  try {
-    const upstream = await fetch(`${apiConfig.usersApiBase}/users/${userId}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      cache: "no-store",
-      signal: AbortSignal.timeout(USER_POINTS_TIMEOUT_MS),
-    });
-
-    if (!upstream.ok) {
-      return 0;
-    }
-
-    const payload = (await upstream.json().catch(() => null)) as
-      | { points?: number }
-      | null;
-
-    return typeof payload?.points === "number" ? payload.points : 0;
-  } catch {
-    return 0;
-  }
 }
 
 async function fetchKanjiProgress(token: string): Promise<KanjiProgressPayload | null> {
@@ -717,14 +686,5 @@ export async function POST(
     responseBody = { success: true };
   }
 
-  const userPoints = await fetchCurrentUserPoints(token);
-
-  return NextResponse.json(
-    {
-      ...responseBody,
-      userPoints,
-      points: userPoints,
-    },
-    { status: upstream.status },
-  );
+  return NextResponse.json(responseBody, { status: upstream.status });
 }

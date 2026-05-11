@@ -13,7 +13,6 @@ import type { KanaQuizType } from "@/features/kana/types/quiz";
 import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
-import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
 import {
@@ -51,7 +50,7 @@ function isKanaQuizType(
 }
 
 export default function HiraganaView() {
-  const { items, summary, loading, error, reload, userPoints } = useHiraganaBoard();
+  const { items, summary, loading, error, reload, userPoints, hasModuleMastery } = useHiraganaBoard();
   const { setHidden } = useSidebar();
   const mastered = useMasteredModules();
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
@@ -260,12 +259,6 @@ export default function HiraganaView() {
 
   const handleQuizEnd = useCallback((result?: KanaQuizCompletionResult) => {
     const isPracticeOnly = quizItem?.isPracticeOnly === true;
-    const resultingKanaPoints =
-      result?.resultingModulePoints ??
-      userPoints + (result?.newlyCompletedPoints ?? 0);
-    const becameMastered =
-      !wasMasteredBeforeQuizRef.current &&
-      resultingKanaPoints >= MASTERY_THRESHOLDS.hiragana;
 
     setQuizItem(null);
     if (isPracticeOnly) {
@@ -282,9 +275,11 @@ export default function HiraganaView() {
         kanaPoints:
           result.resultingModulePoints ??
           userPoints + result.newlyCompletedPoints,
+        hasHiraganaMastery: result.triggeredModuleMastery ? true : undefined,
       });
     }
     if (result?.triggeredModuleMastery) {
+      dispatchMasteryProgressSync({ hasHiraganaMastery: true });
       pendingMasteryCelebrationRef.current = false;
       setSuppressUnlockPointsDuringUnlock(false);
       if (celebrationFallbackTimerRef.current !== null) {
@@ -296,19 +291,6 @@ export default function HiraganaView() {
       });
       void reload();
       return;
-    }
-    if (becameMastered) {
-      pendingMasteryCelebrationRef.current = true;
-      setSuppressUnlockPointsDuringUnlock(true);
-      if (celebrationFallbackTimerRef.current !== null) {
-        clearTimeout(celebrationFallbackTimerRef.current);
-      }
-      celebrationFallbackTimerRef.current = setTimeout(() => {
-        if (!pendingMasteryCelebrationRef.current) return;
-        pendingMasteryCelebrationRef.current = false;
-        setSuppressUnlockPointsDuringUnlock(false);
-        dispatchMasteryCelebrationRequest({ moduleId: "hiragana" });
-      }, 2600);
     }
     void reload();
   }, [quizItem, reload, userPoints]);
@@ -340,6 +322,7 @@ export default function HiraganaView() {
       focusedNodeId={detailNodeId ?? helpFocusedNodeId}
       masteryModuleId="hiragana"
       masteryPoints={userPoints}
+      masteryIsMastered={hasModuleMastery}
       autoTriggerOnNewMastery={false}
       suppressUnlockPointsDuringUnlock={suppressUnlockPointsDuringUnlock}
       onUnlockAnimationComplete={handleUnlockAnimationComplete}

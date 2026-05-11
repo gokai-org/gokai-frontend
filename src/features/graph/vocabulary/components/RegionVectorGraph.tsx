@@ -38,6 +38,11 @@ type RegionVectorGraphProps = {
   level: Extract<VocabularyViewLevel, "theme" | "subtheme">;
   interactionDisabled?: boolean;
   hoverResetToken?: number;
+  unlockTransition?: {
+    fromNodeId: string;
+    toNodeId: string;
+    token: number;
+  } | null;
   onNodeSelected: (node: FlowGraphNode) => void;
 };
 
@@ -445,6 +450,7 @@ function RegionVectorGraph({
   level,
   interactionDisabled = false,
   hoverResetToken = 0,
+  unlockTransition = null,
   onNodeSelected,
 }: RegionVectorGraphProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -487,6 +493,10 @@ function RegionVectorGraph({
   const edgeElements = useMemo(() => {
     return layout.edges.map(({ edge, from, to }, index) => {
       const completed = edge.data?.status === "completed";
+      const isUnlockEdge =
+        unlockTransition !== null &&
+        edge.source === unlockTransition.fromNodeId &&
+        edge.target === unlockTransition.toNodeId;
       const curve = buildRegionGraphCurve(from, to);
       const edgeStroke = completed
         ? `url(#${idPrefix}-edge-completed)`
@@ -534,12 +544,32 @@ function RegionVectorGraph({
             vectorEffect="non-scaling-stroke"
             opacity={completed ? 0.74 : 0.56}
           />
+          {isUnlockEdge ? (
+            <path
+              key={`${edge.id}-${unlockTransition?.token ?? 0}`}
+              d={curve}
+              fill="none"
+              stroke="var(--vocabulary-progress-fill)"
+              strokeWidth={visualScale.completedEdgeWidth + 0.22}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              vectorEffect="non-scaling-stroke"
+              opacity={0.96}
+              pathLength={1}
+              strokeDasharray="1"
+              strokeDashoffset={1}
+            >
+              <animate attributeName="stroke-dashoffset" from="1" to="0" dur="0.9s" begin="0s" fill="freeze" />
+              <animate attributeName="opacity" values="0;1;0.92" dur="0.9s" begin="0s" fill="freeze" />
+            </path>
+          ) : null}
         </g>
       );
     });
   }, [
     idPrefix,
     layout.edges,
+    unlockTransition,
     visualScale.completedEdgeWidth,
     visualScale.edgeWidth,
   ]);
@@ -699,6 +729,7 @@ function RegionVectorGraph({
         const progress = clamp(node.data.progress ?? 0, 0, 100);
         const showProgress = isWordNode && node.data.status !== "locked" && progress > 0 && progress < 100;
         const isAiRecommended = Boolean(node.data.isAiRecommended && node.id !== "home");
+        const isUnlockTarget = unlockTransition !== null && node.id === unlockTransition.toNodeId;
         const recommendationHalo = isAiRecommended
           ? getRecommendationHalo(
               nodeRadius,
@@ -792,6 +823,32 @@ function RegionVectorGraph({
               />
 
               <g>
+                {isUnlockTarget ? (
+                  <g key={`${node.id}-${unlockTransition?.token ?? 0}`} style={{ pointerEvents: "none" }}>
+                    <circle
+                      r={nodeRadius + 0.24}
+                      fill="none"
+                      stroke="var(--vocabulary-progress-fill)"
+                      strokeWidth={0.18}
+                      opacity={0}
+                      vectorEffect="non-scaling-stroke"
+                    >
+                      <animate attributeName="r" from={String(nodeRadius + 0.24)} to={String(nodeRadius + 2.5)} dur="0.92s" begin="0s" fill="freeze" />
+                      <animate attributeName="opacity" values="0;0.74;0" dur="0.92s" begin="0s" fill="freeze" />
+                    </circle>
+                    <circle
+                      r={nodeRadius + 0.18}
+                      fill="none"
+                      stroke="var(--vocabulary-progress-fill)"
+                      strokeWidth={0.28}
+                      opacity={0}
+                      vectorEffect="non-scaling-stroke"
+                    >
+                      <animate attributeName="r" from={String(nodeRadius + 0.18)} to={String(nodeRadius + 1.54)} dur="0.62s" begin="0s" fill="freeze" />
+                      <animate attributeName="opacity" values="0;0.9;0" dur="0.62s" begin="0s" fill="freeze" />
+                    </circle>
+                  </g>
+                ) : null}
                 {hasImage ? (
                   <defs>
                     <clipPath id={imageId}>

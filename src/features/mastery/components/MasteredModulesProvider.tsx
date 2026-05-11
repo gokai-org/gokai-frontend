@@ -7,8 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { getCurrentUser } from "@/features/auth/services/api";
-import { MASTERY_THRESHOLDS } from "../constants/masteryConfig";
+import { getKanaProgress } from "@/features/kana/api/kanaApi";
+import { getKanjiProgress } from "@/features/kanji/api/kanjiApi";
+import { getGrammarProgress } from "@/features/graph/grammar/api/grammarApi";
 import type { MasteryModuleId } from "../types";
 import {
   mergeMasteredModulesFromProgress,
@@ -20,9 +21,43 @@ const MASTERED_MODULES_STORAGE_KEY = "gokai-mastered-modules";
 let masteredModulesBootstrap: MasteredSet | null = null;
 
 function normalizeMasteredModuleId(value: unknown): MasteryModuleId | null {
-  return value === "hiragana" || value === "katakana" || value === "kanji"
+  return value === "hiragana" ||
+    value === "katakana" ||
+    value === "kanji" ||
+    value === "grammar"
     ? value
     : null;
+}
+
+async function fetchMasteredModulesFromProgress(): Promise<MasteredSet> {
+  const [kanaProgress, kanjiProgress, grammarProgress] = await Promise.all([
+    getKanaProgress().catch(() => []),
+    getKanjiProgress().catch(() => null),
+    getGrammarProgress().catch(() => null),
+  ]);
+
+  const next = new Set<MasteryModuleId>();
+  const kanaMasterySource = kanaProgress.find(
+    (item) => item.hasHiraganaMastery || item.hasKatakanaMastery || item.hasKanasMastery,
+  );
+
+  if (kanaMasterySource?.hasHiraganaMastery || kanaMasterySource?.hasKanasMastery) {
+    next.add("hiragana");
+  }
+
+  if (kanaMasterySource?.hasKatakanaMastery || kanaMasterySource?.hasKanasMastery) {
+    next.add("katakana");
+  }
+
+  if (kanjiProgress?.hasKanjiMastery) {
+    next.add("kanji");
+  }
+
+  if (grammarProgress?.hasGrammarMastery) {
+    next.add("grammar");
+  }
+
+  return next;
 }
 
 function readMasteredModulesCache(): MasteredSet {
@@ -105,8 +140,7 @@ export function useMasteredModulesLoading(): boolean {
 // ---------------------------------------------------------------------------
 
 /**
- * Fetches the current user once on mount and computes which modules have been
- * mastered based on their point thresholds.  Place this near the root of the
+ * Fetches progress once on mount and reads backend mastery flags. Place this near the root of the
  * authenticated layout so that all downstream components (library cards, board
  * nodes, etc.) can read the mastered set via `useMasteredModules()`.
  */
@@ -121,20 +155,13 @@ export function MasteredModulesProvider({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getCurrentUser()
-      .then((user) => {
-        if (!user) return;
-        const set = new Set<MasteryModuleId>();
-        const kana = user.kanaPoints ?? 0;
-        const pts = user.points ?? 0;
-        if (kana >= MASTERY_THRESHOLDS.hiragana) set.add("hiragana");
-        if (kana >= MASTERY_THRESHOLDS.katakana) set.add("katakana");
-        if (pts >= MASTERY_THRESHOLDS.kanji) set.add("kanji");
+    fetchMasteredModulesFromProgress()
+      .then((set) => {
         writeMasteredModulesCache(set);
         setMastered(set);
       })
       .catch(() => {
-        // Keep the empty set — graceful degradation.
+        // Keep the cached set — graceful degradation.
       })
       .finally(() => {
         setLoading(false);

@@ -21,6 +21,12 @@ type RawProgressItem = {
   exercise_type?: string;
   completed?: boolean;
   message?: string;
+  hasHiraganaMastery?: boolean;
+  has_hiragana_mastery?: boolean;
+  hasKatakanaMastery?: boolean;
+  has_katakana_mastery?: boolean;
+  hasKanasMastery?: boolean;
+  has_kanas_mastery?: boolean;
 };
 
 function normalizeProgressItem(raw: RawProgressItem) {
@@ -37,6 +43,12 @@ function normalizeProgressItem(raw: RawProgressItem) {
       raw.exerciseType ?? raw.exercise_type ?? "",
     completed: raw.completed === true,
     message: raw.message,
+    hasHiraganaMastery:
+      raw.hasHiraganaMastery === true || raw.has_hiragana_mastery === true,
+    hasKatakanaMastery:
+      raw.hasKatakanaMastery === true || raw.has_katakana_mastery === true,
+    hasKanasMastery:
+      raw.hasKanasMastery === true || raw.has_kanas_mastery === true,
   };
 }
 

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { CheckCircle2, FlaskConical } from "lucide-react";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { AnswerConfirmationPanel } from "@/shared/ui";
@@ -19,7 +20,6 @@ import GrammarOrderExercise from "./GrammarOrderExercise";
 import GrammarQuestionExercise from "./GrammarQuestionExercise";
 
 type GrammarQuizStep = "exercise" | "submitting" | "summary";
-const GRAMMAR_COMPLETION_REWARD = 35;
 
 type GrammarQuizFooterState = {
   canConfirm: boolean;
@@ -132,7 +132,7 @@ function GrammarQuizSummary({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-        <div className="rounded-[28px] bg-[linear-gradient(135deg,rgba(183,71,66,0.12),rgba(183,71,66,0.03))] p-5 ring-1 ring-accent/15">
+        <div data-grammar-summary-card="true" className="rounded-[28px] bg-[linear-gradient(135deg,rgba(183,71,66,0.12),rgba(183,71,66,0.03))] p-5 ring-1 ring-accent/15">
           <p className="text-[0.6875rem] font-black uppercase tracking-[0.22em] text-content-muted">
             Resultado
           </p>
@@ -190,6 +190,7 @@ function GrammarQuizSummary({
 
 export interface GrammarQuizModalProps {
   lesson: GrammarLesson;
+  wasCompletedBefore?: boolean;
   onClose: () => void;
   onExitToBoard?: () => void;
   onComplete?: (result: GrammarQuizCompletionResult) => void;
@@ -197,11 +198,14 @@ export interface GrammarQuizModalProps {
 
 export default function GrammarQuizModal({
   lesson,
+  wasCompletedBefore = false,
   onClose,
   onExitToBoard,
   onComplete,
 }: GrammarQuizModalProps) {
   useMiniDockBlocker(true);
+  const masteredModules = useMasteredModules();
+  const isGrammarMastered = masteredModules.has("grammar");
 
   const platformMotion = usePlatformMotion();
   const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
@@ -215,12 +219,12 @@ export default function GrammarQuizModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [finalScore, setFinalScore] = useState(0);
   const [finalCorrectCount, setFinalCorrectCount] = useState(0);
-  const [awardedPoints, setAwardedPoints] = useState(0);
   const [completedSuccessfully, setCompletedSuccessfully] = useState(false);
   const [exerciseFooterState, setExerciseFooterState] = useState<GrammarQuizFooterState | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
   const startRef = useRef(Date.now());
+  const wasCompletedBeforeAtStartRef = useRef(wasCompletedBefore);
 
   const overlayVariants = useMemo(
     () => ({
@@ -280,7 +284,6 @@ export default function GrammarQuizModal({
     setSubmitError(null);
     setFinalScore(0);
     setFinalCorrectCount(0);
-    setAwardedPoints(0);
     setCompletedSuccessfully(false);
   }, []);
 
@@ -405,17 +408,14 @@ export default function GrammarQuizModal({
 
     try {
       const response = await submitGrammarQuiz(lesson.id, { score, duration });
-      setAwardedPoints(response.pointsAwarded ?? 0);
       setCompletedSuccessfully(response.isCorrect === true);
       onComplete?.({
         grammarId: lesson.id,
         score,
         isCorrect: response.isCorrect,
-        pointsAwarded: response.pointsAwarded ?? 0,
-        userPoints: response.userPoints ?? 0,
+        hasGrammarMastery: response.hasGrammarMastery === true,
       });
     } catch (error) {
-      setAwardedPoints(0);
       setCompletedSuccessfully(false);
       if (!shouldHideSubmitError(error)) {
         setSubmitError(error instanceof Error ? error.message : "No se pudo guardar el resultado");
@@ -505,9 +505,11 @@ export default function GrammarQuizModal({
     }
   }, [isConfirmDialogOpen]);
 
-  const shouldShowUnlockedCompletion = completedSuccessfully && awardedPoints > 0;
-  const shouldShowReaffirmedCompletion = completedSuccessfully && awardedPoints === 0;
-  const displayedAwardedPoints = Math.max(awardedPoints, GRAMMAR_COMPLETION_REWARD);
+  const shouldShowPerfectCompletion = completedSuccessfully;
+  const shouldShowUnlockedCompletion =
+    completedSuccessfully && !wasCompletedBeforeAtStartRef.current;
+  const shouldShowReaffirmedCompletion =
+    completedSuccessfully && wasCompletedBeforeAtStartRef.current;
   const handleCloseCompletedSession = onExitToBoard ?? onClose;
 
   const footerActionVisible =
@@ -524,6 +526,7 @@ export default function GrammarQuizModal({
       initial="hidden"
       animate="visible"
       exit="exit"
+      data-grammar-mastered={isGrammarMastered ? "true" : "false"}
       className="fixed inset-0 z-[75] flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-4"
       onClick={handleRequestClose}
     >
@@ -622,10 +625,11 @@ export default function GrammarQuizModal({
               {shouldShowUnlockedCompletion ? (
                 <UnlockedMasterySequence
                   title="Dominaste esta lección de gramática"
-                  subtitle={`${lesson.title} quedo completada con un resultado perfecto y desbloqueo ${displayedAwardedPoints} puntos nuevos.`}
+                  subtitle={`${lesson.title} se resolvio con un puntaje perfecto.`}
                   score={finalScore}
                   symbol="文"
-                  pointsDelta={displayedAwardedPoints}
+                  pointsDelta={0}
+                  showPointsReward={false}
                   statusLabel="Lección completada"
                   onClose={handleCloseCompletedSession}
                 />
@@ -751,7 +755,7 @@ export default function GrammarQuizModal({
             )}
           </div>
         ) : null}
-        {step === "summary" && !(shouldShowUnlockedCompletion || shouldShowReaffirmedCompletion) ? (
+        {step === "summary" && !shouldShowPerfectCompletion ? (
           <div className="shrink-0 rounded-b-3xl border-t border-border-subtle bg-surface-primary px-5 py-4 sm:px-6">
             <div className="flex flex-col gap-3 sm:flex-row">
               <button
@@ -796,6 +800,7 @@ export default function GrammarQuizModal({
                 confirmLabel="Mostrar resultado"
                 onConfirm={handleConfirmCurrentAnswer}
                 tone="grammar"
+                mastered={isGrammarMastered}
                 secondaryAction={{
                   label: "Seguir revisando",
                   onAction: () => setIsConfirmDialogOpen(false),
@@ -827,6 +832,7 @@ export default function GrammarQuizModal({
                 confirmLabel="Salir"
                 onConfirm={handleConfirmExit}
                 tone="grammar"
+                mastered={isGrammarMastered}
                 secondaryAction={{
                   label: "Seguir en el examen",
                   onAction: () => setIsExitDialogOpen(false),

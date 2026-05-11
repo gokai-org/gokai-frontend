@@ -1,6 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { BookOpen, CheckCircle2, ExternalLink, Headphones, Mic, Pencil } from "lucide-react";
@@ -54,7 +64,24 @@ type VocabularyWordGuideProps = {
   question: VocabularyWordLesson;
   subthemeMeaning: string;
   onStartQuiz: (type: VocabularyAnswerType) => void;
+  onNavigateToLibrary?: () => void;
 };
+
+type ActiveSymbolPopover = {
+  id: string;
+  sticky: boolean;
+};
+
+type SymbolPopoverPosition = {
+  top: number;
+  left: number;
+  arrowLeft: number;
+  placement: "top" | "bottom";
+};
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
 
 const VOCABULARY_TABS: AnimatedLessonTab<VocabularyGuideTab>[] = [
   { id: "meaning", label: "Significado", icon: <BookOpen size={12} /> },
@@ -377,55 +404,228 @@ function getSymbolGuideInfo(
 }
 
 function KanaLearningChip({
+  chipId,
   symbol,
   kanaCatalog,
+  activePopover,
+  onActivePopoverChange,
+  canHoverPopover,
+  onNavigateToLibrary,
 }: {
+  chipId: string;
   symbol: string;
   kanaCatalog: KanaCatalogState | null;
+  activePopover: ActiveSymbolPopover | null;
+  onActivePopoverChange: Dispatch<SetStateAction<ActiveSymbolPopover | null>>;
+  canHoverPopover: boolean;
+  onNavigateToLibrary?: () => void;
 }) {
   const info = getSymbolGuideInfo(symbol, kanaCatalog);
+  const buttonRef = useRef<HTMLButtonElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const [position, setPosition] = useState<SymbolPopoverPosition | null>(null);
+  const isActive = activePopover?.id === chipId;
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  const openHoverPopover = useCallback(() => {
+    clearCloseTimer();
+    onActivePopoverChange({ id: chipId, sticky: false });
+  }, [chipId, clearCloseTimer, onActivePopoverChange]);
+
+  const scheduleHoverClose = useCallback(() => {
+    if (!isActive || activePopover?.sticky) {
+      return;
+    }
+
+    clearCloseTimer();
+    closeTimerRef.current = window.setTimeout(() => {
+      onActivePopoverChange(null);
+      closeTimerRef.current = null;
+    }, 90);
+  }, [activePopover?.sticky, clearCloseTimer, isActive, onActivePopoverChange]);
+
+  const toggleStickyPopover = useCallback(() => {
+    clearCloseTimer();
+    onActivePopoverChange(
+      isActive && activePopover?.sticky
+        ? null
+        : { id: chipId, sticky: true },
+    );
+  }, [activePopover?.sticky, chipId, clearCloseTimer, isActive, onActivePopoverChange]);
+
+  useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
+
+  useLayoutEffect(() => {
+    if (!isActive) {
+      setPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const anchor = buttonRef.current;
+      const popover = popoverRef.current;
+
+      if (!anchor || !popover) {
+        return;
+      }
+
+      const anchorRect = anchor.getBoundingClientRect();
+      const popoverRect = popover.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const padding = 12;
+      const gap = 10;
+      const fitsAbove = anchorRect.top >= popoverRect.height + gap + padding;
+      const fitsBelow =
+        viewportHeight - anchorRect.bottom >= popoverRect.height + gap + padding;
+      const placement: "top" | "bottom" = fitsAbove || !fitsBelow ? "top" : "bottom";
+      const desiredLeft =
+        anchorRect.left + anchorRect.width / 2 - popoverRect.width / 2;
+      const left = clamp(
+        desiredLeft,
+        padding,
+        Math.max(padding, viewportWidth - popoverRect.width - padding),
+      );
+      const desiredTop =
+        placement === "top"
+          ? anchorRect.top - popoverRect.height - gap
+          : anchorRect.bottom + gap;
+      const top = clamp(
+        desiredTop,
+        padding,
+        Math.max(padding, viewportHeight - popoverRect.height - padding),
+      );
+      const arrowLeft = clamp(
+        anchorRect.left + anchorRect.width / 2 - left,
+        18,
+        Math.max(18, popoverRect.width - 18),
+      );
+
+      setPosition({ top, left, arrowLeft, placement });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [isActive]);
 
   return (
-    <div className="group relative inline-flex">
+    <div
+      data-vocabulary-symbol-popover-root="true"
+      className="relative inline-flex"
+    >
       <button
+        ref={buttonRef}
         type="button"
         className="flex h-11 min-w-11 items-center justify-center rounded-2xl border border-accent/18 bg-accent/8 px-3 text-lg font-black text-accent transition hover:-translate-y-0.5 hover:border-accent/35 hover:bg-accent/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/45 jp-text"
         aria-label={info.title}
+        aria-expanded={isActive}
+        onPointerEnter={(event) => {
+          if (canHoverPopover && event.pointerType === "mouse") {
+            openHoverPopover();
+          }
+        }}
+        onPointerLeave={(event) => {
+          if (canHoverPopover && event.pointerType === "mouse") {
+            scheduleHoverClose();
+          }
+        }}
+        onPointerDown={(event) => {
+          if (event.pointerType !== "mouse" || !canHoverPopover) {
+            event.preventDefault();
+            toggleStickyPopover();
+          }
+        }}
+        onFocus={() => {
+          clearCloseTimer();
+          onActivePopoverChange({ id: chipId, sticky: true });
+        }}
       >
         {symbol}
       </button>
-      <div className="pointer-events-none absolute bottom-[calc(100%+0.55rem)] left-1/2 z-20 w-56 -translate-x-1/2 translate-y-1 opacity-0 transition duration-150 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100">
-        <div className="pointer-events-auto overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-[#15161c] dark:ring-white/10">
-          <div className="flex items-center gap-3 px-3 py-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl font-black text-accent jp-text">
-              {symbol}
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
-                Guía del símbolo
-              </p>
-              <p className="mt-0.5 text-sm font-black text-slate-950 dark:text-slate-50">
-                {info.title}
-              </p>
-            </div>
-          </div>
-          <div className="border-t border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-[#111219]">
-            <p className="text-xs font-semibold leading-relaxed text-slate-700 dark:text-slate-300">
-              {info.description}
-            </p>
-            {info.libraryHref ? (
-              <Link
-                href={info.libraryHref}
-                className="mt-2 inline-flex items-center gap-1.5 text-xs font-black text-accent transition hover:text-accent-hover"
+      {isActive && typeof document !== "undefined"
+        ? createPortal(
+            <div className="pointer-events-none fixed inset-0 z-[90]">
+              <motion.div
+                ref={popoverRef}
+                data-vocabulary-symbol-popover-root="true"
+                initial={{ opacity: 0, y: position?.placement === "bottom" ? -6 : 6, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: position?.placement === "bottom" ? -4 : 4, scale: 0.98 }}
+                transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                className="pointer-events-auto fixed w-[min(18rem,calc(100vw-1.5rem))]"
+                style={{
+                  top: position?.top ?? -9999,
+                  left: position?.left ?? -9999,
+                }}
+                onMouseEnter={clearCloseTimer}
+                onMouseLeave={() => {
+                  if (canHoverPopover) {
+                    scheduleHoverClose();
+                  }
+                }}
               >
-                {info.actionLabel ?? "Ver tabla fonética"}
-                <ExternalLink size={12} strokeWidth={2.5} />
-              </Link>
-            ) : null}
-          </div>
-        </div>
-        <div className="mx-auto h-3 w-3 -translate-y-1 rotate-45 border-b border-r border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-[#111219]" />
-      </div>
+                <div className="relative overflow-visible">
+                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-[#15161c] dark:ring-white/10">
+                    <div className="flex items-center gap-3 px-3 py-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl font-black text-accent jp-text">
+                        {symbol}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                          Guía del símbolo
+                        </p>
+                        <p className="mt-0.5 text-sm font-black text-slate-950 dark:text-slate-50">
+                          {info.title}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="border-t border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-[#111219]">
+                      <p className="text-xs font-semibold leading-relaxed text-slate-700 dark:text-slate-300">
+                        {info.description}
+                      </p>
+                      {info.libraryHref ? (
+                        <Link
+                          href={info.libraryHref}
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs font-black text-accent transition hover:text-accent-hover"
+                          onClick={() => {
+                            onNavigateToLibrary?.();
+                          }}
+                        >
+                          {info.actionLabel ?? "Ver tabla fonética"}
+                          <ExternalLink size={12} strokeWidth={2.5} />
+                        </Link>
+                      ) : null}
+                    </div>
+                  </div>
+                  {position ? (
+                    <div
+                      className={`absolute h-3 w-3 rotate-45 border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-[#111219] ${
+                        position.placement === "top"
+                          ? "-bottom-1.5 border-b border-r"
+                          : "-top-1.5 border-l border-t"
+                      }`}
+                      style={{ left: position.arrowLeft - 6 }}
+                    />
+                  ) : null}
+                </div>
+              </motion.div>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }
@@ -434,10 +634,79 @@ export default function VocabularyWordGuide({
   question,
   subthemeMeaning,
   onStartQuiz,
+  onNavigateToLibrary,
 }: VocabularyWordGuideProps) {
   const [activeTab, setActiveTab] = useState<VocabularyGuideTab>("meaning");
   const [direction, setDirection] = useState(1);
   const [kanaCatalog, setKanaCatalog] = useState<KanaCatalogState | null>(null);
+  const [activePopover, setActivePopover] = useState<ActiveSymbolPopover | null>(null);
+  const [canHoverPopover, setCanHoverPopover] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(hover: hover) and (pointer: fine)").matches
+      : false,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia("(hover: hover) and (pointer: fine)");
+    const update = () => {
+      const nextCanHover = media.matches;
+      setCanHoverPopover(nextCanHover);
+      if (!nextCanHover) {
+        return;
+      }
+
+      setActivePopover((current) =>
+        current?.sticky ? { ...current, sticky: false } : current,
+      );
+    };
+
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!activePopover) {
+      return;
+    }
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (
+        event.target instanceof Element &&
+        event.target.closest("[data-vocabulary-symbol-popover-root='true']")
+      ) {
+        return;
+      }
+
+      setActivePopover(null);
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.buttons > 0) {
+        setActivePopover(null);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setActivePopover(null);
+      }
+    };
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    window.addEventListener("pointermove", handlePointerMove, true);
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+      window.removeEventListener("pointermove", handlePointerMove, true);
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activePopover]);
+
+  useEffect(() => {
+    setActivePopover(null);
+  }, [activeTab, question.wordId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -682,8 +951,13 @@ export default function VocabularyWordGuide({
                       writingUnits.map((unit, index) => (
                         <KanaLearningChip
                           key={`${unit}-${index}`}
+                          chipId={`${question.wordId}-${index}-${unit}`}
                           symbol={unit}
                           kanaCatalog={kanaCatalog}
+                          activePopover={activePopover}
+                          onActivePopoverChange={setActivePopover}
+                          canHoverPopover={canHoverPopover}
+                          onNavigateToLibrary={onNavigateToLibrary}
                         />
                       ))
                     ) : (

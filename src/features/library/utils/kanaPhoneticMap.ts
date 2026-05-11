@@ -42,8 +42,8 @@ const SPECIAL_MAP: Record<string, { rowKey: string; colIndex: number }> = {
   fu:  { rowKey: "h", colIndex: 2 },
   ji:  { rowKey: "z", colIndex: 1 },
   zu:  { rowKey: "z", colIndex: 2 },
-  di:  { rowKey: "d", colIndex: 1 },
-  du:  { rowKey: "d", colIndex: 2 },
+  di:  { rowKey: "z", colIndex: 1 },
+  du:  { rowKey: "z", colIndex: 2 },
   wi:  { rowKey: "w", colIndex: 1 },
   we:  { rowKey: "w", colIndex: 3 },
 };

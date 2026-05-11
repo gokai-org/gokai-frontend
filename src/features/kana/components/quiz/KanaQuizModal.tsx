@@ -5,7 +5,6 @@ import type { MouseEvent as ReactMouseEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useKanaQuiz } from "@/features/kana/hooks/useKanaQuiz";
 import { isValidCanvasQuestion } from "@/features/kana/utils/quizParser";
-import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import {
   KANA_QUIZ_TYPE_LABELS,
 } from "@/features/kana/types/quiz";
@@ -157,8 +156,12 @@ export function KanaQuizModal({
     updatedPoints,
     pointsDelta,
     reachedMasteryThisAttempt,
+    moduleMasteryReached,
     roundResults,
   } = quiz;
+
+  const mastered = useMasteredModules();
+  const isMastered = kanaType ? mastered.has(kanaType) : false;
 
   const isPracticeSession = quiz.totalRounds === 1;
   const isProgressSession = shouldPersistProgress;
@@ -173,7 +176,6 @@ export function KanaQuizModal({
     didPerfectMixedCompletion && awardedPointsDelta === 0;
   const shouldShowUnlockedMastery = isNewlyCompleted;
   const isDominated = shouldShowReaffirmedMastery;
-  const moduleMasteryThreshold = kanaType ? MASTERY_THRESHOLDS[kanaType] : null;
   const displayPointsDelta = isPracticeSession
     ? 0
     : shouldShowUnlockedMastery
@@ -190,8 +192,8 @@ export function KanaQuizModal({
     currentModulePoints + (isProgressSession ? awardedPointsDelta : 0);
   const triggeredModuleMastery =
     isNewlyCompleted &&
-    moduleMasteryThreshold !== null &&
-    resultingModulePoints >= moduleMasteryThreshold;
+    moduleMasteryReached &&
+    !isMastered;
 
   const handleClose = useCallback(() => {
     const completionResult: KanaQuizCompletionResult | undefined =
@@ -240,8 +242,6 @@ export function KanaQuizModal({
   }, [handleClose, shouldAutoCloseForMastery]);
 
   const kanaTypeLabel = kanaType === "katakana" ? "Katakana" : "Hiragana";
-  const mastered = useMasteredModules();
-  const isMastered = kanaType ? mastered.has(kanaType) : false;
 
   const strokeAccentColor = isMastered
     ? "#D4A843"

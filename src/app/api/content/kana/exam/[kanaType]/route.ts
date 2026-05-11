@@ -42,13 +42,12 @@ async function proxyKanaExam(
     const body = await req.json().catch(() => null);
     if (
       !body ||
-      !body.type ||
       typeof body.score !== "number" ||
       typeof body.duration !== "number"
     ) {
       return NextResponse.json(
         {
-          message: "Body invalido: se requiere type, score y duration",
+          message: "Body invalido: se requiere score y duration",
           success: false,
         },
         { status: 400 },
@@ -56,7 +55,6 @@ async function proxyKanaExam(
     }
 
     init.body = JSON.stringify({
-      type: body.type,
       score: body.score,
       duration: body.duration,
     });
@@ -79,7 +77,7 @@ async function proxyKanaExam(
 
       return NextResponse.json(
         {
-          message: errorData.message || "Error en examen de kana",
+          message: errorData.message || errorData.error || "Error en examen de kana",
           success: false,
         },
         { status: upstream.status },

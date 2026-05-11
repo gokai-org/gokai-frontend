@@ -36,14 +36,14 @@ const TILE_PALETTES: Record<
   },
   accent: {
     shell:
-      "bg-[#ba4845] border-[#9f3b38] shadow-[0_18px_42px_rgba(186,72,69,0.24)] dark:bg-[#b43f3c] dark:border-[#cf726d] dark:shadow-[0_20px_46px_rgba(120,26,24,0.44)]",
+      "bg-[#D4A843] border-[#B8922E] shadow-[0_18px_42px_rgba(212,168,67,0.24)] dark:bg-[#B8922E] dark:border-[#F0D27A] dark:shadow-[0_20px_46px_rgba(155,123,47,0.44)]",
     highlight:
       "bg-gradient-to-br from-white/16 via-transparent to-transparent dark:from-white/10",
     atmosphere:
       "bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.2),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.14),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.08),transparent_28%)]",
     innerBorder: "border-white/32 dark:border-white/14",
     symbol:
-      "text-[rgba(248,234,231,0.82)] dark:text-[rgba(239,223,220,0.76)]",
+      "text-[rgba(111,83,20,0.88)] dark:text-[rgba(255,241,198,0.88)]",
   },
 };
 
@@ -58,6 +58,7 @@ function GrammarLoaderTile({
 
   return (
     <div
+      data-grammar-loader-tone={tone}
       className={`relative overflow-hidden rounded-[18px] border ${palette.shell}`}
       style={{ width, height }}
     >
@@ -84,21 +85,25 @@ function GrammarLoaderTile({
 
 export default function GrammarBoardLoading() {
   return (
-    <div className="absolute inset-0 overflow-hidden bg-surface-primary">
+    <div className="absolute inset-0 overflow-hidden bg-surface-primary" data-grammar-loading="true">
       <GrammarBoardBackdrop />
 
       <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:repeating-linear-gradient(0deg,transparent,transparent_159px,rgba(18,18,22,0.08)_160px),repeating-linear-gradient(90deg,transparent,transparent_159px,rgba(18,18,22,0.08)_160px)] dark:opacity-35 dark:[background-image:repeating-linear-gradient(0deg,transparent,transparent_159px,rgba(255,255,255,0.05)_160px),repeating-linear-gradient(90deg,transparent,transparent_159px,rgba(255,255,255,0.05)_160px)]" />
 
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(186,72,69,0.08)_0%,transparent_82%)] dark:bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(186,72,69,0.12)_0%,transparent_82%)]" />
+      <div
+        data-grammar-loading-atmosphere="true"
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(212,168,67,0.08)_0%,transparent_82%)] dark:bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(240,210,122,0.12)_0%,transparent_82%)]"
+      />
 
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 pt-24 pb-8 sm:px-6 sm:pt-28">
         <div className="relative h-[180px] w-[280px] sm:h-[220px] sm:w-[340px]">
           <motion.div
+            data-grammar-loading-accent-line="true"
             className="absolute left-[52px] top-[88px] h-[2px] origin-left rounded-full sm:left-[68px] sm:top-[110px]"
             style={{
               width: 86,
-              background: "rgba(186,72,69,0.55)",
-              boxShadow: "0 0 9px rgba(186,72,69,0.12)",
+              background: "rgba(212,168,67,0.55)",
+              boxShadow: "0 0 9px rgba(212,168,67,0.16)",
             }}
             initial={{ scaleX: 0, opacity: 0.35 }}
             animate={{ scaleX: [0, 1, 1], opacity: [0.35, 1, 0.75] }}
@@ -110,11 +115,12 @@ export default function GrammarBoardLoading() {
           />
 
           <motion.div
+            data-grammar-loading-accent-line="true"
             className="absolute left-[138px] top-[88px] h-[2px] origin-left rounded-full sm:left-[172px] sm:top-[110px]"
             style={{
               width: 86,
-              background: "rgba(186,72,69,0.55)",
-              boxShadow: "0 0 9px rgba(186,72,69,0.12)",
+              background: "rgba(212,168,67,0.55)",
+              boxShadow: "0 0 9px rgba(212,168,67,0.16)",
             }}
             initial={{ scaleX: 0, opacity: 0.35 }}
             animate={{ scaleX: [0, 1, 1], opacity: [0.35, 1, 0.75] }}
@@ -147,7 +153,7 @@ export default function GrammarBoardLoading() {
 
           <motion.div
             className="absolute left-[102px] top-[50px] z-20 sm:left-[130px] sm:top-[70px]"
-            style={{ filter: "drop-shadow(0 10px 24px rgba(186,72,69,0.24))" }}
+            style={{ filter: "drop-shadow(0 10px 24px rgba(212,168,67,0.24))" }}
             animate={{
               y: [0, 6, 0, 0, -4, 0],
               scale: [1, 1.04, 1, 1, 1.12, 1],
@@ -160,10 +166,11 @@ export default function GrammarBoardLoading() {
             }}
           >
             <motion.div
+              data-grammar-loading-accent-glow="true"
               className="absolute inset-0 rounded-[22px]"
               style={{
                 background:
-                  "radial-gradient(circle, rgba(186,72,69,0.12) 0%, transparent 72%)",
+                  "radial-gradient(circle, rgba(212,168,67,0.16) 0%, transparent 72%)",
               }}
               animate={{
                 opacity: [0.45, 0.75, 0.45, 0.45, 1, 0.55],
@@ -222,8 +229,8 @@ export default function GrammarBoardLoading() {
             className="absolute top-[84px] z-10 h-[10px] w-[10px] rounded-full sm:top-[106px]"
             style={{
               left: "48px",
-              background: "rgba(186,72,69,0.95)",
-              boxShadow: "0 0 18px rgba(186,72,69,0.18)",
+              background: "rgba(212,168,67,0.95)",
+              boxShadow: "0 0 18px rgba(212,168,67,0.22)",
             }}
             animate={{
               left: ["48px", "calc(50% - 5px)", "calc(50% - 5px)", "238px"],
@@ -243,7 +250,7 @@ export default function GrammarBoardLoading() {
             style={{
               width: 42,
               height: 42,
-              borderColor: "rgba(186,72,69,0.12)",
+              borderColor: "rgba(212,168,67,0.18)",
             }}
             animate={{ scale: [0.85, 1.35], opacity: [0.55, 0] }}
             transition={{
@@ -258,7 +265,7 @@ export default function GrammarBoardLoading() {
             style={{
               width: 50,
               height: 50,
-              borderColor: "rgba(186,72,69,0.12)",
+              borderColor: "rgba(212,168,67,0.18)",
             }}
             animate={{ scale: [0.8, 1.5], opacity: [0.4, 0] }}
             transition={{
@@ -288,8 +295,8 @@ export default function GrammarBoardLoading() {
                 style={{
                   width: 6,
                   height: 6,
-                  background: "rgba(186,72,69,0.95)",
-                  boxShadow: "0 0 12px rgba(186,72,69,0.18)",
+                  background: "rgba(212,168,67,0.95)",
+                  boxShadow: "0 0 12px rgba(212,168,67,0.22)",
                 }}
                 animate={{
                   y: [0, -6, 0],

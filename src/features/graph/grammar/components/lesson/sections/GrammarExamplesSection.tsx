@@ -14,7 +14,7 @@ export default function GrammarExamplesSection({ examples }: { examples: TextSte
   return (
     <div className="space-y-3 lg:space-y-4">
       <div className="overflow-hidden rounded-[18px] bg-[linear-gradient(180deg,rgba(255,255,255,0.92),rgba(255,255,255,0.78))] shadow-[0_16px_34px_rgba(0,0,0,0.05)] dark:bg-[linear-gradient(180deg,rgba(34,34,34,0.96),rgba(24,24,24,0.92))] lg:rounded-2xl">
-        <div className="border-b border-border-subtle bg-[radial-gradient(circle_at_top_left,rgba(194,78,69,0.14),transparent_46%),linear-gradient(90deg,rgba(194,78,69,0.08),transparent)] px-3.5 py-3 lg:px-5 lg:py-4">
+        <div data-grammar-accent-banner="true" className="border-b border-border-subtle bg-[radial-gradient(circle_at_top_left,rgba(194,78,69,0.14),transparent_46%),linear-gradient(90deg,rgba(194,78,69,0.08),transparent)] px-3.5 py-3 lg:px-5 lg:py-4">
           <div className="flex items-center justify-between gap-3 text-center sm:text-left">
             <div className="flex-1">
               <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent/80 lg:text-[11px]">

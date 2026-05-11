@@ -432,6 +432,8 @@ export function ScriptCard({
 
   const cardEl = effectiveOnClick ? (
     <div
+      data-library-mastery-card={variant}
+      data-library-mastered={isMastered ? "true" : "false"}
       role="button"
       tabIndex={0}
       onClick={effectiveOnClick}
@@ -476,6 +478,8 @@ export function ScriptCard({
     </div>
   ) : (
     <div
+      data-library-mastery-card={variant}
+      data-library-mastered={isMastered ? "true" : "false"}
       onPointerDown={pressUnlockEnabled ? handleUnlockPointerDown : undefined}
       onPointerUp={pressUnlockEnabled ? handleUnlockPointerUp : undefined}
       onPointerCancel={pressUnlockEnabled ? handleUnlockPointerCancel : undefined}

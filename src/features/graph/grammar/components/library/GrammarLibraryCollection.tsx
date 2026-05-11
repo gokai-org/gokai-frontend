@@ -2,7 +2,11 @@
 
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import {
+  dispatchMasteryCelebrationRequest,
+  dispatchMasteryProgressSync,
+} from "@/features/mastery/utils/masteryProgressSync";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
 import {
@@ -43,6 +47,7 @@ export function GrammarLibraryCollection({
   filterIds,
   className = "grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
 }: GrammarLibraryCollectionProps) {
+  const mastered = useMasteredModules();
   const {
     boardItems,
     status,
@@ -181,6 +186,14 @@ export function GrammarLibraryCollection({
     setStage("quiz");
   }, [lesson, stage]);
 
+  const selectedBoardLesson = useMemo(
+    () =>
+      selectedLessonId
+        ? (boardItems.find((item) => item.id === selectedLessonId) ?? null)
+        : null,
+    [boardItems, selectedLessonId],
+  );
+
   const handleCloseQuiz = useCallback(() => {
     if (stage !== "quiz") {
       return;
@@ -200,51 +213,63 @@ export function GrammarLibraryCollection({
 
   const handleQuizComplete = useCallback(
     (result: GrammarQuizCompletionResult) => {
-      dispatchMasteryProgressSync({ points: result.userPoints });
       invalidateApiCache("/api/content/grammar/progress");
+      if (result.hasGrammarMastery === true) {
+        dispatchMasteryProgressSync({ hasGrammarMastery: true });
+
+        if (!mastered.has("grammar")) {
+          window.requestAnimationFrame(() => {
+            dispatchMasteryCelebrationRequest({ moduleId: "grammar" });
+          });
+        }
+      }
       void refetchBoard();
     },
-    [refetchBoard],
+    [mastered, refetchBoard],
   );
 
   if (status === "loading") {
     return (
-      <LibraryCardsSkeletonGrid
-        cards={12}
-        className={className}
-        variant="grammar"
-      />
+      <div data-grammar-mastered={mastered.has("grammar") ? "true" : "false"}>
+        <LibraryCardsSkeletonGrid
+          cards={12}
+          className={className}
+          variant="grammar"
+        />
+      </div>
     );
   }
 
   if (status === "error") {
     return (
-      <LibraryCategorySection
-        title="Colección de Gramática"
-        countLabel={`${GRAMMAR_BOARD_TOTAL} lecciones`}
-        emptyTitle="No se pudo cargar gramática"
-        emptyDescription={error || "Ocurrió un error al cargar las lecciones."}
-      >
-        <div className="flex flex-col items-center justify-center py-16 text-center">
-          <p className="max-w-md text-content-secondary">
-            {error || "Ocurrió un error al cargar las lecciones."}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              void refetchBoard();
-            }}
-            className="mt-5 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
-          >
-            Reintentar
-          </button>
-        </div>
-      </LibraryCategorySection>
+      <div data-grammar-mastered={mastered.has("grammar") ? "true" : "false"}>
+        <LibraryCategorySection
+          title="Colección de Gramática"
+          countLabel={`${GRAMMAR_BOARD_TOTAL} lecciones`}
+          emptyTitle="No se pudo cargar gramática"
+          emptyDescription={error || "Ocurrió un error al cargar las lecciones."}
+        >
+          <div className="flex flex-col items-center justify-center py-16 text-center">
+            <p className="max-w-md text-content-secondary">
+              {error || "Ocurrió un error al cargar las lecciones."}
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                void refetchBoard();
+              }}
+              className="mt-5 rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95"
+            >
+              Reintentar
+            </button>
+          </div>
+        </LibraryCategorySection>
+      </div>
     );
   }
 
   return (
-    <>
+    <div data-grammar-mastered={mastered.has("grammar") ? "true" : "false"}>
       <div className={className}>
         {lessons.map((item, index) => (
           item.isMock ? (
@@ -283,13 +308,14 @@ export function GrammarLibraryCollection({
         {stage === "quiz" && lesson ? (
           <GrammarQuizModal
             lesson={lesson}
+            wasCompletedBefore={selectedBoardLesson?.status === "completed"}
             onClose={handleCloseQuiz}
             onExitToBoard={handleExitQuizToGrid}
             onComplete={handleQuizComplete}
           />
         ) : null}
       </AnimatePresence>
-    </>
+    </div>
   );
 }
 

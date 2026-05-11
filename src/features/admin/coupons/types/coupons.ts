@@ -8,6 +8,7 @@ export interface BackendCoupon {
   claim_limit: number;
   months: number;
   created_at: string;
+  redemptions: number;
 }
 
 export interface AdminCoupon {
@@ -16,6 +17,7 @@ export interface AdminCoupon {
   description: string | null;
   vigency: string;
   claimLimit: number;
+  redemptions: number;
   months: number;
   createdAt: string;
   status: AdminCouponStatus;

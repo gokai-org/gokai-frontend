@@ -13,6 +13,9 @@ export type KanaQuizSubmitResponse = {
   userPoints?: number | null;
   kanaPoints?: number | null;
   points?: number | null;
+  hasHiraganaMastery?: boolean | null;
+  hasKatakanaMastery?: boolean | null;
+  hasKanasMastery?: boolean | null;
 };
 
 /**

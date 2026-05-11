@@ -99,17 +99,18 @@ function AdminCouponsTableBase({
       </div>
 
       <div className="overflow-x-auto rounded-xl border border-border-subtle">
-        <table className="w-full min-w-[1080px] table-auto bg-surface-primary xl:min-w-[1220px]">
+        <table className="w-full min-w-[1160px] table-auto bg-surface-primary xl:min-w-[1320px]">
           <colgroup>
-            <col className="w-[11%]" />
+            <col className="w-[10%]" />
             <col className="w-[12%]" />
-            <col className="w-[23%]" />
+            <col className="w-[21%]" />
             <col className="w-[8%]" />
-            <col className="w-[10%]" />
+            <col className="w-[9%]" />
+            <col className="w-[9%]" />
             <col className="w-[10%]" />
             <col className="w-[9%]" />
             <col className="w-[9%]" />
-            <col className="w-[8%]" />
+            <col className="w-[7%]" />
           </colgroup>
           <thead className="bg-[#F8F6F4] text-left">
             <tr>
@@ -129,6 +130,9 @@ function AdminCouponsTableBase({
                 Limite de canjes
               </th>
               <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
+                Canjeados
+              </th>
+              <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
                 Vigencia
               </th>
               <th className="whitespace-nowrap px-2.5 py-2.5 text-[11px] font-semibold tracking-wide text-content-tertiary sm:px-3 lg:px-4">
@@ -145,7 +149,7 @@ function AdminCouponsTableBase({
           <tbody>
             {loading
               ? (
-                  <AdminTableLoadingRows columnCount={9} />
+                  <AdminTableLoadingRows columnCount={10} />
                 )
               : visibleCoupons.map((coupon) => (
                   <AdminCouponRow

@@ -7,4 +7,6 @@ export type {
   OnboardingTheme,
   SaveOnboardingInterestsResponse,
   SelectedOnboardingInterests,
+  OnboardingKanaKnowledgeChoice,
+  OnboardingKanaAssessmentSelections,
 } from "./types";

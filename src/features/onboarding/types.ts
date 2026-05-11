@@ -42,3 +42,10 @@ export type SaveOnboardingInterestsResponse = {
   embeddingUpdated?: boolean;
   embeddingWarning?: string;
 };
+
+export type OnboardingKanaKnowledgeChoice = "exam" | "learn";
+
+export type OnboardingKanaAssessmentSelections = Record<
+  "hiragana" | "katakana",
+  OnboardingKanaKnowledgeChoice | null
+>;

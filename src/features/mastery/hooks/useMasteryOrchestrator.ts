@@ -23,8 +23,8 @@ import { useMasteredModules } from "../components/MasteredModulesProvider";
 
 export interface UseMasteryOrchestratorOptions {
   moduleId: MasteryModuleId;
-  /** User's current points for the relevant field. */
-  currentPoints: number;
+  /** Backend mastery flag for this module. */
+  isMastered: boolean;
   /** Whether threshold-crossing should auto-start the celebration. */
   autoTriggerOnNewMastery?: boolean;
   /** Total items in this module's board. */
@@ -72,7 +72,7 @@ export interface UseMasteryOrchestratorReturn {
  * const { mastery, celebration, dismissModal, modalContent, goldenMixRatio } =
  *   useMasteryOrchestrator({
  *     moduleId: "hiragana",
- *     currentPoints: userKanaPoints,
+ *     isMastered: hasHiraganaMastery,
  *     totalItems: items.length,
  *     completedItems: summary.completedCount,
  *     nodes: graph.nodes,
@@ -82,7 +82,7 @@ export interface UseMasteryOrchestratorReturn {
  */
 export function useMasteryOrchestrator({
   moduleId,
-  currentPoints,
+  isMastered,
   autoTriggerOnNewMastery = true,
   totalItems,
   completedItems,
@@ -99,7 +99,7 @@ export function useMasteryOrchestrator({
 
   const mastery = useMasteryState(
     moduleId,
-    currentPoints,
+    isMastered,
     totalItems,
     completedItems,
     alreadyKnownMastered,

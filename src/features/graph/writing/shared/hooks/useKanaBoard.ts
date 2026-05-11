@@ -118,6 +118,29 @@ type UseKanaBoardParams = {
   errorMessage: string;
 };
 
+type KanaMasteryFlags = {
+  hasHiraganaMastery: boolean;
+  hasKatakanaMastery: boolean;
+  hasKanasMastery: boolean;
+};
+
+function extractKanaMasteryFlags(
+  items: readonly UserKanaProgressDetailedResponse[],
+): KanaMasteryFlags {
+  return items.reduce<KanaMasteryFlags>(
+    (acc, item) => ({
+      hasHiraganaMastery: acc.hasHiraganaMastery || item.hasHiraganaMastery === true || item.hasKanasMastery === true,
+      hasKatakanaMastery: acc.hasKatakanaMastery || item.hasKatakanaMastery === true || item.hasKanasMastery === true,
+      hasKanasMastery: acc.hasKanasMastery || item.hasKanasMastery === true,
+    }),
+    {
+      hasHiraganaMastery: false,
+      hasKatakanaMastery: false,
+      hasKanasMastery: false,
+    },
+  );
+}
+
 export type KanaLookupMap = ReadonlyMap<string, Kana>;
 
 export function useKanaBoard({
@@ -167,6 +190,9 @@ export function useKanaBoard({
     initialSharedBootstrap?.progressItems.filter(
       (item) => item.kanaType === kanaType,
     ) ?? [],
+  );
+  const [kanaMasteryFlags, setKanaMasteryFlags] = useState<KanaMasteryFlags>(
+    () => extractKanaMasteryFlags(initialSharedBootstrap?.progressItems ?? []),
   );
   const [loading, setLoading] = useState(() => initialSharedBootstrap === null);
   const [error, setError] = useState<string | null>(null);
@@ -290,6 +316,7 @@ export function useKanaBoard({
       );
       const nextProgressItems = progressList ?? [];
       allProgressItemsRef.current = nextProgressItems;
+      setKanaMasteryFlags(extractKanaMasteryFlags(nextProgressItems));
 
       if (nextUserId) {
         sharedKanaBootstrapCache = {
@@ -341,9 +368,31 @@ export function useKanaBoard({
         if (typeof detail.kanaPoints === "number") {
           applyUserKanaPoints(detail.kanaPoints);
         }
+        if (
+          typeof detail.hasHiraganaMastery === "boolean" ||
+          typeof detail.hasKatakanaMastery === "boolean" ||
+          typeof detail.hasKanasMastery === "boolean"
+        ) {
+          setKanaMasteryFlags((previous) => ({
+            hasHiraganaMastery:
+              previous.hasHiraganaMastery ||
+              detail.hasHiraganaMastery === true ||
+              detail.hasKanasMastery === true,
+            hasKatakanaMastery:
+              previous.hasKatakanaMastery ||
+              detail.hasKatakanaMastery === true ||
+              detail.hasKanasMastery === true,
+            hasKanasMastery:
+              previous.hasKanasMastery || detail.hasKanasMastery === true,
+          }));
+        }
       }),
     [applyUserKanaPoints],
   );
+
+  const hasModuleMastery = kanaType === "hiragana"
+    ? kanaMasteryFlags.hasHiraganaMastery
+    : kanaMasteryFlags.hasKatakanaMastery;
 
   const progressById = useMemo(() => {
     const map = new Map<string, UserKanaProgressDetailedResponse>();
@@ -400,6 +449,8 @@ export function useKanaBoard({
     items,
     summary,
     userPoints: userKanaPoints,
+    hasModuleMastery,
+    masteryFlags: kanaMasteryFlags,
     loading,
     error,
     reload,

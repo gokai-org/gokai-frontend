@@ -9,6 +9,7 @@ import RegionVectorGraph from "@/features/graph/vocabulary/components/RegionVect
 import VocabularyNodePanel from "@/features/graph/vocabulary/components/VocabularyNodePanel";
 import { useDeferredGraphMount } from "@/features/graph/vocabulary/hooks/useDeferredGraphMount";
 import { useVocabularyGraph } from "@/features/graph/vocabulary/hooks/useVocabularyGraph";
+import { loadJapanMapAssets } from "@/features/graph/vocabulary/components/japanMap/japanMapAssets";
 import { buildRegionGraphLayout } from "@/features/graph/vocabulary/lib/regionGraphLayout";
 import {
   buildVocabularySubthemeGraphElements,
@@ -16,6 +17,7 @@ import {
 } from "@/features/graph/vocabulary/lib/vocabularyGraphBuilder";
 import {
   findWordProgress,
+  isWordFullyCompleted,
   mergeWordProgress,
 } from "@/features/graph/vocabulary/lib/vocabularyQuizProgress";
 import {
@@ -31,7 +33,10 @@ import {
 } from "@/features/graph/vocabulary/services/api";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { useShakeFeedback } from "@/shared/hooks/useShakeFeedback";
+import { PointsRewardFloat } from "@/shared/ui";
 import type {
+  VocabularyQuizSaveContext,
+  VocabularyQuizSaveResult,
   VocabularyRegionId,
   VocabularyRegionLayout,
   VocabularyRegionThemeNode,
@@ -58,6 +63,15 @@ type SvgSceneFrame = {
   height: number;
 };
 
+type VocabularyGraphHistoryState = {
+  currentLevel: VocabularyViewLevel;
+  selectedRegionId: VocabularyRegionId | null;
+  selectedThemeId: string | null;
+  selectedSubthemeNodeId: string | null;
+  selectedWordId: string | null;
+  selectedGraphId: string | null;
+};
+
 const MIN_SCENE_SCALE = 1;
 const MAX_SCENE_SCALE = 16.0;
 const WHEEL_ZOOM_IN_FACTOR = 1.15;
@@ -69,21 +83,84 @@ const CAMERA_AUTO_TRANSITION_DURATION = 0.58;
 const VECTOR_GRAPH_MOUNT_DELAY = Math.round(
   CAMERA_AUTO_TRANSITION_DURATION * 1000 + 180,
 );
-const AUTO_REGION_VIEWPORT_FILL = 0.84;
 const AUTO_REGION_MIN_SCALE = 2.9;
 const AUTO_REGION_BASE_SCALE = 3.45;
-const AUTO_REGION_MAX_SCALE = 11.6;
-const AUTO_REGION_EDGE_MAX_SCALE = 13.2;
 const AUTO_NODE_FOCUS_SCALE = 1.58;
 const AUTO_WORD_FOCUS_SCALE = 2.55;
-const AUTO_NODE_MAX_SCALE = 14.4;
-const AUTO_WORD_MAX_SCALE = 16;
 const LOCKED_THEME_SHAKE_DURATION_MS = 640;
-const REGION_EDGE_ZOOM_BONUS = 0.18;
 const REGION_FOCUS_OVERSCAN_RATIO = 0.28;
+const DESKTOP_DRAWER_BREAKPOINT = 1024;
+const UNLOCK_TRANSITION_DURATION_MS = 1080;
+const GRAPH_HISTORY_STATE_KEY = "__vocabularyGraphState";
+const GRAPH_RETURN_SNAPSHOT_STORAGE_KEY = "gokai:vocabulary-graph-return-snapshot";
+const GRAPH_RETURN_PENDING_STORAGE_KEY = "gokai:vocabulary-graph-return-pending";
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
+}
+
+function readVocabularyGraphHistoryState(
+  state: unknown,
+): VocabularyGraphHistoryState | null {
+  if (!state || typeof state !== "object") {
+    return null;
+  }
+
+  const snapshot = (state as Record<string, unknown>)[GRAPH_HISTORY_STATE_KEY];
+
+  if (!snapshot || typeof snapshot !== "object") {
+    return null;
+  }
+
+  const record = snapshot as Record<string, unknown>;
+  const currentLevel = record.currentLevel;
+  const selectedRegionId = record.selectedRegionId;
+  const selectedThemeId = record.selectedThemeId;
+  const selectedSubthemeNodeId = record.selectedSubthemeNodeId;
+  const selectedWordId = record.selectedWordId;
+  const selectedGraphId = record.selectedGraphId;
+
+  if (
+    currentLevel !== "map" &&
+    currentLevel !== "region" &&
+    currentLevel !== "theme" &&
+    currentLevel !== "subtheme"
+  ) {
+    return null;
+  }
+
+  return {
+    currentLevel,
+    selectedRegionId:
+      typeof selectedRegionId === "string"
+        ? (selectedRegionId as VocabularyRegionId)
+        : null,
+    selectedThemeId:
+      typeof selectedThemeId === "string" ? selectedThemeId : null,
+    selectedSubthemeNodeId:
+      typeof selectedSubthemeNodeId === "string" ? selectedSubthemeNodeId : null,
+    selectedWordId: typeof selectedWordId === "string" ? selectedWordId : null,
+    selectedGraphId: typeof selectedGraphId === "string" ? selectedGraphId : null,
+  };
+}
+
+function readVocabularyGraphSessionSnapshot(): VocabularyGraphHistoryState | null {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const raw = window.sessionStorage.getItem(GRAPH_RETURN_SNAPSHOT_STORAGE_KEY);
+
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as VocabularyGraphHistoryState;
+    return parsed;
+  } catch {
+    return null;
+  }
 }
 
 function getDistance(a: PointerPosition, b: PointerPosition) {
@@ -392,15 +469,6 @@ function toFramePoint(
   };
 }
 
-function getRegionEdgeBias(bounds: VocabularyRegionLayout["bounds"]) {
-  const horizontalEdgeDistance = Math.min(bounds.centerX, 100 - bounds.centerX);
-  const verticalEdgeDistance = Math.min(bounds.centerY, 100 - bounds.centerY);
-  const horizontalBias = 1 - clamp(horizontalEdgeDistance / 50, 0, 1);
-  const verticalBias = 1 - clamp(verticalEdgeDistance / 50, 0, 1);
-
-  return Math.max(horizontalBias * 0.82, verticalBias);
-}
-
 function getRegionFocusFrame(
   frame: SvgSceneFrame,
   bounds: VocabularyRegionLayout["bounds"],
@@ -422,6 +490,126 @@ function getRegionFocusFrame(
     width: focusWidth,
     height: focusHeight,
   };
+}
+
+function getViewportCenter(viewportArea: {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+}) {
+  const viewportX = viewportArea.x ?? 0;
+  const viewportY = viewportArea.y ?? 0;
+  const viewportWidth = viewportArea.width ?? 0;
+  const viewportHeight = viewportArea.height ?? 0;
+
+  return {
+    x: viewportX + viewportWidth / 2,
+    y: viewportY + viewportHeight / 2,
+  };
+}
+
+function getMinimumScaleForCenteredPoint({
+  frame,
+  point,
+  viewportArea,
+}: {
+  frame: SvgSceneFrame;
+  point: PointerPosition;
+  viewportArea: { x?: number; y?: number; width?: number; height?: number };
+}) {
+  const viewportX = viewportArea.x ?? 0;
+  const viewportY = viewportArea.y ?? 0;
+  const viewportWidth = viewportArea.width ?? 0;
+  const viewportHeight = viewportArea.height ?? 0;
+  const target = getViewportCenter(viewportArea);
+  const leftDistance = Math.max(point.x - frame.x, 0.001);
+  const rightDistance = Math.max(frame.x + frame.width - point.x, 0.001);
+  const topDistance = Math.max(point.y - frame.y, 0.001);
+  const bottomDistance = Math.max(frame.y + frame.height - point.y, 0.001);
+  const minScaleX = Math.max(
+    (target.x - viewportX) / leftDistance,
+    (viewportX + viewportWidth - target.x) / rightDistance,
+  );
+  const minScaleY = Math.max(
+    (target.y - viewportY) / topDistance,
+    (viewportY + viewportHeight - target.y) / bottomDistance,
+  );
+
+  return Math.max(minScaleX, minScaleY, MIN_SCENE_SCALE);
+}
+
+function getCameraTransformForPoint({
+  point,
+  frame,
+  sceneSize,
+  scale,
+  viewportArea,
+}: {
+  point: PointerPosition;
+  frame: SvgSceneFrame;
+  sceneSize: { width: number; height: number };
+  scale: number;
+  viewportArea: { x?: number; y?: number; width?: number; height?: number };
+}) {
+  const target = getViewportCenter(viewportArea);
+
+  return clampSceneToFrame(
+    {
+      scale,
+      x: target.x - point.x * scale,
+      y: target.y - point.y * scale,
+    },
+    frame,
+    sceneSize,
+    { x: 0, y: 0 },
+    viewportArea,
+  );
+}
+
+function getCameraTransformForFocusFrame({
+  focusFrame,
+  frame,
+  sceneSize,
+  minScale,
+  maxScale,
+  viewportArea,
+}: {
+  focusFrame: SvgSceneFrame;
+  frame: SvgSceneFrame;
+  sceneSize: { width: number; height: number };
+  minScale: number;
+  maxScale: number;
+  viewportArea: { x?: number; y?: number; width?: number; height?: number };
+}) {
+  const viewportWidth = viewportArea.width ?? sceneSize.width;
+  const viewportHeight = viewportArea.height ?? sceneSize.height;
+  const focusCenter = {
+    x: focusFrame.x + focusFrame.width / 2,
+    y: focusFrame.y + focusFrame.height / 2,
+  };
+  const fitScale = Math.min(
+    viewportWidth / Math.max(focusFrame.width, 1),
+    viewportHeight / Math.max(focusFrame.height, 1),
+  );
+  const centeredMinScale = getMinimumScaleForCenteredPoint({
+    frame,
+    point: focusCenter,
+    viewportArea,
+  });
+  const scale = clamp(
+    Math.max(AUTO_REGION_BASE_SCALE, fitScale, centeredMinScale),
+    minScale,
+    maxScale,
+  );
+
+  return getCameraTransformForPoint({
+    point: focusCenter,
+    frame,
+    sceneSize,
+    scale,
+    viewportArea,
+  });
 }
 
 function toWordLesson(
@@ -472,12 +660,18 @@ export default function Page() {
   const selectedRegionLayoutRef = useRef<VocabularyRegionLayout | null>(null);
   const sceneSizeRef = useRef({ width: 0, height: 0 });
   const currentLevelRef = useRef<VocabularyViewLevel>("map");
+  const sceneInteractionLockedRef = useRef(false);
+  const lastAutoFocusKeyRef = useRef<string | null>(null);
+  const pendingHistoryRestoreRef = useRef<VocabularyGraphHistoryState | null>(null);
+  const historyRestoreStartedRef = useRef(false);
   const isNavigatingRef = useRef(false);
   const animStopRef = useRef<Array<() => void>>([]);
   const lastAutoTargetRef = useRef<SceneTransform | null>(null);
   const preservedCameraTransformRef = useRef<SceneTransform | null>(null);
   const subthemeLoadRequestRef = useRef(0);
   const zoomClassTimeoutRef = useRef<number | null>(null);
+  const unlockTransitionTimeoutRef = useRef<number | null>(null);
+  const deferredRewardTimeoutRef = useRef<number | null>(null);
   const [hoverResetToken, setHoverResetToken] = useState(0);
 
   const dismissGraphHovers = useCallback(() => {
@@ -500,6 +694,13 @@ export default function Page() {
   const [regionThemeGraphLoading, setRegionThemeGraphLoading] = useState(false);
   const [pendingThemeId, setPendingThemeId] = useState<string | null>(null);
   const [pendingGraphNodeId, setPendingGraphNodeId] = useState<string | null>(null);
+  const [unlockFocusWordId, setUnlockFocusWordId] = useState<string | null>(null);
+  const [mapRewardFloatPoints, setMapRewardFloatPoints] = useState<number | null>(null);
+  const [unlockTransition, setUnlockTransition] = useState<{
+    fromNodeId: string;
+    toNodeId: string;
+    token: number;
+  } | null>(null);
   const {
     shakingKey: shakingThemeId,
     triggerShake: triggerThemeShake,
@@ -536,6 +737,7 @@ export default function Page() {
     () => progressItems.find((item) => item.nodeId === selectedSubthemeNodeId) ?? null,
     [progressItems, selectedSubthemeNodeId],
   );
+  const selectedGraphId = selectedGraph?.graphId ?? null;
   const selectedWord = useMemo(
     () => subthemeWords.find((word) => word.wordId === selectedWordId) ?? null,
     [selectedWordId, subthemeWords],
@@ -563,6 +765,21 @@ export default function Page() {
   const graphInteractionDisabled = Boolean(
     pendingThemeId || pendingGraphNodeId || actionPendingId || subthemeWordsLoading,
   );
+  const historySnapshot = useMemo<VocabularyGraphHistoryState>(() => ({
+    currentLevel,
+    selectedRegionId,
+    selectedThemeId,
+    selectedSubthemeNodeId,
+    selectedWordId,
+    selectedGraphId,
+  }), [
+    currentLevel,
+    selectedGraphId,
+    selectedRegionId,
+    selectedSubthemeNodeId,
+    selectedThemeId,
+    selectedWordId,
+  ]);
   const vectorGraphNodeCount = useMemo(() => {
     if (currentLevel === "theme" && selectedGraph) {
       return themeSubthemes.length;
@@ -606,6 +823,10 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    void loadJapanMapAssets().catch(() => null);
+  }, []);
+
+  useEffect(() => {
     if (selectedRegionId) {
       return;
     }
@@ -629,6 +850,12 @@ export default function Page() {
     return () => {
       if (zoomClassTimeoutRef.current !== null) {
         window.clearTimeout(zoomClassTimeoutRef.current);
+      }
+      if (unlockTransitionTimeoutRef.current !== null) {
+        window.clearTimeout(unlockTransitionTimeoutRef.current);
+      }
+      if (deferredRewardTimeoutRef.current !== null) {
+        window.clearTimeout(deferredRewardTimeoutRef.current);
       }
     };
   }, []);
@@ -722,6 +949,32 @@ export default function Page() {
       setHidden(false);
     };
   }, [isLessonOpen, setHidden]);
+
+  useEffect(() => {
+    const shouldRestoreFromSession =
+      window.sessionStorage.getItem(GRAPH_RETURN_PENDING_STORAGE_KEY) === "1";
+
+    const sessionSnapshot = shouldRestoreFromSession
+      ? readVocabularyGraphSessionSnapshot()
+      : null;
+
+    pendingHistoryRestoreRef.current =
+      sessionSnapshot ?? readVocabularyGraphHistoryState(window.history.state);
+
+    if (shouldRestoreFromSession) {
+      window.sessionStorage.removeItem(GRAPH_RETURN_PENDING_STORAGE_KEY);
+      window.sessionStorage.removeItem(GRAPH_RETURN_SNAPSHOT_STORAGE_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    const nextHistoryState = {
+      ...(window.history.state ?? {}),
+      [GRAPH_HISTORY_STATE_KEY]: historySnapshot,
+    };
+
+    window.history.replaceState(nextHistoryState, "", window.location.href);
+  }, [historySnapshot]);
 
   useEffect(() => {
     if (currentLevel !== "region" || !selectedRegionId) {
@@ -955,6 +1208,64 @@ export default function Page() {
     selectedRegionId,
   ]);
 
+  const handleVocabularyQuizSaved = useCallback(
+    async ({ wordId, response }: VocabularyQuizSaveContext): Promise<VocabularyQuizSaveResult> => {
+      const previousItem = selectedSubthemeItem;
+      const previousWordProgress = findWordProgress(previousItem, wordId);
+      const nextProgress = await reloadProgress();
+      const nextItem = nextProgress?.items?.find(
+        (item) => item.nodeId === previousItem?.nodeId,
+      ) ?? null;
+      const nextWordProgress = findWordProgress(nextItem, wordId);
+      const nextUnlockedWordId =
+        nextItem?.currentWordId && nextItem.currentWordId !== wordId
+          ? nextItem.currentWordId
+          : null;
+      const wordJustCompleted =
+        !isWordFullyCompleted(previousWordProgress) &&
+        isWordFullyCompleted(nextWordProgress);
+      const shouldRunUnlockSequence =
+        sceneSizeRef.current.width >= DESKTOP_DRAWER_BREAKPOINT &&
+        wordJustCompleted &&
+        Boolean(nextUnlockedWordId);
+
+      if (!shouldRunUnlockSequence || !nextUnlockedWordId) {
+        return { closeQuiz: false };
+      }
+
+      if (unlockTransitionTimeoutRef.current !== null) {
+        window.clearTimeout(unlockTransitionTimeoutRef.current);
+      }
+
+      if (deferredRewardTimeoutRef.current !== null) {
+        window.clearTimeout(deferredRewardTimeoutRef.current);
+      }
+
+      dismissGraphHovers();
+      setUnlockFocusWordId(nextUnlockedWordId);
+      setUnlockTransition({
+        fromNodeId: `word-${wordId}`,
+        toNodeId: `word-${nextUnlockedWordId}`,
+        token: Date.now(),
+      });
+
+      unlockTransitionTimeoutRef.current = window.setTimeout(() => {
+        setUnlockTransition(null);
+        unlockTransitionTimeoutRef.current = null;
+      }, UNLOCK_TRANSITION_DURATION_MS);
+
+      if ((response.pointsAwarded ?? 0) > 0) {
+        deferredRewardTimeoutRef.current = window.setTimeout(() => {
+          setMapRewardFloatPoints(response.pointsAwarded ?? null);
+          deferredRewardTimeoutRef.current = null;
+        }, UNLOCK_TRANSITION_DURATION_MS + 120);
+      }
+
+      return { closeQuiz: true };
+    },
+    [dismissGraphHovers, reloadProgress, selectedSubthemeItem],
+  );
+
   const handleNodeSelected = useCallback(
     async (node: GraphNode) => {
       if (node.data.entityKind === "subtheme") {
@@ -1003,6 +1314,7 @@ export default function Page() {
       }
 
       if (node.data.entityKind === "word") {
+        setUnlockFocusWordId(null);
         setSelectedWordId(node.data.entityId ?? node.id.replace(/^word-/, ""));
       }
     },
@@ -1016,6 +1328,7 @@ export default function Page() {
       setSubthemeWordsLoading(false);
       setSubthemeWords([]);
       setSelectedWordId(null);
+      setUnlockFocusWordId(null);
       setCurrentLevel("theme");
       return;
     }
@@ -1027,6 +1340,7 @@ export default function Page() {
       setSubthemeWords([]);
       setSelectedSubthemeNodeId(null);
       setSelectedWordId(null);
+      setUnlockFocusWordId(null);
       setCurrentLevel("region");
       return;
     }
@@ -1035,6 +1349,94 @@ export default function Page() {
       exitRegionSelection();
     }
   }, [currentLevel, exitRegionSelection]);
+
+  const handleNavigateToLibrary = useCallback(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.sessionStorage.setItem(
+      GRAPH_RETURN_SNAPSHOT_STORAGE_KEY,
+      JSON.stringify(historySnapshot),
+    );
+    window.sessionStorage.removeItem(GRAPH_RETURN_PENDING_STORAGE_KEY);
+  }, [historySnapshot]);
+
+  useEffect(() => {
+    if (loading || historyRestoreStartedRef.current) {
+      return;
+    }
+
+    const snapshot = pendingHistoryRestoreRef.current;
+
+    if (!snapshot) {
+      historyRestoreStartedRef.current = true;
+      return;
+    }
+
+    historyRestoreStartedRef.current = true;
+    pendingHistoryRestoreRef.current = null;
+
+    let cancelled = false;
+
+    const restoreGraphState = async () => {
+      setPendingThemeId(null);
+      setPendingGraphNodeId(null);
+      setUnlockFocusWordId(null);
+      setSelectedGraphId(snapshot.selectedGraphId);
+      setSelectedRegionId(snapshot.selectedRegionId);
+      setSelectedThemeId(snapshot.selectedThemeId);
+      setSelectedSubthemeNodeId(null);
+      setSelectedWordId(null);
+      setSubthemeWords([]);
+      setSubthemeWordsLoading(false);
+
+      if (snapshot.currentLevel === "map" || !snapshot.selectedRegionId) {
+        if (!cancelled) {
+          setCurrentLevel("map");
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setCurrentLevel(snapshot.currentLevel === "region" ? "region" : "theme");
+      }
+
+      if (snapshot.currentLevel !== "subtheme" || !snapshot.selectedSubthemeNodeId) {
+        return;
+      }
+
+      const matchedItem = progressItems.find(
+        (item) => item.nodeId === snapshot.selectedSubthemeNodeId,
+      );
+
+      if (!matchedItem?.subthemeId) {
+        return;
+      }
+
+      const ready = await loadSubthemeWordsForNode(
+        matchedItem.nodeId,
+        matchedItem.subthemeId,
+      );
+
+      if (!ready || cancelled) {
+        return;
+      }
+
+      setSelectedSubthemeNodeId(matchedItem.nodeId);
+      setCurrentLevel("subtheme");
+
+      if (snapshot.selectedWordId) {
+        setSelectedWordId(snapshot.selectedWordId);
+      }
+    };
+
+    void restoreGraphState();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, loadSubthemeWordsForNode, progressItems, setSelectedGraphId]);
 
   const regionGraph =
     graphElements && (currentLevel === "theme" || currentLevel === "subtheme")
@@ -1059,6 +1461,10 @@ export default function Page() {
       return `word-${selectedWordId}`;
     }
 
+    if (currentLevel === "subtheme" && unlockFocusWordId) {
+      return `word-${unlockFocusWordId}`;
+    }
+
     if (currentLevel === "subtheme") {
       return "home";
     }
@@ -1074,6 +1480,7 @@ export default function Page() {
     pendingThemeId,
     selectedSubthemeNodeId,
     selectedWordId,
+    unlockFocusWordId,
     subthemeWordsLoading,
     vectorGraphReady,
   ]);
@@ -1115,6 +1522,25 @@ export default function Page() {
       null
     );
   }, [focusedVectorNodeId, vectorGraphLayout]);
+  const sceneInteractionLocked =
+    isLessonOpen && sceneSize.width < DESKTOP_DRAWER_BREAKPOINT;
+  const autoFocusKey = useMemo(() => {
+    if (currentLevel === "region" && selectedRegionId) {
+      return `region:${selectedRegionId}`;
+    }
+
+    if (!focusedVectorNodeId) {
+      return null;
+    }
+
+    const drawerAwareWordFocus =
+      currentLevel === "subtheme" &&
+      Boolean(selectedWordId) &&
+      isLessonOpen &&
+      sceneSize.width >= DESKTOP_DRAWER_BREAKPOINT;
+
+    return `${currentLevel}:${focusedVectorNodeId}:${drawerAwareWordFocus ? "drawer" : "plain"}`;
+  }, [currentLevel, focusedVectorNodeId, isLessonOpen, sceneSize.width, selectedRegionId, selectedWordId]);
 
   const autoTransform = useMemo(() => {
     if (!selectedRegion || currentLevel === "map") {
@@ -1129,38 +1555,15 @@ export default function Page() {
     }
 
     const svgFrame = getRenderedSvgFrame(sceneSize, layout.viewport);
-    const regionWidth = Math.max((bounds.width / 100) * svgFrame.width, 1);
-    const regionHeight = Math.max((bounds.height / 100) * svgFrame.height, 1);
-    const viewportFill = AUTO_REGION_VIEWPORT_FILL;
-    const edgeBias = getRegionEdgeBias(bounds);
-    const maxAutoScale = Math.min(
-      MAX_SCENE_SCALE,
-      AUTO_REGION_MAX_SCALE + (AUTO_REGION_EDGE_MAX_SCALE - AUTO_REGION_MAX_SCALE) * edgeBias,
-    );
-    const scale = clamp(
-      Math.max(
-        AUTO_REGION_BASE_SCALE,
-        Math.min(
-          maxAutoScale,
-          Math.min(
-            (sceneSize.width * viewportFill) / regionWidth,
-            (sceneSize.height * viewportFill) / regionHeight,
-          ) * (1 + edgeBias * REGION_EDGE_ZOOM_BONUS),
-        ),
-      ),
-      AUTO_REGION_MIN_SCALE,
-      maxAutoScale,
-    );
-    const centerX = svgFrame.x + (bounds.centerX / 100) * svgFrame.width;
-    const centerY = svgFrame.y + (bounds.centerY / 100) * svgFrame.height;
-    let targetX = sceneSize.width / 2;
-    let targetY = sceneSize.height / 2;
-    let targetScale = scale;
-    const centeredRegionTransform = {
-      scale,
-      x: targetX - centerX * scale,
-      y: targetY - centerY * scale,
-    };
+    const regionFocusFrame = getRegionFocusFrame(svgFrame, bounds);
+    const centeredRegionTransform = getCameraTransformForFocusFrame({
+      focusFrame: regionFocusFrame,
+      frame: svgFrame,
+      sceneSize,
+      minScale: AUTO_REGION_MIN_SCALE,
+      maxScale: MAX_SCENE_SCALE,
+      viewportArea: { x: 0, y: 0, width: sceneSize.width, height: sceneSize.height },
+    });
 
     if (currentLevel === "region") {
       return centeredRegionTransform;
@@ -1168,51 +1571,59 @@ export default function Page() {
 
     if (focusedVectorNode) {
       const isWordFocus = focusedVectorNode.node.data.entityKind === "word";
-      const isPortrait = sceneSize.height > sceneSize.width;
+      const shouldOffsetForLessonDrawer =
+        isWordFocus && isLessonOpen && sceneSize.width >= DESKTOP_DRAWER_BREAKPOINT;
       const focusedPoint = toFramePoint(
         focusedVectorNode.x,
         focusedVectorNode.y,
         layout.viewport,
         svgFrame,
       );
+      const viewportArea = shouldOffsetForLessonDrawer
+        ? (() => {
+            const lessonDrawerWidth = Math.min(
+              LESSON_DRAWER_DESKTOP_WIDTH,
+              Math.round(sceneSize.width * LESSON_DRAWER_MAX_VIEWPORT_RATIO),
+            );
+            const availableWidth = Math.max(
+              sceneSize.width - lessonDrawerWidth,
+              sceneSize.width * 0.42,
+            );
 
-      targetScale = clamp(
-        scale * (isWordFocus ? AUTO_WORD_FOCUS_SCALE : AUTO_NODE_FOCUS_SCALE),
+            return { x: 0, y: 0, width: availableWidth, height: sceneSize.height };
+          })()
+        : { x: 0, y: 0, width: sceneSize.width, height: sceneSize.height };
+      const desiredScale = centeredRegionTransform.scale * (
+        isWordFocus ? AUTO_WORD_FOCUS_SCALE : AUTO_NODE_FOCUS_SCALE
+      );
+      const centeredMinScale = getMinimumScaleForCenteredPoint({
+        frame: svgFrame,
+        point: focusedPoint,
+        viewportArea,
+      });
+      const targetScale = clamp(
+        Math.max(desiredScale, centeredMinScale),
         isWordFocus ? 4.8 : 3.45,
-        isWordFocus ? AUTO_WORD_MAX_SCALE : AUTO_NODE_MAX_SCALE,
+        MAX_SCENE_SCALE,
       );
 
-      if (isWordFocus && isLessonOpen && !isPortrait) {
-        const lessonDrawerWidth = Math.min(
-          LESSON_DRAWER_DESKTOP_WIDTH,
-          Math.round(sceneSize.width * LESSON_DRAWER_MAX_VIEWPORT_RATIO),
-        );
-        const availableWidth = Math.max(sceneSize.width - lessonDrawerWidth, sceneSize.width * 0.42);
-        targetX = availableWidth / 2;
-
-        return clampSceneToFrame(
-          {
-            scale: targetScale,
-            x: targetX - focusedPoint.x * targetScale,
-            y: targetY - focusedPoint.y * targetScale,
-          },
-          svgFrame,
+      if (shouldOffsetForLessonDrawer) {
+        return getCameraTransformForPoint({
+          point: focusedPoint,
+          frame: svgFrame,
           sceneSize,
-          { x: 0, y: 0 },
-          { x: 0, y: 0, width: availableWidth, height: sceneSize.height },
-        );
+          scale: targetScale,
+          viewportArea,
+        });
       }
 
-      return clampSceneToFrame(
-        {
-          scale: targetScale,
-          x: targetX - focusedPoint.x * targetScale,
-          y: targetY - focusedPoint.y * targetScale,
-        },
-        svgFrame,
+      return getCameraTransformForPoint({
+        point: focusedPoint,
+        frame: svgFrame,
         sceneSize,
-        { x: 0, y: 0 },
-      );
+        scale: targetScale,
+        viewportArea,
+      });
     }
 
     return centeredRegionTransform;
@@ -1234,7 +1645,22 @@ export default function Page() {
     selectedRegionLayoutRef.current = selectedRegionLayout ?? null;
     sceneSizeRef.current = sceneSize;
     currentLevelRef.current = currentLevel;
-  }, [autoTransform, currentLevel, mapFrame, sceneSize, selectedRegionLayout]);
+    sceneInteractionLockedRef.current = sceneInteractionLocked;
+  }, [autoTransform, currentLevel, mapFrame, sceneInteractionLocked, sceneSize, selectedRegionLayout]);
+
+  useEffect(() => {
+    if (!sceneInteractionLocked) {
+      return;
+    }
+
+    pointersRef.current.clear();
+    dragRef.current = null;
+    pinchRef.current = null;
+
+    if (sceneRef.current) {
+      sceneRef.current.style.cursor = "default";
+    }
+  }, [sceneInteractionLocked]);
 
   // When autoTransform changes (level/region change), smoothly transition to new position
   useEffect(() => {
@@ -1277,14 +1703,9 @@ export default function Page() {
     const frame = mapFrameRef.current;
     const size = sceneSizeRef.current;
     const finalScale = auto.scale * transform.scale;
-    const regionLayout = selectedRegionLayoutRef.current;
-    const frameForClamp =
-      currentLevelRef.current === "region" && regionLayout?.bounds
-        ? getRegionFocusFrame(frame, regionLayout.bounds)
-        : frame;
     const clamped = clampSceneToFrame(
       { scale: finalScale, x: auto.x + transform.x, y: auto.y + transform.y },
-      frameForClamp,
+      frame,
       size,
     );
     return { ...transform, x: clamped.x - auto.x, y: clamped.y - auto.y };
@@ -1296,6 +1717,20 @@ export default function Page() {
     animStopRef.current = [];
 
   }, []);
+
+  useEffect(() => {
+    if (!autoFocusKey || autoFocusKey === lastAutoFocusKeyRef.current) {
+      return;
+    }
+
+    lastAutoFocusKeyRef.current = autoFocusKey;
+    cancelTransformAnim();
+    pointersRef.current.clear();
+    dragRef.current = null;
+    pinchRef.current = null;
+    manualTransformRef.current = { scale: 1, x: 0, y: 0 };
+    lastAutoTargetRef.current = null;
+  }, [autoFocusKey, cancelTransformAnim]);
 
   // Helper: animate motion values to a target (smooth level transitions)
   const animateTransformTo = useCallback(
@@ -1350,6 +1785,11 @@ export default function Page() {
   // Native wheel handler — registered with { passive: false } so preventDefault works
   const handleWheelNative = useCallback(
     (event: WheelEvent) => {
+      if (sceneInteractionLockedRef.current) {
+        event.preventDefault();
+        return;
+      }
+
       if (isOverlayTarget(event.target)) {
         return;
       }
@@ -1400,6 +1840,10 @@ export default function Page() {
 
   const handlePointerDown = useCallback(
     (event: PointerEvent) => {
+      if (sceneInteractionLockedRef.current) {
+        return;
+      }
+
       if (isNodeTarget(event.target) || isOverlayTarget(event.target)) {
         return;
       }
@@ -1451,6 +1895,10 @@ export default function Page() {
 
   const handlePointerMove = useCallback(
     (event: PointerEvent) => {
+      if (sceneInteractionLockedRef.current) {
+        return;
+      }
+
       if (isOverlayTarget(event.target)) {
         return;
       }
@@ -1519,6 +1967,10 @@ export default function Page() {
 
   const handlePointerEnd = useCallback(
     (event: PointerEvent) => {
+      if (sceneInteractionLockedRef.current) {
+        return;
+      }
+
       if (isOverlayTarget(event.target)) {
         pointersRef.current.delete(event.pointerId);
 
@@ -1782,15 +2234,25 @@ export default function Page() {
                 level={currentLevel}
                 interactionDisabled={graphInteractionDisabled}
                 hoverResetToken={hoverResetToken}
+                unlockTransition={unlockTransition}
                 onNodeSelected={regionGraph.onNodeSelected}
               />
             ) : null}
           </motion.div>
+          <PointsRewardFloat
+            points={mapRewardFloatPoints}
+            caption="Progreso de vocabulario"
+            onComplete={() => setMapRewardFloatPoints(null)}
+          />
           <VocabularyNodePanel
             item={selectedSubthemeItem}
             question={selectedWord}
-            onClose={() => setSelectedWordId(null)}
-            onSaved={reloadProgress}
+            onClose={() => {
+              setSelectedWordId(null);
+              setUnlockFocusWordId(null);
+            }}
+            onNavigateToLibrary={handleNavigateToLibrary}
+            onSaved={handleVocabularyQuizSaved}
           />
         </>
       )}

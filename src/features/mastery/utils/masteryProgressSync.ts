@@ -1,4 +1,3 @@
-import { MASTERY_THRESHOLDS } from "../constants/masteryConfig";
 import type { MasteryModuleId } from "../types";
 
 export const MASTERY_PROGRESS_SYNC_EVENT = "gokai:mastery-progress-sync";
@@ -7,6 +6,13 @@ export const MASTERY_CELEBRATION_REQUEST_EVENT = "gokai:mastery-celebration-requ
 export type MasteryProgressSyncDetail = {
   points?: number | null;
   kanaPoints?: number | null;
+  hasHiraganaMastery?: boolean | null;
+  hasKatakanaMastery?: boolean | null;
+  hasKanaMastery?: boolean | null;
+  hasKanasMastery?: boolean | null;
+  hasKanjiMastery?: boolean | null;
+  hasGrammarMastery?: boolean | null;
+  masteredModules?: MasteryModuleId[] | null;
 };
 
 export type MasteryCelebrationRequestDetail = {
@@ -78,25 +84,24 @@ export function mergeMasteredModulesFromProgress(
 ) {
   const next = new Set(previous);
 
-  if (
-    typeof detail.kanaPoints === "number" &&
-    detail.kanaPoints >= MASTERY_THRESHOLDS.hiragana
-  ) {
+  for (const moduleId of detail.masteredModules ?? []) {
+    next.add(moduleId);
+  }
+
+  if (detail.hasHiraganaMastery === true || detail.hasKanaMastery === true) {
     next.add("hiragana");
   }
 
-  if (
-    typeof detail.kanaPoints === "number" &&
-    detail.kanaPoints >= MASTERY_THRESHOLDS.katakana
-  ) {
+  if (detail.hasKatakanaMastery === true || detail.hasKanasMastery === true) {
     next.add("katakana");
   }
 
-  if (
-    typeof detail.points === "number" &&
-    detail.points >= MASTERY_THRESHOLDS.kanji
-  ) {
+  if (detail.hasKanjiMastery === true) {
     next.add("kanji");
+  }
+
+  if (detail.hasGrammarMastery === true) {
+    next.add("grammar");
   }
 
   return next;

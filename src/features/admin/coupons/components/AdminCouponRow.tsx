@@ -59,6 +59,10 @@ function AdminCouponRowBase({ coupon, onViewCoupon }: AdminCouponRowProps) {
       </td>
 
       <td className="whitespace-nowrap px-2.5 py-3 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
+        {coupon.redemptions}
+      </td>
+
+      <td className="whitespace-nowrap px-2.5 py-3 text-xs text-content-tertiary sm:px-3 sm:text-sm lg:px-4">
         {formatVigencyDate(coupon.vigency)}
       </td>
 

@@ -1,13 +1,14 @@
 import type { MasteryModuleConfig, MasteryModuleId } from "../types";
 
 // ---------------------------------------------------------------------------
-// Mastery point thresholds
+// Mastery display thresholds
 // ---------------------------------------------------------------------------
 
 export const MASTERY_THRESHOLDS: Record<MasteryModuleId, number> = {
-  hiragana: 355,
-  katakana: 710,
-  kanji: 4505,
+  hiragana: 1,
+  katakana: 1,
+  kanji: 1,
+  grammar: 1,
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -18,7 +19,6 @@ export const MASTERY_MODULE_CONFIGS: Record<MasteryModuleId, MasteryModuleConfig
   hiragana: {
     id: "hiragana",
     label: "Hiragana",
-    pointsField: "kanaPoints",
     masteryThreshold: MASTERY_THRESHOLDS.hiragana,
     accentHue: 275,
     celebrationSubtitle: "Dominas el silabario base del japones",
@@ -26,7 +26,6 @@ export const MASTERY_MODULE_CONFIGS: Record<MasteryModuleId, MasteryModuleConfig
   katakana: {
     id: "katakana",
     label: "Katakana",
-    pointsField: "kanaPoints",
     masteryThreshold: MASTERY_THRESHOLDS.katakana,
     accentHue: 210,
     celebrationSubtitle: "El segundo silabario no tiene secretos para ti",
@@ -34,10 +33,16 @@ export const MASTERY_MODULE_CONFIGS: Record<MasteryModuleId, MasteryModuleConfig
   kanji: {
     id: "kanji",
     label: "Kanji",
-    pointsField: "points",
     masteryThreshold: MASTERY_THRESHOLDS.kanji,
     accentHue: 0,
     celebrationSubtitle: "Los kanji se rinden ante tu dedicacion",
+  },
+  grammar: {
+    id: "grammar",
+    label: "Gramatica",
+    masteryThreshold: MASTERY_THRESHOLDS.grammar,
+    accentHue: 42,
+    celebrationSubtitle: "La estructura del japones empieza a sentirse natural",
   },
 } as const;
 
@@ -49,6 +54,7 @@ export const MASTERY_MODULES: readonly MasteryModuleId[] = [
   "hiragana",
   "katakana",
   "kanji",
+  "grammar",
 ] as const;
 
 // ---------------------------------------------------------------------------

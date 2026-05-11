@@ -2,6 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getCurrentUser } from "@/features/auth/services/api";
 import { readOnboardingInterestThemeIds } from "@/features/onboarding/lib/interestThemeStorage";
 import {
+  getUserEntitlements,
+  type VocabularyThemeUnlockScope,
+} from "@/shared/lib/userAccess";
+import {
   createVocabularyGraph,
   getVocabularyGraphProgress,
   listVocabularyGraphs,
@@ -54,9 +58,11 @@ function enrichThemeAvailability(
   themes: VocabularyThemeContent[] | null | undefined,
   graphs: VocabularyGraphSummary[] | null | undefined,
   fallbackThemeIds: string[] = [],
+  unlockScope: VocabularyThemeUnlockScope = "selected",
 ) {
   const safeThemes = Array.isArray(themes) ? themes : [];
   const safeGraphs = Array.isArray(graphs) ? graphs : [];
+  const unlockAllThemes = unlockScope === "all";
   const unlockedThemeIds = new Set([
     ...safeGraphs.map((graph) => graph.themeId),
     ...fallbackThemeIds,
@@ -67,7 +73,7 @@ function enrichThemeAvailability(
 
   return safeThemes.map((theme) => ({
     ...theme,
-    isUnlocked: unlockedThemeIds.has(theme.id),
+    isUnlocked: unlockAllThemes || unlockedThemeIds.has(theme.id),
     order: fallbackOrderByThemeId.get(theme.id) ?? null,
   }));
 }
@@ -152,10 +158,12 @@ export function useVocabularyGraph() {
         listVocabularyThemes(),
         getCurrentUser().catch(() => null),
       ]);
+      const entitlements = getUserEntitlements(currentUser);
       let availableGraphs = currentGraphs;
 
       if (
-        currentUser?.subscribed === false &&
+        currentUser &&
+        !entitlements.hasFullVocabularyAccess &&
         currentGraphs.length === 0 &&
         fallbackThemeIds.length === 0 &&
         themes.length > 0
@@ -166,12 +174,31 @@ export function useVocabularyGraph() {
         availableGraphs = await loadGraphs();
       }
 
-      setThemeCatalog(enrichThemeAvailability(themes, availableGraphs, fallbackThemeIds));
+      setThemeCatalog(
+        enrichThemeAvailability(
+          themes,
+          availableGraphs,
+          fallbackThemeIds,
+          entitlements.vocabularyThemeUnlockScope,
+        ),
+      );
     } catch (catalogError) {
       console.error("Error cargando catalogo de temas:", catalogError);
       try {
-        const themes = await listVocabularyThemes();
-        setThemeCatalog(enrichThemeAvailability(themes, currentGraphs, fallbackThemeIds));
+        const [themes, currentUser] = await Promise.all([
+          listVocabularyThemes(),
+          getCurrentUser().catch(() => null),
+        ]);
+        const entitlements = getUserEntitlements(currentUser);
+
+        setThemeCatalog(
+          enrichThemeAvailability(
+            themes,
+            currentGraphs,
+            fallbackThemeIds,
+            entitlements.vocabularyThemeUnlockScope,
+          ),
+        );
       } catch {
         setThemeCatalog([]);
       }

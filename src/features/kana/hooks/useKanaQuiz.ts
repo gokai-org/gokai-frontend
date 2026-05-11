@@ -25,7 +25,6 @@ import {
   applyEarlyKanaOptionPool,
   isValidCanvasQuestion,
 } from "@/features/kana/utils/quizParser";
-import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 
 function extractKanaQuizErrorMessage(message: string): string {
   const jsonStart = message.indexOf("{");
@@ -80,6 +79,7 @@ export interface UseKanaQuizReturn {
   updatedPoints: number | null;
   pointsDelta: number;
   reachedMasteryThisAttempt: boolean;
+  moduleMasteryReached: boolean;
   roundResults: KanaQuizRoundResult[];
   currentRound: number;
   totalRounds: number;
@@ -173,6 +173,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
   const [updatedPoints, setUpdatedPoints] = useState<number | null>(null);
   const [pointsDelta, setPointsDelta] = useState(0);
   const [reachedMasteryThisAttempt, setReachedMasteryThisAttempt] = useState(false);
+  const [moduleMasteryReached, setModuleMasteryReached] = useState(false);
   const [roundResults, setRoundResults] = useState<KanaQuizRoundResult[]>([]);
   const [sessionType, setSessionType] = useState<KanaQuizSessionType>("mixed");
   const [totalRounds, setTotalRounds] = useState(KANA_QUIZ_TOTAL_ROUNDS);
@@ -301,6 +302,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       setPointsDelta(0);
       setUpdatedPoints(null);
       setReachedMasteryThisAttempt(false);
+      setModuleMasteryReached(false);
       setSessionType(context?.quizType ?? "mixed");
       setTotalRounds(context?.quizType ? 1 : KANA_QUIZ_TOTAL_ROUNDS);
       persistProgressRef.current = shouldPersistProgress;
@@ -333,18 +335,9 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       startingKanaPointsRef.current !== null
         ? Math.max(0, nextKanaPoints - startingKanaPointsRef.current)
         : 0;
-    const threshold = kanaTypeRef.current
-      ? MASTERY_THRESHOLDS[kanaTypeRef.current]
-      : null;
 
     setUpdatedPoints(nextKanaPoints);
     setPointsDelta(nextDelta);
-    setReachedMasteryThisAttempt(
-      threshold !== null &&
-        startingKanaPointsRef.current !== null &&
-        startingKanaPointsRef.current < threshold &&
-        nextKanaPoints >= threshold,
-    );
   }, []);
 
   const refreshPointsAfterSubmit = useCallback(
@@ -359,6 +352,15 @@ export function useKanaQuiz(): UseKanaQuizReturn {
       }
 
       applyResolvedKanaPoints(submittedKanaPoints);
+
+      const reachedModuleMastery = kanaTypeRef.current === "hiragana"
+        ? response.hasHiraganaMastery === true || response.hasKanasMastery === true
+        : kanaTypeRef.current === "katakana"
+          ? response.hasKatakanaMastery === true || response.hasKanasMastery === true
+          : false;
+
+      setModuleMasteryReached(reachedModuleMastery);
+      setReachedMasteryThisAttempt(reachedModuleMastery);
     },
     [applyResolvedKanaPoints],
   );
@@ -657,6 +659,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
     setUpdatedPoints(null);
     setPointsDelta(0);
     setReachedMasteryThisAttempt(false);
+    setModuleMasteryReached(false);
     setSessionType("mixed");
     setTotalRounds(KANA_QUIZ_TOTAL_ROUNDS);
     roundResultsRef.current = [];
@@ -686,6 +689,7 @@ export function useKanaQuiz(): UseKanaQuizReturn {
     updatedPoints,
     pointsDelta,
     reachedMasteryThisAttempt,
+    moduleMasteryReached,
     roundResults,
     currentRound,
     totalRounds,
