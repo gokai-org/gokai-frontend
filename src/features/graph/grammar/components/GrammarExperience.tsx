@@ -2,8 +2,11 @@
 
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import type { Node } from "reactflow";
 import { useSidebar } from "@/shared/components/SidebarContext";
-import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+import { MasteryBoardWrapper } from "@/features/mastery/components/MasteryBoardWrapper";
+import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
 import {
   createGrammarBoardContextTour,
@@ -66,10 +69,12 @@ export function GrammarExperience({
     applyOptimisticUnlock,
     recentlyUnlockedIds,
     nextUnlockCandidate,
+    hasGrammarMastery,
   } = useGrammarBoard();
   const autoUnlockedRef = useRef<Set<string>>(new Set());
   const boardQuality = useGrammarBoardQuality();
   const { setHidden } = useSidebar();
+  const mastered = useMasteredModules();
   const toast = useToast();
   const [selectedLessonId, setSelectedLessonId] = useState<string | null>(null);
   const [helpFocusedLessonId, setHelpFocusedLessonId] = useState<string | null>(null);
@@ -287,6 +292,14 @@ export function GrammarExperience({
     setStage("quiz");
   }, [lesson, stage]);
 
+  const selectedBoardLesson = useMemo(
+    () =>
+      selectedLessonId
+        ? (board.cells.find((cell) => cell.progress.id === selectedLessonId)?.progress ?? null)
+        : null,
+    [board.cells, selectedLessonId],
+  );
+
   const handleCloseQuiz = useCallback(() => {
     if (stage !== "quiz") {
       return;
@@ -311,11 +324,19 @@ export function GrammarExperience({
 
   const handleQuizComplete = useCallback(
     (result: GrammarQuizCompletionResult) => {
-      dispatchMasteryProgressSync({ points: result.userPoints });
       invalidateApiCache("/api/content/grammar/progress");
+      if (result.hasGrammarMastery === true) {
+        dispatchMasteryProgressSync({ hasGrammarMastery: true });
+
+        if (!mastered.has("grammar")) {
+          window.requestAnimationFrame(() => {
+            dispatchMasteryCelebrationRequest({ moduleId: "grammar" });
+          });
+        }
+      }
       void refetchBoard();
     },
-    [refetchBoard],
+    [mastered, refetchBoard],
   );
 
   const focusHelpLesson = useCallback((target?: HelpGuideGrammarDetail["target"]) => {
@@ -446,6 +467,34 @@ export function GrammarExperience({
     ? helpFocusedLessonId
     : selectedLessonId;
 
+  const masteryNodes = useMemo<Node[]>(
+    () =>
+      board.cells
+        .filter((cell) => !cell.progress.isMock)
+        .sort((left, right) => left.layout.order - right.layout.order)
+        .map((cell) => ({
+          id: cell.progress.id,
+          type: "grammar-mastery-node",
+          position: {
+            x: (cell.layout.x + cell.layout.width / 2) * 10,
+            y: (cell.layout.y + cell.layout.height / 2) * 10,
+          },
+          data: {},
+          style: { width: cell.layout.width * 10 },
+        })),
+    [board.cells],
+  );
+
+  const completedGrammarItems = useMemo(
+    () =>
+      board.cells.filter(
+        (cell) => !cell.progress.isMock && cell.progress.status === "completed",
+      ).length,
+    [board.cells],
+  );
+
+  const noopSetCenter = useCallback(() => undefined, []);
+
   const rootClassName = embedded
     ? [
         "relative w-full overflow-hidden rounded-[30px] border border-black/[0.05] bg-surface-primary shadow-[0_24px_54px_rgba(0,0,0,0.12)] dark:border-white/[0.08]",
@@ -458,9 +507,10 @@ export function GrammarExperience({
         .filter(Boolean)
         .join(" ");
 
-  return (
+  const content = (
     <div
       data-help-surface={showHelpButton ? "grammar-board" : undefined}
+      data-grammar-mastered={hasGrammarMastery ? "true" : "false"}
       className={rootClassName}
     >
       <GrammarBoard
@@ -496,6 +546,7 @@ export function GrammarExperience({
         {stage === "quiz" && lesson ? (
           <GrammarQuizModal
             lesson={lesson}
+            wasCompletedBefore={selectedBoardLesson?.status === "completed"}
             onClose={handleCloseQuiz}
             onExitToBoard={handleExitQuizToBoard}
             onComplete={handleQuizComplete}
@@ -503,6 +554,21 @@ export function GrammarExperience({
         ) : null}
       </AnimatePresence>
     </div>
+  );
+
+  return (
+    <MasteryBoardWrapper
+      moduleId="grammar"
+      isMastered={hasGrammarMastery}
+      autoTriggerOnNewMastery={false}
+      totalItems={masteryNodes.length}
+      completedItems={completedGrammarItems}
+      nodes={masteryNodes}
+      setCenter={noopSetCenter}
+      tourZoom={1}
+    >
+      {content}
+    </MasteryBoardWrapper>
   );
 }
 

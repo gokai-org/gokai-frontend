@@ -16,8 +16,8 @@ import { useSidebar } from "@/shared/components/SidebarContext";
 export interface MasteryBoardWrapperProps {
   /** Which module this board represents. */
   moduleId: MasteryModuleId;
-  /** User's current points for the module's point field. */
-  currentPoints: number;
+  /** Backend mastery flag for this module. */
+  isMastered: boolean;
   /** Whether threshold-crossing should auto-start the celebration. */
   autoTriggerOnNewMastery?: boolean;
   /** Total items on this board. */
@@ -50,7 +50,7 @@ export interface MasteryBoardWrapperProps {
  * ```tsx
  * <MasteryBoardWrapper
  *   moduleId="hiragana"
- *   currentPoints={userKanaPoints}
+ *   isMastered={hasHiraganaMastery}
  *   totalItems={items.length}
  *   completedItems={summary.completedCount}
  *   nodes={graph.nodes}
@@ -62,7 +62,7 @@ export interface MasteryBoardWrapperProps {
  */
 export function MasteryBoardWrapper({
   moduleId,
-  currentPoints,
+  isMastered,
   autoTriggerOnNewMastery = true,
   totalItems,
   completedItems,
@@ -79,7 +79,7 @@ export function MasteryBoardWrapper({
     goldenMixRatio,
   } = useMasteryOrchestrator({
     moduleId,
-    currentPoints,
+    isMastered,
     autoTriggerOnNewMastery,
     totalItems,
     completedItems,

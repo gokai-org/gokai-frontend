@@ -13,6 +13,8 @@ import { RED_ICON_FILTER } from "@/features/library/utils/vocabularyCardConfig";
 import type {
   VocabularyAnswerType,
   VocabularyGraphProgressItem,
+  VocabularyQuizSaveContext,
+  VocabularyQuizSaveResult,
   VocabularyWordLesson,
 } from "../types";
 import { getVocabularyNodeMastery } from "../lib/vocabularyGraphBuilder";
@@ -30,7 +32,10 @@ type VocabularyNodePanelProps = {
   item: VocabularyGraphProgressItem | null;
   question: VocabularyWordLesson | null;
   onClose: () => void;
-  onSaved: () => void;
+  onNavigateToLibrary?: () => void;
+  onSaved: (
+    context: VocabularyQuizSaveContext,
+  ) => Promise<VocabularyQuizSaveResult | void> | VocabularyQuizSaveResult | void;
 };
 
 function getQuestionTitle(question: VocabularyWordLesson) {
@@ -49,6 +54,7 @@ export default function VocabularyNodePanel({
   item,
   question,
   onClose,
+  onNavigateToLibrary,
   onSaved,
 }: VocabularyNodePanelProps) {
   const open = Boolean(item && question);
@@ -118,6 +124,17 @@ export default function VocabularyNodePanel({
     screen === "desktop" ? { x: 60, opacity: 0 } : { scale: 0.96, opacity: 0 };
   const visibleAnimation =
     screen === "desktop" ? { x: 0, opacity: 1 } : { scale: 1, opacity: 1 };
+
+  const handleQuizSaved = async (context: VocabularyQuizSaveContext) => {
+    const result = await onSaved(context);
+
+    if (result?.closeQuiz) {
+      setQuizOpen(false);
+      onClose();
+    }
+
+    return result;
+  };
 
   return (
     <AnimatePresence>
@@ -209,6 +226,7 @@ export default function VocabularyNodePanel({
                 <VocabularyWordGuide
                   question={questionWithProgress}
                   subthemeMeaning={item.meaning}
+                  onNavigateToLibrary={onNavigateToLibrary}
                   onStartQuiz={(type) => {
                     setQuizType(type);
                     setQuizOpen(true);
@@ -224,7 +242,7 @@ export default function VocabularyNodePanel({
             question={questionWithProgress}
             initialType={quizType}
             onClose={() => setQuizOpen(false)}
-            onSaved={onSaved}
+            onSaved={handleQuizSaved}
           />
         </>
       )}

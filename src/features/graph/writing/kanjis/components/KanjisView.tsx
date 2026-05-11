@@ -28,7 +28,6 @@ import { KanjiBoardMap } from "./KanjiBoardMap";
 import WritingBoardLoading from "../../shared/components/WritingBoardLoading";
 import { MasteryBoardWrapper } from "@/features/mastery/components/MasteryBoardWrapper";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
-import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { dispatchMasteryCelebrationRequest, dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
 import { useToast } from "@/shared/ui/ToastProvider";
@@ -47,11 +46,11 @@ import { KanjiBoardInteractionProvider } from "../lib/KanjiBoardInteractionConte
 
 type KanjiQuizCompletionResult = {
   newlyCompleted: boolean;
-  newlyCompletedPoints: number;
-  resultingModulePoints: number;
+  newlyCompletedPoints?: number;
+  resultingModulePoints?: number;
   dominated: boolean;
   score: number;
-  triggeredModuleMastery: boolean;
+  triggeredModuleMastery?: boolean;
 };
 
 const GRAPH_USER_ID = "user123";
@@ -86,6 +85,7 @@ export default function KanjisView() {
     reload,
     loading,
     userPoints,
+    hasKanjiMastery,
     nextUnlockCandidate,
     canUnlockNext,
     unlockCost,
@@ -551,12 +551,6 @@ export default function KanjisView() {
 
   const handleQuizEnd = useCallback((result?: KanjiQuizCompletionResult) => {
     const isPracticeOnly = quizKanji?.isPracticeOnly === true;
-    const resultingPoints =
-      result?.resultingModulePoints ??
-      userPoints + (result?.newlyCompletedPoints ?? 0);
-    const becameMastered =
-      !wasMasteredBeforeQuizRef.current &&
-      resultingPoints >= MASTERY_THRESHOLDS.kanji;
 
     setQuizKanji(null);
     quizActiveRef.current = false;
@@ -574,7 +568,11 @@ export default function KanjisView() {
       }
       return;
     }
-    if (result?.newlyCompleted && result.newlyCompletedPoints > 0) {
+    if (
+      result?.newlyCompleted &&
+      typeof result.newlyCompletedPoints === "number" &&
+      result.newlyCompletedPoints > 0
+    ) {
       dispatchMasteryProgressSync({
         points:
           result.resultingModulePoints ??
@@ -583,6 +581,7 @@ export default function KanjisView() {
       setKanjiPointsReward(result.newlyCompletedPoints);
     }
     if (result?.triggeredModuleMastery) {
+      dispatchMasteryProgressSync({ hasKanjiMastery: true });
       pendingMasteryCelebrationRef.current = false;
       setSuppressedUnlockPointIds(new Set());
       if (celebrationFallbackTimerRef.current !== null) {
@@ -595,18 +594,6 @@ export default function KanjisView() {
       shouldResolveUnlocksRef.current = lockedIdsBeforeQuizRef.current !== null;
       void reloadRef.current();
       return;
-    }
-    if (becameMastered) {
-      pendingMasteryCelebrationRef.current = true;
-      if (celebrationFallbackTimerRef.current !== null) {
-        clearTimeout(celebrationFallbackTimerRef.current);
-      }
-      celebrationFallbackTimerRef.current = setTimeout(() => {
-        if (!pendingMasteryCelebrationRef.current) return;
-        pendingMasteryCelebrationRef.current = false;
-        setSuppressedUnlockPointIds(new Set());
-        dispatchMasteryCelebrationRequest({ moduleId: "kanji" });
-      }, 2900);
     }
     shouldResolveUnlocksRef.current = lockedIdsBeforeQuizRef.current !== null;
     void reloadRef.current();
@@ -877,7 +864,7 @@ export default function KanjisView() {
   return (
     <MasteryBoardWrapper
       moduleId="kanji"
-      currentPoints={userPoints}
+      isMastered={hasKanjiMastery}
       autoTriggerOnNewMastery={false}
       totalItems={items.length}
       completedItems={summary.completedCount}

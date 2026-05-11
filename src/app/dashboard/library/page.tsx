@@ -45,7 +45,12 @@ import {
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
-import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
+import type { MasteryModuleId } from "@/features/mastery/types";
+import {
+  dispatchMasteryCelebrationRequest,
+  dispatchMasteryProgressSync,
+  subscribeMasteryCelebrationRequest,
+} from "@/features/mastery/utils/masteryProgressSync";
 import { HELP_GUIDE_LIBRARY_RESET_EVENT } from "@/features/help/utils/guideEvents";
 import { useToast } from "@/shared/ui/ToastProvider";
 import { unlockKanji } from "@/features/kanji";
@@ -55,7 +60,11 @@ type QuizCompletionResult = {
   newlyCompleted?: boolean;
   newlyCompletedPoints?: number;
   resultingModulePoints?: number;
+  triggeredModuleMastery?: boolean;
 };
+
+const GRAPH_RETURN_SNAPSHOT_STORAGE_KEY = "gokai:vocabulary-graph-return-snapshot";
+const GRAPH_RETURN_PENDING_STORAGE_KEY = "gokai:vocabulary-graph-return-pending";
 
 export default function LibraryPage() {
   const searchParams = useSearchParams();
@@ -91,10 +100,124 @@ export default function LibraryPage() {
   const mastered = useMasteredModules();
   const toast = useToast();
   const autoUnlockedKanjiRef = useRef<Set<string>>(new Set());
+  const libraryMasteryRootRef = useRef<HTMLDivElement | null>(null);
+  const libraryMasteryTourTimersRef = useRef<number[]>([]);
+  const libraryMasteryActiveCardRef = useRef<HTMLElement | null>(null);
+  const pendingLibraryMasteryModuleRef = useRef<MasteryModuleId | null>(null);
   useEffect(() => {
     setBlurred(drawerEntity !== null);
     return () => setBlurred(false);
   }, [drawerEntity, setBlurred]);
+
+  const clearLibraryMasteryTour = useCallback(() => {
+    libraryMasteryTourTimersRef.current.forEach((timerId) => {
+      window.clearTimeout(timerId);
+    });
+    libraryMasteryTourTimersRef.current = [];
+
+    if (libraryMasteryActiveCardRef.current) {
+      libraryMasteryActiveCardRef.current.classList.remove("library-mastery-tour-card");
+      libraryMasteryActiveCardRef.current = null;
+    }
+  }, []);
+
+  const runLibraryMasteryTour = useCallback((moduleId: MasteryModuleId) => {
+    const root = libraryMasteryRootRef.current;
+
+    if (!root) {
+      return;
+    }
+
+    clearLibraryMasteryTour();
+
+    const cards = Array.from(
+      root.querySelectorAll<HTMLElement>(`[data-library-mastery-card="${moduleId}"]`),
+    );
+
+    if (cards.length === 0) {
+      return;
+    }
+
+    const perCardDelay = Math.max(70, Math.min(180, Math.round(5400 / cards.length)));
+
+    cards.forEach((card, index) => {
+      const timerId = window.setTimeout(() => {
+        if (libraryMasteryActiveCardRef.current && libraryMasteryActiveCardRef.current !== card) {
+          libraryMasteryActiveCardRef.current.classList.remove("library-mastery-tour-card");
+        }
+
+        libraryMasteryActiveCardRef.current = card;
+        card.classList.add("library-mastery-tour-card");
+        card.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+          inline: "center",
+        });
+      }, index * perCardDelay);
+
+      libraryMasteryTourTimersRef.current.push(timerId);
+    });
+
+    libraryMasteryTourTimersRef.current.push(
+      window.setTimeout(() => {
+        clearLibraryMasteryTour();
+      }, cards.length * perCardDelay + 650),
+    );
+  }, [clearLibraryMasteryTour]);
+
+  useEffect(() => clearLibraryMasteryTour, [clearLibraryMasteryTour]);
+
+  useEffect(
+    () =>
+      subscribeMasteryCelebrationRequest((detail) => {
+        const moduleId = detail.moduleId;
+
+        if (
+          moduleId === "hiragana" ||
+          moduleId === "katakana" ||
+          moduleId === "kanji" ||
+          moduleId === "grammar"
+        ) {
+          pendingLibraryMasteryModuleRef.current = moduleId;
+
+          if (selectedCategory !== moduleId) {
+            setSearchQuery("");
+            setSelectedCategory(moduleId);
+            return;
+          }
+
+          window.requestAnimationFrame(() => {
+            runLibraryMasteryTour(moduleId);
+            pendingLibraryMasteryModuleRef.current = null;
+          });
+        }
+      }),
+    [runLibraryMasteryTour, selectedCategory],
+  );
+
+  useEffect(() => {
+    if (!selectedCategory) {
+      return;
+    }
+
+    if (pendingLibraryMasteryModuleRef.current !== selectedCategory) {
+      return;
+    }
+
+    const moduleId = pendingLibraryMasteryModuleRef.current;
+    if (!moduleId) {
+      return;
+    }
+
+    const timerId = window.setTimeout(() => {
+      runLibraryMasteryTour(moduleId);
+      pendingLibraryMasteryModuleRef.current = null;
+    }, 120);
+
+    return () => {
+      window.clearTimeout(timerId);
+    };
+  }, [runLibraryMasteryTour, selectedCategory]);
 
   // ── Scrollbar accent per category ─────────────────────────────────────────
   useEffect(() => {
@@ -426,8 +549,18 @@ export default function LibraryPage() {
       dispatchMasteryProgressSync({ points: _result.resultingModulePoints });
     }
 
+    if (_result?.triggeredModuleMastery) {
+      dispatchMasteryProgressSync({ hasKanjiMastery: true });
+
+      if (!mastered.has("kanji")) {
+        window.requestAnimationFrame(() => {
+          dispatchMasteryCelebrationRequest({ moduleId: "kanji" });
+        });
+      }
+    }
+
     void reloadLockedStatus();
-  }, [quizKanji, reloadLockedStatus]);
+  }, [mastered, quizKanji, reloadLockedStatus]);
 
   const handleKanaClick = (kana: Kana) => {
     setDrawerEntity({ id: kana.id, kind: "kana", kanaType: kana.kanaType });
@@ -435,6 +568,7 @@ export default function LibraryPage() {
 
   const handleKanaQuizClose = useCallback(async (_result?: QuizCompletionResult) => {
     const isPracticeOnly = quizKana?.isPracticeOnly === true;
+    const kanaType = quizKana?.kanaType ?? "hiragana";
     setQuizKana(null);
 
     const lockedHiraganaIdsBeforeQuiz = lockedHiraganaIdsBeforeQuizRef.current;
@@ -451,6 +585,26 @@ export default function LibraryPage() {
 
     if (typeof _result?.resultingModulePoints === "number") {
       dispatchMasteryProgressSync({ kanaPoints: optimisticKanaPoints });
+    }
+
+    if (_result?.triggeredModuleMastery) {
+      if (kanaType === "hiragana") {
+        dispatchMasteryProgressSync({ hasHiraganaMastery: true });
+
+        if (!mastered.has("hiragana")) {
+          window.requestAnimationFrame(() => {
+            dispatchMasteryCelebrationRequest({ moduleId: "hiragana" });
+          });
+        }
+      } else {
+        dispatchMasteryProgressSync({ hasKatakanaMastery: true });
+
+        if (!mastered.has("katakana")) {
+          window.requestAnimationFrame(() => {
+            dispatchMasteryCelebrationRequest({ moduleId: "katakana" });
+          });
+        }
+      }
     }
 
     if (!lockedHiraganaIdsBeforeQuiz && !lockedKatakanaIdsBeforeQuiz) {
@@ -478,7 +632,7 @@ export default function LibraryPage() {
     startUnlockAnimation(unlockedIds, "kana");
 
     void reloadKanaLockedStatus();
-  }, [hiraganas, katakanas, quizKana, reloadKanaLockedStatus, startUnlockAnimation, userKanaPoints]);
+  }, [hiraganas, katakanas, mastered, quizKana, reloadKanaLockedStatus, startUnlockAnimation, userKanaPoints]);
 
   useEffect(() => {
     return () => {
@@ -507,6 +661,26 @@ export default function LibraryPage() {
 
   const requestedCategory = searchParams.get("category");
   const highlightedKanaSymbol = searchParams.get("symbol");
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!window.sessionStorage.getItem(GRAPH_RETURN_SNAPSHOT_STORAGE_KEY)) {
+      return;
+    }
+
+    const markGraphReturnPending = () => {
+      window.sessionStorage.setItem(GRAPH_RETURN_PENDING_STORAGE_KEY, "1");
+    };
+
+    window.addEventListener("popstate", markGraphReturnPending);
+
+    return () => {
+      window.removeEventListener("popstate", markGraphReturnPending);
+    };
+  }, []);
 
   useEffect(() => {
     if (requestedCategory !== "hiragana" && requestedCategory !== "katakana") {
@@ -553,7 +727,7 @@ export default function LibraryPage() {
           <LibrarySkeleton />
         </div>
       ) : (
-        <div data-help-target="library-page">
+        <div ref={libraryMasteryRootRef} data-help-target="library-page">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div
               data-help-target="library-search"

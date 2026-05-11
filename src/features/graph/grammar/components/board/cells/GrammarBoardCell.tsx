@@ -736,6 +736,7 @@ function GrammarBoardCellComponent({
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
         onPointerLeave={handlePointerCancel}
+        data-grammar-art-tone={variant.artTone}
         data-help-target={helpTarget ? "grammar-focus-cell" : undefined}
         data-help-target-priority={helpTarget ? "10" : undefined}
         className={`relative h-full w-full overflow-hidden border font-sans ${outerCornerClass} ${shellClass} ${buttonHoverClass}`}
@@ -747,10 +748,12 @@ function GrammarBoardCellComponent({
         {pressUnlockEnabled ? (
           <>
             <div
+              data-grammar-unlock-overlay="true"
               className={`pointer-events-none absolute inset-0 z-[1] ${outerCornerClass} bg-[linear-gradient(135deg,rgba(153,51,49,0.08),rgba(186,81,73,0.18),rgba(255,255,255,0.04))] transition-opacity duration-200 ${unlockHoldVisualActive ? "opacity-100" : "opacity-0"}`}
             />
             <div className={`pointer-events-none absolute inset-x-0 bottom-0 z-[2] h-1.5 overflow-hidden bg-black/6 dark:bg-white/8 ${innerCornerClass}`}>
               <div
+                data-grammar-unlock-bar="true"
                 className={`h-full origin-left rounded-full bg-gradient-to-r from-accent via-[#C5544D] to-accent-hover ${unlockPending ? "animate-pulse" : ""}`}
                 style={{
                   transform: `scaleX(${unlockPending ? 1 : unlockHoldVisualActive ? 1 : 0})`,
@@ -779,6 +782,7 @@ function GrammarBoardCellComponent({
           />
           {isUnlockReadyCell ? (
             <span
+              data-grammar-unlock-artwork="true"
               className={`absolute bg-[#b6413a] dark:bg-[#ff7868] ${artworkHoverClass} ${unlockReadyArtworkPulseClass} mix-blend-soft-light dark:mix-blend-screen`}
               style={primaryArtworkStyle}
             />

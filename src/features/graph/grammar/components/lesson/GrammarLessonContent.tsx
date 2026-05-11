@@ -163,7 +163,7 @@ function ExamCallToAction({
         type="button"
         onClick={onClick}
         className={[
-          "inline-flex shrink-0 items-center justify-center gap-2 rounded-[20px] bg-[linear-gradient(135deg,#8e342f_0%,#b3473f_52%,#d7685b_100%)] text-sm font-semibold text-white shadow-[0_10px_20px_rgba(179,71,63,0.20)] ring-1 ring-white/20 dark:ring-white/10 transition hover:brightness-[1.03]",
+          "inline-flex shrink-0 items-center justify-center gap-2 rounded-[20px] bg-gradient-to-r from-accent to-accent-hover text-sm font-semibold text-white shadow-[0_10px_20px_rgba(0,0,0,0.14)] ring-1 ring-white/20 dark:ring-white/10 transition hover:brightness-[1.03]",
           compact ? "w-full px-4 py-3" : "px-5 py-3",
         ].join(" ")}
       >
@@ -220,7 +220,10 @@ function ContentFrame({
       stretch ? "flex min-h-full flex-col" : "",
     ].join(" ")}
     >
-      <div className="border-b border-border-subtle px-3.5 py-3.5 lg:px-4 lg:py-4 xl:bg-[radial-gradient(circle_at_top_left,rgba(194,78,69,0.14),transparent_42%),linear-gradient(90deg,rgba(194,78,69,0.08),transparent)] xl:px-[clamp(1.1rem,1.8vw,1.5rem)] xl:py-[clamp(0.95rem,1.7vw,1.25rem)]">
+      <div
+        data-grammar-accent-banner="true"
+        className="border-b border-border-subtle px-3.5 py-3.5 lg:px-4 lg:py-4 xl:bg-[radial-gradient(circle_at_top_left,rgba(194,78,69,0.14),transparent_42%),linear-gradient(90deg,rgba(194,78,69,0.08),transparent)] xl:px-[clamp(1.1rem,1.8vw,1.5rem)] xl:py-[clamp(0.95rem,1.7vw,1.25rem)]"
+      >
         <p className="text-[10px] font-black uppercase tracking-[0.18em] text-accent/80 lg:text-[11px] lg:tracking-[0.2em]">
           {eyebrow}
         </p>
@@ -286,13 +289,13 @@ export default function GrammarLessonContent({ lesson, onClose, onStartExam }: G
     },
   ];
   return (
-    <div className="grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[34px] border border-black/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,255,255,0.78))] shadow-[0_28px_60px_rgba(0,0,0,0.12)] dark:border-white/[0.08] dark:bg-[linear-gradient(180deg,rgba(18,18,18,0.98),rgba(14,14,14,0.96))] lg:grid-cols-[minmax(20rem,25vw)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(21.5rem,26vw)_minmax(0,1fr)] 2xl:grid-cols-[minmax(23rem,27vw)_minmax(0,1fr)]">
+    <div data-grammar-lesson-shell="true" className="grid h-full min-h-0 min-w-0 grid-rows-[auto_minmax(0,1fr)_auto] overflow-hidden rounded-[34px] border border-black/[0.05] bg-[linear-gradient(180deg,rgba(255,255,255,0.88),rgba(255,255,255,0.78))] shadow-[0_28px_60px_rgba(0,0,0,0.12)] dark:border-white/[0.08] dark:bg-[linear-gradient(180deg,rgba(18,18,18,0.98),rgba(14,14,14,0.96))] lg:grid-cols-[minmax(20rem,25vw)_minmax(0,1fr)] lg:grid-rows-[minmax(0,1fr)] xl:grid-cols-[minmax(21.5rem,26vw)_minmax(0,1fr)] 2xl:grid-cols-[minmax(23rem,27vw)_minmax(0,1fr)]">
       <MobileLessonHeader
         title={lesson.title}
         onClose={onClose}
       />
 
-      <aside className="relative hidden min-h-0 min-w-0 overflow-hidden border-r border-r-black/8 bg-[linear-gradient(180deg,#b74742_0%,#95342f_40%,#6f2223_100%)] px-[clamp(1rem,1.25vw,1.25rem)] py-[clamp(1rem,1.25vw,1.25rem)] dark:border-r-white/10 dark:bg-[linear-gradient(180deg,#a63d38_0%,#822926_42%,#5f1c1d_100%)] lg:block">
+      <aside data-grammar-lesson-sidebar="true" className="relative hidden min-h-0 min-w-0 overflow-hidden border-r border-r-black/8 bg-[linear-gradient(180deg,#b74742_0%,#95342f_40%,#6f2223_100%)] px-[clamp(1rem,1.25vw,1.25rem)] py-[clamp(1rem,1.25vw,1.25rem)] dark:border-r-white/10 dark:bg-[linear-gradient(180deg,#a63d38_0%,#822926_42%,#5f1c1d_100%)] lg:block">
         <div className="relative flex h-full min-h-0 flex-col gap-[clamp(0.5rem,0.65vw,0.85rem)]">
           <div className="shrink-0 space-y-[clamp(0.7rem,0.9vw,1rem)]">
             <div className="space-y-[clamp(0.7rem,0.9vw,1rem)]">

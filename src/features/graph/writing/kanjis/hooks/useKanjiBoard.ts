@@ -473,6 +473,7 @@ export function useKanjiBoard() {
         pointsToUnlock: unlockState.unlockCost,
         exerciseType: progressRef.current?.exerciseType ?? "kanji",
         completed: false,
+        hasKanjiMastery: progressRef.current?.hasKanjiMastery === true,
       };
       progressRef.current = nextProgress;
       setProgress(nextProgress);
@@ -501,6 +502,7 @@ export function useKanjiBoard() {
     items,
     summary,
     userPoints,
+    hasKanjiMastery: progress?.hasKanjiMastery === true,
     progress,
     nextUnlockCandidate: unlockState.nextUnlockCandidate,
     canUnlockNext: unlockState.canUnlockNext,

@@ -22,6 +22,7 @@ type OnboardingKanaAssessmentStepProps = {
   results: Partial<Record<KanaType, KanaExamResult>>;
   currentKanaPoints: number;
   busy?: boolean;
+  skipIntroTransition?: boolean;
   onBack: () => void;
   onContinue: () => void;
   onSelect: (kanaType: KanaType, choice: OnboardingKanaKnowledgeChoice) => void;
@@ -34,6 +35,7 @@ export function OnboardingKanaAssessmentStep({
   selections,
   results,
   busy = false,
+  skipIntroTransition = false,
   onBack,
   onContinue,
   onSelect,
@@ -44,7 +46,7 @@ export function OnboardingKanaAssessmentStep({
   const canSelectKatakanaExam = hasHiraganaApproved || selections.hiragana === "exam";
   const canContinue = answersReady && !busy;
   const primaryLabel = "Continuar";
-  const introDelayMs = platformMotion.shouldAnimate
+  const introDelayMs = !skipIntroTransition && platformMotion.shouldAnimate
     ? Math.max(3200, Math.round(4300 * platformMotion.durationScale))
     : 0;
   const [phase, setPhase] = useState<"intro" | "choices">(
@@ -52,7 +54,7 @@ export function OnboardingKanaAssessmentStep({
   );
 
   useEffect(() => {
-    if (introDelayMs === 0 || phase === "choices") {
+    if (skipIntroTransition || introDelayMs === 0 || phase === "choices") {
       return;
     }
 
@@ -63,7 +65,7 @@ export function OnboardingKanaAssessmentStep({
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [introDelayMs, phase]);
+  }, [introDelayMs, phase, skipIntroTransition]);
 
   const introCopy = useMemo(
     () => ({
@@ -319,7 +321,7 @@ function KanaKnowledgeBoardCard({
         title: "Katakana",
         shortLabel: "Mahjong",
         symbol: "ア",
-        boardLabel: "Préstamos y sonidos modernos",
+        boardLabel: "Sonidos modernos",
         shape: "mahjong" as const,
         icon: Gem,
       }

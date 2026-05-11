@@ -74,6 +74,15 @@ export interface KanaPhoneticGridProps {
   onFavoriteToggle: (id: string) => void;
 }
 
+function isElementInsideViewport(rect: DOMRect, padding = 20) {
+  return (
+    rect.top >= padding &&
+    rect.left >= padding &&
+    rect.bottom <= window.innerHeight - padding &&
+    rect.right <= window.innerWidth - padding
+  );
+}
+
 function HighlightFrame({
   highlighted,
   pulse,
@@ -517,22 +526,64 @@ export function KanaPhoneticGrid({
       return;
     }
 
-    const frame = window.requestAnimationFrame(() => {
-      const targetRect = target.getBoundingClientRect();
-      const nextTop = Math.max(
-        0,
-        window.scrollY + targetRect.top - ((window.innerHeight - targetRect.height) / 2),
-      );
+    let cancelled = false;
+    let frameId = 0;
+    let timeoutId = 0;
 
-      window.scrollTo({ top: nextTop, behavior: "smooth" });
+    const alignHighlightedKana = (attempt: number) => {
+      if (cancelled) {
+        return;
+      }
+
+      const element = cellRefs.current[highlightedKana.id];
+
+      if (!element) {
+        return;
+      }
+
+      element.scrollIntoView({
+        block: "center",
+        inline: "center",
+        behavior: attempt === 0 ? "auto" : "smooth",
+      });
+
+      const rect = element.getBoundingClientRect();
+
+      if (!isElementInsideViewport(rect)) {
+        const nextTop = Math.max(
+          0,
+          window.scrollY + rect.top - ((window.innerHeight - rect.height) / 2),
+        );
+
+        window.scrollTo({
+          top: nextTop,
+          behavior: attempt === 0 ? "auto" : "smooth",
+        });
+      }
 
       window.setTimeout(() => {
-        target.focus({ preventScroll: true });
-      }, 420);
+        element.focus({ preventScroll: true });
+      }, 90);
+
+      if (attempt < 2) {
+        timeoutId = window.setTimeout(() => {
+          frameId = window.requestAnimationFrame(() => {
+            alignHighlightedKana(attempt + 1);
+          });
+        }, 180);
+      }
+    };
+
+    frameId = window.requestAnimationFrame(() => {
+      alignHighlightedKana(0);
     });
 
-    return () => window.cancelAnimationFrame(frame);
-  }, [highlightedKana]);
+    return () => {
+      cancelled = true;
+      window.cancelAnimationFrame(frameId);
+      window.clearTimeout(timeoutId);
+    };
+  }, [highlightPromptOpen, highlightedKana]);
 
   const presentRows = useMemo(
     () => PHONETIC_ROWS.filter((row) => table.has(row.key)),

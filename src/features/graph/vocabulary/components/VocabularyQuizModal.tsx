@@ -38,6 +38,8 @@ import type {
   VocabularyGraphProgressItem,
   VocabularyQuizOption,
   VocabularyQuizQuestion,
+  VocabularyQuizSaveContext,
+  VocabularyQuizSaveResult,
   VocabularyWordAnswer,
   VocabularyWordLesson,
   VocabularyWritingOptionUnit,
@@ -52,7 +54,9 @@ type VocabularyQuizModalProps = {
   question: VocabularyWordLesson;
   initialType: VocabularyAnswerType;
   onClose: () => void;
-  onSaved: () => void;
+  onSaved: (
+    context: VocabularyQuizSaveContext,
+  ) => Promise<VocabularyQuizSaveResult | void> | VocabularyQuizSaveResult | void;
 };
 
 type QuizStep =
@@ -487,7 +491,6 @@ export default function VocabularyQuizModal({
       return;
     }
 
-    const previousPoints = currentPointsRef.current ?? startingPointsRef.current;
     currentPointsRef.current = nextUserPoints;
     setResultingUserPoints(nextUserPoints);
     dispatchMasteryProgressSync({ points: nextUserPoints });
@@ -497,13 +500,6 @@ export default function VocabularyQuizModal({
         ? Math.max(0, nextUserPoints - startingPointsRef.current)
         : 0;
     setPointsDelta(nextTotalDelta);
-
-    if (typeof previousPoints === "number") {
-      const awardedNow = Math.max(0, nextUserPoints - previousPoints);
-      if (awardedNow > 0) {
-        setRewardFloatPoints(awardedNow);
-      }
-    }
   }, []);
 
   const saveCurrentRound = useCallback(
@@ -512,31 +508,40 @@ export default function VocabularyQuizModal({
       setError(null);
 
       const questionWordIds = new Set(roundQuestions.map((roundQuestion) => roundQuestion.wordId));
-      const answersToSave = answers.filter((answer) => questionWordIds.has(answer.wordId));
+      const completedAnswers = answers.filter((answer) => questionWordIds.has(answer.wordId));
 
-      if (answersToSave.length !== roundQuestions.length) {
+      if (completedAnswers.length !== roundQuestions.length) {
         setError("No se completaron todas las respuestas de este quiz.");
         setStep("error");
         return;
       }
 
+      const targetAnswer = completedAnswers.find(
+		(answer) => answer.wordId === question.wordId,
+	  );
+
+	  if (!targetAnswer) {
+		setError("No se encontro la respuesta de la palabra seleccionada.");
+		setStep("error");
+		return;
+	  }
+
       try {
         const response = await saveVocabularyNodeAnswers(item.nodeId, {
           answerType: currentType,
-          answers: answersToSave,
+          answers: [targetAnswer],
         });
 
         applyPointsSync(response.userPoints);
 
-        const totalScore = answersToSave.reduce((sum, answer) => sum + answer.score, 0);
-        const averageScore = Math.round(totalScore / answersToSave.length);
+        const averageScore = targetAnswer.score;
 
         const nextRoundResult: RoundResult = {
           type: currentType,
           score: averageScore,
-          duration: answersToSave.reduce((sum, answer) => sum + answer.duration, 0),
-          perfectAnswers: answersToSave.filter((answer) => answer.score === 100).length,
-          totalAnswers: answersToSave.length,
+		  duration: targetAnswer.duration,
+		  perfectAnswers: targetAnswer.score === 100 ? 1 : 0,
+		  totalAnswers: 1,
         };
 
         setRoundResults((current) =>
@@ -546,7 +551,21 @@ export default function VocabularyQuizModal({
           ]),
         );
 
-        onSaved();
+        const saveResult = await onSaved({
+          wordId: question.wordId,
+          answerType: currentType,
+          score: averageScore,
+          response,
+        });
+
+        if (saveResult?.closeQuiz) {
+          return;
+        }
+
+        if ((response.pointsAwarded ?? 0) > 0) {
+          setRewardFloatPoints(response.pointsAwarded ?? null);
+        }
+
         setStep("summary");
       } catch (saveError) {
         console.error("Error guardando quiz de vocabulario:", saveError);
@@ -554,7 +573,7 @@ export default function VocabularyQuizModal({
         setStep("error");
       }
     },
-    [applyPointsSync, currentType, item.nodeId, onSaved, roundQuestions],
+    [applyPointsSync, currentType, item.nodeId, onSaved, question.wordId, roundQuestions],
   );
 
   const handleNextQuestion = useCallback(() => {

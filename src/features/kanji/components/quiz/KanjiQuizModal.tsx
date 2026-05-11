@@ -23,7 +23,6 @@ import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { KanjiQuizWritingExercise } from "./KanjiQuizWritingExercise";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
-import { MASTERY_THRESHOLDS } from "@/features/mastery/constants/masteryConfig";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 import {
   ReaffirmedMasteryResult,
@@ -31,15 +30,13 @@ import {
 } from "@/shared/ui/ReaffirmedMasteryResult";
 import { AnswerConfirmationPanel } from "@/shared/ui";
 
-const KANJI_COMPLETION_REWARD = 30;
-
 export type KanjiQuizCompletionResult = {
   score: number;
   newlyCompleted: boolean;
-  newlyCompletedPoints: number;
-  resultingModulePoints: number;
+  newlyCompletedPoints?: number;
+  resultingModulePoints?: number;
   dominated: boolean;
-  triggeredModuleMastery: boolean;
+  triggeredModuleMastery?: boolean;
 };
 
 export interface KanjiQuizModalProps {
@@ -57,7 +54,7 @@ export function KanjiQuizModal({
   kanjiId,
   label,
   quizType,
-  currentModulePoints,
+  currentModulePoints: _currentModulePoints,
   wasCompletedBefore = false,
   progressEligible = true,
   onClose,
@@ -168,13 +165,11 @@ export function KanjiQuizModal({
     error,
     submitError,
     isPointsError,
-    updatedPoints,
-    pointsDelta,
-    reachedMasteryThisAttempt,
     roundResults,
     currentRound,
     totalRounds,
     sessionType,
+    moduleMasteryReached,
   } = quiz;
 
   const isPracticeSession = totalRounds === 1;
@@ -184,29 +179,16 @@ export function KanjiQuizModal({
     !isPracticeSession &&
     finalScore === 100 &&
     (state.step === "summary" || state.step === "celebration");
-  const awardedPointsDelta = pointsDelta;
-  const isNewlyCompleted = didPerfectMixedCompletion && awardedPointsDelta > 0;
-  const shouldShowReaffirmedMastery =
-    didPerfectMixedCompletion && awardedPointsDelta === 0;
-  const shouldShowUnlockedMastery = isNewlyCompleted;
+  const isNewlyCompleted = didPerfectMixedCompletion;
+  const shouldShowReaffirmedMastery = false;
+  const shouldShowUnlockedMastery = didPerfectMixedCompletion;
   const isDominated = shouldShowReaffirmedMastery;
-  const displayPointsDelta = isPracticeSession
-    ? 0
-    : shouldShowUnlockedMastery
-      ? Math.max(awardedPointsDelta, KANJI_COMPLETION_REWARD)
-      : isProgressSession
-        ? pointsDelta
-        : 0;
-  const shouldHidePointsDelta =
-    !isProgressSession || isPracticeSession || reachedMasteryThisAttempt;
-  const displayedUpdatedPoints =
-    isProgressSession && !isPracticeSession ? updatedPoints : null;
-  const resultingModulePoints =
-    displayedUpdatedPoints ??
-    currentModulePoints + (isProgressSession ? awardedPointsDelta : 0);
+  const displayPointsDelta = 0;
+  const shouldHidePointsDelta = true;
+  const displayedUpdatedPoints = null;
+  const resultingModulePoints = undefined;
   const triggeredModuleMastery =
-    isNewlyCompleted &&
-    resultingModulePoints >= MASTERY_THRESHOLDS.kanji;
+    isNewlyCompleted && moduleMasteryReached && !isKanjiMastered;
 
   const handleClose = useCallback(() => {
     const completionResult: KanjiQuizCompletionResult | undefined =
@@ -214,7 +196,7 @@ export function KanjiQuizModal({
         ? {
             score: quiz.finalScore,
             newlyCompleted: isNewlyCompleted,
-            newlyCompletedPoints: isNewlyCompleted ? KANJI_COMPLETION_REWARD : 0,
+          newlyCompletedPoints: 0,
             resultingModulePoints,
             dominated: isDominated,
             triggeredModuleMastery,
@@ -692,10 +674,11 @@ export function KanjiQuizModal({
               ) : shouldShowUnlockedMastery ? (
                 <UnlockedMasterySequence
                   title="Dominaste este kanji por primera vez"
-                  subtitle={`${label ? `${label} ` : "Este kanji "}quedo completado con un resultado perfecto y desbloqueo puntos nuevos.`}
+                  subtitle={`${label ? `${label} ` : "Este kanji "}quedo completado con un resultado perfecto.`}
                   score={finalScore}
                   symbol={label || "漢"}
                   pointsDelta={displayPointsDelta}
+                  showPointsReward={false}
                   onClose={handleClose}
                 />
               ) : totalRounds === 1 ? (
@@ -739,10 +722,11 @@ export function KanjiQuizModal({
               ) : shouldShowUnlockedMastery ? (
                 <UnlockedMasterySequence
                   title="Dominaste este kanji por primera vez"
-                  subtitle={`${label ? `${label} ` : "Este kanji "}quedo completado con un resultado perfecto y desbloqueo puntos nuevos.`}
+                  subtitle={`${label ? `${label} ` : "Este kanji "}quedo completado con un resultado perfecto.`}
                   score={finalScore}
                   symbol={label || "漢"}
                   pointsDelta={displayPointsDelta}
+                  showPointsReward={false}
                   onClose={handleClose}
                 />
               ) : totalRounds === 1 ? (

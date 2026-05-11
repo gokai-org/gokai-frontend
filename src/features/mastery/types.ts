@@ -1,9 +1,8 @@
 /**
  * Mastery progression system types.
  *
- * Each writing module (hiragana, katakana, kanji) progresses through
- * a defined set of states.  The mastery feature detects when a user
- * crosses the mastery threshold and triggers a celebration sequence.
+ * Each study module progresses through a defined set of states. The backend
+ * is the source of truth for mastery and sends boolean flags per module.
  */
 
 // ---------------------------------------------------------------------------
@@ -27,7 +26,7 @@ export type MasteryState =
  * Modules that participate in the mastery system.
  * Easily extensible — add future modules here.
  */
-export type MasteryModuleId = "hiragana" | "katakana" | "kanji";
+export type MasteryModuleId = "hiragana" | "katakana" | "kanji" | "grammar";
 
 // ---------------------------------------------------------------------------
 // Module configuration
@@ -39,9 +38,7 @@ export interface MasteryModuleConfig {
   id: MasteryModuleId;
   /** Human-readable display label. */
   label: string;
-  /** The user-points field to evaluate (from User model). */
-  pointsField: "kanaPoints" | "points";
-  /** Minimum points required to achieve mastery. */
+  /** Logical threshold used only for display/progress math. */
   masteryThreshold: number;
   /** Color accent used for the golden celebration variant. */
   accentHue: number;
@@ -57,15 +54,15 @@ export interface MasteryModuleConfig {
 export interface MasterySnapshot {
   /** Current progression state for the module. */
   state: MasteryState;
-  /** The user's current points for this module. */
+  /** Current display progress value for this module. */
   currentPoints: number;
-  /** Points required to achieve mastery. */
+  /** Display threshold used for progress math. */
   threshold: number;
   /** Completion ratio 0–1 (clamped). */
   progress: number;
   /** Whether the user has reached mastery (state >= mastered). */
   isMastered: boolean;
-  /** Whether we just crossed the threshold this session. */
+  /** Whether the backend flag became true before celebration was marked. */
   isNewMastery: boolean;
   /** Persist that the celebration was shown. */
   markCelebrated: () => void;

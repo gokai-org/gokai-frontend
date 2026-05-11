@@ -179,7 +179,7 @@ export default function GrammarCompleteExercise({
                       : filled
                         ? "cursor-pointer border border-accent/50 bg-accent/10 text-accent hover:opacity-75"
                         : activeBlank === seg.value
-                          ? "cursor-pointer border border-accent/50 bg-accent/8 text-accent shadow-[0_0_0_2px_rgba(153,51,49,0.12)]"
+                          ? "cursor-pointer border border-accent/50 bg-accent/8 text-accent ring-2 ring-accent/15"
                           : draggedText
                             ? "cursor-pointer border border-accent/35 bg-accent/5 text-content-secondary"
                             : "cursor-pointer border-b-2 border-accent/40 bg-transparent text-content-muted",

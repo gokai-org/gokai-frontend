@@ -9,8 +9,7 @@ import { normalizeQuizResponse } from "@/features/kanji/utils/quizParser";
 export type KanjiQuizSubmitResponse = {
   success?: boolean;
   message?: string;
-  userPoints?: number | null;
-  points?: number | null;
+  hasKanjiMastery?: boolean | null;
 };
 
 /**
@@ -54,7 +53,7 @@ export async function getKanjiQuiz(
 
 /**
  * Submit the result of a completed quiz for a kanji.
- * The backend handles scoring, points, and progress tracking.
+ * The backend handles scoring and progress tracking.
  */
 export async function submitKanjiQuiz(
   kanjiId: string,

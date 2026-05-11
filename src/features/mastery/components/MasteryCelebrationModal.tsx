@@ -97,6 +97,7 @@ const MODULE_EMOJI: Record<string, string> = {
   hiragana: "\u3042", // あ
   katakana: "\u30A2", // ア
   kanji: "\u5B57",   // 字
+  grammar: "文",
 };
 
 function VisibleMasteryCelebrationModal({

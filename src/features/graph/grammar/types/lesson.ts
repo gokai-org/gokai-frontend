@@ -15,6 +15,7 @@ export type GrammarStudyProgress = {
   title: string;
   pointsToUnlock: number;
   completed: boolean;
+  hasGrammarMastery?: boolean;
 };
 
 export type GrammarUnlockResponse = {
@@ -119,15 +120,17 @@ export type GrammarQuizSubmitBody = {
 export type GrammarQuizSubmitResponse = {
   success: boolean;
   message: string;
-  userPoints: number;
-  pointsAwarded: number;
+  userPoints?: number | null;
+  pointsAwarded?: number | null;
   isCorrect: boolean;
+  hasGrammarMastery?: boolean | null;
 };
 
 export type GrammarQuizCompletionResult = {
   grammarId: string;
   score: number;
   isCorrect: boolean;
-  pointsAwarded: number;
-  userPoints: number;
+  pointsAwarded?: number | null;
+  userPoints?: number | null;
+  hasGrammarMastery?: boolean | null;
 };

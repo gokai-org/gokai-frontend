@@ -50,6 +50,7 @@ export function mapBackendCouponToAdmin(coupon: BackendCoupon): AdminCoupon {
     description: coupon.description ?? null,
     vigency: coupon.vigency,
     claimLimit: coupon.claim_limit,
+    redemptions: coupon.redemptions,
     months: coupon.months,
     createdAt: formatCouponDate(coupon.created_at),
     status: deriveCouponStatus(coupon.vigency),

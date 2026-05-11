@@ -55,11 +55,12 @@ export function useGrammarLessons() {
         title: lesson?.title ?? "",
         pointsToUnlock: FIXED_GRAMMAR_UNLOCK_COST,
         completed: false,
+        hasGrammarMastery: progress?.hasGrammarMastery === true,
       });
       invalidateApiCache("/api/content/grammar/progress");
       markRecentlyUnlocked(lessonId);
     },
-    [lessons, markRecentlyUnlocked],
+    [lessons, markRecentlyUnlocked, progress?.hasGrammarMastery],
   );
 
   const resolveUserPoints = useCallback((nextPoints: number, optimistic = false) => {
@@ -164,6 +165,7 @@ export function useGrammarLessons() {
     error,
     refetch: fetch,
     userPoints,
+    hasGrammarMastery: progress?.hasGrammarMastery === true,
     progress,
     nextUnlockCandidate,
     canUnlockNext,

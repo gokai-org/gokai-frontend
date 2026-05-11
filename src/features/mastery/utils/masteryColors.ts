@@ -47,6 +47,7 @@ export const MODULE_CELEBRATION_TINTS: Record<
   hiragana: { hueRotate: 0, saturate: 1.0 },
   katakana: { hueRotate: -8, saturate: 1.05 },
   kanji: { hueRotate: 5, saturate: 1.1 },
+  grammar: { hueRotate: 0, saturate: 1.0 },
 };
 
 // ---------------------------------------------------------------------------

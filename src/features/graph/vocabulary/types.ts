@@ -251,6 +251,17 @@ export type SaveVocabularyNodeAnswerResponse = {
   pointsAwarded?: number;
 };
 
+export type VocabularyQuizSaveContext = {
+  wordId: string;
+  answerType: VocabularyAnswerType;
+  score: number;
+  response: SaveVocabularyNodeAnswerResponse;
+};
+
+export type VocabularyQuizSaveResult = {
+  closeQuiz?: boolean;
+};
+
 export type VocabularyNodeMastery = {
   total: number;
   completedTypes: number;

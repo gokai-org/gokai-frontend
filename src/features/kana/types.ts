@@ -45,6 +45,9 @@ export type UserKanaProgressDetailedResponse = {
   exerciseType: KanaQuestionType | "";
   completed: boolean;
   message?: string;
+  hasHiraganaMastery?: boolean;
+  hasKatakanaMastery?: boolean;
+  hasKanasMastery?: boolean;
 };
 
 export type KanaExamResponseRaw =

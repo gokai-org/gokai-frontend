@@ -112,6 +112,11 @@ export function AnswerConfirmationPanel({
         background: hexToRgba(palette.base, 0.18),
         boxShadow: "none",
       }
+    : mastered
+      ? {
+          background: `linear-gradient(135deg, ${MASTERY_GOLD.gradientFrom}, ${MASTERY_GOLD.gradientTo})`,
+          boxShadow: `0 12px 28px ${MASTERY_GOLD.glow}`,
+        }
     : {
         backgroundColor: palette.base,
         boxShadow: "none",

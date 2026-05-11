@@ -45,6 +45,7 @@ export type KanjiStudyProgress = {
   pointsToUnlock: number;
   exerciseType: KanjiExerciseType;
   completed: boolean;
+  hasKanjiMastery?: boolean;
 };
 
 export type KanjiUnlockResponse = {

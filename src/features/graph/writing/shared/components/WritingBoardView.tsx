@@ -313,6 +313,8 @@ export interface WritingBoardViewProps {
   masteryModuleId?: MasteryModuleId;
   /** User's current points for mastery detection. */
   masteryPoints?: number;
+  /** Backend mastery flag for this board. */
+  masteryIsMastered?: boolean;
   /** When false, mastery only starts via explicit request. */
   autoTriggerOnNewMastery?: boolean;
   /** Suppress +points bubble for nodes unlocked during this animation. */
@@ -337,6 +339,7 @@ export function WritingBoardView({
   focusedNodeId: focusedNodeIdProp = null,
   masteryModuleId,
   masteryPoints = 0,
+  masteryIsMastered = false,
   autoTriggerOnNewMastery = true,
   suppressUnlockPointsDuringUnlock = false,
   onUnlockAnimationComplete,
@@ -857,7 +860,7 @@ export function WritingBoardView({
     return (
       <MasteryBoardWrapper
         moduleId={masteryModule}
-        currentPoints={masteryPoints}
+        isMastered={masteryIsMastered}
         autoTriggerOnNewMastery={autoTriggerOnNewMastery}
         totalItems={items.length}
         completedItems={summary.completedCount}
