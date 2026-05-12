@@ -15,12 +15,13 @@ interface ChatConversationProps {
   title?: string;
   subtitle?: string;
   currentChatName?: string;
-  usedTokens?: number;
   headerActions?: ReactNode;
   footer?: ReactNode;
   animationsEnabled: boolean;
   heavyAnimationsEnabled?: boolean;
   onReset?: () => void;
+  onOpenWritingMessage?: (message: ChatMessage) => void;
+  onRetryMessage?: (text: string) => void;
 }
 
 export function ChatConversation({
@@ -28,14 +29,15 @@ export function ChatConversation({
   isLoading,
   isBootstrapping = false,
   error,
-  title = "Sensei AI",
+  title = "KAZU",
   currentChatName,
-  usedTokens = 0,
   headerActions,
   footer,
   animationsEnabled,
   heavyAnimationsEnabled = true,
   onReset,
+  onOpenWritingMessage,
+  onRetryMessage,
 }: ChatConversationProps) {
   return (
     <AnimatedEntrance
@@ -96,6 +98,8 @@ export function ChatConversation({
               isLoading={isLoading}
               animationsEnabled={animationsEnabled}
               heavyAnimationsEnabled={heavyAnimationsEnabled}
+              onOpenWritingMessage={onOpenWritingMessage}
+              onRetryMessage={onRetryMessage}
             />
           )}
         </div>

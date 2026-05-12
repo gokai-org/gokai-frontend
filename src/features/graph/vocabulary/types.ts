@@ -94,6 +94,7 @@ export type VocabularyQuizOption = {
   option?: string;
   kanji?: string;
   hiragana?: string;
+  meanings?: string[];
   correct?: boolean;
   units?: VocabularyWritingOptionUnit[];
 };
@@ -113,6 +114,12 @@ export type VocabularyQuiz = {
   subthemeId: string;
   type: VocabularyAnswerType;
   questions: VocabularyQuizQuestion[];
+};
+
+export type VocabularyPronunciationFeedbackResponse = {
+  recognized_speech: string;
+  score: number;
+  feedback: string[];
 };
 
 export type VocabularyThemeContent = {

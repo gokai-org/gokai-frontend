@@ -18,11 +18,15 @@ import { getMockKanaStrokes } from "@/features/kana/mock/mockStrokeData";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
-import { AnswerConfirmationPanel, PointsRewardFloat } from "@/shared/ui";
+import {
+  AnswerConfirmationPanel,
+  QuizAudioPlayer,
+} from "@/shared/ui";
 import {
   ReaffirmedMasteryResult,
   UnlockedMasterySequence,
 } from "@/shared/ui/ReaffirmedMasteryResult";
+import VocabularySpeakingExercise from "./VocabularySpeakingExercise";
 import {
   getVocabularyQuiz,
   saveVocabularyNodeAnswers,
@@ -114,9 +118,9 @@ function getQuizPromptSupport(
     case "meaning":
       return question.kanji && question.hiragana ? question.hiragana : null;
     case "listening":
-      return "Reproduce el audio y elige la palabra correcta.";
+      return null;
     case "speaking":
-      return question.meanings?.join(" · ") || question.hiragana || "Pronuncia la palabra y autoevalua tu intento.";
+      return question.meanings?.join(" · ") || question.hiragana || "Graba tu pronunciación y revisa el feedback.";
     case "writing":
       return question.meanings?.[0]
         ? question.meanings[0]
@@ -146,20 +150,16 @@ function getMeaningPromptReading(question: VocabularyQuizQuestion) {
     : question.hiragana;
 }
 
-function getQuizPromptEyebrow(
-  question: VocabularyQuizQuestion | VocabularyWordLesson,
-  type: VocabularyAnswerType,
+function getOptionLabel(
+  option: VocabularyQuizOption | string,
+  type?: VocabularyAnswerType,
 ) {
-  if (type === "meaning") {
-    return VOCABULARY_QUIZ_TYPE_LABELS[type];
-  }
-
-  return `${VOCABULARY_QUIZ_TYPE_LABELS[type]} · ${getWordTitle(question)}`;
-}
-
-function getOptionLabel(option: VocabularyQuizOption | string) {
   if (typeof option === "string") {
     return option;
+  }
+
+  if (type === "listening") {
+    return option.meanings?.find(Boolean) || option.option || "Opcion";
   }
 
   return (
@@ -170,7 +170,14 @@ function getOptionLabel(option: VocabularyQuizOption | string) {
   );
 }
 
-function getOptionSecondary(option: VocabularyQuizOption | string) {
+function getOptionSecondary(
+  option: VocabularyQuizOption | string,
+  type?: VocabularyAnswerType,
+) {
+  if (type === "listening") {
+    return null;
+  }
+
   if (typeof option === "string" || option.option) {
     return null;
   }
@@ -215,7 +222,7 @@ function getRoundInstruction(type: VocabularyAnswerType) {
     case "listening":
       return "Escucha cada audio y elige la escritura correcta.";
     case "speaking":
-      return "Pronuncia cada palabra y marca tu precision para continuar.";
+      return "Graba tu pronunciación y usa el puntaje para continuar con la palabra.";
     case "writing":
       return "Construye la lectura completa de cada palabra con las fichas disponibles.";
   }
@@ -256,12 +263,11 @@ export default function VocabularyQuizModal({
   const [selectedOptionIndex, setSelectedOptionIndex] = useState<number | null>(null);
   const [selectedWritingOptionIndex, setSelectedWritingOptionIndex] = useState<number | null>(null);
   const [writingTraceScore, setWritingTraceScore] = useState<number | null>(null);
-  const [manualScore, setManualScore] = useState<number | null>(null);
+  const [speakingScore, setSpeakingScore] = useState<number | null>(null);
   const [roundResults, setRoundResults] = useState<RoundResult[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [resultingUserPoints, setResultingUserPoints] = useState<number | null>(null);
   const [pointsDelta, setPointsDelta] = useState(0);
-  const [rewardFloatPoints, setRewardFloatPoints] = useState<number | null>(null);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
   const roundStartRef = useRef(0);
@@ -324,7 +330,7 @@ export default function VocabularyQuizModal({
     setSelectedOptionIndex(null);
     setSelectedWritingOptionIndex(null);
     setWritingTraceScore(null);
-    setManualScore(null);
+    setSpeakingScore(null);
     setIsConfirmDialogOpen(false);
   }, []);
 
@@ -367,7 +373,6 @@ export default function VocabularyQuizModal({
     setRoundResults([]);
     setResultingUserPoints(null);
     setPointsDelta(0);
-    setRewardFloatPoints(null);
     setError(null);
     setIsExitDialogOpen(false);
     void (async () => {
@@ -419,7 +424,7 @@ export default function VocabularyQuizModal({
     if (!activeQuestion) return null;
 
     if (currentType === "speaking") {
-      return manualScore;
+      return speakingScore;
     }
 
     if (currentType === "writing") {
@@ -435,7 +440,7 @@ export default function VocabularyQuizModal({
     if (selectedOptionIndex === null) return null;
 
     return getOptionCorrect(choiceOptions[selectedOptionIndex]) ? 100 : 0;
-  }, [activeQuestion, choiceOptions, currentType, manualScore, selectedOptionIndex, selectedWritingOption, selectedWritingOptionIsCorrect, step, writingTraceScore]);
+  }, [activeQuestion, choiceOptions, currentType, selectedOptionIndex, selectedWritingOption, selectedWritingOptionIsCorrect, speakingScore, step, writingTraceScore]);
 
   const audioSrc = buildAudioSrc(activeQuestion?.audio);
   const questionProgress = roundQuestions.length
@@ -560,10 +565,6 @@ export default function VocabularyQuizModal({
 
         if (saveResult?.closeQuiz) {
           return;
-        }
-
-        if ((response.pointsAwarded ?? 0) > 0) {
-          setRewardFloatPoints(response.pointsAwarded ?? null);
         }
 
         setStep("summary");
@@ -705,12 +706,6 @@ export default function VocabularyQuizModal({
           className="relative flex max-h-[95dvh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-surface-primary shadow-2xl ring-1 ring-border-subtle max-sm:max-h-[92dvh] max-sm:w-[calc(100vw-2rem)]"
           onClick={(event) => event.stopPropagation()}
         >
-          <PointsRewardFloat
-            points={rewardFloatPoints}
-            caption="Progreso de vocabulario"
-            onComplete={() => setRewardFloatPoints(null)}
-          />
-
           <div className="shrink-0 overflow-hidden rounded-t-3xl">
             <div className="flex items-center justify-between bg-gradient-to-r from-accent to-accent-hover px-5 py-4">
               <div className="min-w-0">
@@ -816,9 +811,6 @@ export default function VocabularyQuizModal({
                   className="space-y-4"
                 >
                   <div className="rounded-3xl border border-border-subtle bg-surface-secondary/70 p-4 text-center">
-                    <p className="text-[11px] font-bold uppercase tracking-wide text-content-tertiary">
-                      {getQuizPromptEyebrow(activeQuestion, currentType)}
-                    </p>
                     {currentType === "meaning" ? (
                       <div className="mt-3 space-y-2.5">
                         <div className="rounded-2xl border border-border-subtle bg-surface-primary px-4 py-3">
@@ -861,7 +853,10 @@ export default function VocabularyQuizModal({
                     ) : null}
 
                     {audioSrc && currentType === "listening" ? (
-                      <audio controls className="mt-4 w-full" src={audioSrc} preload="metadata" />
+                      <QuizAudioPlayer
+                        key={`${activeQuestion.wordId}-${audioSrc}`}
+                        audioUrl={audioSrc}
+                      />
                     ) : null}
                   </div>
 
@@ -891,11 +886,11 @@ export default function VocabularyQuizModal({
                             }`}
                           >
                             <span className="block text-sm font-bold">
-                              {getOptionLabel(option)}
+                              {getOptionLabel(option, currentType)}
                             </span>
-                            {getOptionSecondary(option) ? (
+                            {getOptionSecondary(option, currentType) ? (
                               <span className="mt-0.5 block text-xs font-medium text-content-tertiary">
-                                {getOptionSecondary(option)}
+                                {getOptionSecondary(option, currentType)}
                               </span>
                             ) : null}
                           </button>
@@ -914,7 +909,7 @@ export default function VocabularyQuizModal({
 
                           return (
                             <button
-                              key={`${activeQuestion.wordId}-writing-${getOptionLabel(option)}-${index}`}
+                              key={`${activeQuestion.wordId}-writing-${getOptionLabel(option, currentType)}-${index}`}
                               type="button"
                               disabled={answered}
                               onClick={() => {
@@ -934,12 +929,9 @@ export default function VocabularyQuizModal({
                               }`}
                             >
                               <WritingSymbolText
-                                text={getOptionLabel(option)}
+                                text={getOptionLabel(option, currentType)}
                                 className="block text-lg font-black leading-tight jp-text"
                               />
-                              <span className="mt-0.5 block text-[11px] font-bold uppercase tracking-wide text-content-tertiary">
-                                Hiragana
-                              </span>
                             </button>
                           );
                         })}
@@ -947,7 +939,7 @@ export default function VocabularyQuizModal({
 
                       {step === "feedback" && selectedWritingOption && getOptionCorrect(selectedWritingOption) ? (
                         <VocabularyWritingTraceExercise
-                          key={`${activeQuestion.wordId}-${getOptionLabel(selectedWritingOption)}`}
+                          key={`${activeQuestion.wordId}-${getOptionLabel(selectedWritingOption, currentType)}`}
                           option={selectedWritingOption}
                           disabled={false}
                           onComplete={setWritingTraceScore}
@@ -969,38 +961,12 @@ export default function VocabularyQuizModal({
                   )}
 
                   {currentType === "speaking" && (
-                    <div className="space-y-3">
-                      <div className="rounded-2xl border border-border-subtle bg-surface-primary p-4 text-center">
-                        <p className="text-[11px] font-bold uppercase tracking-wide text-content-tertiary">
-                          Autoevaluacion
-                        </p>
-                        <p className="mt-2 text-sm leading-relaxed text-content-secondary">
-                          Pronuncia la palabra en voz alta y marca como te salio en este intento.
-                        </p>
-                      </div>
-
-                      <div className="grid grid-cols-3 gap-2">
-                        {[
-                          { label: "Repasar", score: 0 },
-                          { label: "Casi", score: 50 },
-                          { label: "Perfecto", score: 100 },
-                        ].map((choice) => (
-                          <button
-                            key={choice.score}
-                            type="button"
-                            disabled={step === "feedback"}
-                            onClick={() => setManualScore(choice.score)}
-                            className={`min-h-12 rounded-xl border px-2 text-xs font-bold transition disabled:cursor-default ${
-                              manualScore === choice.score
-                                ? "border-accent bg-accent text-content-inverted"
-                                : "border-border-subtle bg-surface-primary text-content-secondary hover:bg-surface-secondary"
-                            }`}
-                          >
-                            {choice.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+                    <VocabularySpeakingExercise
+                      key={activeQuestion.wordId}
+                      question={activeQuestion}
+                      step={step}
+                      onScoreChange={setSpeakingScore}
+                    />
                   )}
 
                   {step === "exercise" && currentScore !== null && (

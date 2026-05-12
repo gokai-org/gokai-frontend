@@ -51,6 +51,25 @@ function getReadableError(error: unknown, fallback: string) {
   }
 }
 
+function buildRetryPromptMessage(content: string, errorMessage: string): ChatMessage {
+  const normalizedError = errorMessage.trim();
+
+  return {
+    id: `${Date.now()}-bot-error`,
+    role: "bot",
+    content:
+      normalizedError ||
+      "Tuvimos un problema para responder en este momento. Vuelve a intentarlo con el mismo mensaje.",
+    timestamp: new Date(),
+    variant: "error",
+    retryText: content,
+  };
+}
+
+function removeRetryPromptMessages(messages: ChatMessage[]) {
+  return messages.filter((message) => message.variant !== "error");
+}
+
 export function useChatbot() {
   const [chats, setChats] = useState<ReviewChat[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -291,9 +310,11 @@ export function useChatbot() {
     [chats, loadChat],
   );
 
-  const sendMessage = useCallback(
-    async (text: string) => {
+  const sendMessageInternal = useCallback(
+    async (text: string, options?: { appendUserMessage?: boolean }) => {
       const trimmed = text.trim();
+      const appendUserMessage = options?.appendUserMessage ?? true;
+
       if (!trimmed) {
         return;
       }
@@ -305,16 +326,32 @@ export function useChatbot() {
         timestamp: new Date(),
       };
 
-      setMessages((previous) => [...previous, userMessage]);
+      setMessages((previous) => {
+        const withoutRetryPrompts = removeRetryPromptMessages(previous);
+
+        if (!appendUserMessage) {
+          return withoutRetryPrompts;
+        }
+
+        return [...withoutRetryPrompts, userMessage];
+      });
       setError(null);
       setIsLoading(true);
 
       try {
         const chat = await ensureCurrentChat();
         const response = await sendChatMessage(chat.id, { content: trimmed });
+        const hasBotContent = response.botMessage.content.trim().length > 0;
+        const hasRecommendations =
+          (response.botMessage.recommendations?.length ?? 0) > 0;
 
-        const shouldSyncConversation =
-          (response.botMessage.recommendations?.length ?? 0) === 0;
+        if (!hasBotContent && !hasRecommendations) {
+          throw new Error(
+            "No recibimos una respuesta util del chatbot. Vuelve a intentarlo con el mismo mensaje.",
+          );
+        }
+
+        const shouldSyncConversation = !hasRecommendations;
 
         if (shouldSyncConversation) {
           try {
@@ -340,19 +377,40 @@ export function useChatbot() {
             ...previous.filter((item) => item.id !== chat.id),
           ],
         );
-        setMessages((previous) => [...previous, response.botMessage]);
+        setMessages((previous) => [
+          ...removeRetryPromptMessages(previous),
+          response.botMessage,
+        ]);
       } catch (sendError) {
-        setError(
-          getReadableError(
-            sendError,
-            "No se pudo enviar el mensaje al chatbot.",
-          ),
+        const readableError = getReadableError(
+          sendError,
+          "No se pudo enviar el mensaje al chatbot.",
         );
+
+        setMessages((previous) => [
+          ...removeRetryPromptMessages(previous),
+          buildRetryPromptMessage(trimmed, readableError),
+        ]);
+        setError(null);
       } finally {
         setIsLoading(false);
       }
     },
     [applyConversation, ensureCurrentChat, syncChatAfterSend],
+  );
+
+  const sendMessage = useCallback(
+    async (text: string) => {
+      await sendMessageInternal(text, { appendUserMessage: true });
+    },
+    [sendMessageInternal],
+  );
+
+  const retryMessage = useCallback(
+    async (text: string) => {
+      await sendMessageInternal(text, { appendUserMessage: false });
+    },
+    [sendMessageInternal],
   );
 
   const sendAudioMessage = useCallback(
@@ -411,6 +469,7 @@ export function useChatbot() {
     renameExistingChat,
     deleteExistingChat,
     sendMessage,
+    retryMessage,
     sendAudioMessage,
     resetConversation,
   };

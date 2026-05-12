@@ -660,6 +660,7 @@ export default function LibraryPage() {
   };
 
   const requestedCategory = searchParams.get("category");
+  const requestedEntityId = searchParams.get("entityId");
   const highlightedKanaSymbol = searchParams.get("symbol");
 
   useEffect(() => {
@@ -683,7 +684,11 @@ export default function LibraryPage() {
   }, []);
 
   useEffect(() => {
-    if (requestedCategory !== "hiragana" && requestedCategory !== "katakana") {
+    if (
+      requestedCategory !== "hiragana" &&
+      requestedCategory !== "katakana" &&
+      requestedCategory !== "kanji"
+    ) {
       return;
     }
 
@@ -691,6 +696,53 @@ export default function LibraryPage() {
     setSearchQuery("");
     resetVocabularyView();
   }, [requestedCategory, resetVocabularyView]);
+
+  useEffect(() => {
+    if (!requestedEntityId) {
+      return;
+    }
+
+    if (
+      requestedCategory === "kanji" &&
+      selectedCategory === "kanji" &&
+      kanjis.some((kanji) => kanji.id === requestedEntityId)
+    ) {
+      setDrawerEntity({ id: requestedEntityId, kind: "kanji" });
+      return;
+    }
+
+    if (
+      requestedCategory === "hiragana" &&
+      selectedCategory === "hiragana" &&
+      hiraganas.some((kana) => kana.id === requestedEntityId)
+    ) {
+      setDrawerEntity({
+        id: requestedEntityId,
+        kind: "kana",
+        kanaType: "hiragana",
+      });
+      return;
+    }
+
+    if (
+      requestedCategory === "katakana" &&
+      selectedCategory === "katakana" &&
+      katakanas.some((kana) => kana.id === requestedEntityId)
+    ) {
+      setDrawerEntity({
+        id: requestedEntityId,
+        kind: "kana",
+        kanaType: "katakana",
+      });
+    }
+  }, [
+    hiraganas,
+    kanjis,
+    katakanas,
+    requestedCategory,
+    requestedEntityId,
+    selectedCategory,
+  ]);
 
   useEffect(() => {
     const resetGuideState = () => {

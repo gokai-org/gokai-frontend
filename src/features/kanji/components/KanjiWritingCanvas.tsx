@@ -23,6 +23,7 @@ interface KanjiWritingCanvasProps {
   flashError?: boolean;
   hideStrokeOrder?: boolean;
   accentColor?: string;
+  className?: string;
 }
 
 export function KanjiWritingCanvas({
@@ -35,6 +36,7 @@ export function KanjiWritingCanvas({
   flashError = false,
   hideStrokeOrder = false,
   accentColor: accentColorProp,
+  className,
 }: KanjiWritingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const isDrawingRef = useRef(false);
@@ -271,9 +273,13 @@ export function KanjiWritingCanvas({
       ref={canvasRef}
       width={canvasPx}
       height={canvasPx}
-      className={`touch-none rounded-xl border-2 bg-surface-primary transition-colors duration-200 ${
-        flashError ? "border-red-400" : "border-border-default"
-      }`}
+      className={[
+        "touch-none rounded-xl border-2 bg-surface-primary transition-colors duration-200",
+        flashError ? "border-red-400" : "border-border-default",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={{
         width: size,
         height: size,

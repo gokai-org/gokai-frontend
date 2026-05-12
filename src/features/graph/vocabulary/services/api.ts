@@ -1,4 +1,8 @@
-import { apiFetch, invalidateApiCache } from "@/shared/lib/api/client";
+import {
+  apiFetch,
+  handleClientAuthFailure,
+  invalidateApiCache,
+} from "@/shared/lib/api/client";
 import type {
   CreateVocabularyGraphResponse,
   SaveVocabularyNodeAnswerRequest,
@@ -6,6 +10,7 @@ import type {
   SelectVocabularySubthemeResponse,
   VocabularyGraphProgress,
   VocabularyGraphsResponse,
+  VocabularyPronunciationFeedbackResponse,
   VocabularyRecommendation,
   VocabularyQuiz,
   VocabularyAnswerType,
@@ -126,6 +131,44 @@ export async function saveVocabularyNodeAnswers(
 
   invalidateVocabularyGraphCaches();
   return response;
+}
+
+async function readPronunciationError(response: Response) {
+  const contentType = response.headers.get("content-type") ?? "";
+
+  if (contentType.includes("application/json")) {
+    const data = await response.json().catch(() => ({})) as {
+      error?: string;
+      detail?: string;
+    };
+
+    return data.error || data.detail || `HTTP ${response.status}`;
+  }
+
+  const text = await response.text().catch(() => "");
+  return text || `HTTP ${response.status}`;
+}
+
+export async function getVocabularyPronunciationFeedback(
+  wordId: string,
+  audioFile: File,
+) {
+  const formData = new FormData();
+  formData.append("wordId", wordId);
+  formData.append("audio_file", audioFile, audioFile.name || "pronunciation.wav");
+
+  const response = await fetch("/api/study/vocabulary/pronunciation-feedback", {
+    method: "POST",
+    body: formData,
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    handleClientAuthFailure(response);
+    throw new Error(await readPronunciationError(response));
+  }
+
+  return response.json() as Promise<VocabularyPronunciationFeedbackResponse>;
 }
 
 export function invalidateVocabularyGraphCaches() {

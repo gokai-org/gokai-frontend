@@ -22,9 +22,9 @@ export function ChatHeader() {
           />
         </svg>
       }
-      title="Sensei AI"
+      title="KAZU"
       subtitle="Practica vocabulario, frases y repaso conversacional"
-      japaneseText="先生"
+      japaneseText="KAZU"
       statusBadge={
         <span className="hidden items-center gap-2 rounded-full bg-green-50 dark:bg-green-950/30 px-3 py-1.5 text-xs font-semibold text-green-700 dark:text-green-400 sm:inline-flex">
           <span className="h-2 w-2 rounded-full bg-green-500" />

@@ -19,6 +19,7 @@ interface KanaWritingCanvasProps {
   size?: number;
   disabled?: boolean;
   flashError?: boolean;
+  className?: string;
   /** Explicit accent colour (e.g. hiragana purple, katakana blue). Falls back to the `--accent` CSS variable. */
   accentColor?: string;
   /** When true, all guide strokes are shown uniformly — no active-stroke highlight (for quiz mode). */
@@ -33,6 +34,7 @@ export function KanaWritingCanvas({
   size = 300,
   disabled = false,
   flashError = false,
+  className,
   accentColor: accentColorProp,
   hideActiveGuide = false,
 }: KanaWritingCanvasProps) {
@@ -237,9 +239,13 @@ export function KanaWritingCanvas({
       ref={canvasRef}
       width={canvasPx}
       height={canvasPx}
-      className={`touch-none rounded-xl border-2 bg-surface-primary transition-colors duration-200 ${
-        flashError ? "border-red-400" : "border-border-default"
-      }`}
+      className={[
+        "touch-none rounded-xl border-2 bg-surface-primary transition-colors duration-200",
+        flashError ? "border-red-400" : "border-border-default",
+        className,
+      ]
+        .filter(Boolean)
+        .join(" ")}
       style={{
         width: size,
         height: size,

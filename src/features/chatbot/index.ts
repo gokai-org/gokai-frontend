@@ -6,6 +6,7 @@ export { ChatMessageList } from "./components/ChatMessageList";
 export { ChatRecommendationsPanel } from "./components/ChatRecommendationsPanel";
 export { ChatSurfacePanel } from "./components/ChatSurfacePanel";
 export { ChatTracingBoard } from "./components/ChatTracingBoard";
+export { ChatWritingPanel } from "./components/ChatWritingPanel";
 export { ChatTypingIndicator } from "./components/ChatTypingIndicator";
 export { ChatEmptyState } from "./components/ChatEmptyState";
 export { ChatSkeleton } from "./components/ChatSkeleton";

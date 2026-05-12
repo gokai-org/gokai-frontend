@@ -1,7 +1,10 @@
 "use client";
 
+import { AnimatePresence, motion } from "framer-motion";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import { useMemo, useState } from "react";
 import type { ReviewChat } from "@/features/chatbot/types";
+import { AnswerConfirmationPanel } from "@/shared/ui";
 
 interface ChatHistoryPanelProps {
   chats: ReviewChat[];
@@ -37,6 +40,7 @@ export function ChatHistoryPanel({
 }: ChatHistoryPanelProps) {
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
+  const [pendingDeleteChat, setPendingDeleteChat] = useState<ReviewChat | null>(null);
   const empty = chats.length === 0;
 
   const orderedChats = useMemo(
@@ -49,8 +53,15 @@ export function ChatHistoryPanel({
     [chats],
   );
 
+  const handleCloseDeleteDialog = (
+    event?: ReactMouseEvent<HTMLDivElement> | ReactMouseEvent<HTMLButtonElement>,
+  ) => {
+    event?.stopPropagation();
+    setPendingDeleteChat(null);
+  };
+
   return (
-    <div className="flex h-full flex-col bg-surface-primary">
+    <div className="relative flex h-full flex-col bg-surface-primary">
       <div className="shrink-0 border-b border-border-subtle px-4 py-4 sm:px-5">
         <button
           type="button"
@@ -173,13 +184,7 @@ export function ChatHistoryPanel({
                         </button>
                         <button
                           type="button"
-                          onClick={async () => {
-                            if (!window.confirm("Se eliminara este chat de forma permanente.")) {
-                              return;
-                            }
-
-                            await onDeleteChat(chat.id);
-                          }}
+                          onClick={() => setPendingDeleteChat(chat)}
                           className="rounded-full border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-50"
                         >
                           Borrar
@@ -193,6 +198,44 @@ export function ChatHistoryPanel({
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {pendingDeleteChat ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[130] flex items-center justify-center bg-black/58 p-4 backdrop-blur-sm"
+            onClick={handleCloseDeleteDialog}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.96, y: 12 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.96, y: 8 }}
+              transition={{ duration: 0.18 }}
+              className="relative z-10 w-full max-w-md"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <AnswerConfirmationPanel
+                title="Borrar chat"
+                description={`Si continúas, eliminarás “${pendingDeleteChat.name}” y ya no aparecerá en tu historial.`}
+                confirmLabel="Borrar"
+                onConfirm={async () => {
+                  await onDeleteChat(pendingDeleteChat.id);
+                  setPendingDeleteChat(null);
+                }}
+                disabled={isBusy}
+                tone="grammar"
+                secondaryAction={{
+                  label: "Conservar chat",
+                  onAction: () => setPendingDeleteChat(null),
+                  disabled: isBusy,
+                }}
+              />
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

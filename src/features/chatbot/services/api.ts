@@ -173,7 +173,7 @@ function normalizeMessage(message: ChatbotApiMessage): ChatMessage {
 function attachRecommendationsToMessages(
   messages: ChatMessage[],
   recommendations: ChatbotRecommendation[],
-) {
+): ChatMessage[] {
   if (recommendations.length === 0) {
     return messages;
   }
@@ -187,12 +187,12 @@ function attachRecommendationsToMessages(
       ...messages,
       {
         id: `recommendations-${recommendations[0]?.id ?? Date.now()}`,
-        role: "bot",
+        role: "bot" as const,
         content:
           "Ya actualizamos tu espacio de estudio. Si quieres, seguimos practicando con otra frase o una nueva pregunta.",
         timestamp: recommendations[0]?.createdAt ?? new Date(),
         recommendations,
-      },
+      } satisfies ChatMessage,
     ];
   }
 
@@ -270,7 +270,7 @@ export async function sendChatMessage(
       ) {
         if (isTransientChatbotOverload(error)) {
           throw new Error(
-            "Sensei AI esta con mucha demanda en este momento. Intenta de nuevo en unos segundos.",
+            "KAZU está con mucha demanda en este momento. Intenta de nuevo en unos segundos.",
           );
         }
 

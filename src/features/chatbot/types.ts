@@ -1,4 +1,5 @@
 export type MessageRole = "user" | "bot";
+export type ChatMessageVariant = "default" | "error";
 
 export interface ChatbotRecommendation {
   id: string;
@@ -16,6 +17,8 @@ export interface ChatMessage {
   content: string;
   role: MessageRole;
   timestamp: Date;
+  variant?: ChatMessageVariant;
+  retryText?: string;
   recommendations?: ChatbotRecommendation[];
   audioUrl?: string;
   audioDuration?: string;

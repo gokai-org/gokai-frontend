@@ -2,6 +2,7 @@
 
 import { animate, motion, useMotionValue } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import type { GraphEdge, GraphNode } from "@/features/graph/lib/graphTypes";
 import JapanRegionMap from "@/features/graph/vocabulary/components/JapanRegionMap";
 import RegionThemeGraph from "@/features/graph/vocabulary/components/RegionThemeGraph";
@@ -632,6 +633,7 @@ function toWordLesson(
 }
 
 export default function Page() {
+  const searchParams = useSearchParams();
   const { setHidden } = useSidebar();
   const sceneRef = useRef<HTMLDivElement | null>(null);
   const pointersRef = useRef(new Map<number, PointerPosition>());
@@ -672,6 +674,7 @@ export default function Page() {
   const zoomClassTimeoutRef = useRef<number | null>(null);
   const unlockTransitionTimeoutRef = useRef<number | null>(null);
   const deferredRewardTimeoutRef = useRef<number | null>(null);
+  const handledDeepLinkRef = useRef<string | null>(null);
   const [hoverResetToken, setHoverResetToken] = useState(0);
 
   const dismissGraphHovers = useCallback(() => {
@@ -742,6 +745,8 @@ export default function Page() {
     () => subthemeWords.find((word) => word.wordId === selectedWordId) ?? null,
     [selectedWordId, subthemeWords],
   );
+  const requestedThemeId = searchParams.get("themeId");
+  const requestedSubthemeId = searchParams.get("subthemeId");
   const isLessonOpen = Boolean(selectedSubthemeItem && selectedWord);
   const activeRegionId = currentLevel === "map" ? null : selectedRegionId;
   const selectedRegion = useMemo(
@@ -1438,14 +1443,136 @@ export default function Page() {
     };
   }, [loading, loadSubthemeWordsForNode, progressItems, setSelectedGraphId]);
 
-  const regionGraph =
-    graphElements && (currentLevel === "theme" || currentLevel === "subtheme")
-      ? {
-          nodes: graphElements.nodes,
-          edges: graphElements.edges,
-          onNodeSelected: handleNodeSelected,
+  useEffect(() => {
+    const deepLinkKey = `${requestedThemeId ?? ""}:${requestedSubthemeId ?? ""}`;
+
+    if (loading || deepLinkKey === ":") {
+      return;
+    }
+
+    if (handledDeepLinkRef.current === deepLinkKey) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const openRequestedStudyPoint = async () => {
+      let activeThemeId = requestedThemeId;
+
+      if (requestedThemeId) {
+        const matchedTheme = regions
+          .flatMap((region) => region.themes)
+          .find((theme) => theme.themeId === requestedThemeId);
+
+        if (matchedTheme?.themeId) {
+          setSelectedRegionId(matchedTheme.regionId);
+          setSelectedThemeId(matchedTheme.themeId);
+          setSelectedSubthemeNodeId(null);
+          setSelectedWordId(null);
+          setSubthemeWords([]);
+
+          const nextGraphId =
+            matchedTheme.graphId ??
+            (selectedGraph?.themeId === matchedTheme.themeId
+              ? selectedGraph.graphId
+              : null) ??
+            (await createGraphFromTheme(matchedTheme.themeId));
+
+          if (cancelled) {
+            return;
+          }
+
+          if (nextGraphId) {
+            setSelectedGraphId(nextGraphId);
+            setCurrentLevel("theme");
+          }
+
+          activeThemeId = matchedTheme.themeId;
         }
-      : undefined;
+      }
+
+      if (!requestedSubthemeId) {
+        handledDeepLinkRef.current = deepLinkKey;
+        return;
+      }
+
+      const matchedProgressItem = progressItems.find(
+        (item) => item.subthemeId === requestedSubthemeId,
+      );
+
+      if (matchedProgressItem?.subthemeId) {
+        const ready = await loadSubthemeWordsForNode(
+          matchedProgressItem.nodeId,
+          matchedProgressItem.subthemeId,
+        );
+
+        if (!ready || cancelled) {
+          return;
+        }
+
+        setSelectedSubthemeNodeId(matchedProgressItem.nodeId);
+        setSelectedWordId(null);
+        setCurrentLevel("subtheme");
+        handledDeepLinkRef.current = deepLinkKey;
+        return;
+      }
+
+      if (activeThemeId && selectedGraph?.themeId !== activeThemeId) {
+        return;
+      }
+
+      if (!themeSubthemes.some((subtheme) => subtheme.id === requestedSubthemeId)) {
+        return;
+      }
+
+      const nodeId = await addSubthemeToGraph(requestedSubthemeId);
+
+      if (!nodeId || cancelled) {
+        return;
+      }
+
+      const ready = await loadSubthemeWordsForNode(nodeId, requestedSubthemeId);
+
+      if (!ready || cancelled) {
+        return;
+      }
+
+      setSelectedSubthemeNodeId(nodeId);
+      setSelectedWordId(null);
+      setCurrentLevel("subtheme");
+      handledDeepLinkRef.current = deepLinkKey;
+    };
+
+    void openRequestedStudyPoint();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    addSubthemeToGraph,
+    createGraphFromTheme,
+    loadSubthemeWordsForNode,
+    loading,
+    progressItems,
+    regions,
+    requestedSubthemeId,
+    requestedThemeId,
+    selectedGraph,
+    setSelectedGraphId,
+    themeSubthemes,
+  ]);
+
+  const regionGraph = useMemo(() => {
+    if (!graphElements || (currentLevel !== "theme" && currentLevel !== "subtheme")) {
+      return undefined;
+    }
+
+    return {
+      nodes: graphElements.nodes,
+      edges: graphElements.edges,
+      onNodeSelected: handleNodeSelected,
+    };
+  }, [currentLevel, graphElements, handleNodeSelected]);
   const selectedRegionLayout = selectedRegion
     ? regionLayouts[selectedRegion.id]
     : null;

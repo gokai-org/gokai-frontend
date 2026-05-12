@@ -15,6 +15,19 @@ async function readJson(upstream: Response) {
   return upstream.json().catch(() => ({}));
 }
 
+function isChatbotHighDemand(status: number, data: unknown) {
+  if (status === 503) {
+    return true;
+  }
+
+  const message =
+    typeof data === "object" && data !== null
+      ? `${(data as { error?: string }).error ?? ""} ${(data as { message?: string }).message ?? ""}`
+      : "";
+
+  return /high demand|unavailable|503/i.test(message);
+}
+
 async function proxyToStudy(
   req: NextRequest,
   params: Promise<{ id: string }>,
@@ -49,6 +62,17 @@ async function proxyToStudy(
     });
 
     const data = await readJson(upstream);
+
+    if (method === "POST" && isChatbotHighDemand(upstream.status, data)) {
+      return NextResponse.json(
+        {
+          error:
+            "KAZU está con mucha demanda en este momento. Intenta de nuevo en unos segundos.",
+        },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json(data, {
       status: upstream.status,
       headers: {
