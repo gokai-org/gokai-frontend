@@ -28,7 +28,7 @@ export function ChatEmptyState(_props: ChatEmptyStateProps) {
           No hay mensajes todavía
         </h3>
         <p className="mx-auto mt-2 max-w-md text-sm leading-relaxed text-content-tertiary">
-          Inicia una conversación con Sensei AI para practicar frases, repasar
+          Inicia una conversación con KAZU para practicar frases, repasar
           vocabulario o simular una interacción rápida.
         </p>
       </div>

@@ -2565,6 +2565,31 @@ html:not(.dark) .vmap-hit-layer[data-has-selection="true"] .vmap-hit-region:not(
   background: var(--scrollbar-thumb-hover);
 }
 
+.accent-scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: var(--accent-scrollbar-thumb, var(--scrollbar-thumb)) transparent;
+}
+
+.accent-scroll-area::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.accent-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 6px 0;
+}
+
+.accent-scroll-area::-webkit-scrollbar-thumb {
+  background: var(--accent-scrollbar-thumb, var(--scrollbar-thumb));
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.accent-scroll-area::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-scrollbar-thumb-hover, var(--scrollbar-thumb-hover));
+}
+
 /* ── Board background: pause CSS animations while lesson drawer is open ── */
 [data-drawer-open="true"] .kanji-bg-animate {
   animation-play-state: paused;

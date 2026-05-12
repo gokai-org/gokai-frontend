@@ -10,8 +10,8 @@ export function ChatTypingIndicator({
   return (
     <div className="mb-4 flex justify-start">
       <div className="max-w-[85%] sm:max-w-[72%]">
-        <div className="mb-2 inline-flex rounded-full bg-accent px-3 py-1 text-[11px] font-extrabold tracking-wide text-content-inverted">
-          SEN
+        <div className="mb-2 inline-flex rounded-full bg-gradient-to-r from-accent to-accent-hover px-3 py-1 text-[11px] font-extrabold tracking-[0.22em] text-content-inverted shadow-sm ring-1 ring-white/15">
+          KAZU
         </div>
 
         <div
@@ -20,7 +20,7 @@ export function ChatTypingIndicator({
             compact ? "w-[84px]" : "w-[100px]",
           ].join(" ")}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center gap-2">
             {[0, 1, 2].map((dot) => (
               <span
                 key={dot}

@@ -13,6 +13,8 @@ interface ChatMessageListProps {
   isLoading: boolean;
   animationsEnabled: boolean;
   heavyAnimationsEnabled?: boolean;
+  onOpenWritingMessage?: (message: ChatMessage) => void;
+  onRetryMessage?: (text: string) => void;
 }
 
 export function ChatMessageList({
@@ -20,6 +22,8 @@ export function ChatMessageList({
   isLoading,
   animationsEnabled,
   heavyAnimationsEnabled = true,
+  onOpenWritingMessage,
+  onRetryMessage,
 }: ChatMessageListProps) {
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -29,7 +33,7 @@ export function ChatMessageList({
   });
 
   return (
-    <div className="w-full">
+    <div className="h-full overflow-y-auto pr-1">
       <div className="mx-auto flex w-full max-w-4xl flex-col py-2">
         <AnimatePresence initial={false}>
           {messages.map((message, index) => (
@@ -39,7 +43,12 @@ export function ChatMessageList({
               disabled={!animationsEnabled}
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
-              <MessageBubble message={message} />
+              <MessageBubble
+                message={message}
+                onOpenWritingMessage={onOpenWritingMessage}
+                onRetryMessage={onRetryMessage}
+                isBusy={isLoading}
+              />
             </AnimatedEntrance>
           ))}
 

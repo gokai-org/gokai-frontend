@@ -20,6 +20,7 @@ export {
 } from "./Skeleton";
 export { Toast, ToastContainer } from "./Toast";
 export { PointsRewardFloat } from "./PointsRewardFloat";
+export { QuizAudioPlayer } from "./QuizAudioPlayer";
 export { ScreenTransitionOverlay } from "./ScreenTransitionOverlay";
 export type { ToastType } from "./Toast";
 export { ToastProvider, useToast } from "./ToastProvider";

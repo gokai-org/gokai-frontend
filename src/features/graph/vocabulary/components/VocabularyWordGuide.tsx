@@ -26,6 +26,7 @@ import {
   type AnimatedLessonTab,
 } from "@/features/lessons/components/AnimatedLessonTabs";
 import WritingEvaluationGuide from "@/features/lessons/components/WritingEvaluationGuide";
+import { QuizAudioPlayer } from "@/shared/ui";
 import type {
   VocabularyAnswerType,
   VocabularyWordLesson,
@@ -137,9 +138,9 @@ const VOCABULARY_CRITERIA = {
       cue: "Mantén cada mora con peso parecido; eso ayuda a que la palabra suene natural.",
     },
     {
-      title: "Autoevaluar con honestidad",
+      title: "Escuchar el feedback",
       description: "",
-      cue: "Marca el resultado según tu precisión real: repasar, casi o listo. Esa señal guía tu progreso.",
+      cue: "Graba un intento corto y usa el puntaje con sus tips para corregir el siguiente audio.",
     },
   ],
   writing: [
@@ -770,7 +771,7 @@ export default function VocabularyWordGuide({
             "Practicar en voz alta vuelve activa la memoria. No basta reconocer la palabra: quieres poder decirla sin fricción.",
           emphasis: "Pronunciacion clara y ritmo estable.",
           coachNote:
-            "Di la palabra una vez lenta, una vez normal y una vez dentro de una frase corta imaginaria.",
+            "Graba un intento breve, revisa el feedback y vuelve a pronunciar la palabra ajustando solo un detalle cada vez.",
         };
       case "writing":
         return {
@@ -897,7 +898,10 @@ export default function VocabularyWordGuide({
                     Primero identifica el sonido completo y luego vuelve a conectarlo con la lectura {reading}.
                   </p>
                   {audioSrc ? (
-                    <audio controls className="mt-4 w-full" src={audioSrc} />
+                    <QuizAudioPlayer
+                      key={`${question.wordId}-${audioSrc}`}
+                      audioUrl={audioSrc}
+                    />
                   ) : (
                     <div className="mt-4 rounded-2xl border border-dashed border-border-subtle bg-surface-secondary px-3 py-4 text-center text-sm font-semibold text-content-muted">
                       No hay audio disponible para esta palabra todavía.
