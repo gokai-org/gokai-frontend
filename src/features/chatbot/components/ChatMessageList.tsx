@@ -29,7 +29,7 @@ export function ChatMessageList({
   });
 
   return (
-    <div className="w-full">
+    <div className="h-full overflow-y-auto pr-1">
       <div className="mx-auto flex w-full max-w-4xl flex-col py-2">
         <AnimatePresence initial={false}>
           {messages.map((message, index) => (

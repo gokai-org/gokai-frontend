@@ -1,11 +1,22 @@
 export type MessageRole = "user" | "bot";
 
+export interface ChatbotRecommendation {
+  id: string;
+  recommendedLessonId: string;
+  reviewChatId: string;
+  lessonType: string;
+  entityId: string;
+  description: string;
+  createdAt: Date;
+}
+
 export interface ChatMessage {
   id: string;
-  review_chat_id?: string;
+  reviewChatId?: string;
   content: string;
   role: MessageRole;
   timestamp: Date;
+  recommendations?: ChatbotRecommendation[];
   audioUrl?: string;
   audioDuration?: string;
   waveform?: number[];
@@ -13,15 +24,45 @@ export interface ChatMessage {
 
 export interface ReviewChat {
   id: string;
-  user_id: string;
+  userId: string;
   name: string;
-  created_at?: Date;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+export interface ChatConversationData {
+  chat: ReviewChat;
+  messages: ChatMessage[];
+  usedTokens: number;
+}
+
+export interface CreateChatPayload {
+  name: string;
+}
+
+export interface RenameChatPayload {
+  name: string;
+}
+
+export interface SendChatMessagePayload {
+  content: string;
+}
+
+export interface ChatSendResult {
+  userMessageId: string;
+  botMessage: ChatMessage;
+  usedTokens: number;
+  similarity?: number;
 }
 
 export interface ChatbotState {
+  chats: ReviewChat[];
   messages: ChatMessage[];
+  recommendations: ChatbotRecommendation[];
   currentChat?: ReviewChat;
   isLoading: boolean;
+  isBootstrapping?: boolean;
+  error?: string | null;
 }
 
 export interface SendMockMessagePayload {
