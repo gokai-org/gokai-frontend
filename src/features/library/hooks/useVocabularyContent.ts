@@ -324,7 +324,7 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
 
             const themeRecommendationMap = Object.fromEntries(
               (recommendations ?? []).map((recommendation, index) => [
-                recommendation.subthemeId,
+                recommendation.entityId,
                 {
                   rank: index + 1,
                   similarity: recommendation.similarity,

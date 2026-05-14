@@ -10,6 +10,7 @@ import { SettingsBootstrap } from "@/features/configuration/components/SettingsB
 import { MasteredModulesProvider } from "@/features/mastery/components/MasteredModulesProvider";
 import { AuthenticatedUserGate } from "@/features/auth/components/AuthenticatedUserGate";
 import { ProgressBootstrap } from "@/features/dashboard/components/ProgressBootstrap";
+import { OneSignalBootstrap } from "@/features/notifications/components/OneSignalBootstrap";
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -18,6 +19,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         <ToastProvider>
           <GuideTourProvider>
             <MasteredModulesProvider>
+              <OneSignalBootstrap />
               <SettingsBootstrap />
               <ProgressBootstrap />
               <FirstRunOnboarding />

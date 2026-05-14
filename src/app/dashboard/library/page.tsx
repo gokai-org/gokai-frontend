@@ -54,6 +54,7 @@ import {
   katakanaToScriptCard,
   subthemeToCard,
   themeToCard,
+  wordFavToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
@@ -469,7 +470,7 @@ export default function LibraryPage() {
     }
 
     orderedVocabularyWords.forEach((word, index) => {
-      if (index === 0 || isWordFullyCompleted(word)) {
+      if (index === 0 || isWordFullyCompleted(toVocabularyWordLesson(word))) {
         unlockedIds.add(word.id);
       }
     });
@@ -1218,15 +1219,7 @@ export default function LibraryPage() {
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                       {favoriteData.word.map((fav, i) => {
-                        const card = wordToCard({
-                          id: fav.id,
-                          kanji: fav.kanjiWord,
-                          hiragana: fav.hiragana,
-                          meanings: Array.isArray(fav.meanings)
-                            ? (fav.meanings as string[])
-                            : null,
-                          icon: fav.icon ?? null,
-                        });
+                        const card = wordFavToCard(fav);
 
                         return (
                           <VocabularyCard

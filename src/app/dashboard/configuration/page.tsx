@@ -10,6 +10,7 @@ import {
 } from "@/features/configuration/components/SettingsFields";
 import { getCurrentUser } from "@/features/auth/services/api";
 import type { User } from "@/features/auth/types";
+import { useToast } from "@/shared/ui/ToastProvider";
 
 import { useSettings } from "@/features/configuration/hooks/useSettings";
 import type { UserSettings } from "@/features/configuration/types";
@@ -25,6 +26,11 @@ import {
   normalizeFontSize,
   normalizeJapaneseFont,
 } from "@/shared/hooks/useTypography";
+import {
+  getPushNotificationState,
+  setPushNotificationsEnabled,
+  type PushNotificationState,
+} from "@/features/notifications/lib/oneSignal";
 
 const sectionTitles: Record<string, string> = {
   general: "Configuración General",
@@ -138,6 +144,7 @@ export default function ConfigurationPage() {
                   <NotificationSettings
                     settings={settings}
                     updateSection={updateSection}
+                    user={user}
                   />
                 </div>
               )}
@@ -241,11 +248,103 @@ function GeneralSettings({
 function NotificationSettings({
   settings,
   updateSection,
+  user,
 }: {
   settings: UserSettings;
   updateSection: UpdateSectionFn;
+  user: User | null;
 }) {
   const n = settings.notifications;
+  const toast = useToast();
+  const [pushState, setPushState] = useState<PushNotificationState | null>(null);
+  const [pushSaving, setPushSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!user?.id) {
+      setPushState(null);
+      return;
+    }
+
+    void getPushNotificationState()
+      .then((state) => {
+        if (!cancelled) {
+          setPushState(state);
+        }
+      })
+      .catch((error) => {
+        console.error("Error leyendo estado de notificaciones push:", error);
+
+        if (!cancelled) {
+          setPushState({
+            supported: false,
+            browserPermission: "default",
+            optedIn: false,
+            providerId: null,
+          });
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
+
+  const pushEnabled =
+    pushState?.browserPermission === "granted" && pushState.optedIn;
+
+  const pushDescription = !user?.id
+    ? "Inicia sesión para gestionar las notificaciones de este navegador"
+    : pushState === null
+      ? "Comprobando disponibilidad de notificaciones en este navegador"
+      : !pushState.supported
+        ? "Este navegador no admite notificaciones push"
+        : pushState.browserPermission === "denied"
+          ? "Las bloqueaste en el navegador. Para reactivarlas, habilita los permisos del sitio y vuelve a activar esta opción"
+          : pushEnabled
+            ? "Recibirás notificaciones push en este navegador"
+            : "Actívalas para recibir avisos y recordatorios directamente en este navegador";
+
+  const handlePushToggle = async (enabled: boolean) => {
+    if (!user?.id) {
+      toast.error("No se pudo identificar al usuario.");
+      return;
+    }
+
+    setPushSaving(true);
+
+    try {
+      const nextState = await setPushNotificationsEnabled({
+        userId: user.id,
+        enabled,
+        autoPrompt: enabled,
+      });
+
+      setPushState(nextState);
+
+      const isEnabled =
+        nextState.browserPermission === "granted" && nextState.optedIn;
+
+      updateSection("notifications", { priorityAlerts: isEnabled });
+
+      if (enabled && !isEnabled) {
+        if (!nextState.supported) {
+          toast.error("Este navegador no soporta notificaciones push.");
+        } else if (nextState.browserPermission === "denied") {
+          toast.error(
+            "Las notificaciones están bloqueadas en el navegador. Habilítalas en permisos del sitio.",
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Error actualizando notificaciones push:", error);
+      toast.error("No se pudieron actualizar las notificaciones push.");
+    } finally {
+      setPushSaving(false);
+    }
+  };
+
   return (
     <>
       <SettingsSection
@@ -267,12 +366,11 @@ function NotificationSettings({
         />
 
         <SettingsToggleItem
-          label="Alertas prioritarias"
-          description="Notificaciones críticas que te pueden interrumpir"
-          enabled={n.priorityAlerts}
-          onChange={(v) =>
-            updateSection("notifications", { priorityAlerts: v })
-          }
+          label="Notificaciones activadas"
+          description={pushDescription}
+          enabled={pushEnabled}
+          onChange={handlePushToggle}
+          disabled={pushSaving || !user?.id || pushState?.supported === false}
         />
       </SettingsSection>
 
