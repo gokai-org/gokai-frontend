@@ -1,12 +1,13 @@
 "use client";
 
 import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 
 interface CheckboxProps {
   id?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
-  label?: string;
+  label?: ReactNode;
   disabled?: boolean;
   className?: string;
 }

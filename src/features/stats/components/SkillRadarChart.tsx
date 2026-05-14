@@ -27,11 +27,18 @@ interface SkillRadarChartProps {
 export function SkillRadarChart({
   data,
   title = "Habilidades",
-  subtitle = "Tu dominio en cada área de estudio",
+  subtitle = "Porcentaje completado por cada área de estudio",
   loading,
   animationsEnabled = true,
 }: SkillRadarChartProps) {
-  const chartData = (data ?? []).map((d) => ({ ...d, fullMark: 100 }));
+  const chartData = (data ?? []).map((entry) => ({
+    skill: entry.skill,
+    value:
+      typeof entry.value === "number" && Number.isFinite(entry.value)
+        ? Math.min(100, Math.max(0, entry.value))
+        : 0,
+    fullMark: 100,
+  }));
   const Wrapper = animationsEnabled ? motion.div : "div";
 
   if (loading) {
@@ -87,8 +94,8 @@ export function SkillRadarChart({
             Tus habilidades se mostrarán aquí
           </p>
           <p className="text-xs text-content-muted text-center max-w-[200px]">
-            Practica kanji, kana, vocabulario y gramática para ver tu radar de
-            dominio.
+            Completa contenido de kanji, kana, vocabulario y gramática para ver
+            aquí tu avance real por área.
           </p>
         </div>
       </Wrapper>

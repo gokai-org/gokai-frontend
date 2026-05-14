@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Reorder } from "framer-motion";
 import { LibraryCategory } from "@/features/library/types";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
@@ -19,29 +19,38 @@ export function CategoryFilter({
   selectedCategory,
   onSelectCategory,
 }: CategoryFilterProps) {
-  const [orderedCategories, setOrderedCategories] = useState<LibraryCategory[]>(
-    () => {
-      if (typeof window === "undefined") return categories;
+  const [orderedCategoryIds, setOrderedCategoryIds] = useState<string[]>(() => {
+      if (typeof window === "undefined") {
+        return categories.map((category) => category.id);
+      }
 
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return categories;
+      if (!stored) return categories.map((category) => category.id);
 
       try {
-        const orderIds = JSON.parse(stored) as string[];
-        const ordered = orderIds
-          .map((id) => categories.find((cat) => cat.id === id))
-          .filter((cat): cat is LibraryCategory => cat !== undefined);
-
-        const newCategories = categories.filter(
-          (cat) => !orderIds.includes(cat.id),
-        );
-
-        return [...ordered, ...newCategories];
+        return JSON.parse(stored) as string[];
       } catch {
-        return categories;
+        return categories.map((category) => category.id);
       }
-    },
-  );
+  });
+
+  const mergedOrderedCategoryIds = useMemo(() => {
+    const availableIds = new Set(categories.map((category) => category.id));
+    const nextIds = orderedCategoryIds.filter((id) => availableIds.has(id));
+    const missingIds = categories
+      .map((category) => category.id)
+      .filter((id) => !nextIds.includes(id));
+
+    return [...nextIds, ...missingIds];
+  }, [categories, orderedCategoryIds]);
+
+  const orderedCategories = useMemo(() => {
+    const categoriesById = new Map(categories.map((category) => [category.id, category]));
+    const ordered = mergedOrderedCategoryIds
+      .map((id) => categoriesById.get(id))
+      .filter((category): category is LibraryCategory => category !== undefined);
+    return ordered;
+  }, [categories, mergedOrderedCategoryIds]);
 
   // Detectar si es dispositivo touch para deshabilitar drag y habilitar scroll nativo
   const [isTouch] = useState(() =>
@@ -53,24 +62,8 @@ export function CategoryFilter({
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const orderIds = orderedCategories.map((cat) => cat.id);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(orderIds));
-  }, [orderedCategories]);
-
-  useEffect(() => {
-    queueMicrotask(() => {
-      setOrderedCategories((prev) => {
-        const orderMap = new Map(prev.map((cat, idx) => [cat.id, idx]));
-        return categories
-          .map((cat) => ({
-            ...cat,
-            order: orderMap.get(cat.id) ?? Infinity,
-          }))
-          .sort((a, b) => a.order - b.order)
-          .map(({ order: _order, ...cat }) => cat);
-      });
-    });
-  }, [categories]);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(mergedOrderedCategoryIds));
+  }, [mergedOrderedCategoryIds]);
 
   const baseButtonClass =
     "inline-flex items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold whitespace-nowrap transition-all duration-300";
@@ -127,7 +120,9 @@ export function CategoryFilter({
       <Reorder.Group
         axis="x"
         values={orderedCategories}
-        onReorder={setOrderedCategories}
+        onReorder={(nextCategories) => {
+          setOrderedCategoryIds(nextCategories.map((category) => category.id));
+        }}
         className="flex items-center gap-3"
       >
         {orderedCategories.map((category) => (

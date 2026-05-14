@@ -9,6 +9,8 @@ import {
 } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import type { ChatWritingTarget } from "@/features/chatbot/hooks/useChatWritingPractice";
 import { getWritingPalette } from "@/features/chatbot/utils/writingPalette";
 import { useTheme } from "@/shared/hooks/useTheme";
@@ -35,7 +37,7 @@ function getStatusLabel(target: ChatWritingTarget) {
     case "available":
       return "Disponible";
     case "locked":
-      return "Aun no disponible";
+      return "Bloqueado";
     case "upcoming":
       return "Proximamente";
     default:
@@ -64,6 +66,10 @@ export function ChatWritingSymbolChip({
   const palette = getWritingPalette(target.accentColor);
   const accent = palette.accent;
   const isDark = theme === "dark";
+  const popoverTitle = target.symbolGuide?.title ?? target.title;
+  const popoverDescription = target.symbolGuide?.description ?? target.helper;
+  const popoverHref = target.symbolGuide?.libraryHref;
+  const popoverActionLabel = target.symbolGuide?.actionLabel ?? "Ver tabla fonetica";
 
   const clearCloseTimer = useCallback(() => {
     if (closeTimerRef.current !== null) {
@@ -253,6 +259,7 @@ export function ChatWritingSymbolChip({
             <div className="pointer-events-none fixed inset-0 z-[90]">
               <motion.div
                 ref={popoverRef}
+                data-chat-writing-popover-root="true"
                 initial={{
                   opacity: 0,
                   y: position?.placement === "bottom" ? -6 : 6,
@@ -310,7 +317,7 @@ export function ChatWritingSymbolChip({
                           className="mt-0.5 text-sm font-black"
                           style={{ color: isDark ? "#f5f5f5" : "#0f172a" }}
                         >
-                          {target.title}
+                          {popoverTitle}
                         </p>
                       </div>
                     </div>
@@ -325,8 +332,22 @@ export function ChatWritingSymbolChip({
                         className="text-xs font-semibold leading-relaxed"
                         style={{ color: isDark ? "#d4d4d8" : "#334155" }}
                       >
-                        {target.helper}
+                        {popoverDescription}
                       </p>
+                      {popoverHref ? (
+                        <Link
+                          href={popoverHref}
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs font-black transition"
+                          style={{ color: accent }}
+                          onClick={() => {
+                            setIsActive(false);
+                            setIsSticky(false);
+                          }}
+                        >
+                          {popoverActionLabel}
+                          <ExternalLink size={12} strokeWidth={2.5} />
+                        </Link>
+                      ) : null}
                     </div>
                   </div>
                   {position ? (

@@ -100,8 +100,8 @@ export function LibraryRecentPanel({
               Aún no hay actividad
             </h4>
             <p className="text-sm leading-relaxed text-content-tertiary">
-              Los kanjis, hiraganas y katakanas que abras aparecerán aquí para
-              retomarlos más rápido.
+              El contenido que abras en library aparecerá aquí para retomarlo
+              más rápido.
             </p>
           </div>
         )}

@@ -3,8 +3,17 @@
  * Ejemplo: "2026-06-15T14:30:00Z" → "hace 2 h"
  */
 export function timeAgo(isoDate: string): string {
+  if (!isoDate || typeof isoDate !== "string") {
+    return "reciente";
+  }
+
   const now = Date.now();
   const then = new Date(isoDate).getTime();
+
+  if (!Number.isFinite(then)) {
+    return "reciente";
+  }
+
   const diff = Math.max(0, now - then);
 
   const seconds = Math.floor(diff / 1000);

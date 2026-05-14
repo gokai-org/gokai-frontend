@@ -17,14 +17,28 @@ interface StudyStreakCalendarProps {
 
 /*  Helpers  */
 
+function getUtcDayKey(date: Date): string {
+  const year = date.getUTCFullYear();
+  const month = `${date.getUTCMonth() + 1}`.padStart(2, "0");
+  const day = `${date.getUTCDate()}`.padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getUtcToday(): Date {
+  const now = new Date();
+  return new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
+}
+
 function generateEmptyData(weeks: number): Record<string, number> {
   const map: Record<string, number> = {};
-  const today = new Date();
+  const today = getUtcToday();
   const totalDays = weeks * 7;
   for (let i = totalDays - 1; i >= 0; i--) {
     const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+    d.setUTCDate(d.getUTCDate() - i);
+    const key = getUtcDayKey(d);
     map[key] = 0;
   }
   return map;
@@ -59,7 +73,7 @@ export function StudyStreakCalendar({
   );
 
   const grid = useMemo(() => {
-    const today = new Date();
+    const today = getUtcToday();
     const totalDays = weeks * 7;
     const cols: Array<Array<{ date: string; minutes: number }>> = [];
 
@@ -67,8 +81,10 @@ export function StudyStreakCalendar({
       const col: Array<{ date: string; minutes: number }> = [];
       for (let d = 0; d < 7; d++) {
         const dateObj = new Date(today);
-        dateObj.setDate(dateObj.getDate() - (totalDays - 1 - (w * 7 + d)));
-        const key = dateObj.toISOString().slice(0, 10);
+        dateObj.setUTCDate(
+          dateObj.getUTCDate() - (totalDays - 1 - (w * 7 + d)),
+        );
+        const key = getUtcDayKey(dateObj);
         col.push({ date: key, minutes: calendarData[key] || 0 });
       }
       cols.push(col);
@@ -182,7 +198,7 @@ export function StudyStreakCalendar({
             Tu calendario está esperando por ti
           </p>
           <p className="text-xs text-content-muted mt-1">
-            Cada sesión de estudio iluminará un cuadro. ¡Comienza hoy!
+            Cada minuto cuenta. ¡Comienza hoy a estudiar!
           </p>
         </div>
       )}

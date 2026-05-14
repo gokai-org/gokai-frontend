@@ -13,6 +13,7 @@ export interface LayoutProps {
   thumbnail: string;
   hasOnClick: boolean;
   config: VariantConfig;
+  actionAlignment?: "start" | "end";
   /** Tailwind transition class injected by useCardAnimation — empty when animations off. */
   hoverTransition: string;
 }
@@ -145,6 +146,7 @@ export function WordCardLayout({
   thumbnail,
   hasOnClick,
   config,
+  actionAlignment = "end",
   hoverTransition,
 }: LayoutProps) {
   const iconIsUrl = isUrl(thumbnail);
@@ -229,7 +231,12 @@ export function WordCardLayout({
         )}
 
         {hasOnClick && (
-          <div className="mt-2.5 flex justify-end">
+          <div
+            className={[
+              "mt-2.5 flex",
+              actionAlignment === "start" ? "justify-start" : "justify-end",
+            ].join(" ")}
+          >
             <ChevronRight
               className={[
                 "h-4 w-4 text-accent/30 group-hover:translate-x-0.5 group-hover:text-accent/55",

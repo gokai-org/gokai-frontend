@@ -32,8 +32,20 @@ import type { Kana } from "@/features/kana/types";
 import type { KanaQuizType } from "@/features/kana/types/quiz";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import { KanaQuizModal } from "@/features/kana/components/quiz";
+import { GrammarLibraryCard } from "@/features/graph/grammar/components/library/GrammarLibraryCard";
 import { GrammarLibraryCollection } from "@/features/graph/grammar/components/library/GrammarLibraryCollection";
 import { GRAMMAR_BOARD_TOTAL } from "@/features/graph/grammar/constants/grammarBoard";
+import type { GrammarBoardProgress } from "@/features/graph/grammar/types/board";
+import VocabularyNodePanel from "@/features/graph/vocabulary/components/VocabularyNodePanel";
+import {
+  findWordProgress,
+  isWordFullyCompleted,
+} from "@/features/graph/vocabulary/lib/vocabularyQuizProgress";
+import type {
+  VocabularyQuizSaveContext,
+  VocabularyQuizSaveResult,
+  VocabularyWordLesson,
+} from "@/features/graph/vocabulary/types";
 import { dispatchLibraryDockVisibility } from "@/features/library/utils/libraryDockVisibility";
 import {
   buildLibraryCategories,
@@ -42,6 +54,7 @@ import {
   katakanaToScriptCard,
   subthemeToCard,
   themeToCard,
+  wordFavToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
@@ -54,6 +67,11 @@ import {
 import { HELP_GUIDE_LIBRARY_RESET_EVENT } from "@/features/help/utils/guideEvents";
 import { useToast } from "@/shared/ui/ToastProvider";
 import { unlockKanji } from "@/features/kanji";
+import type {
+  Theme as LibraryTheme,
+  Subtheme as LibrarySubtheme,
+  Word as LibraryWord,
+} from "@/features/library/types";
 // import { getPrimaryMeaning } from "@/features/kanji";
 
 type QuizCompletionResult = {
@@ -62,6 +80,31 @@ type QuizCompletionResult = {
   resultingModulePoints?: number;
   triggeredModuleMastery?: boolean;
 };
+
+function toVocabularyWordLesson(word: LibraryWord): VocabularyWordLesson {
+  return {
+    wordId: word.id,
+    kanji: word.kanji ?? undefined,
+    hiragana: word.hiragana ?? undefined,
+    meanings: word.meanings?.filter(Boolean) ?? [],
+    icon: word.icon ?? null,
+    order: word.order ?? null,
+    unlockedAt: word.unlockedAt ?? null,
+    completedAt: word.completedAt ?? null,
+    score: word.score ?? null,
+    progress: word.progress ?? null,
+    completedQuizTypes: word.completedQuizTypes ?? null,
+    meaningCompleted: word.meaningCompleted ?? null,
+    listeningCompleted: word.listeningCompleted ?? null,
+    speakingCompleted: word.speakingCompleted ?? null,
+    writingCompleted: word.writingCompleted ?? null,
+    meaningScore: word.meaningScore ?? null,
+    listeningScore: word.listeningScore ?? null,
+    speakingScore: word.speakingScore ?? null,
+    writingScore: word.writingScore ?? null,
+    updatedAt: word.updatedAt ?? null,
+  };
+}
 
 const GRAPH_RETURN_SNAPSHOT_STORAGE_KEY = "gokai:vocabulary-graph-return-snapshot";
 const GRAPH_RETURN_PENDING_STORAGE_KEY = "gokai:vocabulary-graph-return-pending";
@@ -92,6 +135,11 @@ export default function LibraryPage() {
     isPracticeOnly: boolean;
     progressEligible: boolean;
   } | null>(null);
+  const [selectedVocabularyWordId, setSelectedVocabularyWordId] = useState<string | null>(
+    null,
+  );
+  const [newlyUnlockedVocabularyWordIds, setNewlyUnlockedVocabularyWordIds] =
+    useState<ReadonlySet<string>>(new Set());
 
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
@@ -306,6 +354,9 @@ export default function LibraryPage() {
   const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
+  const vocabularyUnlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   const startUnlockAnimation = useCallback(
     (ids: string[], target: "kanji" | "kana") => {
@@ -337,18 +388,25 @@ export default function LibraryPage() {
 
   const {
     themes,
+    words,
+    interestSubthemes,
     filteredThemes,
     filteredSubthemes,
     filteredWords,
+    filteredInterestSubthemes,
+    progressItems,
+    selectedSubthemeItem,
     selectedTheme,
     selectedSubtheme,
     loadingThemes,
     loadingSubthemes,
     loadingWords,
+    loadingInterestPreviews,
     openTheme,
     openSubtheme,
+    reloadProgress: reloadVocabularyProgress,
     resetVocabularyView,
-  } = useVocabularyContent(searchQuery);
+  } = useVocabularyContent(searchQuery, selectedCategory === "themes");
 
   const { recentItems, addRecentItem, loading: loadingRecentItems } = useRecentItems();
 
@@ -357,6 +415,7 @@ export default function LibraryPage() {
     favoriteHiraganas,
     favoriteKatakanas,
     favoriteGrammar,
+    favoriteWords,
     favoriteData,
     toggleFavorite,
     toggleFavoriteKanji,
@@ -394,10 +453,144 @@ export default function LibraryPage() {
         .find((kana) => !lockedKatakanaIds.has(kana.id))?.id ?? null,
     [katakanas, lockedKatakanaIds],
   );
+  const orderedVocabularyWords = useMemo(
+    () =>
+      [...words].sort(
+        (left, right) =>
+          (left.order ?? Number.MAX_SAFE_INTEGER) -
+          (right.order ?? Number.MAX_SAFE_INTEGER),
+      ),
+    [words],
+  );
+  const vocabularyUnlockedWordIds = useMemo(() => {
+    const unlockedIds = new Set<string>(selectedSubthemeItem?.unlockedWordIds ?? []);
+
+    if (selectedSubthemeItem?.currentWordId) {
+      unlockedIds.add(selectedSubthemeItem.currentWordId);
+    }
+
+    orderedVocabularyWords.forEach((word, index) => {
+      if (index === 0 || isWordFullyCompleted(toVocabularyWordLesson(word))) {
+        unlockedIds.add(word.id);
+      }
+    });
+
+    return unlockedIds;
+  }, [orderedVocabularyWords, selectedSubthemeItem]);
+  const vocabularyWordLockStateById = useMemo(() => {
+    const nextState = new Map<string, boolean>();
+
+    orderedVocabularyWords.forEach((word) => {
+      nextState.set(word.id, !vocabularyUnlockedWordIds.has(word.id));
+    });
+
+    return nextState;
+  }, [orderedVocabularyWords, vocabularyUnlockedWordIds]);
+  const filteredInterestThemes = useMemo(
+    () => filteredThemes.filter((theme) => Boolean(theme.selectedAt)),
+    [filteredThemes],
+  );
+  const interestSubthemesByThemeId = useMemo(() => {
+    const nextGroups = new Map<string, LibrarySubtheme[]>();
+
+    filteredInterestSubthemes.forEach((subtheme) => {
+      if (!subtheme.themeId) {
+        return;
+      }
+
+      const bucket = nextGroups.get(subtheme.themeId) ?? [];
+      bucket.push(subtheme);
+      nextGroups.set(subtheme.themeId, bucket);
+    });
+
+    return nextGroups;
+  }, [filteredInterestSubthemes]);
+  const selectedVocabularyWord = useMemo(
+    () => words.find((word) => word.id === selectedVocabularyWordId) ?? null,
+    [selectedVocabularyWordId, words],
+  );
+  const selectedVocabularyQuestion = useMemo(
+    () =>
+      selectedVocabularyWord ? toVocabularyWordLesson(selectedVocabularyWord) : null,
+    [selectedVocabularyWord],
+  );
   const handleKanjiClick = useCallback((kanji: Kanji) => {
     addRecentItem("kanji", kanji.id);
     setDrawerEntity({ id: kanji.id, kind: "kanji" });
   }, [addRecentItem]);
+
+  const handleVocabularyThemeOpen = useCallback(
+    async (theme: LibraryTheme) => {
+      setSelectedVocabularyWordId(null);
+      return openTheme(theme);
+    },
+    [openTheme],
+  );
+
+  const handleVocabularySubthemeOpen = useCallback(
+    async (subtheme: LibrarySubtheme) => {
+      setSelectedVocabularyWordId(null);
+      return openSubtheme(subtheme);
+    },
+    [openSubtheme],
+  );
+
+
+  const handleVocabularyWordOpen = useCallback(
+    (word: LibraryWord) => {
+      const isLocked = vocabularyWordLockStateById.get(word.id) ?? false;
+
+      if (isLocked || !selectedSubthemeItem) {
+        return;
+      }
+
+      void addRecentItem("word", word.id);
+      setSelectedVocabularyWordId(word.id);
+    },
+    [addRecentItem, selectedSubthemeItem, vocabularyWordLockStateById],
+  );
+
+  const startVocabularyUnlockAnimation = useCallback((ids: string[]) => {
+    if (ids.length === 0) {
+      return;
+    }
+
+    if (vocabularyUnlockAnimationTimerRef.current !== null) {
+      clearTimeout(vocabularyUnlockAnimationTimerRef.current);
+    }
+
+    setNewlyUnlockedVocabularyWordIds(new Set(ids));
+    vocabularyUnlockAnimationTimerRef.current = setTimeout(() => {
+      setNewlyUnlockedVocabularyWordIds(new Set());
+    }, 2800);
+  }, []);
+
+  const handleVocabularyQuizSaved = useCallback(
+    async ({ wordId }: VocabularyQuizSaveContext): Promise<VocabularyQuizSaveResult> => {
+      const previousItem = selectedSubthemeItem;
+      const previousWordProgress = findWordProgress(previousItem, wordId);
+      const nextProgress = await reloadVocabularyProgress();
+      const nextItem =
+        nextProgress?.items?.find((item) => item.nodeId === previousItem?.nodeId) ??
+        null;
+      const nextWordProgress = findWordProgress(nextItem, wordId);
+      const nextUnlockedWordId =
+        nextItem?.currentWordId && nextItem.currentWordId !== wordId
+          ? nextItem.currentWordId
+          : null;
+      const wordJustCompleted =
+        !isWordFullyCompleted(previousWordProgress) &&
+        isWordFullyCompleted(nextWordProgress);
+
+      if (!wordJustCompleted || !nextUnlockedWordId) {
+        return { closeQuiz: false };
+      }
+
+      startVocabularyUnlockAnimation([nextUnlockedWordId]);
+      return { closeQuiz: true };
+    },
+    [reloadVocabularyProgress, selectedSubthemeItem, startVocabularyUnlockAnimation],
+  );
 
   const handleLibraryKanjiSelect = useCallback((kanji: Kanji) => {
     const isLocked = lockedKanjiIds.has(kanji.id);
@@ -639,6 +832,10 @@ export default function LibraryPage() {
       if (unlockAnimationTimerRef.current !== null) {
         clearTimeout(unlockAnimationTimerRef.current);
       }
+
+      if (vocabularyUnlockAnimationTimerRef.current !== null) {
+        clearTimeout(vocabularyUnlockAnimationTimerRef.current);
+      }
     };
   }, []);
 
@@ -653,6 +850,7 @@ export default function LibraryPage() {
   const handleCategoryChange = (cat: string | null) => {
     setSelectedCategory(cat);
     setSearchQuery("");
+    setSelectedVocabularyWordId(null);
 
     if (cat !== "themes") {
       resetVocabularyView();
@@ -694,6 +892,7 @@ export default function LibraryPage() {
 
     setSelectedCategory(requestedCategory);
     setSearchQuery("");
+    setSelectedVocabularyWordId(null);
     resetVocabularyView();
   }, [requestedCategory, resetVocabularyView]);
 
@@ -766,7 +965,7 @@ export default function LibraryPage() {
     ? filteredWords.length
     : selectedTheme
       ? filteredSubthemes.length
-      : filteredThemes.length;
+      : filteredThemes.length + filteredInterestSubthemes.length;
   const isLibraryBootstrapping =
     !hasResolvedInitialContent ||
     !hasResolvedInitialKanjiStatus ||
@@ -844,12 +1043,6 @@ export default function LibraryPage() {
                     newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
                     newlyUnlockedKanaIds={newlyUnlockedKanaIds}
                     toggleFavoriteKanji={toggleFavoriteKanji}
-                    toggleFavoriteHiragana={(id) =>
-                      void toggleFavorite(id, "hiragana")
-                    }
-                    toggleFavoriteKatakana={(id) =>
-                      void toggleFavorite(id, "katakana")
-                    }
                     onKanjiClick={handleLibraryKanjiSelect}
                     onKanjiPressUnlock={handlePressUnlockKanji}
                     onKanaClick={handleKanaClick}
@@ -925,12 +1118,6 @@ export default function LibraryPage() {
                         newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
                         newlyUnlockedKanaIds={newlyUnlockedKanaIds}
                         toggleFavoriteKanji={toggleFavoriteKanji}
-                        toggleFavoriteHiragana={(id) =>
-                          void toggleFavorite(id, "hiragana")
-                        }
-                        toggleFavoriteKatakana={(id) =>
-                          void toggleFavorite(id, "katakana")
-                        }
                         onKanjiClick={handleLibraryKanjiSelect}
                         onKanjiPressUnlock={handlePressUnlockKanji}
                         onKanaClick={handleKanaClick}
@@ -1015,78 +1202,13 @@ export default function LibraryPage() {
                     <GrammarLibraryCollection
                       favoriteIds={favoriteGrammar}
                       filterIds={favoriteGrammar}
+                      onLessonOpen={(id) => {
+                        void addRecentItem("grammar", id);
+                      }}
                       onToggleFavorite={(id) => {
                         void toggleFavorite(id, "grammar");
                       }}
                     />
-                  </div>
-                )}
-
-                {!loadingFavorites && favoriteData.hiragana.length > 0 && (
-                  <div className="mb-8">
-                    <h3 className="mb-4 text-lg font-semibold text-content-primary">
-                      Hiragana
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {favoriteData.hiragana.map((fav, i) => {
-                        const kana = hiraganas.find((h) => h.id === fav.id);
-                        if (kana) {
-                          const isLocked = lockedHiraganaIds.has(kana.id);
-                          return (
-                            <ScriptCard
-                              key={fav.id}
-                              {...hiraganaToScriptCard(kana, true)}
-                              index={i}
-                              locked={isLocked}
-                              unlocking={newlyUnlockedKanaIds.has(kana.id)}
-                              onClick={
-                                isLocked ? undefined : () => handleKanaClick(kana)
-                              }
-                              onFavoriteToggle={
-                                isLocked
-                                  ? undefined
-                                  : (id) => void toggleFavorite(id, "hiragana")
-                              }
-                            />
-                          );
-                        }
-                        return null;
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {!loadingFavorites && favoriteData.katakana.length > 0 && (
-                  <div className="mb-8">
-                    <h3 className="mb-4 text-lg font-semibold text-content-primary">
-                      Katakana
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {favoriteData.katakana.map((fav, i) => {
-                        const kana = katakanas.find((k) => k.id === fav.id);
-                        if (kana) {
-                          const isLocked = lockedKatakanaIds.has(kana.id);
-                          return (
-                            <ScriptCard
-                              key={fav.id}
-                              {...katakanaToScriptCard(kana, true)}
-                              index={i}
-                              locked={isLocked}
-                              unlocking={newlyUnlockedKanaIds.has(kana.id)}
-                              onClick={
-                                isLocked ? undefined : () => handleKanaClick(kana)
-                              }
-                              onFavoriteToggle={
-                                isLocked
-                                  ? undefined
-                                  : (id) => void toggleFavorite(id, "katakana")
-                              }
-                            />
-                          );
-                        }
-                        return null;
-                      })}
-                    </div>
                   </div>
                 )}
 
@@ -1096,17 +1218,25 @@ export default function LibraryPage() {
                       Vocabulario
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                      {favoriteData.word.map((fav, i) => (
-                        <VocabularyCard
-                          key={fav.id}
-                          id={fav.id}
-                          title={fav.kanjiWord || fav.hiragana || "Palabra"}
-                          subtitle={fav.hiragana || undefined}
-                          thumbnail={fav.kanjiWord || fav.hiragana || "言"}
-                          variant="word"
-                          index={i}
-                        />
-                      ))}
+                      {favoriteData.word.map((fav, i) => {
+                        const card = wordFavToCard(fav);
+
+                        return (
+                          <VocabularyCard
+                            key={fav.id}
+                            id={fav.id}
+                            title={card.title}
+                            subtitle={card.subtitle}
+                            thumbnail={card.thumbnail}
+                            variant="word"
+                            index={i}
+                            isFavorite={favoriteWords.has(fav.id)}
+                            onFavoriteToggle={(id) => {
+                              void toggleFavorite(id, "word");
+                            }}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -1191,6 +1321,9 @@ export default function LibraryPage() {
               >
                 <GrammarLibraryCollection
                   favoriteIds={favoriteGrammar}
+                  onLessonOpen={(id) => {
+                    void addRecentItem("grammar", id);
+                  }}
                   onToggleFavorite={(id) => {
                     void toggleFavorite(id, "grammar");
                   }}
@@ -1222,7 +1355,6 @@ export default function LibraryPage() {
                     newlyUnlockedIds={newlyUnlockedKanaIds}
                     favoriteIds={favoriteKatakanas}
                     onKanaClick={handleKanaClick}
-                    onFavoriteToggle={(id) => void toggleFavorite(id, "katakana")}
                   />
                 )}
               </LibraryCategorySection>
@@ -1252,7 +1384,6 @@ export default function LibraryPage() {
                     newlyUnlockedIds={newlyUnlockedKanaIds}
                     favoriteIds={favoriteHiraganas}
                     onKanaClick={handleKanaClick}
-                    onFavoriteToggle={(id) => void toggleFavorite(id, "hiragana")}
                   />
                 )}
               </LibraryCategorySection>
@@ -1289,8 +1420,9 @@ export default function LibraryPage() {
                     <button
                       type="button"
                       onClick={() => {
+                        setSelectedVocabularyWordId(null);
                         if (selectedSubtheme) {
-                          void openTheme(selectedTheme);
+                          void handleVocabularyThemeOpen(selectedTheme);
                         } else {
                           resetVocabularyView();
                         }
@@ -1306,7 +1438,10 @@ export default function LibraryPage() {
                   {selectedSubtheme && (
                     <button
                       type="button"
-                      onClick={resetVocabularyView}
+                      onClick={() => {
+                        setSelectedVocabularyWordId(null);
+                        resetVocabularyView();
+                      }}
                       className="rounded-full border border-border-default bg-surface-primary px-4 py-2 text-sm font-semibold text-content-secondary transition-colors hover:border-accent/20 hover:text-accent"
                     >
                       Ir al inicio
@@ -1328,10 +1463,66 @@ export default function LibraryPage() {
                           thumbnail={card.thumbnail}
                           variant="theme"
                           index={i}
-                          onClick={() => void openTheme(theme)}
+                          locked={theme.isUnlocked === false}
+                          onClick={
+                            theme.isUnlocked === false
+                              ? undefined
+                              : () => void handleVocabularyThemeOpen(theme)
+                          }
                         />
                       );
                     })}
+                  </div>
+                )}
+
+                {!selectedTheme && (loadingInterestPreviews || filteredInterestThemes.length > 0) && (
+                  <div className="mt-8">
+                    <SectionHeader
+                      title="Subtemas de tus intereses"
+                      subtitle={`${filteredInterestSubthemes.length} disponibles`}
+                    />
+
+                    {loadingInterestPreviews ? (
+                      <LibraryCardsSkeletonGrid variant="vocabulary" />
+                    ) : (
+                      <div className="space-y-8">
+                        {filteredInterestThemes.map((theme) => {
+                          const themeSubthemes = interestSubthemesByThemeId.get(theme.id) ?? [];
+
+                          if (themeSubthemes.length === 0) {
+                            return null;
+                          }
+
+                          return (
+                            <div key={`interest-group-${theme.id}`}>
+                              <SectionHeader
+                                title={theme.meaning}
+                                subtitle={`${themeSubthemes.length} subtemas`}
+                              />
+                              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+                                {themeSubthemes.map((subtheme, i) => {
+                                  const card = subthemeToCard(subtheme);
+
+                                  return (
+                                    <VocabularyCard
+                                      key={`interest-subtheme-${subtheme.id}`}
+                                      id={subtheme.id}
+                                      title={card.title}
+                                      subtitle={card.subtitle}
+                                      thumbnail={card.thumbnail}
+                                      variant="subtheme"
+                                      index={i}
+                                      isRecommended={subtheme.isRecommended === true}
+                                      recommendationRank={subtheme.recommendationRank}
+                                    />
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1351,7 +1542,9 @@ export default function LibraryPage() {
                             thumbnail={card.thumbnail}
                             variant="subtheme"
                             index={i}
-                            onClick={() => void openSubtheme(subtheme)}
+                            isRecommended={subtheme.isRecommended === true}
+                            recommendationRank={subtheme.recommendationRank}
+                            onClick={() => void handleVocabularySubthemeOpen(subtheme)}
                           />
                         );
                       })}
@@ -1362,6 +1555,7 @@ export default function LibraryPage() {
                   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                     {filteredWords.map((word, i) => {
                       const card = wordToCard(word);
+                      const isLocked = vocabularyWordLockStateById.get(word.id) ?? false;
 
                       return (
                         <VocabularyCard
@@ -1372,6 +1566,17 @@ export default function LibraryPage() {
                           thumbnail={card.thumbnail}
                           variant="word"
                           index={i}
+                          isFavorite={favoriteWords.has(word.id)}
+                          locked={isLocked}
+                          unlocking={newlyUnlockedVocabularyWordIds.has(word.id)}
+                          onFavoriteToggle={
+                            isLocked
+                              ? undefined
+                              : (id) => {
+                                  void toggleFavorite(id, "word");
+                                }
+                          }
+                          onClick={() => handleVocabularyWordOpen(word)}
                         />
                       );
                     })}
@@ -1430,33 +1635,55 @@ export default function LibraryPage() {
                       }
 
                       if (r.type === "grammar_lesson" || r.type === "grammar") {
+                        const recentLesson: GrammarBoardProgress = {
+                          id: r.id,
+                          index: i,
+                          symbol: "文",
+                          title: r.title || "Gramática",
+                          pointsToUnlock: 0,
+                          status: "available",
+                          isMock: false,
+                          unlocked: true,
+                          canUnlock: false,
+                        };
+
                         return (
-                          <VocabularyCard
+                          <GrammarLibraryCard
                             key={r.id}
-                            id={r.id}
-                            title={r.title || "Gramática"}
-                            subtitle={r.description || undefined}
-                            thumbnail="文"
-                            variant="word"
+                            lesson={recentLesson}
                             index={i}
+                            isFavorite={favoriteGrammar.has(r.id)}
+                            onToggleFavorite={(id) => {
+                              void toggleFavorite(id, "grammar");
+                            }}
                           />
                         );
                       }
 
                       if (r.type === "word") {
-                        const meanings = Array.isArray(r.meanings)
-                          ? (r.meanings as string[]).join(", ")
-                          : undefined;
+                        const card = wordToCard({
+                          id: r.id,
+                          kanji: r.kanjiWord,
+                          hiragana: r.hiragana,
+                          meanings: Array.isArray(r.meanings)
+                            ? (r.meanings as string[])
+                            : null,
+                          icon: null,
+                        });
 
                         return (
                           <VocabularyCard
                             key={r.id}
                             id={r.id}
-                            title={r.kanjiWord || r.hiragana || "Palabra"}
-                            subtitle={meanings}
-                            thumbnail={r.kanjiWord || r.hiragana || "言"}
+                            title={card.title}
+                            subtitle={card.subtitle}
+                            thumbnail={card.thumbnail}
                             variant="word"
                             index={i}
+                            isFavorite={favoriteWords.has(r.id)}
+                            onFavoriteToggle={(id) => {
+                              void toggleFavorite(id, "word");
+                            }}
                           />
                         );
                       }
@@ -1489,6 +1716,15 @@ export default function LibraryPage() {
             }
             kanjiCtaDisabledReason="Completa la lección anterior para desbloquear."
             onQuizStart={handleDrawerQuizStart}
+          />
+
+          <VocabularyNodePanel
+            item={selectedSubthemeItem}
+            question={selectedVocabularyQuestion}
+            onClose={() => {
+              setSelectedVocabularyWordId(null);
+            }}
+            onSaved={handleVocabularyQuizSaved}
           />
 
           {quizKanji !== null && (

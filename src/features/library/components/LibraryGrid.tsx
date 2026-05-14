@@ -30,8 +30,8 @@ interface LibraryGridProps {
   newlyUnlockedKanjiIds?: ReadonlySet<string>;
   newlyUnlockedKanaIds?: ReadonlySet<string>;
   toggleFavoriteKanji: (id: string) => void;
-  toggleFavoriteHiragana: (id: string) => void;
-  toggleFavoriteKatakana: (id: string) => void;
+  toggleFavoriteHiragana?: (id: string) => void;
+  toggleFavoriteKatakana?: (id: string) => void;
   onKanjiClick: (kanji: Kanji) => void;
   onKanjiPressUnlock?: (kanjiId: string) => void;
   onKanaClick: (kana: Kana) => void;

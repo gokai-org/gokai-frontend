@@ -1,61 +1,103 @@
-import type { Kanji } from "@/features/kanji/types";
+export type ReviewLessonType = "kanji" | "grammar" | "word";
 
-/* ── Base fields shared by all review items ───────────── */
+export type ReviewItemType = "kanji" | "grammar" | "vocabulary";
 
-interface ReviewBase {
+export type ReviewExerciseType =
+  | "kanji"
+  | "meaning"
+  | "reading"
+  | "writing"
+  | "listening"
+  | "speaking";
+
+export type ReviewStrategyKey =
+  | "low_avg_score"
+  | "low_recent_score"
+  | "suboptimal_avg_duration"
+  | "suboptimal_recent_duration"
+  | "long_time_since_last_review"
+  | "too_few_reviews"
+  | "low_reading_score"
+  | "low_writing_score"
+  | "low_listening_score"
+  | "low_speaking_score";
+
+export interface ReviewStrategyRegisterItem {
+  probability?: number;
+  avg_reward?: number;
+  evaluation_count?: number;
+}
+
+export interface ReviewStrategiesRegister {
+  highest_avg_reward?: number;
+  highest_reward_strategy?: number;
+  low_avg_score?: ReviewStrategyRegisterItem;
+  low_recent_score?: ReviewStrategyRegisterItem;
+  suboptimal_avg_duration?: ReviewStrategyRegisterItem;
+  suboptimal_recent_duration?: ReviewStrategyRegisterItem;
+  long_time_since_last_review?: ReviewStrategyRegisterItem;
+  too_few_reviews?: ReviewStrategyRegisterItem;
+  low_reading_score?: ReviewStrategyRegisterItem;
+  low_writing_score?: ReviewStrategyRegisterItem;
+  low_listening_score?: ReviewStrategyRegisterItem;
+  low_speaking_score?: ReviewStrategyRegisterItem;
+}
+
+export interface ReviewCurrentStreak {
   id: string;
-  lastPracticed: string;
+  startedAt: string;
+  days: number;
+  isActive: boolean;
 }
 
-/* ── Kanji review ─────────────────────────────────────── */
-
-export interface ReviewKanji extends ReviewBase {
-  type: "kanji";
-  kanji: Kanji;
+export interface ReviewStreakResponse {
+  currentStreak?: ReviewCurrentStreak | null;
+  history?: ReviewCurrentStreak[];
 }
 
-/* ── Grammar review ───────────────────────────────────── */
+export interface ReviewRecommendation {
+  lessonType: ReviewLessonType;
+  entityId: string;
+  nodeId?: string | null;
+  exerciseType?: ReviewExerciseType | null;
+  completedQuizTypes?: ReviewExerciseType[];
+  strategy: string;
+  kanji?: string | null;
+  meanings?: string[];
+  hiragana?: string | null;
+  image?: string | null;
+  readings?: string[];
+  description?: string | null;
+  title?: string | null;
+}
 
-export interface ReviewGrammar extends ReviewBase {
-  type: "grammar";
+export interface ReviewRecommendationsResponse {
+  recommendations: ReviewRecommendation[];
+}
+
+export interface ReviewStrategySyncResponse {
+  updated_review_strategies_register?: ReviewStrategiesRegister;
+  error?: string;
+}
+
+export interface ReviewItem {
+  id: string;
+  type: ReviewItemType;
+  lessonType: ReviewLessonType;
+  entityId: string;
+  nodeId?: string;
+  exerciseType?: ReviewExerciseType;
+  availableExerciseTypes?: ReviewExerciseType[];
+  strategy: string;
+  strategyLabel: string;
   title: string;
   description: string;
-  examples: string;
-}
-
-/* ── Listening review ─────────────────────────────────── */
-
-export interface ReviewListening extends ReviewBase {
-  type: "listening";
-  title: string;
-  description: string;
-  /** Japanese kana/kanji label */
-  kana: string;
-}
-
-/* ── Speaking review ──────────────────────────────────── */
-
-export interface ReviewSpeaking extends ReviewBase {
-  type: "speaking";
-  title: string;
-  description: string;
-  /** Example phrase to practice */
-  phrase: string;
-}
-
-/* ── Union type ───────────────────────────────────────── */
-
-export type ReviewItem =
-  | ReviewKanji
-  | ReviewGrammar
-  | ReviewListening
-  | ReviewSpeaking;
-
-/* ── Stats ────────────────────────────────────────────── */
-
-export interface ReviewStats {
-  totalReviews: number;
-  averageAccuracy: number;
-  currentStreak: number;
-  kanjiMastered: number;
+  exerciseLabel: string;
+  actionLabel: string;
+  detail?: string;
+  symbol?: string;
+  kana?: string;
+  image?: string;
+  meanings: string[];
+  readings: string[];
 }

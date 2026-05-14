@@ -7,7 +7,7 @@ const passthroughImageLoader = ({ src }: ImageLoaderProps) => src;
 export interface VocabThumbnailProps {
   thumbnail: string;
   gradient: string;
-  size?: "lg" | "sm";
+  size?: "lg" | "md" | "sm";
   iconColor?: "red" | "white";
 }
 
@@ -27,7 +27,8 @@ export function VocabThumbnail({
   const isIconUrl = isUrl(thumbnail);
   const charLen = !isIconUrl ? thumbnail.replace(/\s/g, "").length : 0;
 
-  const dim = size === "lg" ? "h-14 w-14" : "h-11 w-11";
+  const dim =
+    size === "lg" ? "h-14 w-14" : size === "md" ? "h-12 w-12" : "h-11 w-11";
 
   const base = [
     "shrink-0 flex items-center justify-center rounded-2xl transition-colors duration-300",
@@ -36,8 +37,9 @@ export function VocabThumbnail({
 
   // ── URL icon ──────────────────────────────────────────────────────────────
   if (isIconUrl) {
-    const imgDim = size === "lg" ? "h-8 w-8" : "h-6 w-6";
-    const imgSize = size === "lg" ? 32 : 24;
+    const imgDim =
+      size === "lg" ? "h-8 w-8" : size === "md" ? "h-7 w-7" : "h-6 w-6";
+    const imgSize = size === "lg" ? 32 : size === "md" ? 28 : 24;
     const bgClass =
       iconColor === "white"
         ? "bg-surface-primary/15"
@@ -63,7 +65,8 @@ export function VocabThumbnail({
 
   // ── Text: 1 char ──────────────────────────────────────────────────────────
   if (charLen <= 1) {
-    const textSize = size === "lg" ? "text-[28px]" : "text-[18px]";
+    const textSize =
+      size === "lg" ? "text-[28px]" : size === "md" ? "text-[22px]" : "text-[18px]";
     return (
       <div
         className={[
@@ -80,7 +83,8 @@ export function VocabThumbnail({
 
   // ── Text: 2 chars – forced single line to prevent wrapping ────────────────
   if (charLen === 2) {
-    const textSize = size === "lg" ? "text-[20px]" : "text-[14px]";
+    const textSize =
+      size === "lg" ? "text-[20px]" : size === "md" ? "text-[16px]" : "text-[14px]";
     return (
       <div
         className={[
@@ -96,7 +100,8 @@ export function VocabThumbnail({
   }
 
   // ── Text: 3+ chars ────────────────────────────────────────────────────────
-  const textSize = size === "lg" ? "text-[11px]" : "text-[9px]";
+  const textSize =
+    size === "lg" ? "text-[11px]" : size === "md" ? "text-[10px]" : "text-[9px]";
   return (
     <div
       className={[

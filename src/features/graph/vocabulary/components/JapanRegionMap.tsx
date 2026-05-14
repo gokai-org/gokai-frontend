@@ -44,6 +44,7 @@ type JapanRegionMapProps = {
   loadingRegionId?: VocabularyRegionId | null;
   layoutCountsByRegion?: Partial<Record<VocabularyRegionId, number>>;
   hoverResetToken?: number;
+  cultureHoverEnabled?: boolean;
   interactionDisabled?: boolean;
   onRegionSelect: (regionId: VocabularyRegionId) => void;
   onLayoutChange: (
@@ -86,6 +87,7 @@ function JapanRegionMap({
   loadingRegionId = null,
   layoutCountsByRegion,
   hoverResetToken = 0,
+  cultureHoverEnabled = false,
   interactionDisabled = false,
   onRegionSelect,
   onLayoutChange,
@@ -113,14 +115,42 @@ function JapanRegionMap({
   const hoveredRegionJpLabel = hoveredRegion ? REGION_JP_LABELS[hoveredRegion.id] : null;
 
   useEffect(() => {
-    setHoveredRegion(null);
+    const frameId = window.requestAnimationFrame(() => {
+      setHoveredRegion(null);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, [hoverResetToken]);
 
   useEffect(() => {
-    if (interactionDisabled) {
-      setHoveredRegion(null);
+    if (!interactionDisabled) {
+      return;
     }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setHoveredRegion(null);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
   }, [interactionDisabled]);
+
+  useEffect(() => {
+    if (cultureHoverEnabled) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      setHoveredRegion(null);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [cultureHoverEnabled]);
 
   const regionStatusByRegion = useMemo(() => {
     const result: Partial<Record<VocabularyRegionId, RegionVisualStatus>> = {};
@@ -201,15 +231,10 @@ function JapanRegionMap({
       return;
     }
 
-    const pointerX = state.clientX - rect.left;
-    const pointerY = state.clientY - rect.top;
-    const x = Math.min(Math.max(pointerX, 84), Math.max(rect.width - 84, 84));
-    const y = Math.min(Math.max(pointerY - 14, 52), Math.max(rect.height - 24, 52));
-
     setHoveredRegion({
       id: state.regionId,
-      x,
-      y,
+      x: state.clientX,
+      y: state.clientY,
     });
   }, []);
 
@@ -345,14 +370,14 @@ function JapanRegionMap({
         regionStatusByRegion={regionStatusByRegion}
         activeRegionId={selectedRegionId}
         disabled={interactionDisabled}
-        onRegionHoverChange={handleRegionHoverChange}
+        onRegionHoverChange={cultureHoverEnabled ? handleRegionHoverChange : undefined}
         onRegionSelect={handleRegionSelect}
       />
       <CartographicLabelLayer
         parsedMap={parsedMap}
         activeRegionId={selectedRegionId}
       />
-      {hoveredRegionData && hoveredRegionJpLabel && hoveredRegion ? (
+      {cultureHoverEnabled && hoveredRegionData && hoveredRegionJpLabel && hoveredRegion ? (
         <GraphHoverCard
           variant="kazu"
           x={hoveredRegion.x}

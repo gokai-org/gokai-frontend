@@ -1,8 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 import { SECTIONS } from "@/features/landing/data/landingData";
+import { TermsAndConditionsPanel } from "@/features/auth/components/forms/TermsAndConditionsPanel";
 import { useLandingPage } from "@/features/landing/hooks/useLandingPage";
 import { useLandingScrollTimeline } from "@/features/landing/hooks/useLandingScrollTimeline";
 import { scaleFade } from "@/features/landing/lib/motionVariants";
@@ -70,9 +72,10 @@ function SkillBlock({ section }: { section: (typeof SECTIONS)[number] }) {
 }
 
 export function LandingPageView() {
+  const [isTermsOpen, setIsTermsOpen] = useState(false);
+
   const {
     sectionIds,
-    activeId: headerActiveId,
     howTab,
     setHowTab,
     how,
@@ -80,6 +83,7 @@ export function LandingPageView() {
 
   const timeline = useLandingScrollTimeline(sectionIds);
   const sceneActiveId = timeline.activeId;
+  const headerActiveId = timeline.activeId;
 
   const howMetrics = timeline.sections["como-funciona"];
   const experienceMetrics = timeline.sections["experiencia"];
@@ -168,6 +172,21 @@ export function LandingPageView() {
   )!;
   const plansSection = SECTIONS.find((section) => section.id === "planes")!;
   const contactSection = SECTIONS.find((section) => section.id === "contacto")!;
+
+  useEffect(() => {
+    if (!isTermsOpen) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousDocumentOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousDocumentOverflow;
+    };
+  }, [isTermsOpen]);
 
   return (
     <main className="relative min-h-screen overflow-x-clip bg-surface-primary text-content-primary">
@@ -278,8 +297,34 @@ export function LandingPageView() {
           </LandingSectionFrame>
         </div>
 
-        <LandingFooter />
+        <LandingFooter onOpenTerms={() => setIsTermsOpen(true)} />
       </div>
+
+      <AnimatePresence>
+        {isTermsOpen && (
+          <motion.div
+            className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 p-2 backdrop-blur-[1px] sm:items-center sm:p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsTermsOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 14, scale: 0.99 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 12, scale: 0.995 }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="w-full max-w-5xl overflow-hidden rounded-[24px] border border-border-default/70 bg-surface-primary p-2 shadow-[var(--shadow-xl)] sm:p-4 md:p-5"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <TermsAndConditionsPanel
+                onBack={() => setIsTermsOpen(false)}
+                onAccept={() => setIsTermsOpen(false)}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }

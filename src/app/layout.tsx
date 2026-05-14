@@ -87,6 +87,11 @@ export default function RootLayout({
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
+        <Script
+          id="onesignal-sdk"
+          src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js"
+          strategy="afterInteractive"
+        />
       </head>
       <body className="min-h-dvh overflow-x-hidden bg-surface-primary text-content-primary">
         <ThemeProvider>

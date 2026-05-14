@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import {
   getFavorites,
   addFavorite as addFavoriteAPI,
@@ -10,24 +10,18 @@ import type { FavoriteType, FavoritesResponse } from "@/features/library/types";
 
 const EMPTY_RESPONSE: FavoritesResponse = {
   kanji: [],
-  hiragana: [],
-  katakana: [],
   grammar: [],
   word: [],
 };
 
 export function useFavorites() {
   const [favoriteKanjis, setFavoriteKanjis] = useState<Set<string>>(new Set());
-  const [favoriteHiraganas, setFavoriteHiraganas] = useState<Set<string>>(
-    new Set(),
-  );
-  const [favoriteKatakanas, setFavoriteKatakanas] = useState<Set<string>>(
-    new Set(),
-  );
   const [favoriteGrammar, setFavoriteGrammar] = useState<Set<string>>(
     new Set(),
   );
   const [favoriteWords, setFavoriteWords] = useState<Set<string>>(new Set());
+  const favoriteHiraganas = useMemo(() => new Set<string>(), []);
+  const favoriteKatakanas = useMemo(() => new Set<string>(), []);
 
   const [favoriteData, setFavoriteData] =
     useState<FavoritesResponse>(EMPTY_RESPONSE);
@@ -38,15 +32,11 @@ export function useFavorites() {
       const response = await getFavorites();
       const safeResponse: FavoritesResponse = {
         kanji: response.kanji ?? [],
-        hiragana: response.hiragana ?? [],
-        katakana: response.katakana ?? [],
         grammar: response.grammar ?? [],
         word: response.word ?? [],
       };
       setFavoriteData(safeResponse);
       setFavoriteKanjis(new Set(safeResponse.kanji.map((f) => f.id)));
-      setFavoriteHiraganas(new Set(safeResponse.hiragana.map((f) => f.id)));
-      setFavoriteKatakanas(new Set(safeResponse.katakana.map((f) => f.id)));
       setFavoriteGrammar(new Set(safeResponse.grammar.map((f) => f.id)));
       setFavoriteWords(new Set(safeResponse.word.map((f) => f.id)));
     } catch (e) {
@@ -64,17 +54,9 @@ export function useFavorites() {
   const isFavorite = useCallback(
     (id: string) =>
       favoriteKanjis.has(id) ||
-      favoriteHiraganas.has(id) ||
-      favoriteKatakanas.has(id) ||
       favoriteGrammar.has(id) ||
       favoriteWords.has(id),
-    [
-      favoriteKanjis,
-      favoriteHiraganas,
-      favoriteKatakanas,
-      favoriteGrammar,
-      favoriteWords,
-    ],
+    [favoriteKanjis, favoriteGrammar, favoriteWords],
   );
 
   /** Toggle genérico – requiere indicar el tipo backend */
@@ -85,8 +67,6 @@ export function useFavorites() {
         React.Dispatch<React.SetStateAction<Set<string>>>
       > = {
         kanji: setFavoriteKanjis,
-        hiragana: setFavoriteHiraganas,
-        katakana: setFavoriteKatakanas,
         grammar: setFavoriteGrammar,
         word: setFavoriteWords,
       };
@@ -130,17 +110,9 @@ export function useFavorites() {
   const getTotalFavorites = useCallback(
     () =>
       favoriteKanjis.size +
-      favoriteHiraganas.size +
-      favoriteKatakanas.size +
       favoriteGrammar.size +
       favoriteWords.size,
-    [
-      favoriteKanjis,
-      favoriteHiraganas,
-      favoriteKatakanas,
-      favoriteGrammar,
-      favoriteWords,
-    ],
+    [favoriteKanjis, favoriteGrammar, favoriteWords],
   );
 
   return {

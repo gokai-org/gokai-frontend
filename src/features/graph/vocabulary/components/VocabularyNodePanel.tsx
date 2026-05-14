@@ -237,6 +237,7 @@ export default function VocabularyNodePanel({
           </div>
 
           <VocabularyQuizModal
+            key={`${item.nodeId}-${questionWithProgress.wordId}-${quizType}`}
             open={quizOpen}
             item={item}
             question={questionWithProgress}

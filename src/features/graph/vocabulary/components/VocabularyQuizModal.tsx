@@ -57,6 +57,7 @@ type VocabularyQuizModalProps = {
   item: VocabularyGraphProgressItem;
   question: VocabularyWordLesson;
   initialType: VocabularyAnswerType;
+  availableTypes?: VocabularyAnswerType[];
   onClose: () => void;
   onSaved: (
     context: VocabularyQuizSaveContext,
@@ -236,8 +237,11 @@ function getVocabularyReaffirmedTitle(type: VocabularyAnswerType) {
   return `${VOCABULARY_QUIZ_TYPE_LABELS[type]} reforzado`;
 }
 
-function normalizeRoundResults(results: RoundResult[]) {
-  return VOCABULARY_QUIZ_TYPES.flatMap((type) => {
+function normalizeRoundResults(
+  results: RoundResult[],
+  quizTypes: VocabularyAnswerType[],
+) {
+  return quizTypes.flatMap((type) => {
     const result = results.find((entry) => entry.type === type);
     return result ? [result] : [];
   });
@@ -248,6 +252,7 @@ export default function VocabularyQuizModal({
   item,
   question,
   initialType,
+  availableTypes,
   onClose,
   onSaved,
 }: VocabularyQuizModalProps) {
@@ -276,7 +281,15 @@ export default function VocabularyQuizModal({
   const completedBeforeSessionRef = useRef(false);
   const wasOpenRef = useRef(false);
 
-  const currentType = VOCABULARY_QUIZ_TYPES[roundIndex] ?? initialType;
+  const quizTypes = useMemo(() => {
+    const requestedTypes = availableTypes?.length ? availableTypes : [initialType];
+    const unique = new Set<VocabularyAnswerType>(requestedTypes);
+    const normalized = VOCABULARY_QUIZ_TYPES.filter((type) => unique.has(type));
+
+    return normalized.length > 0 ? normalized : [initialType];
+  }, [availableTypes, initialType]);
+
+  const currentType = quizTypes[roundIndex] ?? quizTypes[0] ?? initialType;
   const activeQuestion = roundQuestions[questionIndex] ?? null;
 
   const overlayVariants = useMemo(
@@ -336,7 +349,7 @@ export default function VocabularyQuizModal({
 
   const loadRound = useCallback(
     async (nextRoundIndex: number) => {
-      const nextType = VOCABULARY_QUIZ_TYPES[nextRoundIndex] ?? initialType;
+      const nextType = quizTypes[nextRoundIndex] ?? quizTypes[0] ?? initialType;
       setStep("loading");
       setError(null);
       resetQuestionAnswer();
@@ -366,7 +379,7 @@ export default function VocabularyQuizModal({
         setStep("error");
       }
     },
-    [initialType, item.nodeId, question.wordId, resetQuestionAnswer],
+    [initialType, item.nodeId, question.wordId, quizTypes, resetQuestionAnswer],
   );
 
   const resetQuiz = useCallback(() => {
@@ -380,9 +393,9 @@ export default function VocabularyQuizModal({
       const nextPoints = typeof user?.points === "number" ? user.points : null;
       startingPointsRef.current = nextPoints;
       currentPointsRef.current = nextPoints;
-      void loadRound(Math.max(0, VOCABULARY_QUIZ_TYPES.indexOf(initialType)));
+      void loadRound(Math.max(0, quizTypes.indexOf(initialType)));
     })();
-  }, [initialType, loadRound]);
+  }, [initialType, loadRound, quizTypes]);
 
   useEffect(() => {
     if (!open) {
@@ -446,6 +459,8 @@ export default function VocabularyQuizModal({
   const questionProgress = roundQuestions.length
     ? Math.round(((questionIndex + (step === "feedback" ? 1 : 0)) / roundQuestions.length) * 100)
     : 0;
+  const hasNextRound = roundIndex < quizTypes.length - 1;
+  const nextRoundType = hasNextRound ? quizTypes[roundIndex + 1] : null;
   const finalScore = roundResults.length
     ? Math.round(
         roundResults.reduce((sum, result) => sum + result.score, 0) /
@@ -553,7 +568,7 @@ export default function VocabularyQuizModal({
           normalizeRoundResults([
             ...current.filter((result) => result.type !== currentType),
             nextRoundResult,
-          ]),
+          ], quizTypes),
         );
 
         const saveResult = await onSaved({
@@ -567,6 +582,11 @@ export default function VocabularyQuizModal({
           return;
         }
 
+        if (roundIndex < quizTypes.length - 1) {
+          await loadRound(roundIndex + 1);
+          return;
+        }
+
         setStep("summary");
       } catch (saveError) {
         console.error("Error guardando quiz de vocabulario:", saveError);
@@ -574,7 +594,7 @@ export default function VocabularyQuizModal({
         setStep("error");
       }
     },
-    [applyPointsSync, currentType, item.nodeId, onSaved, question.wordId, roundQuestions],
+    [applyPointsSync, currentType, item.nodeId, loadRound, onSaved, question.wordId, quizTypes, roundIndex, roundQuestions],
   );
 
   const handleNextQuestion = useCallback(() => {
@@ -721,7 +741,7 @@ export default function VocabularyQuizModal({
 
               <div className="flex items-center gap-3">
                 {step !== "summary" && step !== "error" ? (
-                  <RoundDots current={currentType} question={question} results={roundResults} />
+                  <RoundDots current={currentType} question={question} results={roundResults} quizTypes={quizTypes} />
                 ) : null}
 
                 <button
@@ -1027,10 +1047,14 @@ export default function VocabularyQuizModal({
                         >
                           {currentScore < 100
                             ? questionIndex >= roundQuestions.length - 1
-                              ? "Ver resumen"
+                              ? hasNextRound && nextRoundType
+                                ? `Continuar con ${VOCABULARY_QUIZ_TYPE_LABELS[nextRoundType].toLowerCase()}`
+                                : "Ver resumen"
                               : "Siguiente palabra"
                             : questionIndex >= roundQuestions.length - 1
-                              ? `Guardar ${VOCABULARY_QUIZ_TYPE_LABELS[currentType].toLowerCase()}`
+                              ? hasNextRound && nextRoundType
+                                ? `Continuar con ${VOCABULARY_QUIZ_TYPE_LABELS[nextRoundType].toLowerCase()}`
+                                : `Guardar ${VOCABULARY_QUIZ_TYPE_LABELS[currentType].toLowerCase()}`
                               : "Siguiente palabra"}
                         </motion.button>
                       ) : null}
@@ -1068,6 +1092,7 @@ export default function VocabularyQuizModal({
                 item={item}
                 question={question}
                 results={roundResults}
+                quizTypes={quizTypes}
                 userPoints={resultingUserPoints}
                 pointsDelta={pointsDelta}
                 onRetry={retryCurrentQuiz}
@@ -1440,19 +1465,29 @@ function RoundDots({
   current,
   question,
   results,
+  quizTypes,
 }: {
   current: VocabularyAnswerType;
   question: VocabularyWordLesson;
   results: RoundResult[];
+  quizTypes: VocabularyAnswerType[];
 }) {
   return (
     <div className="flex items-center gap-1.5">
-      {VOCABULARY_QUIZ_TYPES.map((type, index) => {
+      {quizTypes.map((type, index) => {
         const result = results.find((entry) => entry.type === type);
         const persisted = getQuizTypeProgress(question, type);
         const isDone = Boolean(result) || persisted.completed;
         const isCurrent = type === current;
         const isPerfect = (result?.score ?? persisted.score ?? 0) === 100;
+        const shouldShowCurrentMarker = isCurrent && !isDone;
+        const baseClasses = isDone
+          ? isPerfect
+            ? "h-6 w-6 bg-emerald-400 shadow-md shadow-emerald-400/30"
+            : "h-6 w-6 bg-white/70"
+          : shouldShowCurrentMarker
+            ? "h-6 w-6 bg-white/90 ring-2 ring-white/40 ring-offset-1 ring-offset-transparent"
+            : "h-4 w-4 bg-white/25";
 
         return (
           <motion.div
@@ -1460,15 +1495,7 @@ function RoundDots({
             initial={{ scale: 0.7, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             transition={{ delay: index * 0.05, type: "spring", stiffness: 260, damping: 20 }}
-            className={`flex items-center justify-center rounded-full transition-all duration-300 ${
-              isDone
-                ? isPerfect
-                  ? "h-6 w-6 bg-emerald-400 shadow-md shadow-emerald-400/30"
-                  : "h-6 w-6 bg-white/70"
-                : isCurrent
-                  ? "h-6 w-6 bg-white/90 ring-2 ring-white/40 ring-offset-1 ring-offset-transparent"
-                  : "h-4 w-4 bg-white/25"
-            }`}
+            className={`relative flex items-center justify-center rounded-full transition-all duration-300 ${baseClasses}`}
           >
             {isDone ? (
               <Check
@@ -1476,7 +1503,10 @@ function RoundDots({
                 strokeWidth={3}
               />
             ) : null}
-            {isCurrent ? <span className="block h-2 w-2 rounded-full bg-accent" /> : null}
+            {shouldShowCurrentMarker ? <span className="block h-2 w-2 rounded-full bg-accent" /> : null}
+            {isCurrent && isDone ? (
+              <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-full border border-white/80 bg-accent shadow-sm shadow-accent/40" />
+            ) : null}
           </motion.div>
         );
       })}
@@ -1576,6 +1606,7 @@ function VocabularyQuizSummary({
   item,
   question,
   results,
+  quizTypes,
   userPoints,
   pointsDelta,
   onRetry,
@@ -1585,20 +1616,21 @@ function VocabularyQuizSummary({
   item: VocabularyGraphProgressItem;
   question: VocabularyWordLesson;
   results: RoundResult[];
+  quizTypes: VocabularyAnswerType[];
   userPoints: number | null;
   pointsDelta: number;
   onRetry: () => void;
   onClose: () => void;
 }) {
   const success = finalScore === 100;
-  const completedTypes = VOCABULARY_QUIZ_TYPES.filter((type) => {
+  const completedTypes = quizTypes.filter((type) => {
     const result = results.find((round) => round.type === type);
     const persisted = getQuizTypeProgress(question, type);
     return (result?.score ?? persisted.score ?? 0) === 100;
   }).length;
   const totalQuizProgress = Math.max(
     getWordQuizProgressPercent(question),
-    completedTypes * 25,
+    quizTypes.length > 0 ? Math.round((completedTypes / quizTypes.length) * 100) : 0,
   );
   const earnedPoints = pointsDelta > 0 && typeof userPoints === "number";
   const statusLabel = success ? "Aprobada" : "Requiere reintento";
@@ -1649,13 +1681,13 @@ function VocabularyQuizSummary({
               {statusLabel}
             </p>
             <p className="mt-1 text-sm text-content-secondary">
-              {completedTypes} de {VOCABULARY_QUIZ_TYPES.length} tipos perfectos
+              {completedTypes} de {quizTypes.length} tipos perfectos
             </p>
           </div>
         </div>
 
         <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-4">
-          {VOCABULARY_QUIZ_TYPES.map((type, index) => {
+          {quizTypes.map((type, index) => {
             const result = results.find((round) => round.type === type);
             const persisted = getQuizTypeProgress(question, type);
             const score = result?.score ?? persisted.score;

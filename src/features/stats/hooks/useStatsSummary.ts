@@ -9,7 +9,7 @@ export function useStatsSummary(data: StatsData) {
   const accuracy = overview?.accuracy ?? 0;
 
   const scoreEntries =
-    data.recentActivity?.activities?.filter(
+    (data.recentAnswers?.recentActivity ?? data.recentActivity?.activities)?.filter(
       (a) => typeof a.score === "number",
     ) ?? [];
 
@@ -23,7 +23,7 @@ export function useStatsSummary(data: StatsData) {
 
   const hasAnyData = !!(
     overview &&
-    (overview.studyHours > 0 ||
+    (overview.studyMinutes > 0 ||
       overview.kanjiLearned > 0 ||
       overview.hiraganaLearned > 0 ||
       overview.katakanaLearned > 0 ||

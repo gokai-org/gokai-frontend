@@ -27,12 +27,12 @@ export const KAZU_LESSON_SEGMENTS: Record<
     pathIndexes: range(11, 26),
   },
   listening: {
-    reviewType: "listening",
+    reviewType: "vocabulary",
     guideColor: "#1C1C1C",
     pathIndexes: range(27, 30),
   },
   speaking: {
-    reviewType: "speaking",
+    reviewType: "vocabulary",
     guideColor: "#F5D076",
     pathIndexes: range(31, 65),
   },
@@ -41,8 +41,10 @@ export const KAZU_LESSON_SEGMENTS: Record<
 export const KAZU_REVIEW_TYPE_PATHS: Record<ReviewItem["type"], number[]> = {
   kanji: KAZU_LESSON_SEGMENTS.writing.pathIndexes,
   grammar: KAZU_LESSON_SEGMENTS.grammar.pathIndexes,
-  listening: KAZU_LESSON_SEGMENTS.listening.pathIndexes,
-  speaking: KAZU_LESSON_SEGMENTS.speaking.pathIndexes,
+  vocabulary: [
+    ...KAZU_LESSON_SEGMENTS.listening.pathIndexes,
+    ...KAZU_LESSON_SEGMENTS.speaking.pathIndexes,
+  ],
 };
 
 export const KAZU_PATH_REVIEW_TYPE_BY_INDEX = new Map<number, ReviewItem["type"]>(

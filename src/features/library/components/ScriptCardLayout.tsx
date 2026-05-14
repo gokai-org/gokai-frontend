@@ -4,7 +4,7 @@ import type { ScriptCardConfig } from "@/features/library/utils/scriptCardConfig
 
 interface HeartProps {
   isFavorite: boolean;
-  config: ScriptCardConfig;
+  config: Pick<ScriptCardConfig, "heartColor">;
   hoverTransition: string;
 }
 
