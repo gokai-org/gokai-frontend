@@ -2,9 +2,12 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { BookOpen, TrendingUp } from "lucide-react";
+import { BookOpen, BookText, Languages, TrendingUp } from "lucide-react";
 import type { ReactNode } from "react";
-import type { OverviewStatsResponse } from "@/features/stats/types";
+import type {
+  CompletedTotals,
+  OverviewStatsResponse,
+} from "@/features/stats/types";
 
 interface StatCard {
   id: string;
@@ -19,6 +22,7 @@ interface StatCard {
 
 interface StatsOverviewProps {
   data?: OverviewStatsResponse | null;
+  completedTotals?: CompletedTotals | null;
   loading?: boolean;
   animationsEnabled?: boolean;
 }
@@ -26,25 +30,21 @@ interface StatsOverviewProps {
 const defaultCards: StatCard[] = [
   {
     id: "kanji-learned",
-    label: "Kanji aprendidos",
+    label: "Kanjis aprendidos",
     value: 0,
     icon: <BookOpen className="w-6 h-6" />,
   },
   {
-    id: "hiragana-learned",
-    label: "Hiragana aprendidos",
+    id: "grammar-learned",
+    label: "Lecciones gramaticales aprendidas",
     value: 0,
-    icon: (
-      <span className="text-base font-bold leading-none select-none">あ</span>
-    ),
+    icon: <BookText className="w-6 h-6" />,
   },
   {
-    id: "katakana-learned",
-    label: "Katakana aprendidos",
+    id: "words-learned",
+    label: "Palabras aprendidas",
     value: 0,
-    icon: (
-      <span className="text-base font-bold leading-none select-none">カ</span>
-    ),
+    icon: <Languages className="w-6 h-6" />,
   },
   {
     id: "reviews",
@@ -58,32 +58,29 @@ function safeNumber(value: unknown): number {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-function mapToCards(data: OverviewStatsResponse): StatCard[] {
+function mapToCards(
+  data: OverviewStatsResponse,
+  completedTotals?: CompletedTotals | null,
+): StatCard[] {
   return [
     {
       id: "kanji-learned",
-      label: "Kanji aprendidos",
-      value: safeNumber(data.kanjiLearned),
+      label: "Kanjis aprendidos",
+      value: safeNumber(completedTotals?.kanjiCompleted ?? data.kanjiLearned),
       icon: <BookOpen className="w-6 h-6" />,
       trend: safeNumber(data.kanjiLearnedTrend),
     },
     {
-      id: "hiragana-learned",
-      label: "Hiragana aprendidos",
-      value: safeNumber(data.hiraganaLearned),
-      icon: (
-        <span className="text-base font-bold leading-none select-none">あ</span>
-      ),
-      trend: safeNumber(data.hiraganaLearnedTrend),
+      id: "grammar-learned",
+      label: "Lecciones gramaticales aprendidas",
+      value: safeNumber(completedTotals?.grammarCompleted),
+      icon: <BookText className="w-6 h-6" />,
     },
     {
-      id: "katakana-learned",
-      label: "Katakana aprendidos",
-      value: safeNumber(data.katakanaLearned),
-      icon: (
-        <span className="text-base font-bold leading-none select-none">カ</span>
-      ),
-      trend: safeNumber(data.katakanaLearnedTrend),
+      id: "words-learned",
+      label: "Palabras aprendidas",
+      value: safeNumber(completedTotals?.wordsCompleted),
+      icon: <Languages className="w-6 h-6" />,
     },
     {
       id: "reviews",
@@ -249,10 +246,11 @@ function StatOverviewCard({
 
 export function StatsOverview({
   data,
+  completedTotals,
   loading,
   animationsEnabled = true,
 }: StatsOverviewProps) {
-  const cards = data ? mapToCards(data) : defaultCards;
+  const cards = data ? mapToCards(data, completedTotals) : defaultCards;
 
   if (loading) {
     return (

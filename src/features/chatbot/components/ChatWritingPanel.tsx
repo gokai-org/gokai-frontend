@@ -10,6 +10,7 @@ import { KanjiStrokePlayer } from "@/features/kanji/components/KanjiStrokePlayer
 import { KanjiWritingCanvas } from "@/features/kanji/components/KanjiWritingCanvas";
 import { ChatWritingNotebook } from "@/features/chatbot/components/ChatWritingNotebook";
 import { useChatWritingPractice } from "@/features/chatbot/hooks/useChatWritingPractice";
+import { extractJapaneseCharacters } from "@/features/chatbot/utils/writingCharacters";
 import { getWritingPalette, hexToRgba } from "@/features/chatbot/utils/writingPalette";
 import { useTheme } from "@/shared/hooks/useTheme";
 
@@ -187,8 +188,20 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
     canOpenNotebook && completionSequence > dismissedCompletionSequence;
   const isNotebookOpen = canOpenNotebook && (notebookOpen || shouldAutoOpenNotebook);
   const compactMobileLayout = !onClose;
+  const hasMessageCharacters = useMemo(
+    () => extractJapaneseCharacters(message?.content ?? "", { unique: true }).length > 0,
+    [message?.content],
+  );
+  const shouldShowTargetsSkeleton =
+    Boolean(message) &&
+    hasMessageCharacters &&
+    (targetsLoading || (targets.length === 0 && !error && !activeTarget));
 
   const notebookSummary = useMemo(() => {
+    if (shouldShowTargetsSkeleton) {
+      return "";
+    }
+
     if (totalAvailableCount === 0) {
       return "No hay letras disponibles para este mensaje.";
     }
@@ -198,7 +211,7 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
     }
 
     return `Completa ${completedCount} de ${totalAvailableCount} letras disponibles para desbloquear el cuaderno.`;
-  }, [completedCount, hasCompletedMessage, totalAvailableCount]);
+  }, [completedCount, hasCompletedMessage, shouldShowTargetsSkeleton, totalAvailableCount]);
 
   const handleOpenNotebook = () => {
     if (!canOpenNotebook) {
@@ -291,7 +304,16 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
                 </div>
               </div>
 
-              {targets.length > 0 ? (
+              {shouldShowTargetsSkeleton ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {Array.from({ length: 6 }).map((_, index) => (
+                    <div
+                      key={`chat-writing-chip-skeleton-${index}`}
+                      className="h-11 w-11 animate-pulse rounded-2xl bg-surface-secondary"
+                    />
+                  ))}
+                </div>
+              ) : targets.length > 0 ? (
                 <div className="mt-3 flex flex-wrap gap-1">
                   {targets.map((target) => (
                     <ChatWritingSymbolChip
@@ -305,10 +327,23 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
               ) : null}
             </article>
 
-            {targetsLoading ? (
+            {shouldShowTargetsSkeleton ? (
               <div className="space-y-3">
-                <div className="h-28 animate-pulse rounded-[24px] bg-surface-primary" />
-                <div className="h-48 animate-pulse rounded-[24px] bg-surface-primary" />
+                <div className="rounded-[26px] border border-border-subtle bg-surface-primary p-4 shadow-sm sm:p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="h-5 w-40 animate-pulse rounded-full bg-surface-secondary" />
+                      <div className="h-4 w-full animate-pulse rounded-full bg-surface-secondary" />
+                      <div className="h-4 w-4/5 animate-pulse rounded-full bg-surface-secondary" />
+                    </div>
+                    <div className="h-7 w-20 animate-pulse rounded-full bg-surface-secondary" />
+                  </div>
+                  <div className="mt-4 h-32 animate-pulse rounded-[22px] bg-surface-secondary" />
+                </div>
+                <div className="rounded-[24px] border border-border-subtle bg-surface-primary p-4 shadow-sm">
+                  <div className="h-4 w-36 animate-pulse rounded-full bg-surface-secondary" />
+                  <div className="mt-3 h-4 w-full animate-pulse rounded-full bg-surface-secondary" />
+                </div>
               </div>
             ) : error ? (
               <div className="rounded-[24px] border border-amber-200 bg-amber-50 px-4 py-4 text-sm font-medium text-amber-800">
@@ -321,11 +356,11 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
                     <h4 className={`${compactMobileLayout ? "text-sm" : "text-base"} font-bold text-content-primary`}>
                       {activeTarget.title}
                     </h4>
-                    <p className={`mt-1 text-content-tertiary ${compactMobileLayout ? "hidden sm:block sm:text-sm sm:leading-6" : "text-sm leading-6"}`}>
-                      {activeTarget.status === "available"
-                        ? "Mira la guia y luego traza en el lienzo con el color de este sistema de escritura."
-                        : activeTarget.helper}
-                    </p>
+                    {activeTarget.status === "available" ? (
+                      <p className={`mt-1 text-content-tertiary ${compactMobileLayout ? "hidden sm:block sm:text-sm sm:leading-6" : "text-sm leading-6"}`}>
+                        Mira la guia y luego traza en el lienzo con el color de este sistema de escritura.
+                      </p>
+                    ) : null}
                   </div>
 
                   <span
@@ -519,15 +554,17 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
                       </button>
                     </div>
 
-                    <p className={`mt-3 text-content-tertiary ${compactMobileLayout ? "hidden text-[11px] leading-4 sm:block" : "text-xs leading-5"}`}>
-                      {notebookSummary}
-                    </p>
+                    {notebookSummary ? (
+                      <p className={`mt-3 text-content-tertiary ${compactMobileLayout ? "hidden text-[11px] leading-4 sm:block" : "text-xs leading-5"}`}>
+                        {notebookSummary}
+                      </p>
+                    ) : null}
                   </>
                 )}
               </article>
             ) : null}
 
-            {targets.length === 0 ? (
+            {!shouldShowTargetsSkeleton && targets.length === 0 ? (
               <div className="rounded-[24px] border border-dashed border-border-default bg-surface-primary px-6 py-8 text-center">
                 <h4 className="text-base font-bold text-content-primary">
                   Este mensaje no tiene simbolos practicables

@@ -46,6 +46,7 @@ export interface KanjiQuizModalProps {
   currentModulePoints: number;
   wasCompletedBefore?: boolean;
   progressEligible?: boolean;
+  persistProgressOnSpecificQuiz?: boolean;
   onClose: (result?: KanjiQuizCompletionResult) => void;
   onComplete?: (result: KanjiQuizCompletionResult) => void;
 }
@@ -57,6 +58,7 @@ export function KanjiQuizModal({
   currentModulePoints: _currentModulePoints,
   wasCompletedBefore = false,
   progressEligible = true,
+  persistProgressOnSpecificQuiz = false,
   onClose,
   onComplete,
 }: KanjiQuizModalProps) {
@@ -71,7 +73,7 @@ export function KanjiQuizModal({
   const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
   const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
   const shouldPersistProgress =
-    progressEligible && !wasCompletedBefore && quizType === undefined;
+    progressEligible && !wasCompletedBefore && (quizType === undefined || persistProgressOnSpecificQuiz);
 
   const goldenAccentVars = useMemo<React.CSSProperties | undefined>(
     () =>

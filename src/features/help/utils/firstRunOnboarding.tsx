@@ -2,26 +2,23 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Menu, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import {
   useGuideTour,
   type TourDefinition,
   type TourStep,
 } from "@/features/help/components/GuideTourProvider";
 import { getTourById } from "@/features/help/components/tourData";
-import { FIRST_RUN_SIDEBAR_PREVIEW_EVENT } from "@/features/help/utils/guideEvents";
 import {
   activateFirstRunOnboardingSession,
   readFirstRunSeenPages,
   writeFirstRunSeenPages,
 } from "@/features/help/utils/firstRunOnboardingState";
-import { KazuMascot } from "@/features/mascot";
 
 type OnboardingPageConfig = {
   pageId: string;
   pageName: string;
   tour: TourDefinition;
-  includeWelcome?: boolean;
   prependIntro?: boolean;
   introTitle?: string;
   introDescription?: string;
@@ -31,16 +28,6 @@ type IntroCopy = {
   title: string;
   description: string;
 };
-
-function dispatchSidebarPreview(expanded: boolean) {
-  if (typeof window === "undefined") return;
-
-  window.dispatchEvent(
-    new CustomEvent<{ expanded: boolean }>(FIRST_RUN_SIDEBAR_PREVIEW_EVENT, {
-      detail: { expanded },
-    }),
-  );
-}
 
 function createPageIntroStep({ title, description }: IntroCopy): TourStep {
   return {
@@ -60,51 +47,13 @@ function getIntroCopy(config: OnboardingPageConfig): IntroCopy {
   };
 }
 
-function createWelcomeSteps(): TourStep[] {
-  return [
-    {
-      title: "Bienvenido a GOKAI",
-      description:
-        "Soy Kazu. Te acompañaré en este primer recorrido para que sepas dónde empezar y cómo moverte por la plataforma.",
-      icon: (
-        <KazuMascot
-          state="proud"
-          size={58}
-          focusOnHover={false}
-          ariaLabel="Kazu dando la bienvenida"
-          className="-m-2"
-        />
-      ),
-      position: "center",
-    },
-    {
-      title: "Menú lateral",
-      description:
-        "Desde aquí cambias entre mapa, repasos, estadísticas, biblioteca, chatbot, avisos, ajustes y ayuda cuando lo necesites.",
-      icon: <Menu className="h-6 w-6" />,
-      selector:
-        '[data-help-target="dashboard-sidebar"], [data-help-target="dashboard-menu-button"]',
-      spotlightPadding: 16,
-      position: "right",
-      onEnter: () => {
-        dispatchSidebarPreview(true);
-        return () => dispatchSidebarPreview(false);
-      },
-    },
-  ];
-}
-
 function cloneTourForFirstRun(
   config: OnboardingPageConfig,
   onComplete: () => void,
 ): TourDefinition {
   const introStep = createPageIntroStep(getIntroCopy(config));
   const shouldPrependIntro = config.prependIntro !== false;
-  const introSteps = shouldPrependIntro
-    ? config.includeWelcome
-      ? [...createWelcomeSteps(), introStep]
-      : [introStep]
-    : [];
+  const introSteps = shouldPrependIntro ? [introStep] : [];
 
   return {
     ...config.tour,
@@ -125,21 +74,6 @@ function getPageConfig(
   if (!pathname) return null;
 
   const byId = (id: string) => getTourById(id);
-
-  if (pathname === "/dashboard/graph") {
-    const tour = byId("getting-started");
-    return tour
-      ? {
-          pageId: "graph",
-          pageName: "Explorar",
-          introTitle: "Aquí eliges tu siguiente ruta",
-          introDescription:
-            "Kazu te muestra cómo leer el mapa general para decidir si avanzar por gramática, escritura o contenido pendiente.",
-          tour,
-          includeWelcome: true,
-        }
-      : null;
-  }
 
   if (pathname === "/dashboard/library") {
     const tour = byId("explore-library");

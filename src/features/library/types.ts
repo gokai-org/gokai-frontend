@@ -39,6 +39,10 @@ export type Theme = {
   kana: string;
   meaning: string;
   released: boolean;
+  isUnlocked?: boolean | null;
+  selectedAt?: string | null;
+  order?: number | null;
+  graphId?: string | null;
 };
 
 export type Subtheme = {
@@ -47,6 +51,11 @@ export type Subtheme = {
   kanji: string;
   kana: string;
   meaning: string;
+  isRecommended?: boolean;
+  recommendationRank?: number;
+  recommendationSimilarity?: number;
+  nodeId?: string | null;
+  isSelectedInGraph?: boolean;
 };
 
 export type Word = {
@@ -56,13 +65,26 @@ export type Word = {
   hiragana?: string | null;
   icon?: string | null;
   meanings?: string[] | null;
+  order?: number | null;
+  unlockedAt?: string | null;
+  completedAt?: string | null;
+  score?: number | null;
+  progress?: number | null;
+  completedQuizTypes?: Array<"speaking" | "listening" | "meaning" | "writing"> | null;
+  meaningCompleted?: boolean | null;
+  listeningCompleted?: boolean | null;
+  speakingCompleted?: boolean | null;
+  writingCompleted?: boolean | null;
+  meaningScore?: number | null;
+  listeningScore?: number | null;
+  speakingScore?: number | null;
+  writingScore?: number | null;
+  updatedAt?: string | null;
 };
 
 // FAVORITES
 export type FavoriteType =
   | "kanji"
-  | "hiragana"
-  | "katakana"
   | "grammar"
   | "word";
 
@@ -81,14 +103,12 @@ export interface BackendFavoriteItem {
 
 export interface FavoritesResponse {
   kanji: BackendFavoriteItem[];
-  hiragana: BackendFavoriteItem[];
-  katakana: BackendFavoriteItem[];
   grammar: BackendFavoriteItem[];
   word: BackendFavoriteItem[];
 }
 
 // RECENT ITEMS
-export type RecentEntityType = "kanji" | "grammar_lesson" | "grammar" | "word";
+export type RecentEntityType = "kanji" | "grammar" | "word";
 
 export interface BackendRecentItem {
   type: string;
@@ -105,6 +125,6 @@ export interface BackendRecentItem {
 
 export interface RecentItemsResponse {
   kanji: BackendRecentItem[];
-  grammar_lesson: BackendRecentItem[];
+  grammar: BackendRecentItem[];
   word: BackendRecentItem[];
 }

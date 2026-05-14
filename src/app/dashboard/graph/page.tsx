@@ -1,6 +1,7 @@
 "use client";
 
 import { animate, motion, useMotionValue } from "framer-motion";
+import { Compass, Menu, PanelsTopLeft, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import type { GraphEdge, GraphNode } from "@/features/graph/lib/graphTypes";
@@ -8,6 +9,22 @@ import JapanRegionMap from "@/features/graph/vocabulary/components/JapanRegionMa
 import RegionThemeGraph from "@/features/graph/vocabulary/components/RegionThemeGraph";
 import RegionVectorGraph from "@/features/graph/vocabulary/components/RegionVectorGraph";
 import VocabularyNodePanel from "@/features/graph/vocabulary/components/VocabularyNodePanel";
+import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
+import {
+  useGuideTour,
+  type TourStep,
+} from "@/features/help/components/GuideTourProvider";
+import { resolveGuideTarget } from "@/features/help/utils/guideOverlay";
+import {
+  createLockedBoardAccessTour,
+  createVocabularyGraphContextTour,
+} from "@/features/help/utils/contextualTours";
+import { FIRST_RUN_SIDEBAR_PREVIEW_EVENT } from "@/features/help/utils/guideEvents";
+import {
+  activateFirstRunOnboardingSession,
+  readFirstRunSeenPages,
+  writeFirstRunSeenPages,
+} from "@/features/help/utils/firstRunOnboardingState";
 import { useDeferredGraphMount } from "@/features/graph/vocabulary/hooks/useDeferredGraphMount";
 import { useVocabularyGraph } from "@/features/graph/vocabulary/hooks/useVocabularyGraph";
 import { loadJapanMapAssets } from "@/features/graph/vocabulary/components/japanMap/japanMapAssets";
@@ -95,6 +112,55 @@ const UNLOCK_TRANSITION_DURATION_MS = 1080;
 const GRAPH_HISTORY_STATE_KEY = "__vocabularyGraphState";
 const GRAPH_RETURN_SNAPSHOT_STORAGE_KEY = "gokai:vocabulary-graph-return-snapshot";
 const GRAPH_RETURN_PENDING_STORAGE_KEY = "gokai:vocabulary-graph-return-pending";
+
+function dispatchSidebarPreview(expanded: boolean) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent<{ expanded: boolean }>(FIRST_RUN_SIDEBAR_PREVIEW_EVENT, {
+      detail: { expanded },
+    }),
+  );
+}
+
+function createGraphFirstRunIntroSteps(): TourStep[] {
+  return [
+    {
+      title: "Menú lateral",
+      description:
+        "Desde aquí te mueves entre explorar, repasos, estadísticas, biblioteca, chatbot, avisos, configuración y ayuda sin salir del dashboard.",
+      icon: <Menu className="h-6 w-6" />,
+      selector:
+        '[data-help-target="dashboard-sidebar"], [data-help-target="dashboard-menu-button"]',
+      spotlightPadding: 16,
+      position: "right",
+      onEnter: () => {
+        dispatchSidebarPreview(true);
+        return () => dispatchSidebarPreview(false);
+      },
+    },
+    {
+      title: "Navegación superior",
+      description:
+        "Esta barra te deja cambiar rápido entre vocabulario, gramática y escritura para seguir estudiando sin perder contexto.",
+      icon: <PanelsTopLeft className="h-6 w-6" />,
+      selector: '[data-help-target="graph-nav"]',
+      spotlightPadding: 14,
+      position: "bottom",
+    },
+    {
+      title: "Pantalla principal",
+      description:
+        "Esta vista es tu punto de entrada en Graph: aquí orientas tu avance, eliges una ruta y bajas hasta región, tema, subtema y palabra.",
+      icon: <Sparkles className="h-6 w-6" />,
+      selector: '[data-help-surface="vocabulary-graph"] [data-help-target="graph-canvas"]',
+      spotlightPadding: 18,
+      position: "right",
+    },
+  ];
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -632,9 +698,44 @@ function toWordLesson(
   }, progress);
 }
 
+function waitForValue<T>(
+  readValue: () => T | null | undefined,
+  timeoutMs = 2400,
+  intervalMs = 80,
+): Promise<T | null> {
+  const currentValue = readValue();
+
+  if (currentValue != null) {
+    return Promise.resolve(currentValue);
+  }
+
+  return new Promise((resolve) => {
+    const deadline = Date.now() + timeoutMs;
+
+    const tick = () => {
+      const nextValue = readValue();
+
+      if (nextValue != null) {
+        resolve(nextValue);
+        return;
+      }
+
+      if (Date.now() >= deadline) {
+        resolve(null);
+        return;
+      }
+
+      window.setTimeout(tick, intervalMs);
+    };
+
+    window.setTimeout(tick, intervalMs);
+  });
+}
+
 export default function Page() {
   const searchParams = useSearchParams();
   const { setHidden } = useSidebar();
+  const { activeTour, pendingTour, startTour } = useGuideTour();
   const sceneRef = useRef<HTMLDivElement | null>(null);
   const pointersRef = useRef(new Map<number, PointerPosition>());
   const dragRef = useRef<{
@@ -676,6 +777,10 @@ export default function Page() {
   const deferredRewardTimeoutRef = useRef<number | null>(null);
   const handledDeepLinkRef = useRef<string | null>(null);
   const [hoverResetToken, setHoverResetToken] = useState(0);
+  const [firstRunEnabled, setFirstRunEnabled] = useState(false);
+  const [firstRunSeenPages, setFirstRunSeenPages] = useState<Set<string>>(
+    () => new Set(),
+  );
 
   const dismissGraphHovers = useCallback(() => {
     setHoverResetToken((current) => current + 1);
@@ -692,6 +797,7 @@ export default function Page() {
     string | null
   >(null);
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
+  const [cultureExplorationEnabled, setCultureExplorationEnabled] = useState(false);
   const [subthemeWords, setSubthemeWords] = useState<VocabularyWordLesson[]>([]);
   const [subthemeWordsLoading, setSubthemeWordsLoading] = useState(false);
   const [regionThemeGraphLoading, setRegionThemeGraphLoading] = useState(false);
@@ -712,6 +818,7 @@ export default function Page() {
   const {
     graphs,
     selectedGraph,
+    selectedGraphId: activeGraphId,
     progress,
     themeCatalog,
     themeSubthemes,
@@ -740,7 +847,7 @@ export default function Page() {
     () => progressItems.find((item) => item.nodeId === selectedSubthemeNodeId) ?? null,
     [progressItems, selectedSubthemeNodeId],
   );
-  const selectedGraphId = selectedGraph?.graphId ?? null;
+  const selectedGraphId = selectedGraph?.graphId ?? activeGraphId ?? null;
   const selectedWord = useMemo(
     () => subthemeWords.find((word) => word.wordId === selectedWordId) ?? null,
     [selectedWordId, subthemeWords],
@@ -770,6 +877,72 @@ export default function Page() {
   const graphInteractionDisabled = Boolean(
     pendingThemeId || pendingGraphNodeId || actionPendingId || subthemeWordsLoading,
   );
+  const helpRegion = useMemo(
+    () =>
+      regions.find((region) => region.themes.some((theme) => theme.isAvailable)) ??
+      regions.find((region) => region.themes.length > 0) ??
+      null,
+    [regions],
+  );
+  const helpTheme = useMemo(
+    () =>
+      helpRegion?.themes.find((theme) => theme.isAvailable) ??
+      helpRegion?.themes[0] ??
+      null,
+    [helpRegion],
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    queueMicrotask(() => {
+      if (cancelled) {
+        return;
+      }
+
+      const isActive = activateFirstRunOnboardingSession();
+      setFirstRunEnabled(isActive);
+      setFirstRunSeenPages(isActive ? readFirstRunSeenPages() : new Set());
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const markGraphFirstRunSeen = useCallback(() => {
+    setFirstRunSeenPages((current) => {
+      if (current.has("graph")) {
+        return current;
+      }
+
+      const next = new Set(current);
+      next.add("graph");
+      writeFirstRunSeenPages(next);
+      return next;
+    });
+  }, []);
+
+  const progressItemsRef = useRef(progressItems);
+  const themeSubthemesRef = useRef(themeSubthemes);
+  const subthemeWordsRef = useRef(subthemeWords);
+  const selectedGraphIdRef = useRef<string | null>(selectedGraphId);
+
+  useEffect(() => {
+    progressItemsRef.current = progressItems;
+  }, [progressItems]);
+
+  useEffect(() => {
+    themeSubthemesRef.current = themeSubthemes;
+  }, [themeSubthemes]);
+
+  useEffect(() => {
+    subthemeWordsRef.current = subthemeWords;
+  }, [subthemeWords]);
+
+  useEffect(() => {
+    selectedGraphIdRef.current = selectedGraphId;
+  }, [selectedGraphId]);
   const historySnapshot = useMemo<VocabularyGraphHistoryState>(() => ({
     currentLevel,
     selectedRegionId,
@@ -1366,6 +1539,346 @@ export default function Page() {
     );
     window.sessionStorage.removeItem(GRAPH_RETURN_PENDING_STORAGE_KEY);
   }, [historySnapshot]);
+
+  const resetVocabularyHelpState = useCallback(() => {
+    if (typeof document !== "undefined") {
+      const helpAction = document.querySelector(
+        '[data-help-target="vocabulary-help-action-culture-exploration-mode"]',
+      );
+      const helpButton = document.querySelector(
+        '[data-help-target="vocabulary-help-button"]',
+      );
+
+      if (helpAction && helpButton instanceof HTMLElement) {
+        helpButton.click();
+      }
+    }
+
+    subthemeLoadRequestRef.current += 1;
+    dismissGraphHovers();
+    clearThemeShake();
+    setRegionThemeGraphLoading(false);
+    setPendingThemeId(null);
+    setPendingGraphNodeId(null);
+    setSubthemeWordsLoading(false);
+    setSubthemeWords([]);
+    setSelectedThemeId(null);
+    setSelectedSubthemeNodeId(null);
+    setSelectedWordId(null);
+    setUnlockFocusWordId(null);
+    setSelectedGraphId(null);
+    setSelectedRegionId(null);
+    setCurrentLevel("map");
+  }, [clearThemeShake, dismissGraphHovers, setSelectedGraphId]);
+
+  const enterCultureExplorationMode = useCallback(() => {
+    setCultureExplorationEnabled(true);
+    dismissGraphHovers();
+    resetVocabularyHelpState();
+  }, [dismissGraphHovers, resetVocabularyHelpState]);
+
+  const disableCultureExplorationMode = useCallback(() => {
+    setCultureExplorationEnabled(false);
+    dismissGraphHovers();
+  }, [dismissGraphHovers]);
+
+  const focusHelpMap = useCallback(() => {
+    setCultureExplorationEnabled(false);
+    resetVocabularyHelpState();
+  }, [resetVocabularyHelpState]);
+
+  const waitForHelpTarget = useCallback(
+    (selector: string, timeoutMs = 3200) =>
+      waitForValue(
+        () =>
+          typeof document === "undefined"
+            ? null
+            : resolveGuideTarget(selector, { includeOffscreen: true }),
+        timeoutMs,
+        80,
+      ),
+    [],
+  );
+
+  const clickHelpTarget = useCallback((selector: string) => {
+    if (typeof document === "undefined") {
+      return false;
+    }
+
+    const target = resolveGuideTarget(selector, { includeOffscreen: true });
+
+    if (!target) {
+      return false;
+    }
+
+    target.dispatchEvent(
+      new MouseEvent("click", {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+      }),
+    );
+    return true;
+  }, []);
+
+  const focusHelpRegion = useCallback(async () => {
+    if (!helpRegion) {
+      return false;
+    }
+
+    setCultureExplorationEnabled(false);
+    dismissGraphHovers();
+    handleRegionSelect(helpRegion.id);
+
+    const regionTarget = await waitForHelpTarget(
+      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-selected-region"]',
+    );
+
+    return Boolean(regionTarget);
+  }, [dismissGraphHovers, handleRegionSelect, helpRegion, waitForHelpTarget]);
+
+  const focusHelpThemeNode = useCallback(async () => {
+    if (!helpRegion || !helpTheme) {
+      return false;
+    }
+
+    const regionReady = await focusHelpRegion();
+
+    if (!regionReady) {
+      return false;
+    }
+
+    const themeTarget = await waitForHelpTarget(
+      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-theme-node"]',
+    );
+
+    return Boolean(themeTarget);
+  }, [focusHelpRegion, helpRegion, helpTheme, waitForHelpTarget]);
+
+  const focusHelpRecommendedSubtheme = useCallback(async () => {
+    const themeReady = await focusHelpThemeNode();
+
+    if (!themeReady) {
+      return false;
+    }
+
+    const clicked = clickHelpTarget(
+      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-theme-node"]',
+    );
+
+    if (!clicked) {
+      return false;
+    }
+
+    const recommendedTarget = await waitForHelpTarget(
+      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-recommended-subtheme-node"]',
+    );
+
+    return Boolean(recommendedTarget);
+  }, [clickHelpTarget, focusHelpThemeNode, waitForHelpTarget]);
+
+  const focusHelpWordNode = useCallback(async () => {
+    const recommendedReady = await focusHelpRecommendedSubtheme();
+
+    if (!recommendedReady) {
+      return false;
+    }
+
+    const clicked = clickHelpTarget(
+      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-recommended-subtheme-node"]',
+    );
+
+    if (!clicked) {
+      return false;
+    }
+
+    const wordTarget = await waitForHelpTarget(
+      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-word-node"]',
+    );
+
+    return Boolean(wordTarget);
+  }, [clickHelpTarget, focusHelpRecommendedSubtheme, waitForHelpTarget]);
+
+  const openHelpLesson = useCallback(async () => {
+    const ready = await focusHelpWordNode();
+
+    if (!ready) {
+      return false;
+    }
+
+    const clicked = clickHelpTarget(
+      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-word-node"]',
+    );
+
+    if (!clicked) {
+      return false;
+    }
+
+    const lessonTarget = await waitForHelpTarget(
+      '[data-help-surface="vocabulary-graph"] [data-help-target="lesson-drawer"]',
+    );
+
+    return Boolean(lessonTarget);
+  }, [clickHelpTarget, focusHelpWordNode, waitForHelpTarget]);
+
+  const ensureHelpLessonOpen = useCallback(async () => {
+    const lessonSelector =
+      '[data-help-surface="vocabulary-graph"] [data-help-target="lesson-drawer"]';
+
+    const existingLesson =
+      typeof document === "undefined"
+        ? null
+        : resolveGuideTarget(lessonSelector, { includeOffscreen: true });
+
+    if (existingLesson) {
+      return true;
+    }
+
+    return openHelpLesson();
+  }, [openHelpLesson]);
+
+  const focusHelpLessonTab = useCallback(
+    async (tab: "meaning" | "listening" | "speaking" | "writing") => {
+      const lessonOpen = await ensureHelpLessonOpen();
+
+      if (!lessonOpen) {
+        return false;
+      }
+
+      const tabSelector = `[data-help-surface="vocabulary-graph"] [data-help-target="lesson-section-tab-${tab}"]`;
+      const contentSelector = `[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-lesson-exercise-${tab}"]`;
+
+      const tabTarget = await waitForHelpTarget(tabSelector);
+
+      if (!tabTarget) {
+        return false;
+      }
+
+      clickHelpTarget(tabSelector);
+
+      const contentTarget = await waitForHelpTarget(contentSelector);
+      return Boolean(contentTarget);
+    },
+    [clickHelpTarget, ensureHelpLessonOpen, waitForHelpTarget],
+  );
+
+  const focusCultureModeAction = useCallback(async () => {
+    setSelectedWordId(null);
+    setUnlockFocusWordId(null);
+    dismissGraphHovers();
+
+    const helpButton = await waitForHelpTarget(
+      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-help-button"]',
+    );
+
+    if (!helpButton) {
+      return false;
+    }
+
+    const actionSelector =
+      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-help-action-culture-exploration-mode"]';
+    const existingAction =
+      typeof document === "undefined"
+        ? null
+        : resolveGuideTarget(actionSelector, { includeOffscreen: true });
+
+    if (!existingAction) {
+      const opened = clickHelpTarget(
+        '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-help-button"]',
+      );
+
+      if (!opened) {
+        return false;
+      }
+    }
+
+    const cultureAction = await waitForHelpTarget(actionSelector);
+    return Boolean(cultureAction);
+  }, [clickHelpTarget, dismissGraphHovers, waitForHelpTarget]);
+
+  const buildHelpTour = useCallback(() => {
+    if (!helpRegion || !helpTheme) {
+      return createLockedBoardAccessTour({
+        id: "vocabulary-context-tour-locked",
+        title: "Guía de Vocabulario",
+        scopeSelector: '[data-help-surface="vocabulary-graph"]',
+        boardLabel: "Mapa de vocabulario",
+        requirementLabel: "tener al menos una región y un tema disponibles",
+        targetName: "graph-canvas",
+      });
+    }
+
+    return createVocabularyGraphContextTour({
+      id: "vocabulary-context-tour",
+      title: "Guía de Vocabulario",
+      route: "/dashboard/graph",
+      scopeSelector: '[data-help-surface="vocabulary-graph"]',
+      focusMap: focusHelpMap,
+      focusRegion: async () => {
+        await focusHelpRegion();
+      },
+      focusThemeNode: async () => {
+        await focusHelpThemeNode();
+      },
+      focusRecommendedSubtheme: async () => {
+        await focusHelpRecommendedSubtheme();
+      },
+      focusWordNode: async () => {
+        await focusHelpWordNode();
+      },
+      focusLessonTab: async (tab) => {
+        await focusHelpLessonTab(tab);
+      },
+      openLesson: async () => {
+        await openHelpLesson();
+      },
+      focusCultureModeAction: async () => {
+        await focusCultureModeAction();
+      },
+      resetTourState: resetVocabularyHelpState,
+    });
+  }, [focusCultureModeAction, focusHelpLessonTab, focusHelpMap, focusHelpRecommendedSubtheme, focusHelpRegion, focusHelpThemeNode, focusHelpWordNode, helpRegion, helpTheme, openHelpLesson, resetVocabularyHelpState]);
+
+  const buildFirstRunTour = useCallback(() => {
+    const baseTour = buildHelpTour();
+
+    return {
+      ...baseTour,
+      id: `first-run-${baseTour.id}`,
+      title: "Primer recorrido",
+      steps: [...createGraphFirstRunIntroSteps(), ...baseTour.steps],
+      onClose: () => {
+        baseTour.onClose?.();
+        markGraphFirstRunSeen();
+      },
+    };
+  }, [buildHelpTour, markGraphFirstRunSeen]);
+
+  useEffect(() => {
+    if (
+      loading ||
+      !firstRunEnabled ||
+      firstRunSeenPages.has("graph") ||
+      activeTour ||
+      pendingTour
+    ) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      startTour(buildFirstRunTour());
+    }, 220);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [
+    activeTour,
+    buildFirstRunTour,
+    firstRunEnabled,
+    firstRunSeenPages,
+    loading,
+    pendingTour,
+    startTour,
+  ]);
 
   useEffect(() => {
     if (loading || historyRestoreStartedRef.current) {
@@ -2287,27 +2800,28 @@ export default function Page() {
     : null;
 
   return (
-    <div
-      ref={sceneRef}
-      data-help-target="graph-canvas"
-      className="map-scene absolute inset-0 z-0 cursor-grab overflow-hidden touch-none select-none kanji-bg-base"
-      style={{
-        overscrollBehavior: "contain",
-        userSelect: "none",
-        WebkitUserSelect: "none",
-        WebkitTouchCallout: "none",
-      }}
-    >
-      {loading ? (
-        <div
-          data-help-loading="true"
-          className="absolute inset-0 flex items-center justify-center"
-          aria-label="Cargando vocabulario"
-        >
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
-        </div>
-      ) : (
-        <>
+    <div data-help-surface="vocabulary-graph" className="absolute inset-0">
+      <div
+        ref={sceneRef}
+        data-help-target="graph-canvas"
+        className="map-scene absolute inset-0 z-0 cursor-grab overflow-hidden touch-none select-none kanji-bg-base"
+        style={{
+          overscrollBehavior: "contain",
+          userSelect: "none",
+          WebkitUserSelect: "none",
+          WebkitTouchCallout: "none",
+        }}
+      >
+        {loading ? (
+          <div
+            data-help-loading="true"
+            className="absolute inset-0 flex items-center justify-center"
+            aria-label="Cargando vocabulario"
+          >
+            <div className="h-7 w-7 animate-spin rounded-full border-2 border-accent/20 border-t-accent" />
+          </div>
+        ) : (
+          <>
           <motion.div
             ref={transformLayerRef}
             data-map-transform-layer="true"
@@ -2322,28 +2836,44 @@ export default function Page() {
               WebkitUserSelect: "none",
             }}
           >
-            <JapanRegionMap
-              regions={regions}
-              selectedRegionId={activeRegionId}
-              loadingRegionId={loadingRegionId}
-              layoutCountsByRegion={layoutCountsByRegion}
-              hoverResetToken={hoverResetToken}
-              interactionDisabled={currentLevel !== "map"}
-              onRegionSelect={handleMapRegionSelect}
-              onLayoutChange={handleRegionLayoutsChange}
-            />
+            <div
+              data-help-target="vocabulary-map-view"
+              className="absolute inset-0 pointer-events-none"
+            >
+              <div className="h-full w-full pointer-events-auto">
+                <JapanRegionMap
+                  regions={regions}
+                  selectedRegionId={activeRegionId}
+                  loadingRegionId={loadingRegionId}
+                  layoutCountsByRegion={layoutCountsByRegion}
+                  hoverResetToken={hoverResetToken}
+                  cultureHoverEnabled={cultureExplorationEnabled}
+                  interactionDisabled={currentLevel !== "map"}
+                  onRegionSelect={handleMapRegionSelect}
+                  onLayoutChange={handleRegionLayoutsChange}
+                />
+              </div>
+            </div>
 
             {selectedRegion && currentLevel === "region" ? (
               !graphTransitionLoading && regionThemeLayoutReady ? (
-                <RegionThemeGraph
-                  region={selectedRegion}
-                  regionBounds={selectedRegionLayout?.bounds ?? null}
-                  nodePoints={selectedRegionLayout?.nodePoints ?? null}
-                  viewport={selectedRegionLayout?.viewport ?? null}
-                  shakingThemeId={shakingThemeId}
-                  interactionDisabled={graphInteractionDisabled}
-                  onThemeSelect={handleThemeSelected}
-                />
+                <div
+                  data-help-target="vocabulary-region-graph"
+                  className="absolute inset-0 pointer-events-none"
+                >
+                  <div className="h-full w-full pointer-events-auto">
+                    <RegionThemeGraph
+                      region={selectedRegion}
+                      regionBounds={selectedRegionLayout?.bounds ?? null}
+                      nodePoints={selectedRegionLayout?.nodePoints ?? null}
+                      viewport={selectedRegionLayout?.viewport ?? null}
+                      shakingThemeId={shakingThemeId}
+                      helpTargetThemeId={helpTheme?.id ?? null}
+                      interactionDisabled={graphInteractionDisabled}
+                      onThemeSelect={handleThemeSelected}
+                    />
+                  </div>
+                </div>
               ) : null
             ) : null}
 
@@ -2352,18 +2882,25 @@ export default function Page() {
             !graphTransitionLoading &&
             vectorGraphLayoutReady &&
             (currentLevel === "theme" || currentLevel === "subtheme") ? (
-              <RegionVectorGraph
-                nodes={regionGraph.nodes}
-                edges={regionGraph.edges as GraphEdge[]}
-                regionBounds={selectedRegionLayout?.bounds ?? null}
-                nodePoints={selectedRegionLayout?.nodePoints ?? null}
-                viewport={selectedRegionLayout?.viewport ?? null}
-                level={currentLevel}
-                interactionDisabled={graphInteractionDisabled}
-                hoverResetToken={hoverResetToken}
-                unlockTransition={unlockTransition}
-                onNodeSelected={regionGraph.onNodeSelected}
-              />
+              <div
+                data-help-target="vocabulary-subtheme-graph"
+                className="absolute inset-0 pointer-events-none"
+              >
+                <div className="h-full w-full pointer-events-auto">
+                  <RegionVectorGraph
+                    nodes={regionGraph.nodes}
+                    edges={regionGraph.edges as GraphEdge[]}
+                    regionBounds={selectedRegionLayout?.bounds ?? null}
+                    nodePoints={selectedRegionLayout?.nodePoints ?? null}
+                    viewport={selectedRegionLayout?.viewport ?? null}
+                    level={currentLevel}
+                    interactionDisabled={graphInteractionDisabled}
+                    hoverResetToken={hoverResetToken}
+                    unlockTransition={unlockTransition}
+                    onNodeSelected={regionGraph.onNodeSelected}
+                  />
+                </div>
+              </div>
             ) : null}
           </motion.div>
           <PointsRewardFloat
@@ -2371,6 +2908,28 @@ export default function Page() {
             caption="Progreso de vocabulario"
             onComplete={() => setMapRewardFloatPoints(null)}
           />
+          {!isLessonOpen ? (
+            <ContextualHelpButton
+              getTour={buildHelpTour}
+              actions={[
+                {
+                  id: "culture-exploration-mode",
+                  label: cultureExplorationEnabled
+                    ? "Desactivar modo exploración de cultura"
+                    : "Entrar a modo exploración de cultura",
+                  description:
+                    cultureExplorationEnabled
+                      ? "Oculta los hover culturales del mapa y vuelve al comportamiento normal de vocabulario."
+                      : "Activa los hover culturales por región y te devuelve al mapa para recorrer Japón con pistas culturales en pantalla.",
+                  icon: Compass,
+                  tone: "danger",
+                  onClick: cultureExplorationEnabled
+                    ? disableCultureExplorationMode
+                    : enterCultureExplorationMode,
+                },
+              ]}
+            />
+          ) : null}
           <VocabularyNodePanel
             item={selectedSubthemeItem}
             question={selectedWord}
@@ -2381,8 +2940,9 @@ export default function Page() {
             onNavigateToLibrary={handleNavigateToLibrary}
             onSaved={handleVocabularyQuizSaved}
           />
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 }

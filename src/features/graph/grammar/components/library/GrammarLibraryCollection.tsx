@@ -30,6 +30,7 @@ export interface GrammarLibraryCollectionProps {
   favoriteIds?: ReadonlySet<string>;
   filterIds?: ReadonlySet<string>;
   onToggleFavorite?: (lessonId: string) => void;
+  onLessonOpen?: (lessonId: string) => void;
   className?: string;
 }
 
@@ -44,7 +45,10 @@ function getRequestErrorMessage(error: unknown, fallback: string) {
 }
 
 export function GrammarLibraryCollection({
+  favoriteIds,
   filterIds,
+  onToggleFavorite,
+  onLessonOpen,
   className = "grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
 }: GrammarLibraryCollectionProps) {
   const mastered = useMasteredModules();
@@ -163,10 +167,11 @@ export function GrammarLibraryCollection({
         return;
       }
 
+      onLessonOpen?.(lessonId);
       setSelectedLessonId(lessonId);
       setStage("lesson");
     },
-    [boardItems, stage],
+    [boardItems, onLessonOpen, stage],
   );
 
   const handleCloseLesson = useCallback(() => {
@@ -282,9 +287,11 @@ export function GrammarLibraryCollection({
               key={item.id}
               lesson={item}
               index={index}
+              isFavorite={favoriteIds?.has(item.id) ?? false}
               unlockPending={unlockPendingLessonId === item.id}
               justUnlocked={recentlyUnlockedIds.has(item.id)}
               onSelect={handleSelectLesson}
+              onToggleFavorite={onToggleFavorite}
               onPressUnlock={handleUnlockNextLesson}
             />
           )

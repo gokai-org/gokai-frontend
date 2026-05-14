@@ -57,6 +57,13 @@ export function WeeklyActivityChart({
   animationsEnabled = true,
 }: WeeklyActivityChartProps) {
   const Wrapper = animationsEnabled ? motion.div : "div";
+  const chartData = (data ?? []).map((entry) => ({
+    day: entry.day,
+    minutes:
+      typeof entry.minutes === "number" && Number.isFinite(entry.minutes)
+        ? Math.max(0, entry.minutes)
+        : 0,
+  }));
 
   if (loading) {
     return (
@@ -68,7 +75,7 @@ export function WeeklyActivityChart({
     );
   }
 
-  if (!data || data.length === 0) {
+  if (chartData.length === 0) {
     return (
       <Wrapper
         {...(animationsEnabled
@@ -114,13 +121,18 @@ export function WeeklyActivityChart({
     );
   }
 
-  const totalMinutes = data.reduce((sum, d) => sum + d.minutes, 0);
-  const avgMinutes = Math.round(totalMinutes / data.length);
-  const maxDay = data.reduce(
+  const totalMinutes = chartData.reduce((sum, d) => sum + d.minutes, 0);
+  const avgMinutes = Math.round(totalMinutes / chartData.length);
+  const maxDay = chartData.reduce(
     (max, d) => (d.minutes > max.minutes ? d : max),
-    data[0],
+    chartData[0],
   );
   const highlightDay = highlight ?? maxDay.day;
+  const comparisonPercent =
+    avgMinutes > 0
+      ? Number((((maxDay.minutes - avgMinutes) / avgMinutes) * 100).toFixed(1))
+      : 0;
+  const comparisonLabel = comparisonPercent > 0 ? "+" : "";
 
   return (
     <Wrapper
@@ -146,7 +158,8 @@ export function WeeklyActivityChart({
         </div>
         <div className="text-right">
           <p className="text-2xl font-extrabold text-accent">
-            +{((maxDay.minutes / avgMinutes - 1) * 100).toFixed(1)}%
+            {comparisonLabel}
+            {comparisonPercent}%
           </p>
           <p className="text-xs text-content-tertiary">vs promedio</p>
         </div>
@@ -164,7 +177,7 @@ export function WeeklyActivityChart({
 
       <div className="w-full h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} barSize={32} barGap={8}>
+          <BarChart data={chartData} barSize={32} barGap={8}>
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
@@ -197,7 +210,7 @@ export function WeeklyActivityChart({
               animationDuration={animationsEnabled ? 1000 : 0}
               animationEasing="ease-out"
             >
-              {data.map((entry) => (
+              {chartData.map((entry) => (
                 <Cell
                   key={entry.day}
                   fill={

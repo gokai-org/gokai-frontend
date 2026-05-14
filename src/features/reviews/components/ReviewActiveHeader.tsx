@@ -69,7 +69,7 @@ export function ReviewActiveHeader({
               {loading ? "--" : activeCount}
             </p>
             <p className="mt-1 text-[11px] font-semibold text-white/70 sm:text-xs">
-              Lecciones listas
+              Repasos listos
             </p>
             <motion.button
               type="button"

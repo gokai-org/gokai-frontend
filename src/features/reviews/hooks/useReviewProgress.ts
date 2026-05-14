@@ -33,6 +33,7 @@ interface UseReviewProgressOptions {
   recentActivity?: RecentActivityEntry[];
   loading?: boolean;
   reviewActive?: boolean;
+  currentStreakDays?: number | null;
 }
 
 interface ReviewHeroCopy {
@@ -42,6 +43,10 @@ interface ReviewHeroCopy {
   state: KazuMascotState;
 }
 
+export const KAZU_ACTIVE_THRESHOLD = 72;
+export const KAZU_ATTENTIVE_THRESHOLD = 42;
+export const KAZU_LIGHT_REVIEW_LIMIT = 3;
+export const KAZU_ALERT_REVIEW_LIMIT = 7;
 const TOTAL_KAZU_GOAL = 40;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -51,17 +56,16 @@ const categoryDefinitions: Array<{
   japanese: string;
   baseline: number;
 }> = [
-  { type: "kanji", label: "Escritura", japanese: "書く", baseline: 78 },
-  { type: "grammar", label: "Gramática", japanese: "文法", baseline: 62 },
-  { type: "listening", label: "Escuchar", japanese: "聴く", baseline: 46 },
-  { type: "speaking", label: "Hablar", japanese: "話す", baseline: 34 },
+  { type: "kanji", label: "Kanji", japanese: "漢字", baseline: 78 },
+  { type: "grammar", label: "Gramática", japanese: "文法", baseline: 68 },
+  { type: "vocabulary", label: "Vocabulario", japanese: "語彙", baseline: 58 },
 ];
 
 const clamp = (value: number, min = 0, max = 100) =>
   Math.min(max, Math.max(min, value));
 
-function getMockCompletedReviews(activeCount: number) {
-  return clamp(28 - Math.max(0, activeCount - 2) * 3, 12, TOTAL_KAZU_GOAL);
+function getFallbackCompletedReviews(activeCount: number) {
+  return clamp(26 - Math.max(0, activeCount - 1) * 2, 10, TOTAL_KAZU_GOAL);
 }
 
 function getDaysSinceLatestReview(recentActivity: RecentActivityEntry[]) {
@@ -101,14 +105,14 @@ function getConstancyScore({
 }
 
 function getZoneStatus(progress: number) {
-  if (progress >= 72) {
+  if (progress >= KAZU_ACTIVE_THRESHOLD) {
     return {
       statusLabel: "Activo",
       helperText: "Color estable por poca carga pendiente",
     };
   }
 
-  if (progress >= 42) {
+  if (progress >= KAZU_ATTENTIVE_THRESHOLD) {
     return {
       statusLabel: "Atento",
       helperText: "Empieza a apagarse por repasos acumulados",
@@ -143,20 +147,20 @@ function getHeroCopy(
     };
   }
 
-  if (activeCount <= 3) {
+  if (activeCount <= KAZU_LIGHT_REVIEW_LIMIT) {
     return {
-      eyebrow: "Bloque ligero",
+      eyebrow: "",
       title: "Kazu está listo para avanzar",
       description: "Un repaso corto mantiene activo tu progreso sin saturarte.",
       state: "idle",
     };
   }
 
-  if (activeCount <= 7) {
+  if (activeCount <= KAZU_ALERT_REVIEW_LIMIT) {
     return {
       eyebrow: "Bloque medio",
       title: "Kazu se mantiene atento",
-      description: "El color baja cuando se acumulan lecciones listas para repasar.",
+      description: "El color baja cuando se acumulan repasos pendientes.",
       state: "determined",
     };
   }
@@ -175,14 +179,15 @@ export function useReviewProgress({
   recentActivity = [],
   loading = false,
   reviewActive = false,
+  currentStreakDays,
 }: UseReviewProgressOptions) {
   return useMemo(() => {
     const activeCount = items.length;
     const completedReviews = loading
       ? 0
-      : (reviewStats?.reviewsCompleted ?? getMockCompletedReviews(activeCount));
+      : (reviewStats?.reviewsCompleted ?? getFallbackCompletedReviews(activeCount));
     const normalizedCompleted = clamp(completedReviews, 0, TOTAL_KAZU_GOAL);
-    const currentStreak = reviewStats?.currentStreak ?? 12;
+    const currentStreak = currentStreakDays ?? reviewStats?.currentStreak ?? 0;
     const daysSinceLatestReview = getDaysSinceLatestReview(recentActivity);
     const constancyScore = loading
       ? 0
@@ -198,11 +203,13 @@ export function useReviewProgress({
       const pendingCount = items.filter(
         (item) => item.type === category.type,
       ).length;
-      const totalReviewPressure = clamp(activeCount * 4.5, 0, 46);
-      const typeReviewPressure = clamp(pendingCount * 12, 0, 48);
+      const totalReviewPressure = clamp(activeCount * 6.5, 0, 64);
+      const typeReviewPressure = clamp(pendingCount * 13, 0, 42);
       const progress = loading
         ? 58
-        : clamp(100 - totalReviewPressure - typeReviewPressure, 22, 100);
+        : activeCount === 0
+          ? 100
+          : clamp(100 - totalReviewPressure - typeReviewPressure, 14, 100);
       const status = getZoneStatus(progress);
 
       return {
@@ -210,7 +217,7 @@ export function useReviewProgress({
         label: category.label,
         pendingCount,
         progress,
-        active: progress >= 42,
+        active: progress >= KAZU_ATTENTIVE_THRESHOLD,
         ...status,
       };
     });
@@ -222,7 +229,7 @@ export function useReviewProgress({
       const masteryPercent = loading
         ? 42
         : clamp(
-            category.baseline + (pendingCount === 0 ? 18 : -pendingCount * 4),
+            category.baseline + (pendingCount === 0 ? 18 : -pendingCount * 6),
             18,
             100,
           );
@@ -243,8 +250,8 @@ export function useReviewProgress({
       zones,
       categories,
       currentStreak,
-      recommendedItem: items.find((item) => item.type === "kanji") ?? items[0] ?? null,
+      recommendedItem: items[0] ?? null,
       ...heroCopy,
     };
-  }, [items, loading, recentActivity, reviewActive, reviewStats?.currentStreak, reviewStats?.reviewsCompleted, reviewStats?.reviewsCompletedTrend]);
+  }, [currentStreakDays, items, loading, recentActivity, reviewActive, reviewStats?.currentStreak, reviewStats?.reviewsCompleted, reviewStats?.reviewsCompletedTrend]);
 }

@@ -11,6 +11,7 @@ import {
   type PointerEvent as ReactPointerEvent,
 } from "react";
 import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
+import { HeartIcon } from "@/features/library/components/ScriptCardLayout";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { getUnlockVisualVars } from "@/shared/lib/unlockVisuals";
 import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
@@ -34,6 +35,21 @@ const CARD_STATE_ACCENTS = {
   available: "shadow-none",
   completed: "shadow-none",
   locked: "shadow-none",
+} as const;
+
+const GRAMMAR_FAVORITE_STYLES = {
+  paper: {
+    heartColor: "text-[#6B5F57]",
+    heartBg: "border-[#6B5F57]/20 bg-[#6B5F57]/10",
+  },
+  accent: {
+    heartColor: "text-[#BA5149]",
+    heartBg: "border-[#BA5149]/20 bg-[#BA5149]/10",
+  },
+  locked: {
+    heartColor: "text-content-muted",
+    heartBg: "border-border-subtle bg-surface-primary",
+  },
 } as const;
 
 function clamp(value: number, min: number, max: number) {
@@ -106,18 +122,22 @@ function getArtworkLayerStyle(
 export interface GrammarLibraryCardProps {
   lesson: GrammarBoardProgress;
   index?: number;
+  isFavorite?: boolean;
   unlockPending?: boolean;
   justUnlocked?: boolean;
   onSelect?: (lessonId: string) => void;
+  onToggleFavorite?: (lessonId: string) => void;
   onPressUnlock?: (lessonId: string) => void;
 }
 
 export function GrammarLibraryCard({
   lesson,
   index = 0,
+  isFavorite = false,
   unlockPending = false,
   justUnlocked = false,
   onSelect,
+  onToggleFavorite,
   onPressUnlock,
 }: GrammarLibraryCardProps) {
   const { motionProps, hoverTransition, cardTransition } = useCardAnimation(index);
@@ -153,6 +173,8 @@ export function GrammarLibraryCard({
   const artworkEchoHoverClass = hoverEnabled ? GRAMMAR_CARD_HOVER_ARTWORK_SECONDARY_CLASS : "";
   const unlockHoldVisualActive = isHoldingUnlock || unlockPending;
   const unlockVisualVars = getUnlockVisualVars("grammar");
+  const favoriteStyle = GRAMMAR_FAVORITE_STYLES[variant.artTone];
+  const canToggleFavorite = !isComingSoon && !isLockedCard && Boolean(onToggleFavorite);
 
   const clearHoldTimer = useCallback(() => {
     if (holdTimerRef.current !== null) {
@@ -264,6 +286,20 @@ export function GrammarLibraryCard({
     [isComingSoon, isLockedCard, lesson.id, onSelect, triggerLockedShake],
   );
 
+  const handleFavoriteClick = useCallback(
+    (event: ReactMouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+
+      if (isComingSoon) {
+        return;
+      }
+
+      onToggleFavorite?.(lesson.id);
+    },
+    [isComingSoon, lesson.id, onToggleFavorite],
+  );
+
   return (
     <motion.div
       {...motionProps}
@@ -295,6 +331,28 @@ export function GrammarLibraryCard({
             : CARD_STATE_ACCENTS[lesson.status],
         ].join(" ")}
       >
+        {canToggleFavorite ? (
+          <button
+            type="button"
+            onClick={handleFavoriteClick}
+            className={[
+              "absolute bottom-4 right-4 z-20 rounded-full border p-2 shadow-sm",
+              "active:scale-95",
+              hoverTransition,
+              isFavorite
+                ? `opacity-100 ${favoriteStyle.heartBg}`
+                : "border-border-subtle bg-surface-primary opacity-0 group-hover:border-white/25 group-hover:bg-surface-primary/15 group-hover:opacity-100",
+            ].join(" ")}
+            aria-label={isFavorite ? "Quitar de favoritos" : "Agregar a favoritos"}
+          >
+            <HeartIcon
+              isFavorite={isFavorite}
+              config={favoriteStyle}
+              hoverTransition={hoverTransition}
+            />
+          </button>
+        ) : null}
+
         <button
           type="button"
           disabled={isComingSoon}

@@ -6,7 +6,10 @@ import {
   addRecentItem as addRecentItemAPI,
   clearRecentItems as clearRecentItemsAPI,
 } from "@/features/library/services/api";
-import type { BackendRecentItem } from "@/features/library/types";
+import type {
+  BackendRecentItem,
+  RecentEntityType,
+} from "@/features/library/types";
 
 export function useRecentItems() {
   const [recentItems, setRecentItems] = useState<BackendRecentItem[]>([]);
@@ -22,9 +25,9 @@ export function useRecentItems() {
           ...item,
           type: item.type || "kanji",
         })),
-        ...(response.grammar_lesson ?? []).map((item) => ({
+        ...(response.grammar ?? []).map((item) => ({
           ...item,
-          type: item.type || "grammar_lesson",
+          type: item.type || "grammar",
         })),
         ...(response.word ?? []).map((item) => ({
           ...item,
@@ -52,7 +55,7 @@ export function useRecentItems() {
    * @param entityId   UUID de la entidad
    */
   const addRecentItem = useCallback(
-    async (entityType: string, entityId: string) => {
+    async (entityType: RecentEntityType, entityId: string) => {
       try {
         await addRecentItemAPI(entityType, entityId);
         // Recargar para obtener la lista actualizada con datos enriquecidos

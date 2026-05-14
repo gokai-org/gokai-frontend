@@ -1,25 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
-import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
+import {
+  getBearerTokenFromRequest,
+  getUserIdFromToken,
+} from "@/app/api/_utils/auth";
 import { apiConfig } from "@/shared/config";
 
 export const dynamic = "force-dynamic";
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const raw = getTokenFromRequest(req);
+export async function DELETE(req: NextRequest) {
+  const token = getBearerTokenFromRequest(req);
 
-  if (!raw) {
+  if (!token) {
     return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
   }
 
-  const { id } = await params;
-  const token = normalizeBearerToken(raw);
+  const userId = getUserIdFromToken(token);
+
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Could not resolve user id" },
+      { status: 401 },
+    );
+  }
 
   const upstream = await fetch(
-    `${apiConfig.contentApiBase}/content/favorites/kanji/${id}`,
+    `${apiConfig.contentApiBase}/content/recent/${userId}`,
     {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },

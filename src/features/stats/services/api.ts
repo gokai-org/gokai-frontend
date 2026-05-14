@@ -4,6 +4,7 @@ import type {
   ActivityResponse,
   SkillsResponse,
   RecentActivityResponse,
+  RecentAnsweredResponse,
   StreakCalendarResponse,
   StatsPeriod,
 } from "@/features/stats/types";
@@ -32,6 +33,11 @@ export async function getStatsSkills(): Promise<SkillsResponse> {
 /** GET /api/users/stats/recent-activity */
 export async function getStatsRecentActivity(): Promise<RecentActivityResponse> {
   return apiFetch<RecentActivityResponse>("/api/users/stats/recent-activity");
+}
+
+/** GET /api/users/stats/recent-answers */
+export async function getStatsRecentAnswers(): Promise<RecentAnsweredResponse> {
+  return apiFetch<RecentAnsweredResponse>("/api/users/stats/recent-answers");
 }
 
 /** GET /api/users/stats/streak?weeks=... */

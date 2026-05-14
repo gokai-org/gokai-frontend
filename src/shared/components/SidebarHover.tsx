@@ -350,14 +350,27 @@ export default function SidebarOnly() {
             onMouseEnter={() => setHovered(true)}
             onMouseLeave={() => setHovered(false)}
             className={[
-              "h-full rounded-[28px] bg-[var(--sidebar-bg)] ring-1 ring-[var(--sidebar-ring)] backdrop-blur",
-              "shadow-[var(--shadow-md)]",
+              "h-full rounded-[28px] backdrop-blur",
+              "[--sidebar-desktop-bg:rgba(255,255,255,0.94)]",
+              "[--sidebar-desktop-ring:rgba(15,23,42,0.09)]",
+              "[--sidebar-desktop-border:rgba(255,255,255,0.72)]",
+              "[--sidebar-desktop-shadow-rest:0_18px_44px_rgba(15,23,42,0.14),0_6px_18px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.74)]",
+              "[--sidebar-desktop-shadow-hover:0_18px_44px_rgba(15,23,42,0.14),0_6px_18px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.74)]",
+              "bg-[var(--sidebar-desktop-bg)] ring-1 ring-[var(--sidebar-desktop-ring)] border border-[var(--sidebar-desktop-border)]",
+              "shadow-[var(--sidebar-desktop-shadow-rest)]",
+              "dark:[--sidebar-desktop-bg:var(--sidebar-bg)]",
+              "dark:[--sidebar-desktop-ring:var(--sidebar-ring)]",
+              "dark:[--sidebar-desktop-border:transparent]",
+              "dark:[--sidebar-desktop-shadow-rest:var(--shadow-md)]",
+              "dark:[--sidebar-desktop-shadow-hover:var(--shadow-xl)]",
               "flex flex-col overflow-hidden",
               "w-[320px] md:w-[78px]",
             ].join(" ")}
             animate={{
               width: expanded ? 320 : 78,
-              boxShadow: hovered ? "var(--shadow-xl)" : "var(--shadow-md)",
+              boxShadow: hovered
+                ? "var(--sidebar-desktop-shadow-hover)"
+                : "var(--sidebar-desktop-shadow-rest)",
             }}
             transition={SIDEBAR_TWEEN}
           >

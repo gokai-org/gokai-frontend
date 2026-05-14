@@ -25,6 +25,7 @@ interface ProgressRingProps {
 
 const CATEGORY_COLORS: Record<string, string> = {
   Kanji: "var(--accent)",
+  Kana: "#b45309",
   Hiragana: "#b45309",
   Katakana: "#0369a1",
   Vocabulario: "var(--text-tertiary)",
@@ -118,7 +119,7 @@ export function ProgressRing({
   total = 0,
   categories,
   title = "Progreso total",
-  subtitle = "Distribución de estudio por categoría",
+  subtitle = "Distribución de contenido completado",
   loading,
   animationsEnabled = true,
 }: ProgressRingProps) {
@@ -190,8 +191,8 @@ export function ProgressRing({
             Sin distribución aún
           </p>
           <p className="text-xs text-content-muted text-center max-w-[200px]">
-            A medida que estudies, verás aquí cómo se distribuye tu progreso
-            entre categorías.
+            A medida que estudies, verás aquí cómo se distribuye tu contenido
+            completado entre categorías.
           </p>
         </div>
       </Wrapper>

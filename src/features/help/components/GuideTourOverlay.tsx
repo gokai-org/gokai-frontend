@@ -342,6 +342,50 @@ export function GuideTourOverlay() {
     return null;
   }
 
+  const isRoundSpotlight = step.spotlightShape === "round";
+  const spotlightMaskId = `guide-tour-mask-${activeTour.id}-${currentStep}`;
+
+  const spotlightShades = spotlightMode && targetRect
+    ? [
+        {
+          key: "top",
+          style: {
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: targetRect.top,
+          },
+        },
+        {
+          key: "left",
+          style: {
+            top: targetRect.top,
+            left: 0,
+            width: targetRect.left,
+            height: targetRect.height,
+          },
+        },
+        {
+          key: "right",
+          style: {
+            top: targetRect.top,
+            left: targetRect.right,
+            width: Math.max(0, viewportSize.width - targetRect.right),
+            height: targetRect.height,
+          },
+        },
+        {
+          key: "bottom",
+          style: {
+            top: targetRect.bottom,
+            left: 0,
+            width: "100%",
+            height: Math.max(0, viewportSize.height - targetRect.bottom),
+          },
+        },
+      ]
+    : [];
+
   const renderCard = (compact: boolean) => (
     <div
       className={compact
@@ -528,16 +572,74 @@ export function GuideTourOverlay() {
         transition={{ duration: 0.35, ease }}
         className="pointer-events-none fixed inset-0 z-[99999] isolate"
       >
-        <motion.button
-          type="button"
-          className="pointer-events-auto absolute inset-0 bg-black/46"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.35 }}
-          onClick={closeTour}
-          aria-label="Cerrar guía"
-        />
+        {spotlightMode && targetRect && isRoundSpotlight ? (
+          <motion.button
+            type="button"
+            className="pointer-events-auto absolute inset-0"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+            onClick={closeTour}
+            aria-label="Cerrar guía"
+          >
+            <svg className="h-full w-full" aria-hidden="true">
+              <defs>
+                <mask id={spotlightMaskId} maskUnits="userSpaceOnUse">
+                  <rect
+                    x="0"
+                    y="0"
+                    width={viewportSize.width}
+                    height={viewportSize.height}
+                    fill="white"
+                  />
+                  <ellipse
+                    cx={targetRect.left + targetRect.width / 2}
+                    cy={targetRect.top + targetRect.height / 2}
+                    rx={targetRect.width / 2}
+                    ry={targetRect.height / 2}
+                    fill="black"
+                  />
+                </mask>
+              </defs>
+
+              <rect
+                x="0"
+                y="0"
+                width={viewportSize.width}
+                height={viewportSize.height}
+                fill="rgba(0,0,0,0.46)"
+                mask={`url(#${spotlightMaskId})`}
+              />
+            </svg>
+          </motion.button>
+        ) : spotlightMode && targetRect
+          ? spotlightShades.map((shade) => (
+              <motion.button
+                key={shade.key}
+                type="button"
+                className="pointer-events-auto absolute bg-black/46"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.35 }}
+                onClick={closeTour}
+                aria-label="Cerrar guía"
+                style={shade.style}
+              />
+            ))
+          : (
+            <motion.button
+              type="button"
+              className="pointer-events-auto absolute inset-0 bg-black/46"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.35 }}
+              onClick={closeTour}
+              aria-label="Cerrar guía"
+            />
+          )}
 
         {spotlightMode && targetRect ? (
           <>
@@ -546,7 +648,10 @@ export function GuideTourOverlay() {
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
               transition={{ duration: 0.28, ease }}
-              className="pointer-events-none absolute rounded-[28px] border border-white/30"
+              className={[
+                "pointer-events-none absolute border border-white/30",
+                step.spotlightShape === "round" ? "rounded-full" : "rounded-[28px]",
+              ].join(" ")}
               style={{
                 top: targetRect.top,
                 left: targetRect.left,

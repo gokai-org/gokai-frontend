@@ -7,8 +7,6 @@ export const dynamic = "force-dynamic";
 
 const ALLOWED_TYPES = new Set([
   "kanji",
-  "hiragana",
-  "katakana",
   "grammar",
   "word",
 ]);

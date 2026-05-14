@@ -1,6 +1,6 @@
 export const GUIDE_VIEWPORT_GUTTER = 16;
 export const GUIDE_SPOTLIGHT_GLOW =
-  "0 0 0 1px rgba(255,255,255,0.14), 0 0 0 9999px rgba(8,8,12,0.68), 0 18px 60px rgba(0,0,0,0.45)";
+  "0 0 0 1px rgba(255,255,255,0.14), 0 18px 60px rgba(0,0,0,0.45)";
 export const GUIDE_CARD_MAX_WIDTH = 460;
 
 export type SpotlightRect = {

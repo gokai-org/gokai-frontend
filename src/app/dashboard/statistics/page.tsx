@@ -7,7 +7,6 @@ import { StatsOverview } from "@/features/stats/components/StatsOverview";
 import { StatsActivitySection } from "@/features/stats/components/StatsActivitySection";
 import { StatsSkillsSection } from "@/features/stats/components/StatsSkillsSection";
 import { StatsStreakSection } from "@/features/stats/components/StatsStreakSection";
-import { StatsCTA } from "@/features/stats/components/StatsCTA";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
 import { StatsSkeleton } from "@/shared/ui/Skeleton";
 import { useStats } from "@/features/stats/hooks/useStats";
@@ -66,6 +65,7 @@ export default function StatsPage() {
         <div data-help-target="stats-overview">
           <StatsOverview
             data={data.overview}
+            completedTotals={data.recentAnswers?.completedTotals}
             loading={loading}
             animationsEnabled={animationsEnabled}
           />
@@ -110,16 +110,6 @@ export default function StatsPage() {
             loading={loading}
             animationsEnabled={animationsEnabled}
           />
-        </div>
-      </AnimatedEntrance>
-
-      <AnimatedEntrance
-        index={6}
-        disabled={!animationsEnabled}
-        mode={heavyAnimationsEnabled ? "default" : "light"}
-      >
-        <div data-help-target="stats-cta">
-          <StatsCTA animationsEnabled={animationsEnabled} />
         </div>
       </AnimatedEntrance>
     </DashboardShell>

@@ -3,8 +3,11 @@
 import { motion } from "framer-motion";
 import {
   BookOpen,
+  BookText,
+  Languages,
   PenTool,
   CheckCircle2,
+  Sparkles,
   Zap,
   type LucideIcon,
 } from "lucide-react";
@@ -24,20 +27,26 @@ interface RecentActivityProps {
 
 const iconMap: Record<RecentActivityEntry["type"], LucideIcon> = {
   kanji: PenTool,
+  kana: BookOpen,
   hiragana: BookOpen,
   katakana: BookOpen,
+  word: Languages,
   vocabulary: BookOpen,
-  grammar: CheckCircle2,
+  grammar: BookText,
   review: Zap,
+  subtheme: Sparkles,
 };
 
 const colorMap: Record<RecentActivityEntry["type"], string> = {
   kanji: "bg-accent/10 text-accent",
+  kana: "bg-amber-50 text-amber-600",
   hiragana: "bg-amber-50 text-amber-600",
   katakana: "bg-sky-50 text-sky-600",
+  word: "bg-emerald-50 text-emerald-600",
   vocabulary: "bg-emerald-50 text-emerald-600",
   grammar: "bg-purple-50 text-purple-600",
   review: "bg-blue-50 text-blue-600",
+  subtheme: "bg-rose-50 text-rose-600",
 };
 
 /*  Defaults  */
@@ -167,8 +176,8 @@ export function RecentActivity({
             Nada por aquí todavía
           </p>
           <p className="text-xs text-content-muted text-center max-w-[220px]">
-            Tus lecciones de kanji, kana, gramática y repasos aparecerán aquí en
-            tiempo real.
+            Tus avances de kanji, kana, gramática, vocabulario y repasos
+            aparecerán aquí en tiempo real.
           </p>
         </div>
       </Wrapper>

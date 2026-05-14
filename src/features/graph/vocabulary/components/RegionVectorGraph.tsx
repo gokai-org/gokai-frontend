@@ -53,6 +53,7 @@ type RecommendedNodeHoverState = {
   description: string | null;
   rank: number;
   similarity: number;
+  resetToken: number;
 };
 
 type RecommendedNodeHotspot = {
@@ -457,6 +458,35 @@ function RegionVectorGraph({
   const idPrefix = useId().replace(/:/g, "");
   const [hoveredRecommendedNode, setHoveredRecommendedNode] = useState<RecommendedNodeHoverState | null>(null);
   const [containerSize, setContainerSize] = useState({ width: 0, height: 0 });
+  const activeHoveredRecommendedNode =
+    hoveredRecommendedNode?.resetToken === hoverResetToken
+      ? hoveredRecommendedNode
+      : null;
+  const helpRecommendedNodeId = useMemo(
+    () =>
+      level === "theme"
+        ? nodes.find(
+            (node) =>
+              node.id !== "home" &&
+              node.data.entityKind === "subtheme" &&
+              node.data.status !== "locked" &&
+              node.data.isAiRecommended,
+          )?.id ?? null
+        : null,
+    [level, nodes],
+  );
+  const helpWordNodeId = useMemo(
+    () =>
+      level === "subtheme"
+        ? nodes.find(
+            (node) =>
+              node.id !== "home" &&
+              node.data.entityKind === "word" &&
+              node.data.status !== "locked",
+          )?.id ?? null
+        : null,
+    [level, nodes],
+  );
   const visualScale = useMemo(() => getVisualScale(level, nodes.length), [level, nodes.length]);
   const layoutCacheKey = useMemo(
     () =>
@@ -600,25 +630,17 @@ function RegionVectorGraph({
         return;
       }
 
-      const x = Math.min(
-        Math.max(event.clientX - containerRect.left, 154),
-        Math.max(containerRect.width - 154, 154),
-      );
-      const y = Math.min(
-        Math.max(event.clientY - containerRect.top - 18, 124),
-        Math.max(containerRect.height - 28, 124),
-      );
-
       setHoveredRecommendedNode({
-        x,
-        y,
+        x: event.clientX,
+        y: event.clientY,
         title: getNodeLabel(node),
         description: node.data.description ?? null,
         rank: node.data.recommendationRank ?? 3,
         similarity: node.data.recommendationSimilarity ?? 0,
+        resetToken: hoverResetToken,
       });
     },
-    [],
+    [hoverResetToken],
   );
 
   const clearRecommendedHover = useCallback(() => {
@@ -652,10 +674,6 @@ function RegionVectorGraph({
       observer.disconnect();
     };
   }, []);
-
-  useEffect(() => {
-    setHoveredRecommendedNode(null);
-  }, [hoverResetToken]);
 
   const recommendedHotspots = useMemo<RecommendedNodeHotspot[]>(() => {
     if (!viewport || !containerSize.width || !containerSize.height) {
@@ -761,6 +779,18 @@ function RegionVectorGraph({
             key={node.id}
             data-vocabulary-node="true"
             data-ai-recommended={node.data.isAiRecommended ? "true" : undefined}
+            data-help-target={
+              node.id === helpRecommendedNodeId
+                ? "vocabulary-recommended-subtheme-node"
+                : node.id === helpWordNodeId
+                  ? "vocabulary-word-node"
+                  : undefined
+            }
+            data-help-target-priority={
+              node.id === helpRecommendedNodeId || node.id === helpWordNodeId
+                ? "20"
+                : undefined
+            }
             className={[
               node.data.status === "locked"
                 ? "cursor-default"
@@ -972,6 +1002,14 @@ function RegionVectorGraph({
             <button
               key={hotspot.id}
               type="button"
+              data-help-target={
+                hotspot.node.id === helpRecommendedNodeId
+                  ? "vocabulary-recommended-subtheme-node"
+                  : undefined
+              }
+              data-help-target-priority={
+                hotspot.node.id === helpRecommendedNodeId ? "30" : undefined
+              }
               className="absolute rounded-full border-0 p-0 pointer-events-auto"
               aria-label={hotspot.node.data.label}
               tabIndex={-1}
@@ -1001,29 +1039,29 @@ function RegionVectorGraph({
         })}
       </div>
 
-      {hoveredRecommendedNode ? (
+      {activeHoveredRecommendedNode ? (
         <GraphHoverCard
           variant="kazu"
-          x={hoveredRecommendedNode.x}
-          y={hoveredRecommendedNode.y}
+          x={activeHoveredRecommendedNode.x}
+          y={activeHoveredRecommendedNode.y}
           eyebrow="Guía KAZU"
-          badge={`TOP ${hoveredRecommendedNode.rank}`}
-          title={hoveredRecommendedNode.title}
+          badge={`TOP ${activeHoveredRecommendedNode.rank}`}
+          title={activeHoveredRecommendedNode.title}
           subtitle={
-            hoveredRecommendedNode.description
-              ? hoveredRecommendedNode.description
+            activeHoveredRecommendedNode.description
+              ? activeHoveredRecommendedNode.description
               : "Subtema de vocabulario japonés"
           }
           caption={getKazuRecommendationVoice(
-            hoveredRecommendedNode.rank,
-            hoveredRecommendedNode.similarity,
+            activeHoveredRecommendedNode.rank,
+            activeHoveredRecommendedNode.similarity,
           )}
           mascot={
             <KazuMascot
               state={
-                hoveredRecommendedNode.rank === 1
+                activeHoveredRecommendedNode.rank === 1
                   ? "proud"
-                  : hoveredRecommendedNode.rank === 2
+                  : activeHoveredRecommendedNode.rank === 2
                     ? "focus"
                     : "determined"
               }

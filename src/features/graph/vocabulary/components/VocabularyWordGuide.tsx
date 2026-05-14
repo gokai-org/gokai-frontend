@@ -14,10 +14,17 @@ import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import Link from "next/link";
 import { BookOpen, CheckCircle2, ExternalLink, Headphones, Mic, Pencil } from "lucide-react";
-import { HIRAGANA_DATA } from "@/features/graph/writing/hiragana/mock/data";
-import { KATAKANA_DATA } from "@/features/graph/writing/katakana/mock/data";
+import { classifyJapaneseCharacter } from "@/features/chatbot/utils/writingCharacters";
+import {
+  getWritingPalette,
+  resolveWritingAccentColor,
+} from "@/features/chatbot/utils/writingPalette";
 import { listKanaCatalog } from "@/features/kana/api/kanaApi";
-import type { Kana } from "@/features/kana/types";
+import {
+  buildKanaCatalogState,
+  getKanaSymbolGuideInfo,
+  type KanaCatalogState,
+} from "@/features/kana/utils/kanaSymbolGuide";
 import LessonCTA from "@/features/lessons/components/LessonCTA";
 import {
   LESSON_SECTION_TRANSITION,
@@ -38,28 +45,6 @@ import {
 } from "../lib/vocabularyQuizProgress";
 
 type VocabularyGuideTab = "meaning" | "listening" | "speaking" | "writing";
-type KanaLearningScript = "hiragana" | "katakana";
-
-type KanaLearningInfo = {
-  symbol: string;
-  script: KanaLearningScript;
-  boardNumber: number;
-  label: string;
-  libraryHref: string;
-  description: string;
-};
-
-type SymbolGuideInfo = {
-  title: string;
-  description: string;
-  libraryHref?: string;
-  actionLabel?: string;
-};
-
-type KanaCatalogState = {
-  hiraganaBySymbol: Map<string, KanaLearningInfo>;
-  katakanaBySymbol: Map<string, KanaLearningInfo>;
-};
 
 type VocabularyWordGuideProps = {
   question: VocabularyWordLesson;
@@ -71,6 +56,10 @@ type VocabularyWordGuideProps = {
 type ActiveSymbolPopover = {
   id: string;
   sticky: boolean;
+};
+
+type ScopedActiveSymbolPopover = ActiveSymbolPopover & {
+  scopeKey: string;
 };
 
 type SymbolPopoverPosition = {
@@ -184,226 +173,6 @@ function getWritingUnits(question: VocabularyWordLesson) {
   return Array.from(question.hiragana || "");
 }
 
-const SMALL_KANA_BASE: Record<string, string> = {
-  "ぁ": "あ",
-  "ぃ": "い",
-  "ぅ": "う",
-  "ぇ": "え",
-  "ぉ": "お",
-  "っ": "つ",
-  "ゃ": "や",
-  "ゅ": "ゆ",
-  "ょ": "よ",
-  "ゎ": "わ",
-  "ァ": "ア",
-  "ィ": "イ",
-  "ゥ": "ウ",
-  "ェ": "エ",
-  "ォ": "オ",
-  "ッ": "ツ",
-  "ャ": "ヤ",
-  "ュ": "ユ",
-  "ョ": "ヨ",
-  "ヮ": "ワ",
-};
-
-const HIRAGANA_BOARD_NUMBER = new Map(
-  HIRAGANA_DATA.map((kana, index) => [kana.symbol, index + 1]),
-);
-const KATAKANA_BOARD_NUMBER = new Map(
-  KATAKANA_DATA.map((kana, index) => [kana.symbol, index + 1]),
-);
-
-const VOICED_KANA_BASE: Record<string, string> = {
-  "が": "か",
-  "ぎ": "き",
-  "ぐ": "く",
-  "げ": "け",
-  "ご": "こ",
-  "ざ": "さ",
-  "じ": "し",
-  "ず": "す",
-  "ぜ": "せ",
-  "ぞ": "そ",
-  "だ": "た",
-  "ぢ": "ち",
-  "づ": "つ",
-  "で": "て",
-  "ど": "と",
-  "ば": "は",
-  "び": "ひ",
-  "ぶ": "ふ",
-  "べ": "へ",
-  "ぼ": "ほ",
-  "ぱ": "は",
-  "ぴ": "ひ",
-  "ぷ": "ふ",
-  "ぺ": "へ",
-  "ぽ": "ほ",
-  "ガ": "カ",
-  "ギ": "キ",
-  "グ": "ク",
-  "ゲ": "ケ",
-  "ゴ": "コ",
-  "ザ": "サ",
-  "ジ": "シ",
-  "ズ": "ス",
-  "ゼ": "セ",
-  "ゾ": "ソ",
-  "ダ": "タ",
-  "ヂ": "チ",
-  "ヅ": "ツ",
-  "デ": "テ",
-  "ド": "ト",
-  "バ": "ハ",
-  "ビ": "ヒ",
-  "ブ": "フ",
-  "ベ": "ヘ",
-  "ボ": "ホ",
-  "パ": "ハ",
-  "ピ": "ヒ",
-  "プ": "フ",
-  "ペ": "ヘ",
-  "ポ": "ホ",
-};
-
-const SPECIAL_SYMBOL_GUIDES: Record<string, SymbolGuideInfo> = {
-  "ー": {
-    title: "Marca de vocal larga",
-    description: "Este símbolo se llama choonpu. En katakana y palabras extendidas alarga el sonido de la vocal anterior.",
-  },
-  "・": {
-    title: "Punto medio japonés",
-    description: "Este signo se llama nakaguro. Se usa para separar palabras, nombres extranjeros o elementos dentro de una misma expresión.",
-  },
-  "々": {
-    title: "Marca de repetición",
-    description: "Este signo repite el kanji anterior. No es un kana independiente; indica que el carácter previo se lee otra vez.",
-  },
-  "ゝ": {
-    title: "Repetición de hiragana",
-    description: "Esta marca repite el hiragana anterior sin dakuten. Es un signo ortográfico, no una casilla propia de la tabla fonética.",
-  },
-  "ゞ": {
-    title: "Repetición con dakuten",
-    description: "Esta marca repite el hiragana anterior aplicando sonorización. Se usa en escritura tradicional y nombres concretos.",
-  },
-  "ヽ": {
-    title: "Repetición de katakana",
-    description: "Esta marca repite el katakana anterior sin dakuten. Es un signo ortográfico especial, no un kana nuevo.",
-  },
-  "ヾ": {
-    title: "Repetición de katakana con dakuten",
-    description: "Esta marca repite el katakana anterior con sonorización. Aparece sobre todo en usos tradicionales o estilizados.",
-  },
-  "ヶ": {
-    title: "Katakana pequeño ケ",
-    description: "Este símbolo suele leerse como partícula abreviada en topónimos, contadores o expresiones fijas. No se aprende como una casilla fonética independiente.",
-  },
-  "ヵ": {
-    title: "Katakana pequeño カ",
-    description: "Se usa en abreviaciones y contadores. Funciona como variante tipográfica, no como un kana nuevo dentro de la tabla fonética.",
-  },
-  "〜": {
-    title: "Guion de extensión",
-    description: "Este signo alarga o suaviza el tono en escritura informal. No pertenece a la tabla fonética como kana independiente.",
-  },
-  "～": {
-    title: "Guion de extensión",
-    description: "Este signo alarga o suaviza el tono en escritura informal. No pertenece a la tabla fonética como kana independiente.",
-  },
-};
-
-function buildFallbackKanaInfo(
-  symbol: string,
-  script: KanaLearningScript,
-  boardNumber: number,
-  lookupSymbol?: string,
-  note?: string,
-): KanaLearningInfo {
-  const label = `${script === "hiragana" ? "Hiragana" : "Katakana"} ${String(boardNumber).padStart(2, "0")}`;
-  return {
-    symbol,
-    script,
-    boardNumber,
-    label,
-    libraryHref: `/dashboard/library?category=${script}&symbol=${encodeURIComponent(lookupSymbol ?? symbol)}`,
-    description: note
-      ? `${note} Se referencia junto a ${label}.`
-      : `Se aprende en ${label} dentro de la tabla fonética.`,
-  };
-}
-
-function buildCatalogInfoMap(kanaList: Kana[], script: KanaLearningScript) {
-  return new Map(
-    kanaList.map((kana, index) => [
-      kana.symbol,
-      buildFallbackKanaInfo(
-        kana.symbol,
-        script,
-        index + 1,
-        kana.symbol,
-        `Este kana tiene su propia posición en la tabla fonética${kana.romaji ? ` (${kana.romaji}).` : "."}`,
-      ),
-    ]),
-  );
-}
-
-function getFallbackKanaLearningInfo(symbol: string): KanaLearningInfo | null {
-  const baseSymbol = SMALL_KANA_BASE[symbol] ?? VOICED_KANA_BASE[symbol] ?? symbol;
-  const hiraganaBoardNumber = HIRAGANA_BOARD_NUMBER.get(baseSymbol);
-  if (hiraganaBoardNumber) {
-    const note = symbol !== baseSymbol
-      ? SMALL_KANA_BASE[symbol]
-        ? `${symbol} es un kana pequeño derivado de ${baseSymbol}.`
-        : `${symbol} es una variante sonorizada relacionada con ${baseSymbol}.`
-      : undefined;
-
-    return buildFallbackKanaInfo(symbol, "hiragana", hiraganaBoardNumber, baseSymbol, note);
-  }
-
-  const katakanaBoardNumber = KATAKANA_BOARD_NUMBER.get(baseSymbol);
-  if (katakanaBoardNumber) {
-    const note = symbol !== baseSymbol
-      ? SMALL_KANA_BASE[symbol]
-        ? `${symbol} es un kana pequeño derivado de ${baseSymbol}.`
-        : `${symbol} es una variante sonorizada relacionada con ${baseSymbol}.`
-      : undefined;
-
-    return buildFallbackKanaInfo(symbol, "katakana", katakanaBoardNumber, baseSymbol, note);
-  }
-
-  return null;
-}
-
-function getSymbolGuideInfo(
-  symbol: string,
-  kanaCatalog: KanaCatalogState | null,
-): SymbolGuideInfo {
-  const exactInfo = kanaCatalog?.hiraganaBySymbol.get(symbol)
-    ?? kanaCatalog?.katakanaBySymbol.get(symbol)
-    ?? getFallbackKanaLearningInfo(symbol);
-
-  if (exactInfo) {
-    return {
-      title: `${symbol} · ${exactInfo.label}`,
-      description: exactInfo.description,
-      libraryHref: exactInfo.libraryHref,
-      actionLabel: "Ver tabla fonética",
-    };
-  }
-
-  const specialInfo = SPECIAL_SYMBOL_GUIDES[symbol];
-  if (specialInfo) {
-    return specialInfo;
-  }
-
-  return {
-    title: `${symbol} · Símbolo de apoyo`,
-    description: "Este carácter no forma una casilla independiente de hiragana o katakana. Se usa como apoyo ortográfico dentro de la palabra.",
-  };
-}
-
 function KanaLearningChip({
   chipId,
   symbol,
@@ -421,7 +190,11 @@ function KanaLearningChip({
   canHoverPopover: boolean;
   onNavigateToLibrary?: () => void;
 }) {
-  const info = getSymbolGuideInfo(symbol, kanaCatalog);
+  const info = getKanaSymbolGuideInfo(symbol, kanaCatalog);
+  const scriptType = classifyJapaneseCharacter(symbol);
+  const palette = getWritingPalette(
+    scriptType ? resolveWritingAccentColor(scriptType) : undefined,
+  );
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
@@ -447,10 +220,16 @@ function KanaLearningChip({
 
     clearCloseTimer();
     closeTimerRef.current = window.setTimeout(() => {
-      onActivePopoverChange(null);
+      onActivePopoverChange((current) => {
+        if (!current || current.id !== chipId || current.sticky) {
+          return current;
+        }
+
+        return null;
+      });
       closeTimerRef.current = null;
     }, 90);
-  }, [activePopover?.sticky, clearCloseTimer, isActive, onActivePopoverChange]);
+  }, [activePopover?.sticky, chipId, clearCloseTimer, isActive, onActivePopoverChange]);
 
   const toggleStickyPopover = useCallback(() => {
     clearCloseTimer();
@@ -463,9 +242,14 @@ function KanaLearningChip({
 
   useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
 
+  useEffect(() => {
+    if (!isActive) {
+      clearCloseTimer();
+    }
+  }, [clearCloseTimer, isActive]);
+
   useLayoutEffect(() => {
     if (!isActive) {
-      setPosition(null);
       return;
     }
 
@@ -579,28 +363,47 @@ function KanaLearningChip({
                 }}
               >
                 <div className="relative overflow-visible">
-                  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl ring-1 ring-black/5 dark:border-slate-700 dark:bg-[#15161c] dark:ring-white/10">
+                  <div
+                    className="overflow-hidden rounded-2xl border bg-white shadow-xl ring-1 ring-black/5 dark:bg-[#121316] dark:ring-white/8"
+                    style={{ borderColor: palette.borderSoft }}
+                  >
                     <div className="flex items-center gap-3 px-3 py-3">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-accent/10 text-xl font-black text-accent jp-text">
+                      <div
+                        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-xl font-black jp-text"
+                        style={{
+                          color: palette.accent,
+                          backgroundColor: palette.softStrong,
+                        }}
+                      >
                         {symbol}
                       </div>
                       <div className="min-w-0">
-                        <p className="text-[10px] font-black uppercase tracking-[0.18em] text-slate-500 dark:text-slate-400">
+                        <p
+                          className="text-[10px] font-black uppercase tracking-[0.18em]"
+                          style={{ color: palette.symbolMuted }}
+                        >
                           Guía del símbolo
                         </p>
-                        <p className="mt-0.5 text-sm font-black text-slate-950 dark:text-slate-50">
+                        <p className="mt-0.5 text-sm font-black text-slate-950 dark:text-neutral-50">
                           {info.title}
                         </p>
                       </div>
                     </div>
-                    <div className="border-t border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-[#111219]">
-                      <p className="text-xs font-semibold leading-relaxed text-slate-700 dark:text-slate-300">
+                    <div
+                      className="border-t px-3 py-2.5"
+                      style={{
+                        borderColor: palette.borderSoft,
+                        backgroundColor: palette.soft,
+                      }}
+                    >
+                      <p className="text-xs font-semibold leading-relaxed text-slate-700 dark:text-neutral-300">
                         {info.description}
                       </p>
                       {info.libraryHref ? (
                         <Link
                           href={info.libraryHref}
-                          className="mt-2 inline-flex items-center gap-1.5 text-xs font-black text-accent transition hover:text-accent-hover"
+                          className="mt-2 inline-flex items-center gap-1.5 text-xs font-black transition"
+                          style={{ color: palette.accent }}
                           onClick={() => {
                             onNavigateToLibrary?.();
                           }}
@@ -613,12 +416,15 @@ function KanaLearningChip({
                   </div>
                   {position ? (
                     <div
-                      className={`absolute h-3 w-3 rotate-45 border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-[#111219] ${
+                      className={`absolute h-3 w-3 rotate-45 bg-white dark:bg-[#121316] ${
                         position.placement === "top"
                           ? "-bottom-1.5 border-b border-r"
                           : "-top-1.5 border-l border-t"
                       }`}
-                      style={{ left: position.arrowLeft - 6 }}
+                      style={{
+                        left: position.arrowLeft - 6,
+                        borderColor: palette.borderSoft,
+                      }}
                     />
                   ) : null}
                 </div>
@@ -640,11 +446,39 @@ export default function VocabularyWordGuide({
   const [activeTab, setActiveTab] = useState<VocabularyGuideTab>("meaning");
   const [direction, setDirection] = useState(1);
   const [kanaCatalog, setKanaCatalog] = useState<KanaCatalogState | null>(null);
-  const [activePopover, setActivePopover] = useState<ActiveSymbolPopover | null>(null);
+  const [activePopoverState, setActivePopoverState] =
+    useState<ScopedActiveSymbolPopover | null>(null);
   const [canHoverPopover, setCanHoverPopover] = useState(() =>
     typeof window !== "undefined"
       ? window.matchMedia("(hover: hover) and (pointer: fine)").matches
       : false,
+  );
+  const activePopoverScopeKey = `${activeTab}:${question.wordId}`;
+  const activePopover =
+    activePopoverState?.scopeKey === activePopoverScopeKey
+      ? activePopoverState
+      : null;
+  const setActivePopover = useCallback<Dispatch<SetStateAction<ActiveSymbolPopover | null>>>(
+    (value) => {
+      setActivePopoverState((currentState) => {
+        const currentPopover =
+          currentState?.scopeKey === activePopoverScopeKey
+            ? currentState
+            : null;
+        const nextPopover =
+          typeof value === "function"
+            ? value(currentPopover)
+            : value;
+
+        return nextPopover
+          ? {
+              ...nextPopover,
+              scopeKey: activePopoverScopeKey,
+            }
+          : null;
+      });
+    },
+    [activePopoverScopeKey],
   );
 
   useEffect(() => {
@@ -664,7 +498,7 @@ export default function VocabularyWordGuide({
     update();
     media.addEventListener("change", update);
     return () => media.removeEventListener("change", update);
-  }, []);
+  }, [setActivePopover]);
 
   useEffect(() => {
     if (!activePopover) {
@@ -703,11 +537,7 @@ export default function VocabularyWordGuide({
       window.removeEventListener("pointermove", handlePointerMove, true);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [activePopover]);
-
-  useEffect(() => {
-    setActivePopover(null);
-  }, [activeTab, question.wordId]);
+  }, [activePopover, setActivePopover]);
 
   useEffect(() => {
     let cancelled = false;
@@ -719,10 +549,7 @@ export default function VocabularyWordGuide({
           return;
         }
 
-        setKanaCatalog({
-          hiraganaBySymbol: buildCatalogInfoMap(catalog.hiragana ?? [], "hiragana"),
-          katakanaBySymbol: buildCatalogInfoMap(catalog.katakana ?? [], "katakana"),
-        });
+        setKanaCatalog(buildKanaCatalogState(catalog));
       } catch (error) {
         console.error("No se pudo cargar el catalogo de kana para el modal de vocabulario:", error);
       }
@@ -799,7 +626,10 @@ export default function VocabularyWordGuide({
 
   return (
     <div className="flex flex-col gap-3 sm:gap-4">
-      <div className="grid grid-cols-4 gap-1.5 rounded-2xl border border-border-subtle bg-surface-primary p-1.5">
+      <div
+        data-help-target="lesson-section-tabs"
+        className="grid grid-cols-4 gap-1.5 rounded-2xl border border-border-subtle bg-surface-primary p-1.5"
+      >
         {VOCABULARY_TABS.map((tab) => {
           const progress = getQuizTypeProgress(question, tab.id);
 
@@ -807,6 +637,7 @@ export default function VocabularyWordGuide({
             <button
               key={tab.id}
               type="button"
+              data-help-target={`lesson-section-tab-${tab.id}`}
               onClick={() => switchTab(tab.id)}
               className={`flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-1.5 text-[10px] font-black transition focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/45 ${
                 activeTab === tab.id
@@ -852,9 +683,12 @@ export default function VocabularyWordGuide({
             className="origin-center will-change-transform"
             style={{ transformStyle: "preserve-3d" }}
           >
-            <div className="space-y-3 sm:space-y-4">
+            <div data-help-target="lesson-section-content" className="space-y-3 sm:space-y-4">
               {activeTab === "meaning" && (
-                <div className="rounded-3xl border border-border-subtle bg-surface-primary p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)] sm:p-5">
+                <div
+                  data-help-target="vocabulary-lesson-exercise-meaning"
+                  className="rounded-3xl border border-border-subtle bg-surface-primary p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)] sm:p-5"
+                >
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-content-tertiary">
                     Enseñanza del significado
                   </p>
@@ -887,7 +721,10 @@ export default function VocabularyWordGuide({
               )}
 
               {activeTab === "listening" && (
-                <div className="rounded-3xl border border-border-subtle bg-surface-primary p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)] sm:p-5">
+                <div
+                  data-help-target="vocabulary-lesson-exercise-listening"
+                  className="rounded-3xl border border-border-subtle bg-surface-primary p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)] sm:p-5"
+                >
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-content-tertiary">
                     Enseñanza del audio
                   </p>
@@ -914,7 +751,10 @@ export default function VocabularyWordGuide({
               )}
 
               {activeTab === "speaking" && (
-                <div className="rounded-3xl border border-border-subtle bg-surface-primary p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)] sm:p-5">
+                <div
+                  data-help-target="vocabulary-lesson-exercise-speaking"
+                  className="rounded-3xl border border-border-subtle bg-surface-primary p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)] sm:p-5"
+                >
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-content-tertiary">
                     Enseñanza del habla
                   </p>
@@ -940,7 +780,10 @@ export default function VocabularyWordGuide({
               )}
 
               {activeTab === "writing" && (
-                <div className="rounded-3xl border border-border-subtle bg-surface-primary p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)] sm:p-5">
+                <div
+                  data-help-target="vocabulary-lesson-exercise-writing"
+                  className="rounded-3xl border border-border-subtle bg-surface-primary p-4 shadow-[0_12px_30px_rgba(0,0,0,0.05)] sm:p-5"
+                >
                   <p className="text-[11px] font-bold uppercase tracking-[0.24em] text-content-tertiary">
                     Enseñanza de la escritura
                   </p>
@@ -989,7 +832,9 @@ export default function VocabularyWordGuide({
         </AnimatePresence>
       </div>
 
-      <LessonCTA label={ctaLabel} onClick={() => onStartQuiz(activeTab)} />
+      <div data-help-target="lesson-quiz-actions">
+        <LessonCTA label={ctaLabel} onClick={() => onStartQuiz(activeTab)} />
+      </div>
     </div>
   );
 }

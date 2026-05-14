@@ -33,7 +33,7 @@ export function StatsSkillsSection({
           </>
         }
         titleClassName="text-2xl font-extrabold tracking-tight text-content-primary"
-        subtitle="Tu dominio por área y actividad reciente"
+        subtitle="Tu avance completado por área y actividad reciente"
       />
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
         <SkillRadarChart

@@ -3,19 +3,30 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowUpRight, Eye, LifeBuoy } from "lucide-react";
+import { ArrowUpRight, Eye, LifeBuoy, type LucideIcon } from "lucide-react";
 import { useGuideTour, type TourDefinition } from "./GuideTourProvider";
 
 const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
+export type ContextualHelpButtonAction = {
+  id: string;
+  label: string;
+  description: string;
+  icon: LucideIcon;
+  tone?: "default" | "danger";
+  onClick: () => void;
+};
+
 interface ContextualHelpButtonProps {
   getTour: () => TourDefinition;
   helpHref?: string;
+  actions?: ContextualHelpButtonAction[];
 }
 
 export function ContextualHelpButton({
   getTour,
   helpHref = "/dashboard/help",
+  actions = [],
 }: ContextualHelpButtonProps) {
   const router = useRouter();
   const { startTour } = useGuideTour();
@@ -58,9 +69,16 @@ export function ContextualHelpButton({
     router.push(helpHref);
   }, [helpHref, router]);
 
+  const handleActionClick = useCallback((action: ContextualHelpButtonAction) => {
+    setOpen(false);
+    action.onClick();
+  }, []);
+
   return (
     <div
       ref={rootRef}
+      data-vocabulary-overlay="true"
+      data-help-target="vocabulary-help-root"
       className="pointer-events-none fixed right-3 bottom-3 z-[70] md:right-4 md:bottom-4 lg:right-6 lg:bottom-6"
     >
       <AnimatePresence>
@@ -70,6 +88,7 @@ export function ContextualHelpButton({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 12, scale: 0.96 }}
             transition={{ duration: 0.24, ease }}
+            data-help-target="vocabulary-help-menu"
             className="pointer-events-auto absolute right-0 bottom-[calc(100%+10px)] w-[min(280px,calc(100vw-1.25rem))] overflow-hidden rounded-[24px] border border-border-subtle/80 bg-surface-primary shadow-[0_24px_50px_-24px_rgba(10,10,14,0.5)] md:bottom-[calc(100%+12px)] md:w-[min(300px,calc(100vw-2rem))] md:rounded-[26px] lg:bottom-[calc(100%+14px)] lg:w-[min(320px,calc(100vw-2rem))] lg:rounded-[28px]"
           >
             <div className="relative overflow-hidden bg-gradient-to-br from-accent via-[#8a2e2c] to-accent-hover px-4 pt-3.5 pb-3 text-content-inverted md:px-4.5 md:pt-4 lg:px-5">
@@ -104,6 +123,59 @@ export function ContextualHelpButton({
                 </span>
               </button>
 
+              {actions.map((action) => {
+                const Icon = action.icon;
+                const isDanger = action.tone === "danger";
+
+                return (
+                  <button
+                    key={action.id}
+                    type="button"
+                    data-help-target={`vocabulary-help-action-${action.id}`}
+                    onClick={() => handleActionClick(action)}
+                    className={[
+                      "flex w-full items-start gap-2.5 rounded-[18px] border px-3 py-2.5 text-left transition-all duration-200 md:gap-3 md:rounded-2xl md:px-4 md:py-3",
+                      isDanger
+                        ? "border-[#d65b52]/35 bg-[linear-gradient(180deg,rgba(214,91,82,0.12),rgba(214,91,82,0.05))] hover:border-[#d65b52]/55 hover:bg-[linear-gradient(180deg,rgba(214,91,82,0.18),rgba(214,91,82,0.08))] dark:border-[#f07b72]/35 dark:bg-[linear-gradient(180deg,rgba(104,30,27,0.55),rgba(72,20,18,0.4))] dark:hover:border-[#f07b72]/55"
+                        : "border-border-subtle bg-surface-secondary/70 hover:border-accent/20 hover:bg-accent/5",
+                    ].join(" ")}
+                  >
+                    <span
+                      className={[
+                        "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl md:h-9 md:w-9 md:rounded-2xl lg:h-10 lg:w-10",
+                        isDanger
+                          ? "bg-[#d65b52]/14 text-[#bf3c33] dark:bg-[#f07b72]/16 dark:text-[#ff9e97]"
+                          : "bg-accent/10 text-accent",
+                      ].join(" ")}
+                    >
+                      <Icon className="h-4 w-4 md:h-[18px] md:w-[18px] lg:h-5 lg:w-5" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={[
+                          "block text-[13px] font-bold md:text-sm",
+                          isDanger
+                            ? "text-[#9f2e28] dark:text-[#ffb3ae]"
+                            : "text-content-primary",
+                        ].join(" ")}
+                      >
+                        {action.label}
+                      </span>
+                      <span
+                        className={[
+                          "mt-1 block text-[11px] leading-relaxed md:text-xs",
+                          isDanger
+                            ? "text-[#934842] dark:text-[#efc1bd]"
+                            : "text-content-tertiary",
+                        ].join(" ")}
+                      >
+                        {action.description}
+                      </span>
+                    </span>
+                  </button>
+                );
+              })}
+
               <button
                 type="button"
                 onClick={handleGoToHelp}
@@ -129,6 +201,7 @@ export function ContextualHelpButton({
 
       <motion.button
         type="button"
+        data-help-target="vocabulary-help-button"
         onClick={() => setOpen((current) => !current)}
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.97 }}

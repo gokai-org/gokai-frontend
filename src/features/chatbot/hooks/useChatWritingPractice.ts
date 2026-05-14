@@ -6,6 +6,11 @@ import { listKanaCatalog, getKanaStrokes } from "@/features/kana/api/kanaApi";
 import { getMockKanaStrokes } from "@/features/kana/mock/mockStrokeData";
 import type { DrawnStroke as KanaDrawnStroke } from "@/features/kana/components/KanaWritingCanvas";
 import {
+  buildKanaCatalogState,
+  getKanaSymbolGuideInfo,
+  type KanaSymbolGuideInfo,
+} from "@/features/kana/utils/kanaSymbolGuide";
+import {
   getFeedbackColor as getKanaFeedbackColor,
   getFeedbackLabel as getKanaFeedbackLabel,
   validateStroke as validateKanaStroke,
@@ -44,6 +49,7 @@ export type ChatWritingTarget = {
   helper: string;
   catalogId?: string;
   accentColor?: string;
+  symbolGuide?: KanaSymbolGuideInfo;
 };
 
 export type ChatWritingNotebookEntry = {
@@ -103,6 +109,18 @@ function findNextAvailableTarget(
   return targets.find(
     (target) => target.status === "available" && target.id !== currentId,
   ) ?? null;
+}
+
+function getLockedKanaHelper(type: JapaneseCharacterType) {
+  if (type === "hiragana") {
+    return "Aun no has desbloqueado este hiragana. Cuando avances en la tabla fonetica podras practicar su trazado desde el chat.";
+  }
+
+  if (type === "katakana") {
+    return "Aun no has desbloqueado este katakana. Cuando avances en la tabla fonetica podras practicar su trazado desde el chat.";
+  }
+
+  return "Este simbolo aun no esta disponible para tu practica actual.";
 }
 
 export function useChatWritingPractice(message: ChatMessage | null) {
@@ -188,6 +206,7 @@ export function useChatWritingPractice(message: ChatMessage | null) {
 
         const hiraganaCatalog = kanaCatalog?.hiragana ?? [];
         const katakanaCatalog = kanaCatalog?.katakana ?? [];
+        const kanaGuideCatalog = buildKanaCatalogState(kanaCatalog);
         const hiraganaBySymbol = new Map(
           hiraganaCatalog.map((kana) => [kana.symbol, kana]),
         );
@@ -214,6 +233,10 @@ export function useChatWritingPractice(message: ChatMessage | null) {
             const symbolMap =
               character.type === "hiragana" ? hiraganaBySymbol : katakanaBySymbol;
             const kana = symbolMap.get(character.symbol);
+            const symbolGuide = getKanaSymbolGuideInfo(
+              character.symbol,
+              kanaGuideCatalog,
+            );
 
             if (!kana) {
               return {
@@ -226,6 +249,7 @@ export function useChatWritingPractice(message: ChatMessage | null) {
                 helper:
                   "Este caracter todavia no tiene una ficha disponible para practicar desde el chat.",
                 accentColor: getAccentColor(character.type),
+                symbolGuide,
               } satisfies ChatWritingTarget;
             }
 
@@ -240,9 +264,10 @@ export function useChatWritingPractice(message: ChatMessage | null) {
               badge: isAvailable ? "Listo" : "Bloqueado",
               helper: isAvailable
                 ? `Practica este ${getScriptLabel(character.type).toLowerCase()} con el mismo flujo de escritura del quiz.`
-                : `Este ${getScriptLabel(character.type).toLowerCase()} todavia no esta disponible para tu practica actual.`,
+                : getLockedKanaHelper(character.type),
               catalogId: kana.id,
               accentColor: getAccentColor(character.type),
+              symbolGuide,
             } satisfies ChatWritingTarget;
           }
 

@@ -27,6 +27,7 @@ type RegionThemeGraphProps = {
   nodePoints: VocabularyRegionNodePoint[] | null;
   viewport: VocabularySvgViewport | null;
   shakingThemeId?: string | null;
+  helpTargetThemeId?: string | null;
   interactionDisabled?: boolean;
   onThemeSelect: (theme: VocabularyRegionThemeNode) => void;
 };
@@ -404,6 +405,7 @@ function RegionThemeGraph({
   nodePoints,
   viewport,
   shakingThemeId = null,
+  helpTargetThemeId = null,
   interactionDisabled = false,
   onThemeSelect,
 }: RegionThemeGraphProps) {
@@ -507,6 +509,8 @@ function RegionThemeGraph({
           <g
             key={theme.id}
             data-vocabulary-node="true"
+            data-help-target={theme.id === helpTargetThemeId ? "vocabulary-theme-node" : undefined}
+            data-help-target-priority={theme.id === helpTargetThemeId ? "20" : undefined}
             className={
               theme.isAvailable && !interactionDisabled
                 ? "pointer-events-auto cursor-pointer"

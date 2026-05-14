@@ -11,24 +11,11 @@ import {
   cardReveal,
 } from "@/features/landing/lib/motionVariants";
 
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="currentColor"
-      aria-hidden="true"
-      className={className}
-    >
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.747l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622Zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-    </svg>
-  );
-}
-
 const SOCIAL_LINKS = [
   {
     label: "Instagram",
     sublabel: "Gokai",
-    href: "https://www.instagram.com/gokai.app",
+    href: "https://www.instagram.com/gokai.jp/?hl=es-la",
     Icon: Instagram,
   },
   {
@@ -36,12 +23,6 @@ const SOCIAL_LINKS = [
     sublabel: "gokai.learn@gmail.com",
     href: "mailto:gokai.learn@gmail.com",
     Icon: Mail,
-  },
-  {
-    label: "X",
-    sublabel: "Gokai",
-    href: "https://x.com/gokai_app",
-    Icon: XIcon,
   },
 ] as const;
 
@@ -139,7 +120,7 @@ export function ContactCard() {
 
         <motion.div
           variants={staggerContainer(0.07, 0.1)}
-          className="mx-auto grid max-w-3xl grid-cols-1 gap-2 min-[400px]:grid-cols-3 sm:gap-3"
+          className="mx-auto grid w-full max-w-xl grid-cols-1 gap-2 min-[400px]:grid-cols-2 sm:gap-3"
         >
           {SOCIAL_LINKS.map((item) => (
             <motion.div key={item.label} variants={cardReveal}>

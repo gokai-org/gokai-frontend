@@ -12,8 +12,8 @@ export interface ApiErrorResponse {
 export type StatsPeriod = "week" | "month" | "all";
 
 export interface OverviewStatsResponse {
-  studyHours: number;
-  studyHoursTrend: number;
+  studyMinutes: number;
+  studyMinutesTrend: number;
   kanjiLearned: number;
   kanjiLearnedTrend: number;
   hiraganaLearned: number;
@@ -36,6 +36,7 @@ export interface MonthlyProgressEntry {
   month: string;
   score: number;
   reviews: number;
+  metric?: "accuracy" | "minutes";
 }
 
 export interface ActivityResponse {
@@ -61,9 +62,20 @@ export interface SkillsResponse {
   };
 }
 
+export type RecentActivityType =
+  | "kanji"
+  | "kana"
+  | "hiragana"
+  | "katakana"
+  | "vocabulary"
+  | "word"
+  | "grammar"
+  | "review"
+  | "subtheme";
+
 export interface RecentActivityEntry {
   id: string;
-  type: "kanji" | "hiragana" | "katakana" | "vocabulary" | "grammar" | "review";
+  type: RecentActivityType;
   title: string;
   description: string;
   createdAt: string;
@@ -80,10 +92,38 @@ export interface StreakCalendarResponse {
   longestStreak: number;
 }
 
+export interface ActivitySecondsEntry {
+  day: string;
+  kanjiSeconds: number;
+  kanaSeconds: number;
+  grammarSeconds: number;
+  vocabularySeconds: number;
+}
+
+export interface CompletedTotals {
+  kanjiCompleted: number;
+  kanjiTotal: number;
+  kanaCompleted: number;
+  kanaTotal: number;
+  grammarCompleted: number;
+  grammarTotal: number;
+  wordsCompleted: number;
+  wordsTotal: number;
+}
+
+export interface RecentAnsweredResponse {
+  items: Array<Record<string, unknown>>;
+  weeklyActivitySeconds: ActivitySecondsEntry[];
+  monthlyActivitySeconds: ActivitySecondsEntry[];
+  completedTotals: CompletedTotals;
+  recentActivity: RecentActivityEntry[];
+}
+
 export interface StatsData {
   overview: OverviewStatsResponse | null;
   activity: ActivityResponse | null;
   skills: SkillsResponse | null;
   recentActivity: RecentActivityResponse | null;
+  recentAnswers: RecentAnsweredResponse | null;
   streakCalendar: StreakCalendarResponse | null;
 }

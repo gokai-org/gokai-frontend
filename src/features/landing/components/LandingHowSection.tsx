@@ -52,14 +52,15 @@ export function LandingHowSection({
           className="relative w-full"
         >
           <div className="relative aspect-[16/8.5] w-full overflow-visible">
-            <AnimatePresence mode="wait">
+            <AnimatePresence mode="sync" initial={false}>
               <motion.div
                 key={howTab}
-                initial={{ opacity: 0, scale: 0.97, y: 18 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.985, y: -10 }}
-                transition={{ duration: 0.4, ease: EASE_BRAND }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18, ease: EASE_BRAND }}
                 className="absolute inset-0"
+                style={{ willChange: "opacity" }}
               >
                 <Image
                   src={how.img}
@@ -73,9 +74,9 @@ export function LandingHowSection({
           </div>
         </motion.div>
 
-        <div className="w-full overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:overflow-visible">
+        <div className="w-full pb-1">
           <motion.div
-            className="mx-auto flex w-max min-w-full items-stretch gap-2 px-0.5 sm:grid sm:w-full sm:max-w-4xl sm:grid-cols-3 sm:gap-3 sm:px-0"
+            className="mx-auto grid w-full max-w-4xl grid-cols-1 items-stretch gap-2 px-0.5 sm:grid-cols-3 sm:gap-3 sm:px-0"
             variants={staggerContainer(0.06, 0.05)}
           >
             {HOW_TABS.map((tab) => (
@@ -88,7 +89,7 @@ export function LandingHowSection({
                 whileHover={{ y: -3 }}
                 whileTap={{ scale: 0.985 }}
                 className={[
-                  "min-w-[138px] rounded-full border px-3 py-2.5 text-center transition-all duration-300 sm:min-w-0 sm:px-5 sm:py-3.5",
+                  "w-full min-w-0 rounded-full border px-3 py-2.5 text-center transition-all duration-300 sm:px-5 sm:py-3.5",
                   tab.id === howTab
                     ? "border-accent/25 bg-accent text-content-inverted shadow-[0_16px_36px_-20px_rgba(153,51,49,0.75)]"
                     : "border-border-default/70 bg-surface-primary/72 text-content-primary hover:border-accent/18 hover:bg-surface-primary/88",

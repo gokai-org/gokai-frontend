@@ -64,6 +64,8 @@ function ActiveRegionOverlay({
       <g
         key={activeRegionId}
         data-active-region-paths={activeRegionId}
+        data-help-target="vocabulary-selected-region"
+        data-help-target-priority="30"
         dangerouslySetInnerHTML={{
           __html: parsedMap.regionMarkupById[activeRegionId] ?? "",
         }}

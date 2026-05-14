@@ -10,4 +10,8 @@ export type {
 	KazuProgressZoneId,
 	ReviewCategoryProgress,
 } from "./hooks/useReviewProgress";
-export type { ReviewItem } from "./types";
+export type {
+	ReviewItem,
+	ReviewStrategiesRegister,
+	ReviewStrategyKey,
+} from "./types";

@@ -23,6 +23,7 @@ export interface TourStep {
   selector?: string;
   autoScroll?: boolean;
   spotlightPadding?: number;
+  spotlightShape?: "rect" | "round";
   spotlightInsets?: Partial<Record<"top" | "right" | "bottom" | "left", number>>;
   position?:
     | "center"

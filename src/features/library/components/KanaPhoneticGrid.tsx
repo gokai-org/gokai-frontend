@@ -71,7 +71,7 @@ export interface KanaPhoneticGridProps {
   newlyUnlockedIds: ReadonlySet<string>;
   favoriteIds: ReadonlySet<string>;
   onKanaClick: (kana: Kana) => void;
-  onFavoriteToggle: (id: string) => void;
+  onFavoriteToggle?: (id: string) => void;
 }
 
 function isElementInsideViewport(rect: DOMRect, padding = 20) {

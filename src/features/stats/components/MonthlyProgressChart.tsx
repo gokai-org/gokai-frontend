@@ -28,10 +28,12 @@ function CustomTooltip({
   active,
   payload,
   label,
+  metric,
 }: {
   active?: boolean;
   payload?: Array<{ value: number; dataKey: string }>;
   label?: string;
+  metric: "accuracy" | "minutes";
 }) {
   if (!active || !payload?.length) return null;
   return (
@@ -40,7 +42,9 @@ function CustomTooltip({
       {payload.map((p) => (
         <p key={p.dataKey} className="text-sm font-bold text-content-primary">
           {p.dataKey === "score"
-            ? `Precisión: ${p.value}%`
+            ? metric === "minutes"
+              ? `Minutos: ${p.value} min`
+              : `Precisión: ${p.value}%`
             : `Repasos: ${p.value}`}
         </p>
       ))}
@@ -58,6 +62,32 @@ export function MonthlyProgressChart({
   animationsEnabled = true,
 }: MonthlyProgressChartProps) {
   const Wrapper = animationsEnabled ? motion.div : "div";
+  const chartData = (data ?? []).map((entry) => ({
+    month: entry.month,
+    score:
+      typeof entry.score === "number" && Number.isFinite(entry.score)
+        ? Math.min(100, Math.max(0, entry.score))
+        : 0,
+    reviews:
+      typeof entry.reviews === "number" && Number.isFinite(entry.reviews)
+        ? Math.max(0, entry.reviews)
+        : 0,
+    metric: entry.metric ?? "accuracy",
+  }));
+  const metricMode = chartData[0]?.metric ?? "accuracy";
+  const isMinutesMetric = metricMode === "minutes";
+  const maxValue = chartData.reduce(
+    (currentMax, entry) => Math.max(currentMax, entry.score),
+    0,
+  );
+  const resolvedTitle =
+    isMinutesMetric && title === "Progreso mensual"
+      ? "Actividad del mes"
+      : title;
+  const resolvedSubtitle =
+    isMinutesMetric && subtitle === "Evolución de tu precisión y sesiones"
+      ? "Minutos diarios acumulados del mes actual"
+      : subtitle;
 
   if (loading) {
     return (
@@ -69,7 +99,7 @@ export function MonthlyProgressChart({
     );
   }
 
-  if (!data || data.length === 0) {
+  if (chartData.length === 0) {
     return (
       <Wrapper
         {...(animationsEnabled
@@ -85,8 +115,8 @@ export function MonthlyProgressChart({
           : {})}
         className="bg-surface-primary rounded-2xl p-6 shadow-sm border border-border-subtle"
       >
-        <h3 className="text-lg font-extrabold text-content-primary">{title}</h3>
-        <p className="text-xs text-content-tertiary mb-6">{subtitle}</p>
+        <h3 className="text-lg font-extrabold text-content-primary">{resolvedTitle}</h3>
+        <p className="text-xs text-content-tertiary mb-6">{resolvedSubtitle}</p>
         <div className="flex flex-col items-center justify-center py-10 gap-3">
           <div className="w-14 h-14 rounded-2xl bg-surface-tertiary flex items-center justify-center">
             <svg
@@ -104,10 +134,12 @@ export function MonthlyProgressChart({
             </svg>
           </div>
           <p className="text-sm font-semibold text-content-tertiary">
-            Sin datos mensuales aún
+            {isMinutesMetric ? "Sin minutos registrados aún" : "Sin datos mensuales aún"}
           </p>
           <p className="text-xs text-content-muted text-center max-w-[220px]">
-            Tu evolución mes a mes aparecerá aquí conforme vayas estudiando.
+            {isMinutesMetric
+              ? "Tus minutos por día aparecerán aquí conforme avances en kanji, kana, gramática y vocabulario."
+              : "Tu evolución mes a mes aparecerá aquí conforme vayas estudiando."}
           </p>
         </div>
       </Wrapper>
@@ -115,7 +147,16 @@ export function MonthlyProgressChart({
   }
 
   const growth =
-    data.length >= 2 ? data[data.length - 1].score - data[0].score : 0;
+    chartData.length >= 2
+      ? chartData[chartData.length - 1].score - chartData[0].score
+      : 0;
+  const growthPrefix = growth > 0 ? "+" : "";
+  const growthToneClass =
+    growth > 0
+      ? "bg-green-50 text-green-600"
+      : growth < 0
+        ? "bg-red-50 text-red-600"
+        : "bg-surface-secondary text-content-secondary";
 
   return (
     <Wrapper
@@ -135,13 +176,13 @@ export function MonthlyProgressChart({
       <div className="flex items-start justify-between mb-4">
         <div>
           <h3 className="text-lg font-extrabold text-content-primary">
-            {title}
+            {resolvedTitle}
           </h3>
-          <p className="text-xs text-content-tertiary">{subtitle}</p>
+          <p className="text-xs text-content-tertiary">{resolvedSubtitle}</p>
         </div>
-        <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-50">
+        <div className={`flex items-center gap-1 px-3 py-1 rounded-full ${growthToneClass}`}>
           <svg
-            className="w-3.5 h-3.5 text-green-600"
+            className="w-3.5 h-3.5"
             fill="none"
             stroke="currentColor"
             strokeWidth={2.5}
@@ -153,13 +194,17 @@ export function MonthlyProgressChart({
               d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25"
             />
           </svg>
-          <span className="text-xs font-bold text-green-600">+{growth}%</span>
+          <span className="text-xs font-bold">
+            {growthPrefix}
+            {growth}%
+            {isMinutesMetric ? " min" : "%"}
+          </span>
         </div>
       </div>
 
       <div className="w-full h-[220px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data}>
+          <AreaChart data={chartData}>
             <defs>
               <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="var(--accent)" stopOpacity={0.2} />
@@ -182,14 +227,16 @@ export function MonthlyProgressChart({
               }}
             />
             <YAxis
-              domain={[50, 100]}
+              domain={[0, isMinutesMetric ? Math.max(10, maxValue) : 100]}
               axisLine={false}
               tickLine={false}
               tick={{ fontSize: 11, fill: "var(--text-muted)" }}
-              tickFormatter={(v) => `${v}%`}
+              tickFormatter={(v) =>
+                isMinutesMetric ? `${v}m` : `${v}%`
+              }
               width={40}
             />
-            <Tooltip content={<CustomTooltip />} />
+            <Tooltip content={<CustomTooltip metric={metricMode} />} />
             <Area
               type="monotone"
               dataKey="score"
@@ -215,7 +262,7 @@ export function MonthlyProgressChart({
         <div className="flex items-center gap-1.5">
           <div className="w-3 h-3 rounded-full bg-accent" />
           <span className="text-xs text-content-tertiary font-medium">
-            Precisión
+            {isMinutesMetric ? "Minutos estudiados" : "Precisión"}
           </span>
         </div>
       </div>

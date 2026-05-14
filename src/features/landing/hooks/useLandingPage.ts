@@ -6,10 +6,8 @@ import {
   SECTIONS,
   type HowTabId,
 } from "@/features/landing/data/landingData";
-import { useLandingActiveSection } from "@/features/landing/hooks/useLandingActiveSection";
 
 export function useLandingPage() {
-  const { activeId } = useLandingActiveSection("inicio");
   const [howTab, setHowTab] = useState<HowTabId>("explora");
 
   const how = useMemo(
@@ -35,7 +33,6 @@ export function useLandingPage() {
   }, []);
 
   return {
-    activeId,
     howTab,
     setHowTab,
     how,
