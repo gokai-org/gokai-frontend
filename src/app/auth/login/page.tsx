@@ -10,6 +10,7 @@ import { AuthHero } from "@/features/auth/components/AuthHero";
 import { AuthHeader } from "@/features/auth/components/AuthHeader";
 import { LoginForm } from "@/features/auth/components/forms/LoginForm";
 import { RegisterForm } from "@/features/auth/components/forms/RegisterForm";
+import { TermsAndConditionsPanel } from "@/features/auth/components/forms/TermsAndConditionsPanel";
 import { RegisterVerifyForm } from "@/features/auth/components/forms/RegisterVerifyForm";
 import { ForgotPasswordFlow } from "@/features/auth/components/forms/ForgotPasswordFlow";
 import { markFirstRunOnboardingPending } from "@/features/help/utils/firstRunOnboardingState";
@@ -25,8 +26,12 @@ const HERO_MESSAGES = [
 
 type Mode = "login" | "register" | "forgot-password";
 type RegisterStep = "form" | "verify-email";
+type RegisterPanel = "form" | "terms";
 type MembershipIntent = "free" | "premium";
 type UserProfile = "admin" | "user";
+
+const TERMS_REQUIRED_MESSAGE =
+  "Debes aceptar los Términos y Condiciones para continuar.";
 
 function parseIntent(raw: string | null): MembershipIntent | null {
   if (raw === "free" || raw === "premium") return raw;
@@ -59,6 +64,7 @@ export default function LoginPage() {
   const [intent, setIntent] = useState<MembershipIntent | null>(null);
 
   const [registerStep, setRegisterStep] = useState<RegisterStep>("form");
+  const [registerPanel, setRegisterPanel] = useState<RegisterPanel>("form");
   const [regVerificationCode, setRegVerificationCode] = useState(
     Array(CODE_LEN).fill(""),
   );
@@ -73,6 +79,7 @@ export default function LoginPage() {
   const [birthdate, setBirthdate] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regPassword2, setRegPassword2] = useState("");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -153,6 +160,26 @@ export default function LoginPage() {
     };
   }, []);
 
+  useEffect(() => {
+    const termsOpen =
+      mode === "register" &&
+      registerStep === "form" &&
+      registerPanel === "terms";
+
+    if (!termsOpen) return;
+
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousDocumentOverflow = document.documentElement.style.overflow;
+
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousDocumentOverflow;
+    };
+  }, [mode, registerStep, registerPanel]);
+
   function resetTransientState() {
     setPassword("");
     setShowPass(false);
@@ -162,6 +189,7 @@ export default function LoginPage() {
     setRegPassword2("");
 
     setRegisterStep("form");
+    setRegisterPanel("form");
     setRegVerificationCode(Array(CODE_LEN).fill(""));
   }
 
@@ -227,6 +255,11 @@ export default function LoginPage() {
 
   async function handleRegisterSubmit(e: React.FormEvent) {
     e.preventDefault();
+
+    if (!acceptedTerms) {
+      toast.error(TERMS_REQUIRED_MESSAGE);
+      return;
+    }
 
     if (regPassword.length < 8) {
       toast.error("La contraseña debe tener al menos 8 caracteres.");
@@ -452,6 +485,10 @@ export default function LoginPage() {
   }
 
   const hero = HERO_MESSAGES[heroIndex];
+  const isRegisterTermsOpen =
+    mode === "register" &&
+    registerStep === "form" &&
+    registerPanel === "terms";
 
   const slideOut =
     switchDir === "left"
@@ -464,16 +501,33 @@ export default function LoginPage() {
   ].join(" ");
 
   return (
-    <main className="relative min-h-dvh overflow-x-hidden bg-surface-secondary">
+    <main
+      className={[
+        "relative bg-surface-secondary overflow-x-hidden",
+        isRegisterTermsOpen ? "h-dvh overflow-hidden" : "min-h-dvh",
+      ].join(" ")}
+    >
       <LoginHistoryHandler />
       <AnimatedGraphBackground />
       <div className="absolute inset-0 bg-linear-to-b from-surface-primary/20 via-surface-primary/10 to-surface-primary/30" />
 
       <AuthHero hero={hero} heroIndex={heroIndex} />
 
-      <div className="relative z-10 flex min-h-dvh w-full items-center px-6 py-10 lg:pl-10 lg:pr-35 lg:pt-16 xl:pt-20">
+      <div
+        className={[
+          "relative z-10 flex w-full",
+          isRegisterTermsOpen
+            ? "h-dvh items-stretch overflow-hidden px-2 py-2 sm:items-center sm:px-4 sm:py-6 lg:pl-10 lg:pr-35 lg:pt-16 xl:pt-20"
+            : "min-h-dvh items-center px-6 py-10 lg:pl-10 lg:pr-35 lg:pt-16 xl:pt-20",
+        ].join(" ")}
+      >
         <div className="w-full">
-          <section className="flex w-full justify-center lg:justify-end lg:self-center lg:mr-15 xl:mr-14">
+          <section
+            className={[
+              "flex w-full justify-center lg:justify-end lg:self-center lg:mr-15 xl:mr-14",
+              isRegisterTermsOpen ? "h-full items-stretch sm:items-center" : "",
+            ].join(" ")}
+          >
             <motion.div
               layout
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
@@ -483,7 +537,12 @@ export default function LoginPage() {
                 ease: "easeOut",
                 layout: { duration: 0.4, ease: "easeInOut" },
               }}
-              className="w-full max-w-sm md:max-w-md lg:max-w-lg rounded-2xl bg-surface-primary/95 p-6 md:p-7 shadow-xl ring-1 ring-border-subtle backdrop-blur overflow-hidden"
+              className={[
+                "w-full rounded-2xl bg-surface-primary/95 shadow-xl ring-1 ring-border-subtle backdrop-blur overflow-hidden",
+                isRegisterTermsOpen
+                  ? "max-w-[calc(100vw-1rem)] p-3 sm:max-w-4xl sm:p-4 md:p-6 lg:p-7"
+                  : "max-w-sm p-6 md:max-w-md md:p-7 lg:max-w-lg",
+              ].join(" ")}
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -493,12 +552,14 @@ export default function LoginPage() {
                   exit={{ opacity: 0, x: switchDir === "left" ? -30 : 30 }}
                   transition={{ duration: 0.3, ease: "easeInOut" }}
                 >
-                  <AuthHeader
-                    mode={mode}
-                    registerStep={registerStep}
-                    intent={intent}
-                    regEmail={regEmail}
-                  />
+                  {!isRegisterTermsOpen && (
+                    <AuthHeader
+                      mode={mode}
+                      registerStep={registerStep}
+                      intent={intent}
+                      regEmail={regEmail}
+                    />
+                  )}
 
                   {mode === "login" && (
                     <LoginForm
@@ -522,14 +583,15 @@ export default function LoginPage() {
 
                   {mode === "register" && (
                     <motion.div
-                      className="mt-5"
+                      className={isRegisterTermsOpen ? "mt-0" : "mt-5"}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: 0.1, duration: 0.3 }}
                     >
-                      <AnimatePresence mode="wait">
-                        {registerStep === "form" && (
+                      <AnimatePresence mode="wait" initial={false}>
+                        {registerStep === "form" && registerPanel === "form" && (
                           <RegisterForm
+                            key="register-form-panel"
                             firstName={firstName}
                             lastName={lastName}
                             regEmail={regEmail}
@@ -539,6 +601,7 @@ export default function LoginPage() {
                             fromGoogle={fromGoogle}
                             showPass={showPass}
                             showPass2={showPass2}
+                            acceptedTerms={acceptedTerms}
                             loading={loading}
                             onFirstNameChange={setFirstName}
                             onLastNameChange={setLastName}
@@ -546,14 +609,28 @@ export default function LoginPage() {
                             onBirthdateChange={setBirthdate}
                             onRegPasswordChange={setRegPassword}
                             onRegPassword2Change={setRegPassword2}
+                            onAcceptedTermsChange={setAcceptedTerms}
+                            onOpenTerms={() => setRegisterPanel("terms")}
                             onToggleShowPass={() => setShowPass((s) => !s)}
                             onToggleShowPass2={() => setShowPass2((s) => !s)}
                             onSubmit={handleRegisterSubmit}
                           />
                         )}
 
+                        {registerStep === "form" && registerPanel === "terms" && (
+                          <TermsAndConditionsPanel
+                            key="register-terms-panel"
+                            onBack={() => setRegisterPanel("form")}
+                            onAccept={() => {
+                              setAcceptedTerms(true);
+                              setRegisterPanel("form");
+                            }}
+                          />
+                        )}
+
                         {registerStep === "verify-email" && (
                           <RegisterVerifyForm
+                            key="verify-email-panel"
                             regEmail={regEmail}
                             regVerificationCode={regVerificationCode}
                             regCodeInputRefs={regCodeInputRefs}

@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { DatePicker } from "@/shared/ui/DatePicker";
+import { Checkbox } from "@/shared/ui/Checkbox";
 import { PasswordField } from "@/features/auth/components/PasswordField";
 
 type Props = {
@@ -14,6 +15,7 @@ type Props = {
   fromGoogle: boolean;
   showPass: boolean;
   showPass2: boolean;
+  acceptedTerms: boolean;
   loading: boolean;
   onFirstNameChange: (value: string) => void;
   onLastNameChange: (value: string) => void;
@@ -21,6 +23,8 @@ type Props = {
   onBirthdateChange: (value: string) => void;
   onRegPasswordChange: (value: string) => void;
   onRegPassword2Change: (value: string) => void;
+  onAcceptedTermsChange: (value: boolean) => void;
+  onOpenTerms: () => void;
   onToggleShowPass: () => void;
   onToggleShowPass2: () => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -36,6 +40,7 @@ export function RegisterForm({
   fromGoogle,
   showPass,
   showPass2,
+  acceptedTerms,
   loading,
   onFirstNameChange,
   onLastNameChange,
@@ -43,6 +48,8 @@ export function RegisterForm({
   onBirthdateChange,
   onRegPasswordChange,
   onRegPassword2Change,
+  onAcceptedTermsChange,
+  onOpenTerms,
   onToggleShowPass,
   onToggleShowPass2,
   onSubmit,
@@ -57,7 +64,7 @@ export function RegisterForm({
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.3 }}
     >
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-sm font-semibold text-content-secondary">
             Nombre
@@ -89,7 +96,7 @@ export function RegisterForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div>
           <label className="mb-1.5 block text-sm font-semibold text-content-secondary">
             Correo
@@ -141,6 +148,31 @@ export function RegisterForm({
         placeholder="Confirmar contraseña"
         autoComplete="new-password"
       />
+
+      <div className="flex items-start gap-2 pt-1">
+        <Checkbox
+          id="register-terms"
+          checked={acceptedTerms}
+          onChange={onAcceptedTermsChange}
+          className="pt-0.5"
+        />
+
+        <p
+          id="register-terms-description"
+          className="min-w-0 text-xs font-medium leading-5 text-content-secondary"
+        >
+          Acepto los{" "}
+          <button
+            type="button"
+            onClick={onOpenTerms}
+            className="font-semibold text-accent underline decoration-accent/40 underline-offset-3 transition hover:text-accent-hover focus:outline-none focus:ring-2 focus:ring-red-200 rounded-sm"
+            aria-haspopup="dialog"
+            aria-controls="register-terms-panel"
+          >
+            Términos y Condiciones
+          </button>
+        </p>
+      </div>
 
       <motion.button
         type="submit"
