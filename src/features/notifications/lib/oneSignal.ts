@@ -10,6 +10,8 @@ export interface PushNotificationState {
   browserPermission: NotificationPermission;
   optedIn: boolean;
   providerId: string | null;
+  unsupportedReason: string | null;
+  requiresHomeScreen: boolean;
 }
 
 export type OneSignalNotificationEventName =
@@ -63,12 +65,54 @@ declare global {
 
 let oneSignalInitPromise: Promise<void> | null = null;
 
-function hasPushSupport() {
+type NavigatorWithStandalone = Navigator & {
+  standalone?: boolean;
+};
+
+function isIosDevice() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const { userAgent, platform, maxTouchPoints } = window.navigator;
+
   return (
-    typeof window !== "undefined" &&
-    typeof Notification !== "undefined" &&
-    "serviceWorker" in navigator
+    /iPad|iPhone|iPod/.test(userAgent) ||
+    (platform === "MacIntel" && maxTouchPoints > 1)
   );
+}
+
+function isStandaloneWebApp() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const navigatorWithStandalone = window.navigator as NavigatorWithStandalone;
+
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    Boolean(navigatorWithStandalone.standalone)
+  );
+}
+
+function readUnsupportedReason() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  if (isIosDevice() && !isStandaloneWebApp()) {
+    return "En iPhone y iPad las notificaciones web solo funcionan si agregas GOKAI a la pantalla de inicio y la abres desde ahí.";
+  }
+
+  if (typeof Notification === "undefined" || !("serviceWorker" in navigator)) {
+    return "Este navegador no admite notificaciones push en este dispositivo.";
+  }
+
+  return null;
+}
+
+function hasPushSupport() {
+  return readUnsupportedReason() === null;
 }
 
 function readBrowserPermission(): NotificationPermission {
@@ -176,16 +220,22 @@ async function readPushState(oneSignal: OneSignalClient): Promise<PushNotificati
     browserPermission: permission,
     optedIn,
     providerId,
+    unsupportedReason: null,
+    requiresHomeScreen: false,
   };
 }
 
 export async function getPushNotificationState() {
+  const unsupportedReason = readUnsupportedReason();
+
   if (!hasPushSupport()) {
     return {
       supported: false,
       browserPermission: readBrowserPermission(),
       optedIn: false,
       providerId: null,
+      unsupportedReason,
+      requiresHomeScreen: Boolean(unsupportedReason && isIosDevice()),
     } satisfies PushNotificationState;
   }
 
@@ -201,6 +251,7 @@ export async function setPushNotificationsEnabled(options: {
   autoPrompt?: boolean;
 }) {
   const { userId, enabled, autoPrompt = false } = options;
+  const unsupportedReason = readUnsupportedReason();
 
   if (!hasPushSupport()) {
     return {
@@ -208,6 +259,8 @@ export async function setPushNotificationsEnabled(options: {
       browserPermission: readBrowserPermission(),
       optedIn: false,
       providerId: null,
+      unsupportedReason,
+      requiresHomeScreen: Boolean(unsupportedReason && isIosDevice()),
     } satisfies PushNotificationState;
   }
 
@@ -303,4 +356,13 @@ export async function subscribeToOneSignalNotifications(
       });
     };
   });
+}
+
+export function getPushUnavailableMessage(
+  pushState: PushNotificationState | null | undefined,
+) {
+  return (
+    pushState?.unsupportedReason ??
+    "Este navegador no admite notificaciones push en este dispositivo."
+  );
 }

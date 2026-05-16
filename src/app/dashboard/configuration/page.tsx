@@ -27,6 +27,7 @@ import {
   normalizeJapaneseFont,
 } from "@/shared/hooks/useTypography";
 import {
+  getPushUnavailableMessage,
   getPushNotificationState,
   setPushNotificationsEnabled,
   type PushNotificationState,
@@ -282,6 +283,8 @@ function NotificationSettings({
             browserPermission: "default",
             optedIn: false,
             providerId: null,
+            unsupportedReason: null,
+            requiresHomeScreen: false,
           });
         }
       });
@@ -299,7 +302,7 @@ function NotificationSettings({
     : pushState === null
       ? "Comprobando disponibilidad de notificaciones en este navegador"
       : !pushState.supported
-        ? "Este navegador no admite notificaciones push"
+        ? getPushUnavailableMessage(pushState)
         : pushState.browserPermission === "denied"
           ? "Las bloqueaste en el navegador. Para reactivarlas, habilita los permisos del sitio y vuelve a activar esta opción"
           : pushEnabled
@@ -330,7 +333,7 @@ function NotificationSettings({
 
       if (enabled && !isEnabled) {
         if (!nextState.supported) {
-          toast.error("Este navegador no soporta notificaciones push.");
+          toast.error(getPushUnavailableMessage(nextState));
         } else if (nextState.browserPermission === "denied") {
           toast.error(
             "Las notificaciones están bloqueadas en el navegador. Habilítalas en permisos del sitio.",

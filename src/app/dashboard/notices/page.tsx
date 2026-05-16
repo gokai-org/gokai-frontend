@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BellRing, CheckCheck } from "lucide-react";
+import { CheckCheck } from "lucide-react";
 import { getCurrentUser } from "@/features/auth";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
@@ -19,6 +19,7 @@ import {
   NoticeToolbar,
 } from "@/features/notices";
 import {
+  getPushUnavailableMessage,
   getPushNotificationState,
   setPushNotificationsEnabled,
   type PushNotificationState,
@@ -40,7 +41,6 @@ export default function Page() {
   const [pushState, setPushState] = useState<PushNotificationState | null>(null);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
   const [pushPromptLoading, setPushPromptLoading] = useState(false);
-  const [testNotificationLoading, setTestNotificationLoading] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
 
   const {
@@ -79,6 +79,8 @@ export default function Page() {
             browserPermission: "default" as const,
             optedIn: false,
             providerId: null,
+            unsupportedReason: null,
+            requiresHomeScreen: false,
           } satisfies PushNotificationState;
         });
 
@@ -134,7 +136,7 @@ export default function Page() {
 
       if (!nextState.supported) {
         setShowPushPrompt(false);
-        toast.error("Este navegador no soporta notificaciones push.");
+        toast.error(getPushUnavailableMessage(nextState));
         return;
       }
 
@@ -151,59 +153,6 @@ export default function Page() {
       toast.error("No se pudieron activar las notificaciones push.");
     } finally {
       setPushPromptLoading(false);
-    }
-  };
-
-  const handleSendTestNotification = async () => {
-    if (!userId) {
-      toast.error("No se pudo identificar al usuario.");
-      return;
-    }
-
-    const providerId = pushState?.providerId?.trim();
-    const pushEnabled =
-      pushState?.supported &&
-      pushState.browserPermission === "granted" &&
-      pushState.optedIn;
-
-    if (!pushEnabled || !providerId) {
-      setShowPushPrompt(true);
-      toast.error("Activa las notificaciones push antes de enviar la prueba.");
-      return;
-    }
-
-    setTestNotificationLoading(true);
-
-    try {
-      const response = await fetch("/api/notifications/test", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ playerId: providerId }),
-      });
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as
-          | { error?: string }
-          | null;
-
-        throw new Error(
-          payload?.error || "No se pudo enviar la notificación de prueba.",
-        );
-      }
-
-      toast.success("Notificación de prueba enviada.");
-    } catch (error) {
-      console.error("Error enviando notificación de prueba:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "No se pudo enviar la notificación de prueba.",
-      );
-    } finally {
-      setTestNotificationLoading(false);
     }
   };
 
@@ -228,18 +177,6 @@ export default function Page() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={handleSendTestNotification}
-              disabled={testNotificationLoading || !userId}
-              className="inline-flex items-center gap-2 rounded-full border border-border-default bg-surface-secondary px-4 py-2 text-xs font-bold text-content-primary transition-colors hover:bg-surface-tertiary disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <BellRing className="h-4 w-4" />
-              {testNotificationLoading
-                ? "Enviando prueba..."
-                : "Enviar notificación de prueba"}
-            </button>
-
             {unreadCount > 0 && (
               <button
                 onClick={markAllRead}

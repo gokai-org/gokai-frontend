@@ -44,6 +44,13 @@ const sawarabiMincho = Sawarabi_Mincho({
 export const metadata: Metadata = {
   title: "GOKAI — Aprende japonés con IA",
   description: "Plataforma de aprendizaje de japonés con IA y rutas dinámicas.",
+  applicationName: "GOKAI",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    title: "GOKAI",
+    statusBarStyle: "default",
+  },
   icons: {
     icon: [{ url: siteIcon, type: "image/svg+xml" }],
     shortcut: [siteIcon],
