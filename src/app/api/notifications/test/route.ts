@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { apiConfig } from "@/shared/config";
+import { serverNotificationsConfig } from "@/shared/config/serverNotifications";
 
 export const dynamic = "force-dynamic";
 
@@ -12,11 +13,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const internalApiKey = process.env.GOKAI_API_KEY?.trim();
+    const { internalApiKey, missingInternalApiKeyMessage } =
+      serverNotificationsConfig;
 
     if (!internalApiKey) {
       return NextResponse.json(
-        { error: "Falta configurar GOKAI_API_KEY en el frontend" },
+        { error: missingInternalApiKeyMessage },
         { status: 500 },
       );
     }

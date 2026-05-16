@@ -1,6 +1,6 @@
-const ONE_SIGNAL_APP_ID =
-  process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID ??
-  "bc8ba5b3-be3c-4cf2-85c7-67bea1145208";
+import { notificationsConfig } from "@/shared/config";
+
+const ONE_SIGNAL_APP_ID = notificationsConfig.oneSignalAppId;
 
 const ONE_SIGNAL_SYNC_KEY_PREFIX = "gokai-onesignal-provider";
 const ONE_SIGNAL_AUTO_PROMPT_KEY_PREFIX = "gokai-onesignal-first-visit";
