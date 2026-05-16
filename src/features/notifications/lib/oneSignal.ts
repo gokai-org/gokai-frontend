@@ -304,3 +304,37 @@ export async function subscribeToOneSignalNotifications(
     };
   });
 }
+
+export async function sendLocalTestNotification() {
+  if (!hasPushSupport()) {
+    throw new Error("Este navegador no soporta notificaciones push.");
+  }
+
+  if (!ONE_SIGNAL_APP_ID.trim()) {
+    throw new Error(
+      "Falta configurar NEXT_PUBLIC_ONESIGNAL_APP_ID en .env.local del frontend.",
+    );
+  }
+
+  if (readBrowserPermission() !== "granted") {
+    throw new Error("Activa las notificaciones push antes de enviar la prueba.");
+  }
+
+  const title = "Prueba de notificaciones";
+  const body = `Prueba enviada ${new Date().toLocaleTimeString("es-MX", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })}`;
+
+  const registration = await navigator.serviceWorker.ready.catch(() => null);
+
+  if (registration) {
+    await registration.showNotification(title, {
+      body,
+      tag: "gokai-local-test-notification",
+    });
+    return;
+  }
+
+  new Notification(title, { body });
+}
