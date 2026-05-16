@@ -151,14 +151,16 @@ export function useLibraryContent(searchQuery: string) {
   const filteredKatakanas = useMemo(() => {
     if (!normalizedQuery) return katakanas;
     return katakanas.filter((k) =>
-      k.symbol.toLowerCase().includes(normalizedQuery),
+      k.symbol.toLowerCase().includes(normalizedQuery) ||
+      (k.romaji || "").toLowerCase().includes(normalizedQuery),
     );
   }, [katakanas, normalizedQuery]);
 
   const filteredHiraganas = useMemo(() => {
     if (!normalizedQuery) return hiraganas;
     return hiraganas.filter((h) =>
-      h.symbol.toLowerCase().includes(normalizedQuery),
+      h.symbol.toLowerCase().includes(normalizedQuery) ||
+      (h.romaji || "").toLowerCase().includes(normalizedQuery),
     );
   }, [hiraganas, normalizedQuery]);
 

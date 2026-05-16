@@ -779,18 +779,6 @@ function RegionVectorGraph({
             key={node.id}
             data-vocabulary-node="true"
             data-ai-recommended={node.data.isAiRecommended ? "true" : undefined}
-            data-help-target={
-              node.id === helpRecommendedNodeId
-                ? "vocabulary-recommended-subtheme-node"
-                : node.id === helpWordNodeId
-                  ? "vocabulary-word-node"
-                  : undefined
-            }
-            data-help-target-priority={
-              node.id === helpRecommendedNodeId || node.id === helpWordNodeId
-                ? "20"
-                : undefined
-            }
             className={[
               node.data.status === "locked"
                 ? "cursor-default"
@@ -918,6 +906,14 @@ function RegionVectorGraph({
                   fill={palette.fill}
                   stroke={palette.stroke}
                   strokeWidth={node.id === "home" ? 0.82 : 0.72}
+                  data-help-target={
+                    node.id === helpWordNodeId
+                      ? "vocabulary-word-node"
+                      : undefined
+                  }
+                  data-help-target-priority={
+                    node.id === helpWordNodeId ? "20" : undefined
+                  }
                   vectorEffect="non-scaling-stroke"
                 />
                 <circle

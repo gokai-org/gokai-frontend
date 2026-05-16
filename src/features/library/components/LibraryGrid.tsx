@@ -2,25 +2,37 @@
 
 import { startTransition, useEffect, useMemo, useState } from "react";
 import { ScriptCard } from "@/features/library/components/ScriptCard";
-import type { CombinedLibraryItem } from "@/features/library/hooks/useLibraryContent";
+import { VocabularyCard } from "@/features/library/components/VocabularyCard";
+import { GrammarLibraryCard } from "@/features/graph/grammar/components/library/GrammarLibraryCard";
+import type { GrammarBoardProgress } from "@/features/graph/grammar/types/board";
 import type { Kanji } from "@/features/kanji/types";
 import type { Kana } from "@/features/kana/types";
+import type { Theme } from "@/features/library/types";
 import { SkeletonCard } from "@/shared/ui/Skeleton";
 import {
   kanjiToScriptCard,
   katakanaToScriptCard,
   hiraganaToScriptCard,
+  themeToCard,
 } from "@/features/library/utils/libraryMappers";
 
 const INITIAL_BATCH_SIZE = 24;
 const SUBSEQUENT_BATCH_SIZE = 24;
 const TAIL_SKELETON_COUNT = 6;
 
+export type LibraryGridItem =
+  | { type: "kanji"; data: Kanji }
+  | { type: "katakana"; data: Kana }
+  | { type: "hiragana"; data: Kana }
+  | { type: "theme"; data: Theme }
+  | { type: "grammar"; data: GrammarBoardProgress };
+
 interface LibraryGridProps {
-  items: CombinedLibraryItem[];
+  items: LibraryGridItem[];
   favoriteKanjis: Set<string>;
   favoriteHiraganas: Set<string>;
   favoriteKatakanas: Set<string>;
+  favoriteGrammar?: Set<string>;
   lockedKanjiIds?: Set<string>;
   nextUnlockReadyKanjiId?: string | null;
   unlockPendingKanjiId?: string | null;
@@ -32,9 +44,12 @@ interface LibraryGridProps {
   toggleFavoriteKanji: (id: string) => void;
   toggleFavoriteHiragana?: (id: string) => void;
   toggleFavoriteKatakana?: (id: string) => void;
+  onToggleFavoriteGrammar?: (id: string) => void;
   onKanjiClick: (kanji: Kanji) => void;
   onKanjiPressUnlock?: (kanjiId: string) => void;
   onKanaClick: (kana: Kana) => void;
+  onThemeClick?: (theme: Theme) => void;
+  onGrammarClick?: (lessonId: string) => void;
   className?: string;
 }
 
@@ -43,6 +58,7 @@ export function LibraryGrid({
   favoriteKanjis,
   favoriteHiraganas,
   favoriteKatakanas,
+  favoriteGrammar,
   lockedKanjiIds,
   nextUnlockReadyKanjiId,
   unlockPendingKanjiId,
@@ -54,9 +70,12 @@ export function LibraryGrid({
   toggleFavoriteKanji,
   toggleFavoriteHiragana,
   toggleFavoriteKatakana,
+  onToggleFavoriteGrammar,
   onKanjiClick,
   onKanjiPressUnlock,
   onKanaClick,
+  onThemeClick,
+  onGrammarClick,
   className = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:gap-4 2xl:grid-cols-5",
 }: LibraryGridProps) {
   const [visibleCount, setVisibleCount] = useState(() =>
@@ -103,6 +122,41 @@ export function LibraryGrid({
   return (
     <div className={className}>
       {visibleItems.map((item, i) => {
+        if (item.type === "theme") {
+          const card = themeToCard(item.data);
+
+          return (
+            <VocabularyCard
+              key={item.data.id}
+              id={item.data.id}
+              title={card.title}
+              subtitle={card.subtitle}
+              thumbnail={card.thumbnail}
+              variant="theme"
+              index={i}
+              locked={item.data.isUnlocked === false}
+              onClick={
+                item.data.isUnlocked === false || !onThemeClick
+                  ? undefined
+                  : () => onThemeClick(item.data)
+              }
+            />
+          );
+        }
+
+        if (item.type === "grammar") {
+          return (
+            <GrammarLibraryCard
+              key={item.data.id}
+              lesson={item.data}
+              index={i}
+              isFavorite={favoriteGrammar?.has(item.data.id) ?? false}
+              onSelect={onGrammarClick}
+              onToggleFavorite={onToggleFavoriteGrammar}
+            />
+          );
+        }
+
         if (item.type === "kanji") {
           const isLocked = lockedKanjiIds?.has(item.data.id) ?? false;
           return (

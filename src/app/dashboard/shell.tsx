@@ -32,7 +32,6 @@ export default function ContentShell({
   const isNotices = pathname === "/dashboard/notices";
   const isConfiguration = pathname === "/dashboard/configuration";
   const shouldShowMiniProfile =
-    isChatbot ||
     isReviews ||
     isVocabularyGraph ||
     isGrammarBoard ||

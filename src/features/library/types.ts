@@ -95,8 +95,9 @@ export interface BackendFavoriteItem {
   symbol?: string | null;
   readings?: string | null;
   kanjiWord?: string | null;
-  meanings?: string | null;
+  meanings?: string | string[] | Record<string, string[]> | null;
   hiragana?: string | null;
+  icon?: string | null;
   title?: string | null;
   description?: string | null;
 }
@@ -108,7 +109,12 @@ export interface FavoritesResponse {
 }
 
 // RECENT ITEMS
-export type RecentEntityType = "kanji" | "grammar" | "word";
+export type RecentEntityType =
+  | "kanji"
+  | "grammar"
+  | "word"
+  | "hiragana"
+  | "katakana";
 
 export interface BackendRecentItem {
   type: string;
@@ -119,12 +125,17 @@ export interface BackendRecentItem {
   kanjiWord?: string | null;
   meanings?: string[] | Record<string, string[]> | null;
   hiragana?: string | null;
+  icon?: string | null;
+  romaji?: string | null;
+  kanaType?: "hiragana" | "katakana" | null;
   title?: string | null;
   description?: string | null;
 }
 
 export interface RecentItemsResponse {
   kanji: BackendRecentItem[];
+  hiragana: BackendRecentItem[];
+  katakana: BackendRecentItem[];
   grammar: BackendRecentItem[];
   word: BackendRecentItem[];
 }

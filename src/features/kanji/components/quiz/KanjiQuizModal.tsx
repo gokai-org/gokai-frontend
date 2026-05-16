@@ -69,6 +69,7 @@ export function KanjiQuizModal({
   const mastered = useMasteredModules();
   const isKanjiMastered = mastered.has("kanji");
   const autoClosedForMasteryRef = useRef(false);
+  const completionNotifiedRef = useRef(false);
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
   const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
@@ -191,37 +192,48 @@ export function KanjiQuizModal({
   const resultingModulePoints = undefined;
   const triggeredModuleMastery =
     isNewlyCompleted && moduleMasteryReached && !isKanjiMastered;
+  const completionResult = useMemo<KanjiQuizCompletionResult | undefined>(() => {
+    if (state.step !== "summary" && state.step !== "celebration") {
+      return undefined;
+    }
+
+    return {
+      score: finalScore,
+      newlyCompleted: isNewlyCompleted,
+      newlyCompletedPoints: 0,
+      resultingModulePoints,
+      dominated: isDominated,
+      triggeredModuleMastery,
+    };
+  }, [
+    finalScore,
+    isDominated,
+    isNewlyCompleted,
+    resultingModulePoints,
+    state.step,
+    triggeredModuleMastery,
+  ]);
 
   const handleClose = useCallback(() => {
-    const completionResult: KanjiQuizCompletionResult | undefined =
-      quiz.state.step === "summary" || quiz.state.step === "celebration"
-        ? {
-            score: quiz.finalScore,
-            newlyCompleted: isNewlyCompleted,
-          newlyCompletedPoints: 0,
-            resultingModulePoints,
-            dominated: isDominated,
-            triggeredModuleMastery,
-          }
-        : undefined;
-
-    if (
-      (quiz.state.step === "summary" || quiz.state.step === "celebration") &&
-      onComplete &&
-      completionResult
-    ) {
+    if (onComplete && completionResult && !completionNotifiedRef.current) {
+      completionNotifiedRef.current = true;
       onComplete(completionResult);
     }
     onClose(completionResult);
   }, [
-    resultingModulePoints,
-    isDominated,
-    isNewlyCompleted,
+    completionResult,
     onClose,
     onComplete,
-    quiz,
-    triggeredModuleMastery,
   ]);
+
+  useEffect(() => {
+    if (!onComplete || !completionResult || completionNotifiedRef.current) {
+      return;
+    }
+
+    completionNotifiedRef.current = true;
+    onComplete(completionResult);
+  }, [completionResult, onComplete]);
 
   const shouldAutoCloseForMastery =
     triggeredModuleMastery &&

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, HelpCircle } from "lucide-react";
 import type { FaqItem } from "@/features/help/types";
@@ -9,23 +8,22 @@ const ease: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
 interface FaqAccordionProps {
   item: FaqItem;
+  open: boolean;
+  onToggle: () => void;
   index?: number;
   animationsEnabled?: boolean;
 }
 
 export function FaqAccordion({
   item,
+  open,
+  onToggle,
   index = 0,
   animationsEnabled = true,
 }: FaqAccordionProps) {
-  const [open, setOpen] = useState(false);
-
   const content = (
     <div>
-      <button
-        onClick={() => setOpen((prev) => !prev)}
-        className="group w-full text-left"
-      >
+      <button onClick={onToggle} className="group w-full text-left">
         <div
           className={`flex items-start gap-4 rounded-2xl border p-5 transition-all duration-300 ${
             open

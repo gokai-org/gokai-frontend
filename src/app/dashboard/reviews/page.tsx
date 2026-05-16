@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
+import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
+import { getTourById } from "@/features/help/components/tourData";
 import GrammarQuizModal from "@/features/graph/grammar/components/lesson/exam/GrammarQuizModal";
 import { VocabularyQuizModal } from "@/features/graph/vocabulary";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz/KanjiQuizModal";
@@ -14,9 +17,52 @@ import {
   useReviewProgress,
   useReviewPageData,
 } from "@/features/reviews";
+import {
+  KAZU_ALERT_REVIEW_LIMIT,
+  KAZU_LIGHT_REVIEW_LIMIT,
+} from "@/features/reviews/hooks/useReviewProgress";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import { SkeletonBox, SkeletonLine } from "@/shared/ui/Skeleton";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
+
+type ReviewCelebrationState = {
+  lessonLabel: string;
+  title: string;
+  message: string;
+};
+
+function getKazuColorStage(activeCount: number) {
+  if (activeCount <= KAZU_LIGHT_REVIEW_LIMIT) {
+    return 2;
+  }
+
+  if (activeCount <= KAZU_ALERT_REVIEW_LIMIT) {
+    return 1;
+  }
+
+  return 0;
+}
+
+function didKazuColorImprove(previousActiveCount: number, nextActiveCount: number) {
+  if (nextActiveCount >= previousActiveCount) {
+    return false;
+  }
+
+  return getKazuColorStage(nextActiveCount) > getKazuColorStage(previousActiveCount);
+}
+
+function buildReviewCelebrationState(
+  lessonLabel: string,
+  kazuRecoveredColor: boolean,
+): ReviewCelebrationState {
+  return {
+    lessonLabel,
+    title: "Felicidades por repasar",
+    message: kazuRecoveredColor
+      ? "KAZU recuperó color gracias a ti. Cada repaso lo mantiene vivo y empuja tu progreso hacia adelante."
+      : "KAZU sigue con color gracias a ti. Cada repaso refuerza lo que ya construiste y mantiene viva tu constancia.",
+  };
+}
 
 function ReviewPageSkeleton() {
   return (
@@ -174,10 +220,11 @@ export default function Page() {
     setActiveGrammarLesson,
     activeVocabularyReview,
     setActiveVocabularyReview,
-    handleVocabularyQuizSaved,
-    refreshAfterReview,
+    prepareReviewRefresh,
+    applyPreparedReviewRefresh,
     handleStartReview,
   } = useReviewPageData();
+  const [reviewCelebration, setReviewCelebration] = useState<ReviewCelebrationState | null>(null);
 
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
@@ -199,6 +246,117 @@ export default function Page() {
     handleStartReview(firstStartableReview.id);
   }, [firstStartableReview, handleStartReview]);
 
+  const handleReviewResolution = useCallback(
+    async ({
+      closeReview,
+      lessonLabel,
+    }: {
+      closeReview: () => void;
+      lessonLabel: string;
+    }) => {
+      const previousActiveCount = reviewProgress.activeCount;
+      const snapshot = await prepareReviewRefresh();
+      const nextActiveCount = snapshot.recommendations.length;
+      const kazuRecoveredColor = didKazuColorImprove(
+        previousActiveCount,
+        nextActiveCount,
+      );
+
+      closeReview();
+
+      applyPreparedReviewRefresh(snapshot);
+      setReviewCelebration(
+        buildReviewCelebrationState(lessonLabel, kazuRecoveredColor),
+      );
+
+      return kazuRecoveredColor;
+    },
+    [applyPreparedReviewRefresh, prepareReviewRefresh, reviewProgress.activeCount],
+  );
+
+  const handleKanjiReviewComplete = useCallback(async () => {
+    await handleReviewResolution({
+      closeReview: () => setActiveKanjiReview(null),
+      lessonLabel: "Kanji",
+    });
+  }, [handleReviewResolution, setActiveKanjiReview]);
+
+  const handleGrammarReviewComplete = useCallback(async () => {
+    await handleReviewResolution({
+      closeReview: () => setActiveGrammarLesson(null),
+      lessonLabel: "Gramática",
+    });
+  }, [handleReviewResolution, setActiveGrammarLesson]);
+
+  const handleVocabularyReviewComplete = useCallback(async () => {
+    await handleReviewResolution({
+      closeReview: () => setActiveVocabularyReview(null),
+      lessonLabel: "Vocabulario",
+    });
+  }, [handleReviewResolution, setActiveVocabularyReview]);
+
+  const reviewCelebrationOverlay = reviewCelebration && typeof document !== "undefined"
+    ? createPortal(
+        <div className="fixed inset-0 z-[280] overflow-y-auto">
+          <div
+            className="fixed inset-0 bg-black/45 backdrop-blur-[2px]"
+            onClick={() => setReviewCelebration(null)}
+          />
+          <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Repaso completado"
+              className="relative w-full max-w-xl overflow-hidden rounded-[32px] bg-surface-primary shadow-2xl ring-1 ring-border-subtle"
+            >
+              <div className="border-b border-border-subtle bg-gradient-to-r from-accent to-accent-hover px-5 py-5 text-content-inverted sm:px-6">
+                <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white/70">
+                  Repaso completado
+                </p>
+                <h2 className="mt-2 text-2xl font-extrabold tracking-tight">
+                  {reviewCelebration.title}
+                </h2>
+              </div>
+
+              <div className="px-5 py-5 sm:px-6 sm:py-6">
+                <span className="inline-flex rounded-full border border-accent/20 bg-accent/10 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-accent">
+                  {reviewCelebration.lessonLabel}
+                </span>
+                <p className="mt-4 text-lg font-bold leading-tight text-content-primary">
+                  Kazu sigue contigo gracias a este repaso.
+                </p>
+                <p className="mt-3 text-sm font-semibold leading-relaxed text-content-tertiary sm:text-base">
+                  {reviewCelebration.message}
+                </p>
+
+                <div className="mt-6 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setReviewCelebration(null)}
+                    className="inline-flex items-center justify-center rounded-2xl bg-accent px-5 py-3 text-sm font-extrabold text-content-inverted shadow-sm transition-colors hover:bg-accent-hover"
+                  >
+                    Seguir repasando
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )
+    : null;
+
+  const buildHelpTour = useCallback(
+    () =>
+      getTourById("review-system") ?? {
+        id: "review-system-fallback",
+        title: "Sistema de repasos",
+        route: "/dashboard/reviews",
+        steps: [],
+      },
+    [],
+  );
+
   if (loading) {
     return (
       <DashboardShell
@@ -215,6 +373,8 @@ export default function Page() {
       contentClassName="xl:overflow-hidden"
       containerClassName="xl:h-full xl:overflow-hidden"
     >
+      {reviewCelebrationOverlay}
+
       {activeKanjiReview && (
         <KanjiQuizModal
           kanjiId={activeKanjiReview.entityId}
@@ -223,7 +383,7 @@ export default function Page() {
           progressEligible
           persistProgressOnSpecificQuiz
           onComplete={() => {
-            void refreshAfterReview();
+            void handleKanjiReviewComplete();
           }}
           onClose={() => setActiveKanjiReview(null)}
         />
@@ -233,7 +393,7 @@ export default function Page() {
         <GrammarQuizModal
           lesson={activeGrammarLesson}
           onComplete={() => {
-            void refreshAfterReview();
+            void handleGrammarReviewComplete();
           }}
           onClose={() => setActiveGrammarLesson(null)}
         />
@@ -246,12 +406,18 @@ export default function Page() {
           question={activeVocabularyReview.question}
           initialType={activeVocabularyReview.initialType}
           availableTypes={activeVocabularyReview.availableTypes}
-          onSaved={handleVocabularyQuizSaved}
+          onComplete={() => {
+            void handleVocabularyReviewComplete();
+          }}
+          onSaved={async () => undefined}
           onClose={() => setActiveVocabularyReview(null)}
         />
       )}
 
-      <div className="grid gap-6 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(420px,0.96fr)_minmax(0,1.04fr)] xl:items-start">
+      <div
+        data-help-surface="reviews-page"
+        className="grid gap-6 xl:h-full xl:min-h-0 xl:grid-cols-[minmax(420px,0.96fr)_minmax(0,1.04fr)] xl:items-start"
+      >
         <AnimatedEntrance
           index={0}
           className="xl:h-full xl:min-h-0"
@@ -324,6 +490,8 @@ export default function Page() {
           </AnimatedEntrance>
         </div>
       </div>
+
+      <ContextualHelpButton getTour={buildHelpTour} />
     </DashboardShell>
   );
 }

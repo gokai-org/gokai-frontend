@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Search } from "lucide-react";
 import { FaqAccordion } from "@/features/help/components/FaqAccordion";
@@ -17,6 +18,8 @@ export function HelpFaqSection({
   faqs,
   animationsEnabled = true,
 }: HelpFaqSectionProps) {
+  const [openQuestion, setOpenQuestion] = useState<string | null>(null);
+
   if (faqs.length === 0) {
     return (
       <motion.div
@@ -43,6 +46,12 @@ export function HelpFaqSection({
         <FaqAccordion
           key={`${faq.question}-${index}`}
           item={faq}
+          open={openQuestion === faq.question}
+          onToggle={() => {
+            setOpenQuestion((current) =>
+              current === faq.question ? null : faq.question,
+            );
+          }}
           index={index}
           animationsEnabled={animationsEnabled}
         />

@@ -67,6 +67,20 @@
   --chart-label: #6b7280;
 }
 
+body[data-guide-tour-active="true"] {
+  user-select: none;
+}
+
+body[data-guide-tour-active="true"] [data-guide-tour-portal="overlay"] {
+  pointer-events: none;
+}
+
+body[data-guide-tour-active="true"] [data-guide-tour-portal="overlay"] [data-guide-tour-overlay-card],
+body[data-guide-tour-active="true"] [data-guide-tour-portal="overlay"] [data-guide-tour-overlay-card] * {
+  pointer-events: auto;
+  user-select: auto;
+}
+
 .dark {
   color-scheme: dark;
 
@@ -1449,6 +1463,249 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   fill: rgba(226, 226, 236, 0.96);
 }
 
+.vocabulary-board-background {
+  contain: layout paint style;
+  opacity: 0.72;
+  overflow: hidden;
+  backface-visibility: hidden;
+}
+
+.vocabulary-board-background::before {
+  content: "";
+  position: absolute;
+  inset: -12%;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      ellipse 112% 88% at 50% 50%,
+      transparent 58.6%,
+      rgba(18, 18, 22, 0.055) 59.1%,
+      transparent 59.8%
+    ),
+    radial-gradient(
+      ellipse 82% 138% at 50% 50%,
+      transparent 61.4%,
+      rgba(18, 18, 22, 0.04) 61.9%,
+      transparent 62.5%
+    );
+  opacity: 0.85;
+}
+
+.dark .vocabulary-board-background::before {
+  background-image:
+    radial-gradient(
+      ellipse 112% 88% at 50% 50%,
+      transparent 58.6%,
+      rgba(226, 226, 236, 0.085) 59.1%,
+      transparent 59.8%
+    ),
+    radial-gradient(
+      ellipse 82% 138% at 50% 50%,
+      transparent 61.4%,
+      rgba(226, 226, 236, 0.06) 61.9%,
+      transparent 62.5%
+    );
+  opacity: 0.78;
+}
+
+.vocabulary-map-surface {
+  --vocabulary-map-radius: 32px;
+  border-radius: var(--vocabulary-map-radius);
+}
+
+.vocabulary-map-frame {
+  border-radius: var(--vocabulary-map-radius);
+  overflow: hidden;
+  isolation: isolate;
+  clip-path: inset(0 round var(--vocabulary-map-radius));
+}
+
+.vocabulary-map-frame > .h-full {
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.vocabulary-map-frame .japan-map-stage,
+.vocabulary-map-frame .vmap-static-svg,
+.vocabulary-map-frame .vmap-hit-layer,
+.vocabulary-map-frame .vmap-cartography-layer {
+  border-radius: inherit;
+  overflow: hidden;
+}
+
+.vocabulary-map-coordinate-grid {
+  --vocabulary-map-coordinate-inset-x: 48px;
+  --vocabulary-map-coordinate-inset-y: 34px;
+  position: absolute;
+  inset: var(--vocabulary-map-coordinate-inset-y) var(--vocabulary-map-coordinate-inset-x);
+  pointer-events: none;
+  z-index: 2;
+}
+
+.vocabulary-map-coordinate-grid__line {
+  position: absolute;
+}
+
+.vocabulary-map-coordinate-grid__line--vertical {
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    180deg,
+    rgba(186, 72, 69, 0.16) 0%,
+    rgba(108, 116, 132, 0.18) 16%,
+    rgba(108, 116, 132, 0.18) 84%,
+    rgba(186, 72, 69, 0.16) 100%
+  );
+}
+
+.vocabulary-map-coordinate-grid__line--horizontal {
+  left: 0;
+  right: 0;
+  height: 1px;
+  transform: translateY(-50%);
+  background: linear-gradient(
+    90deg,
+    rgba(186, 72, 69, 0.16) 0%,
+    rgba(108, 116, 132, 0.18) 14%,
+    rgba(108, 116, 132, 0.18) 86%,
+    rgba(186, 72, 69, 0.16) 100%
+  );
+}
+
+.vocabulary-map-coordinates {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  color: rgba(102, 106, 116, 0.88);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.42);
+  overflow: visible;
+}
+
+.vocabulary-map-coordinates span {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  line-height: 1;
+  white-space: nowrap;
+  width: max-content;
+}
+
+.vocabulary-map-coordinates--top,
+.vocabulary-map-coordinates--bottom {
+  left: 48px;
+  right: 48px;
+  height: 1px;
+}
+
+.vocabulary-map-coordinates--top {
+  top: 8px;
+}
+
+.vocabulary-map-coordinates--bottom {
+  bottom: 8px;
+}
+
+.vocabulary-map-coordinates--left,
+.vocabulary-map-coordinates--right {
+  top: 34px;
+  bottom: 34px;
+  width: 22px;
+}
+
+.vocabulary-map-coordinates--left {
+  left: 10px;
+}
+
+.vocabulary-map-coordinates--right {
+  right: 10px;
+}
+
+.vocabulary-map-coordinates--top span {
+  top: 0;
+  transform: translate(-50%, 0);
+}
+
+.vocabulary-map-coordinates--bottom span {
+  bottom: 0;
+  transform: translate(-50%, 0);
+}
+
+.vocabulary-map-coordinates--left span,
+.vocabulary-map-coordinates--right span {
+  left: 50%;
+  min-height: 0;
+  min-width: auto;
+}
+
+.vocabulary-map-coordinates--left span {
+  transform: translate(-50%, -50%) rotate(-90deg);
+}
+
+.vocabulary-map-coordinates--right span {
+  transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.dark .vocabulary-map-coordinate-grid__line--vertical {
+  background: linear-gradient(
+    180deg,
+    rgba(205, 92, 87, 0.2) 0%,
+    rgba(170, 176, 188, 0.22) 16%,
+    rgba(170, 176, 188, 0.22) 84%,
+    rgba(205, 92, 87, 0.2) 100%
+  );
+}
+
+.dark .vocabulary-map-coordinate-grid__line--horizontal {
+  background: linear-gradient(
+    90deg,
+    rgba(205, 92, 87, 0.2) 0%,
+    rgba(170, 176, 188, 0.22) 14%,
+    rgba(170, 176, 188, 0.22) 86%,
+    rgba(205, 92, 87, 0.2) 100%
+  );
+}
+
+.dark .vocabulary-map-coordinates {
+  color: rgba(170, 176, 188, 0.9);
+  text-shadow: 0 1px 0 rgba(10, 10, 10, 0.3);
+}
+
+.vocabulary-map-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  border: 1.5px solid rgba(186, 72, 69, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 250, 0.52),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.16),
+    inset 0 0 0 2.5px rgba(186, 72, 69, 0.12),
+    0 0 0 1px rgba(186, 72, 69, 0.16),
+    0 0 24px rgba(186, 72, 69, 0.12),
+    0 18px 36px rgba(64, 33, 30, 0.1);
+}
+
+.dark .vocabulary-map-frame::after {
+  border-color: rgba(205, 92, 87, 0.52);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 246, 244, 0.08),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    inset 0 0 0 2.5px rgba(205, 92, 87, 0.16),
+    0 0 0 1px rgba(205, 92, 87, 0.18),
+    0 0 26px rgba(165, 52, 47, 0.16),
+    0 22px 46px rgba(0, 0, 0, 0.24),
+    0 0 18px rgba(165, 52, 47, 0.12);
+}
+
 /* ── Per-script background tints (hiragana=purple, katakana=blue) ── */
 /* data-script is set on .kanji-bg-scene by WritingBoardBackground */
 
@@ -1774,12 +2031,12 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 .vmap-static-base {
   filter: none;
   mix-blend-mode: normal;
-  opacity: 0.82;
+  opacity: 1;
 }
 .dark .vmap-static-base {
   filter: none;
   mix-blend-mode: normal;
-  opacity: 0.72;
+  opacity: 1;
 }
 
 .vmap-static-svg {
@@ -1963,8 +2220,7 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 
 /* ── KAZU variant — minimal panel ── */
 .graph-hover-card--kazu .graph-hover-card__surface {
-  background:
-    linear-gradient(180deg, rgba(20, 21, 24, 0.98), rgba(14, 15, 18, 0.96));
+  background: rgba(0, 0, 0, 0.94);
   border-color: rgba(153, 51, 49, 0.3);
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.42);
   border-left-width: 2px;
@@ -2051,11 +2307,10 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 }
 
 html:not(.dark) .graph-hover-card--kazu .graph-hover-card__surface {
-  background:
-    linear-gradient(180deg, rgba(24, 25, 29, 0.98), rgba(16, 17, 20, 0.96));
+  background: rgba(255, 255, 255, 0.98);
   border-color: rgba(189, 60, 51, 0.26);
   border-left-color: rgba(189, 60, 51, 0.86);
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+  box-shadow: 0 14px 34px rgba(80, 54, 46, 0.18);
 }
 
 html:not(.dark) .graph-hover-card--kazu .graph-hover-card__eyebrow {
@@ -2069,15 +2324,15 @@ html:not(.dark) .graph-hover-card--kazu .graph-hover-card__badge {
 }
 
 html:not(.dark) .graph-hover-card--kazu .graph-hover-card__title {
-  color: rgba(244, 245, 247, 0.96);
+  color: rgba(42, 28, 26, 0.96);
 }
 
 html:not(.dark) .graph-hover-card--kazu .graph-hover-card__subtitle {
-  color: rgba(146, 149, 156, 0.86);
+  color: rgba(92, 74, 70, 0.86);
 }
 
 html:not(.dark) .graph-hover-card--kazu .graph-hover-card__caption {
-  color: rgba(192, 196, 203, 0.9);
+  color: rgba(96, 76, 72, 0.9);
   border-top-color: rgba(189, 60, 51, 0.18);
 }
 

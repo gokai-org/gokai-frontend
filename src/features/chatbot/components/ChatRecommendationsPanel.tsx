@@ -73,7 +73,10 @@ export function ChatRecommendationsPanel({
   const compactMobileLayout = Boolean(onClose);
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-border-subtle bg-surface-elevated shadow-[0_2px_18px_-8px_rgba(0,0,0,0.08)]">
+    <section
+      data-help-target="chat-recommendations-panel"
+      className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-border-subtle bg-surface-elevated shadow-[0_2px_18px_-8px_rgba(0,0,0,0.08)]"
+    >
       <div className={`shrink-0 border-b border-border-subtle bg-surface-primary ${compactMobileLayout ? "px-3 py-3 sm:px-5 sm:py-4" : "px-4 py-4 sm:px-5"}`}>
         <div className="flex items-start justify-between gap-3">
           <div>

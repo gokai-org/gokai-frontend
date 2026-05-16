@@ -12,6 +12,7 @@ export interface LayoutProps {
   subtitle?: string;
   thumbnail: string;
   hasOnClick: boolean;
+  hoverEnabled: boolean;
   config: VariantConfig;
   actionAlignment?: "start" | "end";
   /** Tailwind transition class injected by useCardAnimation — empty when animations off. */
@@ -35,6 +36,7 @@ export function GradientCardLayout({
   subtitle,
   thumbnail,
   hasOnClick,
+  hoverEnabled,
   config,
   hoverTransition,
 }: LayoutProps) {
@@ -42,7 +44,7 @@ export function GradientCardLayout({
 
   return (
     <>
-      {hasOnClick && (
+      {hoverEnabled && (
         <span
           aria-hidden
           className={[
@@ -145,6 +147,7 @@ export function WordCardLayout({
   subtitle,
   thumbnail,
   hasOnClick,
+  hoverEnabled,
   config,
   actionAlignment = "end",
   hoverTransition,
@@ -153,7 +156,7 @@ export function WordCardLayout({
 
   return (
     <>
-      {hasOnClick && (
+      {hoverEnabled && (
         <span
           aria-hidden
           className={[

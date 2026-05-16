@@ -240,6 +240,8 @@ export function AccountSettings({ user, setUser, loading }: Props) {
   const routeTransitionDelayMs = platformMotion.shouldAnimate
     ? Math.max(170, Math.round(320 * platformMotion.durationScale))
     : 0;
+  const showInitialSkeleton =
+    loading || (Boolean(user?.id) && subLoading && subscription === null);
 
   useEffect(() => {
     router.prefetch(configurationSuccessPath);
@@ -375,7 +377,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
 
   // ── Loading skeleton ───────────────────────────────────────────────────────
 
-  if (loading) return <AccountSettingsSkeleton />;
+  if (showInitialSkeleton) return <AccountSettingsSkeleton />;
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

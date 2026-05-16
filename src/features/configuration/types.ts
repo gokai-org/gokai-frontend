@@ -12,7 +12,7 @@ export interface GeneralSettings {
 /** Notification settings */
 export interface NotificationSettings {
   emailNotifications: boolean;
-  notificationFrequency: string; // "Inmediato" | "Cada 3 horas" | "Diario" | "Semanal"
+  notificationFrequency: string; // "Cada 8 horas" | "Cada 16 horas" | "Cada 24 horas" | "Cada 2 días"
   priorityAlerts: boolean;
   quietHoursEnabled: boolean;
   quietHoursDays: string; // "Todos los días" | "Lunes - Viernes" | "Fines de semana" | "Personalizado"
@@ -75,7 +75,7 @@ export const DEFAULT_SETTINGS: UserSettings = {
   },
   notifications: {
     emailNotifications: true,
-    notificationFrequency: "Diario",
+    notificationFrequency: "Cada 24 horas",
     priorityAlerts: true,
     quietHoursEnabled: true,
     quietHoursDays: "Lunes - Viernes",

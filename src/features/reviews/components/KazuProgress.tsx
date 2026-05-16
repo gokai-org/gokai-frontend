@@ -30,6 +30,10 @@ const shadowTransformStyle = {
   transformOrigin: "50% 50%",
 } as CSSProperties;
 
+const mascotFrameStyle = {
+  maxWidth: "min(100%, clamp(17rem, 82vw, 31rem), max(15rem, calc(100dvh - 24rem)))",
+} as CSSProperties;
+
 const rootVariants: Variants = {
   idle: {
     x: 0,
@@ -187,10 +191,10 @@ function getSolidGrayFill(pathMarkup: string) {
   return rgbToHex(gray, gray, gray);
 }
 
-function tintPath(pathMarkup: string, progress: number) {
+function tintPath(pathMarkup: string, progress: number, minimumVitality = 0.22) {
   const activeFill = getPathFill(pathMarkup);
   const mutedFill = getSolidGrayFill(pathMarkup);
-  const vitality = clamp(progress / 100, 0.22, 1);
+  const vitality = clamp(progress / 100, minimumVitality, 1);
   const fill = mixHexColors(mutedFill, activeFill, vitality);
   const styledPath = pathMarkup.replace(/fill="[^"]+"/, `fill="${fill}"`);
 
@@ -245,6 +249,7 @@ interface KazuProgressProps {
   state?: KazuMascotState;
   reducedMotion?: boolean;
   className?: string;
+  minimumVitality?: number;
 }
 
 export const KazuProgress = memo(function KazuProgress({
@@ -253,6 +258,7 @@ export const KazuProgress = memo(function KazuProgress({
   state = "idle",
   reducedMotion,
   className,
+  minimumVitality = 0.22,
 }: KazuProgressProps) {
   const prefersReducedMotion = useReducedMotion();
   const paths = useKazuSvgPaths();
@@ -269,13 +275,16 @@ export const KazuProgress = memo(function KazuProgress({
       const reviewType = KAZU_PATH_REVIEW_TYPE_BY_INDEX.get(index);
       const progress = reviewType ? (zoneState.get(reviewType) ?? 64) : 64;
 
-      return tintPath(path, progress);
+      return tintPath(path, progress, minimumVitality);
     });
-  }, [paths, zoneState]);
+  }, [minimumVitality, paths, zoneState]);
 
   return (
     <div className={className}>
-      <div className="relative mx-auto aspect-square w-full max-w-[520px]">
+      <div
+        className="relative mx-auto aspect-square w-full"
+        style={mascotFrameStyle}
+      >
         <motion.svg
           viewBox="0 0 1254 1254"
           role="img"

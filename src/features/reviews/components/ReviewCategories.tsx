@@ -73,34 +73,47 @@ export function ReviewCategories({ categories, loading = false }: ReviewCategori
                 meta.hoverClassName,
               )}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2.5">
-                  <div
-                    className={joinClassNames(
-                      "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-md sm:h-10 sm:w-10",
-                      meta.iconClassName,
-                    )}
-                  >
-                    <Icon className="h-4 w-4 text-content-inverted sm:h-5 sm:w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-extrabold text-content-primary sm:text-sm">
-                      {category.label}
-                    </p>
-                    <p className="truncate font-mono text-[10px] font-bold text-content-tertiary sm:text-xs">
-                      {category.japanese}
-                    </p>
-                  </div>
+              <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] gap-x-2 gap-y-1.5 sm:flex sm:items-start sm:justify-between sm:gap-2">
+                <div
+                  className={joinClassNames(
+                    "col-start-1 row-start-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-md sm:hidden",
+                    meta.iconClassName,
+                  )}
+                >
+                  <Icon className="h-4 w-4 text-content-inverted" />
                 </div>
 
                 <span
                   className={joinClassNames(
-                    "rounded-full border px-2 py-0.5 text-[10px] font-extrabold sm:text-[11px]",
+                    "col-start-3 row-start-1 inline-flex h-7 w-7 items-center justify-center justify-self-end rounded-full border text-[10px] font-extrabold leading-none sm:h-8 sm:w-8 sm:text-[11px]",
                     meta.badgeClassName,
                   )}
                 >
                   {loading ? "..." : category.pendingCount}
                 </span>
+
+                <div className="col-span-3 min-w-0 pt-0.5 sm:col-auto sm:flex sm:min-w-0 sm:flex-1 sm:items-center sm:gap-2.5 sm:pt-0">
+                  <div className="hidden sm:flex">
+                    <div
+                      className={joinClassNames(
+                        "flex h-9 w-9 shrink-0 items-center justify-center rounded-xl shadow-md sm:h-10 sm:w-10",
+                        meta.iconClassName,
+                      )}
+                    >
+                      <Icon className="h-4 w-4 text-content-inverted sm:h-5 sm:w-5" />
+                    </div>
+                  </div>
+                  <div
+                    className="min-w-0"
+                  >
+                    <p className="text-[11px] font-extrabold leading-tight text-content-primary sm:truncate sm:text-sm">
+                      {category.label}
+                    </p>
+                    <p className="mt-0.5 text-[10px] font-bold leading-tight text-content-tertiary sm:truncate sm:font-mono sm:text-xs">
+                      {category.japanese}
+                    </p>
+                  </div>
+                </div>
               </div>
             </motion.div>
           );

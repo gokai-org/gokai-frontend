@@ -1,12 +1,13 @@
 export type { Notice, NoticeCategory, NoticeCategoryItem } from "./types";
 
-export { useNoticesMock } from "./hooks/useNoticesMock";
+export { useNotices } from "./hooks/useNotices";
 export { useNoticeFilters } from "./hooks/useNoticeFilters";
 
 export { NoticeSearchBar, NoticeToolbar } from "./components/NoticeFilters";
 export { NoticeCategoryFilter } from "./components/NoticeCategoryFilter";
 export { NoticeList } from "./components/NoticeList";
 export { NoticeCardRouter } from "./components/NoticeCardRouter";
+export { NoticePushPromptModal } from "./components/NoticePushPromptModal";
 
 export { default as NoticeEmptyState } from "./components/NoticeEmptyState";
 export { default as NoticeFooterCTA } from "./components/NoticeFooterCTA";
@@ -20,12 +21,3 @@ export { StreakNoticeCard } from "./cards/StreakNoticeCard";
 export { SystemNoticeCard } from "./cards/SystemNoticeCard";
 
 export { noticeCategoryConfig, timeAgo, cls } from "./utils/noticeConfig";
-
-export {
-  lessonNoticeMocks,
-  reviewNoticeMocks,
-  achievementNoticeMocks,
-  streakNoticeMocks,
-  systemNoticeMocks,
-  mockNotices,
-} from "./utils/noticeMocks";

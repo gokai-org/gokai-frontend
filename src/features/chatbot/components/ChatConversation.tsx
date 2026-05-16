@@ -50,7 +50,7 @@ export function ChatConversation({
         data-help-loading={isBootstrapping ? "true" : undefined}
         className="flex h-full min-h-0 w-full flex-col overflow-hidden rounded-[30px] border border-border-subtle bg-surface-elevated shadow-[0_2px_18px_-8px_rgba(0,0,0,0.08)]"
       >
-        <div className="shrink-0 border-b border-border-subtle bg-surface-primary px-4 py-4 sm:px-6">
+        <div className="shrink-0 border-b border-border-subtle bg-surface-primary px-4 py-5 sm:px-6 sm:py-5.5">
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <h2 className="text-lg font-extrabold text-content-primary">
@@ -73,7 +73,7 @@ export function ChatConversation({
             </div>
 
             {headerActions ? (
-              <div className="flex shrink-0 items-center gap-2">{headerActions}</div>
+              <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 py-1">{headerActions}</div>
             ) : null}
           </div>
         </div>

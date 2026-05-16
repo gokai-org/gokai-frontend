@@ -2,6 +2,7 @@ export const HELP_GUIDE_SECTION_EVENT = "gokai:help-guide-section";
 export const HELP_GUIDE_LIBRARY_RESET_EVENT = "gokai:help-guide-library-reset";
 export const HELP_GUIDE_WRITING_EVENT = "gokai:help-guide-writing";
 export const HELP_GUIDE_GRAMMAR_EVENT = "gokai:help-guide-grammar";
+export const HELP_GUIDE_CHATBOT_EVENT = "gokai:help-guide-chatbot";
 export const FIRST_RUN_SIDEBAR_PREVIEW_EVENT =
   "gokai:first-run-sidebar-preview";
 
@@ -18,6 +19,10 @@ export type HelpGuideWritingDetail = {
 export type HelpGuideGrammarDetail = {
   action: "focus" | "open" | "reset";
   target?: "available" | "start" | "outer" | "inner" | "goal" | "next" | "path";
+};
+
+export type HelpGuideChatbotDetail = {
+  action: "open-recommendations" | "close-recommendations";
 };
 
 export function dispatchHelpGuideSection(section: string) {
@@ -67,6 +72,20 @@ export function dispatchHelpGuideGrammar(
   window.dispatchEvent(
     new CustomEvent<HelpGuideGrammarDetail>(HELP_GUIDE_GRAMMAR_EVENT, {
       detail: { action, target },
+    }),
+  );
+}
+
+export function dispatchHelpGuideChatbot(
+  action: HelpGuideChatbotDetail["action"],
+) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent<HelpGuideChatbotDetail>(HELP_GUIDE_CHATBOT_EVENT, {
+      detail: { action },
     }),
   );
 }

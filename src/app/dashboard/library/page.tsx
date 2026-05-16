@@ -6,7 +6,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
-import { Search } from "lucide-react";
 import { CategoryFilter } from "@/features/library/components/CategoryFilter";
 import { VocabularyCard } from "@/features/library/components/VocabularyCard";
 import { useSidebar } from "@/shared/components/SidebarContext";
@@ -14,6 +13,8 @@ import { ScriptCard } from "@/features/library/components/ScriptCard";
 import { LibraryGrid } from "@/features/library/components/LibraryGrid";
 import { LibraryRecentPanel } from "@/features/library/components/LibraryRecentPanel";
 import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
+import { LibrarySearchBar } from "@/features/library/components/LibrarySearchBar";
+import { LibrarySearchResults } from "@/features/library/components/LibrarySearchResults";
 import { KanaPhoneticGrid } from "@/features/library/components/KanaPhoneticGrid";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import {
@@ -21,11 +22,13 @@ import {
   LibrarySkeleton,
 } from "@/shared/ui/Skeleton";
 import { useFavorites } from "@/features/library/hooks/useFavorites";
+import { useLibrarySearch } from "@/features/library/hooks/useLibrarySearch";
 import { useRecentItems } from "@/features/library/hooks/useRecentItems";
 import { useVocabularyContent } from "@/features/library/hooks/useVocabularyContent";
 import { useKanjiLockedStatus } from "@/features/library/hooks/useKanjiLockedStatus";
 import { useKanaLockedStatus } from "@/features/library/hooks/useKanaLockedStatus";
 import { useLibraryContent } from "@/features/library/hooks/useLibraryContent";
+import { useGrammarLessons } from "@/features/graph/grammar/hooks/useGrammarLessons";
 import type { Kanji } from "@/features/kanji/types";
 import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import type { Kana } from "@/features/kana/types";
@@ -48,13 +51,14 @@ import type {
 } from "@/features/graph/vocabulary/types";
 import { dispatchLibraryDockVisibility } from "@/features/library/utils/libraryDockVisibility";
 import {
+  backendWordToWord,
   buildLibraryCategories,
-  kanjiToScriptCard,
   hiraganaToScriptCard,
+  kanjiToScriptCard,
   katakanaToScriptCard,
+  recentWordToCard,
   subthemeToCard,
   themeToCard,
-  wordFavToCard,
   wordToCard,
 } from "@/features/library/utils/libraryMappers";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
@@ -72,6 +76,7 @@ import type {
   Subtheme as LibrarySubtheme,
   Word as LibraryWord,
 } from "@/features/library/types";
+import type { SearchIndexItem } from "@/features/library/types/librarySearch.types";
 // import { getPrimaryMeaning } from "@/features/kanji";
 
 type QuizCompletionResult = {
@@ -144,7 +149,7 @@ export default function LibraryPage() {
   const { animationsEnabled, heavyAnimationsEnabled } =
     useAnimationPreferences();
 
-  const { setBlurred } = useSidebar();
+  const { setBlurred, setHidden } = useSidebar();
   const mastered = useMasteredModules();
   const toast = useToast();
   const autoUnlockedKanjiRef = useRef<Set<string>>(new Set());
@@ -152,10 +157,16 @@ export default function LibraryPage() {
   const libraryMasteryTourTimersRef = useRef<number[]>([]);
   const libraryMasteryActiveCardRef = useRef<HTMLElement | null>(null);
   const pendingLibraryMasteryModuleRef = useRef<MasteryModuleId | null>(null);
+  const hasCompletedInitialLibraryEntranceRef = useRef(false);
   useEffect(() => {
     setBlurred(drawerEntity !== null);
     return () => setBlurred(false);
   }, [drawerEntity, setBlurred]);
+
+  useEffect(() => {
+    setHidden(selectedVocabularyWordId !== null);
+    return () => setHidden(false);
+  }, [selectedVocabularyWordId, setHidden]);
 
   const clearLibraryMasteryTour = useCallback(() => {
     libraryMasteryTourTimersRef.current.forEach((timerId) => {
@@ -196,11 +207,6 @@ export default function LibraryPage() {
 
         libraryMasteryActiveCardRef.current = card;
         card.classList.add("library-mastery-tour-card");
-        card.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
-          inline: "center",
-        });
       }, index * perCardDelay);
 
       libraryMasteryTourTimersRef.current.push(timerId);
@@ -311,9 +317,9 @@ export default function LibraryPage() {
     kanjis,
     katakanas,
     hiraganas,
-    filteredKanjis: _filteredKanjis,
-    allLibraryItems,
-    isSearching,
+    filteredKanjis,
+    filteredKatakanas,
+    filteredHiraganas,
     hasResolvedInitialContent,
     loadingKanjis,
     loadingKatakanas,
@@ -389,12 +395,11 @@ export default function LibraryPage() {
   const {
     themes,
     words,
-    interestSubthemes,
+    interestWords,
     filteredThemes,
     filteredSubthemes,
     filteredWords,
     filteredInterestSubthemes,
-    progressItems,
     selectedSubthemeItem,
     selectedTheme,
     selectedSubtheme,
@@ -406,9 +411,15 @@ export default function LibraryPage() {
     openSubtheme,
     reloadProgress: reloadVocabularyProgress,
     resetVocabularyView,
-  } = useVocabularyContent(searchQuery, selectedCategory === "themes");
+  } = useVocabularyContent(
+    searchQuery,
+    selectedCategory === "themes" ||
+      selectedCategory === "favoritos" ||
+      selectedCategory === "recent",
+  );
 
   const { recentItems, addRecentItem, loading: loadingRecentItems } = useRecentItems();
+  const { boardItems: grammarBoardItems, status: grammarStatus } = useGrammarLessons();
 
   const {
     favoriteKanjis,
@@ -432,6 +443,36 @@ export default function LibraryPage() {
     hiraganaCount: hiraganas.length,
     themeCount: themes.length,
   });
+  const browsableGrammarItems = useMemo(
+    () => grammarBoardItems.filter((item) => !item.isMock),
+    [grammarBoardItems],
+  );
+  const filteredGrammarItems = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return browsableGrammarItems;
+    }
+
+    return browsableGrammarItems.filter((item) =>
+      [item.title, item.symbol]
+        .some((value) => (value || "").toLowerCase().includes(normalizedQuery)),
+    );
+  }, [browsableGrammarItems, searchQuery]);
+  const grammarLessonsById = useMemo(
+    () => new Map(browsableGrammarItems.map((item) => [item.id, item])),
+    [browsableGrammarItems],
+  );
+  const allContentItems = useMemo(
+    () => [
+      ...filteredThemes.map((theme) => ({ type: "theme" as const, data: theme })),
+      ...filteredKanjis.map((kanji) => ({ type: "kanji" as const, data: kanji })),
+      ...filteredHiraganas.map((hiragana) => ({ type: "hiragana" as const, data: hiragana })),
+      ...filteredKatakanas.map((katakana) => ({ type: "katakana" as const, data: katakana })),
+      ...filteredGrammarItems.map((lesson) => ({ type: "grammar" as const, data: lesson })),
+    ],
+    [filteredGrammarItems, filteredHiraganas, filteredKanjis, filteredKatakanas, filteredThemes],
+  );
   const currentKanjiProgressId = useMemo(
     () =>
       [...kanjis]
@@ -462,6 +503,19 @@ export default function LibraryPage() {
       ),
     [words],
   );
+  const vocabularyWordIndex = useMemo(() => {
+    const nextIndex = new Map<string, LibraryWord>();
+
+    interestWords.forEach((word) => {
+      nextIndex.set(word.id, word);
+    });
+
+    orderedVocabularyWords.forEach((word) => {
+      nextIndex.set(word.id, word);
+    });
+
+    return nextIndex;
+  }, [interestWords, orderedVocabularyWords]);
   const vocabularyUnlockedWordIds = useMemo(() => {
     const unlockedIds = new Set<string>(selectedSubthemeItem?.unlockedWordIds ?? []);
 
@@ -486,6 +540,15 @@ export default function LibraryPage() {
 
     return nextState;
   }, [orderedVocabularyWords, vocabularyUnlockedWordIds]);
+  const themeLockStateById = useMemo(() => {
+    const nextState = new Map<string, boolean>();
+
+    themes.forEach((theme) => {
+      nextState.set(theme.id, theme.isUnlocked === false);
+    });
+
+    return nextState;
+  }, [themes]);
   const filteredInterestThemes = useMemo(
     () => filteredThemes.filter((theme) => Boolean(theme.selectedAt)),
     [filteredThemes],
@@ -527,6 +590,25 @@ export default function LibraryPage() {
     [openTheme],
   );
 
+  const handleAllContentThemeOpen = useCallback(
+    (theme: LibraryTheme) => {
+      setSearchQuery("");
+      setSelectedCategory("themes");
+      void handleVocabularyThemeOpen(theme);
+    },
+    [handleVocabularyThemeOpen],
+  );
+
+  const handleAllContentGrammarOpen = useCallback(
+    (lessonId: string) => {
+      setSearchQuery("");
+      setSelectedVocabularyWordId(null);
+      setSelectedCategory("grammar");
+      void addRecentItem("grammar", lessonId);
+    },
+    [addRecentItem],
+  );
+
   const handleVocabularySubthemeOpen = useCallback(
     async (subtheme: LibrarySubtheme) => {
       setSelectedVocabularyWordId(null);
@@ -548,6 +630,125 @@ export default function LibraryPage() {
       setSelectedVocabularyWordId(word.id);
     },
     [addRecentItem, selectedSubthemeItem, vocabularyWordLockStateById],
+  );
+
+  const handleSearchVocabularyThemeOpen = useCallback(
+    (theme: LibraryTheme) => {
+      setSearchQuery("");
+      setSelectedCategory("themes");
+      setSelectedVocabularyWordId(null);
+      void handleVocabularyThemeOpen(theme);
+    },
+    [handleVocabularyThemeOpen],
+  );
+
+  const {
+    groupedResults: groupedSearchResults,
+    totalResults: totalGroupedSearchResults,
+    isSearchActive,
+    isIndexLoading: isLibrarySearchIndexLoading,
+    isDebouncing: isLibrarySearchDebouncing,
+    error: librarySearchError,
+    hasNoResults: librarySearchHasNoResults,
+  } = useLibrarySearch(searchQuery);
+
+  function handleSearchKanjiSelect(item: SearchIndexItem) {
+    const kanji = kanjis.find((entry) => entry.id === item.id);
+
+    if (!kanji) {
+      return;
+    }
+
+    handleLibraryKanjiSelect(kanji);
+  }
+
+  function handleSearchKanaSelect(item: SearchIndexItem) {
+    const collection = item.entityType === "katakana" ? katakanas : hiraganas;
+    const kana = collection.find((entry) => entry.id === item.id);
+
+    if (!kana) {
+      return;
+    }
+
+    handleKanaClick(kana);
+  }
+
+  const handleSearchGrammarSelect = useCallback(
+    (item: SearchIndexItem) => {
+      setSearchQuery("");
+      setSelectedVocabularyWordId(null);
+      setSelectedCategory("grammar");
+      void addRecentItem("grammar", item.id);
+    },
+    [addRecentItem],
+  );
+
+  const handleSearchVocabularySelect = useCallback(
+    async (item: SearchIndexItem) => {
+      setSearchQuery("");
+      setSelectedCategory("themes");
+      setSelectedVocabularyWordId(null);
+
+      if (item.entityType === "theme") {
+        await handleSearchVocabularyThemeOpen({
+          id: item.id,
+          kanji: item.kanji ?? "",
+          kana: item.kana ?? "",
+          meaning: item.title,
+          released: item.released ?? true,
+          isUnlocked: themeLockStateById.get(item.id) ? false : null,
+        });
+        return;
+      }
+
+      if (!item.themeId) {
+        return;
+      }
+
+      const themeOpened = await openTheme({
+        id: item.themeId,
+        kanji: "",
+        kana: "",
+        meaning: "",
+        released: true,
+        isUnlocked: themeLockStateById.get(item.themeId) ? false : null,
+      });
+
+      if (!themeOpened) {
+        return;
+      }
+
+      if (item.entityType === "subtheme") {
+        await openSubtheme({
+          id: item.id,
+          themeId: item.themeId,
+          kanji: item.kanji ?? "",
+          kana: item.kana ?? "",
+          meaning: item.title,
+        });
+        return;
+      }
+
+      if (item.entityType !== "word" || !item.subthemeId) {
+        return;
+      }
+
+      const subthemeOpened = await openSubtheme({
+        id: item.subthemeId,
+        themeId: item.themeId,
+        kanji: "",
+        kana: "",
+        meaning: "",
+      });
+
+      if (!subthemeOpened) {
+        return;
+      }
+
+      void addRecentItem("word", item.id);
+      setSelectedVocabularyWordId(item.id);
+    },
+    [addRecentItem, handleSearchVocabularyThemeOpen, openSubtheme, openTheme, themeLockStateById],
   );
 
   const startVocabularyUnlockAnimation = useCallback((ids: string[]) => {
@@ -755,9 +956,10 @@ export default function LibraryPage() {
     void reloadLockedStatus();
   }, [mastered, quizKanji, reloadLockedStatus]);
 
-  const handleKanaClick = (kana: Kana) => {
+  const handleKanaClick = useCallback((kana: Kana) => {
+    void addRecentItem(kana.kanaType, kana.id);
     setDrawerEntity({ id: kana.id, kind: "kana", kanaType: kana.kanaType });
-  };
+  }, [addRecentItem]);
 
   const handleKanaQuizClose = useCallback(async (_result?: QuizCompletionResult) => {
     const isPracticeOnly = quizKana?.isPracticeOnly === true;
@@ -856,6 +1058,22 @@ export default function LibraryPage() {
       resetVocabularyView();
     }
   };
+
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchQuery(value);
+
+      if (!value.trim()) {
+        return;
+      }
+
+      setDrawerEntity(null);
+      setSelectedCategory(null);
+      setSelectedVocabularyWordId(null);
+      resetVocabularyView();
+    },
+    [resetVocabularyView],
+  );
 
   const requestedCategory = searchParams.get("category");
   const requestedEntityId = searchParams.get("entityId");
@@ -960,7 +1178,7 @@ export default function LibraryPage() {
   }, [resetVocabularyView]);
 
   const totalBaseContentCount =
-    kanjis.length + katakanas.length + hiraganas.length;
+    themes.length + kanjis.length + katakanas.length + hiraganas.length + browsableGrammarItems.length;
   const vocabularyCurrentCount = selectedSubtheme
     ? filteredWords.length
     : selectedTheme
@@ -969,7 +1187,18 @@ export default function LibraryPage() {
   const isLibraryBootstrapping =
     !hasResolvedInitialContent ||
     !hasResolvedInitialKanjiStatus ||
-    !hasResolvedInitialKanaStatus;
+    !hasResolvedInitialKanaStatus ||
+    grammarStatus === "loading";
+  const shouldDisableLibraryEntranceAnimations =
+    !animationsEnabled || hasCompletedInitialLibraryEntranceRef.current;
+
+  useEffect(() => {
+    if (isLibraryBootstrapping) {
+      return;
+    }
+
+    hasCompletedInitialLibraryEntranceRef.current = true;
+  }, [isLibraryBootstrapping]);
 
   return (
     <DashboardShell>
@@ -980,25 +1209,17 @@ export default function LibraryPage() {
       ) : (
         <div ref={libraryMasteryRootRef} data-help-target="library-page">
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div
-              data-help-target="library-search"
-              className="flex items-center gap-2 rounded-full border border-border-default bg-surface-secondary px-4 py-2"
-            >
-              <Search className="h-4 w-4 text-content-muted" />
-              <input
-                type="text"
-                placeholder="Buscar kanjis, hiraganas o katakanas..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="bg-transparent text-sm outline-none w-48 lg:w-72"
-              />
-            </div>
+            <LibrarySearchBar
+              value={searchQuery}
+              onChange={handleSearchChange}
+              isLoading={isLibrarySearchIndexLoading || isLibrarySearchDebouncing}
+            />
           </div>
 
           <AnimatedEntrance
             index={0}
             className="mb-8"
-            disabled={!animationsEnabled}
+            disabled={shouldDisableLibraryEntranceAnimations}
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >
             <div data-help-target="library-categories">
@@ -1010,74 +1231,86 @@ export default function LibraryPage() {
             </div>
           </AnimatedEntrance>
 
-          {isSearching && !selectedCategory && (
+          {isSearchActive && !selectedCategory && (
             <AnimatedEntrance
               index={1}
-              disabled={!animationsEnabled}
+              disabled={shouldDisableLibraryEntranceAnimations}
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
-              <div>
-                <div className="mb-6 flex items-center justify-between">
-                  <h2 className="text-2xl font-bold text-content-primary">
-                    Resultados para &ldquo;{searchQuery.trim()}&rdquo;
-                  </h2>
-                  <span className="text-sm text-content-secondary">
-                    {allLibraryItems.length} resultados
-                  </span>
+              {librarySearchError ? (
+                <div className="flex flex-col items-center justify-center py-16">
+                  <h3 className="mb-2 text-xl font-bold text-content-primary">
+                    No pudimos cargar la búsqueda
+                  </h3>
+                  <p className="max-w-md text-center text-content-secondary">
+                    Intenta de nuevo en unos segundos. {librarySearchError}
+                  </p>
                 </div>
-
-                {allLibraryItems.length > 0 ? (
-                  <LibraryGrid
-                    items={allLibraryItems}
-                    favoriteKanjis={favoriteKanjis}
-                    favoriteHiraganas={favoriteHiraganas}
-                    favoriteKatakanas={favoriteKatakanas}
-                    lockedKanjiIds={lockedKanjiIds}
-                    nextUnlockReadyKanjiId={
-                      canUnlockNext ? nextUnlockCandidateId : null
-                    }
-                    unlockPendingKanjiId={unlockPendingKanjiId}
-                    currentKanjiPoints={userPoints}
-                    lockedHiraganaIds={lockedHiraganaIds}
-                    lockedKatakanaIds={lockedKatakanaIds}
-                    newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
-                    newlyUnlockedKanaIds={newlyUnlockedKanaIds}
-                    toggleFavoriteKanji={toggleFavoriteKanji}
-                    onKanjiClick={handleLibraryKanjiSelect}
-                    onKanjiPressUnlock={handlePressUnlockKanji}
-                    onKanaClick={handleKanaClick}
-                    className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <h3 className="mb-2 text-xl font-bold text-content-primary">
-                      Sin resultados
-                    </h3>
-                    <p className="max-w-md text-center text-content-secondary">
-                      No encontramos contenido que coincida con &ldquo;
-                      {searchQuery.trim()}&rdquo;.
-                    </p>
-                  </div>
-                )}
-              </div>
+              ) : (
+                <LibrarySearchResults
+                  query={searchQuery}
+                  groupedResults={groupedSearchResults}
+                  totalResults={totalGroupedSearchResults}
+                  isLoading={isLibrarySearchIndexLoading || isLibrarySearchDebouncing}
+                  hasNoResults={librarySearchHasNoResults}
+                  grammarLessonsById={grammarLessonsById}
+                  favoriteKanjis={favoriteKanjis}
+                  favoriteHiraganas={favoriteHiraganas}
+                  favoriteKatakanas={favoriteKatakanas}
+                  favoriteGrammar={favoriteGrammar}
+                  favoriteWords={favoriteWords}
+                  lockedKanjiIds={lockedKanjiIds}
+                  lockedHiraganaIds={lockedHiraganaIds}
+                  lockedKatakanaIds={lockedKatakanaIds}
+                  themeLockStateById={themeLockStateById}
+                  wordLockStateById={vocabularyWordLockStateById}
+                  newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
+                  newlyUnlockedKanaIds={newlyUnlockedKanaIds}
+                  canUnlockNext={canUnlockNext}
+                  nextUnlockCandidateId={nextUnlockCandidateId}
+                  unlockPendingKanjiId={unlockPendingKanjiId}
+                  userPoints={userPoints}
+                  onKanjiSelect={handleSearchKanjiSelect}
+                  onKanaSelect={handleSearchKanaSelect}
+                  onGrammarSelect={handleSearchGrammarSelect}
+                  onVocabularySelect={(item) => {
+                    void handleSearchVocabularySelect(item);
+                  }}
+                  onToggleFavoriteKanji={(id) => {
+                    toggleFavoriteKanji(id);
+                  }}
+                  onToggleFavoriteWord={(id) => {
+                    void toggleFavorite(id, "word");
+                  }}
+                  onToggleFavoriteGrammar={(id) => {
+                    void toggleFavorite(id, "grammar");
+                  }}
+                  onPressUnlockKanji={(id) => {
+                    void handlePressUnlockKanji(id);
+                  }}
+                />
+              )}
             </AnimatedEntrance>
           )}
 
-          {!selectedCategory && !isSearching && (
+          {!selectedCategory && !isSearchActive && (
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-8">
               <AnimatedEntrance
                 index={1}
                 className="order-1 xl:order-2"
-                disabled={!animationsEnabled}
+                disabled={shouldDisableLibraryEntranceAnimations}
                 mode={heavyAnimationsEnabled ? "default" : "light"}
               >
                 <div data-help-target="library-recent">
                   <LibraryRecentPanel
                     recentItems={recentItems}
                     kanjis={kanjis}
+                    hiraganas={hiraganas}
+                    katakanas={katakanas}
                     loading={loadingRecentItems}
                     onOpenRecent={() => setSelectedCategory("recent")}
                     onKanjiClick={handleLibraryKanjiSelect}
+                    onKanaClick={handleKanaClick}
                   />
                 </div>
               </AnimatedEntrance>
@@ -1085,7 +1318,7 @@ export default function LibraryPage() {
               <AnimatedEntrance
                 index={2}
                 className="order-2 min-w-0 xl:order-1"
-                disabled={!animationsEnabled}
+                disabled={shouldDisableLibraryEntranceAnimations}
               >
                 <div data-help-target="library-main-section">
                   <div data-help-target="library-main-overview">
@@ -1101,12 +1334,13 @@ export default function LibraryPage() {
                   </div>
 
                   <div data-help-target="library-main-grid">
-                    {allLibraryItems.length > 0 ? (
+                    {allContentItems.length > 0 ? (
                       <LibraryGrid
-                        items={allLibraryItems}
+                        items={allContentItems}
                         favoriteKanjis={favoriteKanjis}
                         favoriteHiraganas={favoriteHiraganas}
                         favoriteKatakanas={favoriteKatakanas}
+                        favoriteGrammar={favoriteGrammar}
                         lockedKanjiIds={lockedKanjiIds}
                         nextUnlockReadyKanjiId={
                           canUnlockNext ? nextUnlockCandidateId : null
@@ -1118,9 +1352,14 @@ export default function LibraryPage() {
                         newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
                         newlyUnlockedKanaIds={newlyUnlockedKanaIds}
                         toggleFavoriteKanji={toggleFavoriteKanji}
+                        onToggleFavoriteGrammar={(id) => {
+                          void toggleFavorite(id, "grammar");
+                        }}
                         onKanjiClick={handleLibraryKanjiSelect}
                         onKanjiPressUnlock={handlePressUnlockKanji}
                         onKanaClick={handleKanaClick}
+                        onThemeClick={handleAllContentThemeOpen}
+                        onGrammarClick={handleAllContentGrammarOpen}
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center py-16">
@@ -1141,7 +1380,7 @@ export default function LibraryPage() {
           {selectedCategory === "favoritos" && (
             <AnimatedEntrance
               index={1}
-              disabled={!animationsEnabled}
+              disabled={shouldDisableLibraryEntranceAnimations}
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
               <div>
@@ -1219,7 +1458,9 @@ export default function LibraryPage() {
                     </h3>
                     <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                       {favoriteData.word.map((fav, i) => {
-                        const card = wordFavToCard(fav);
+                        const resolvedWord =
+                          vocabularyWordIndex.get(fav.id) ?? backendWordToWord(fav);
+                        const card = wordToCard(resolvedWord);
 
                         return (
                           <VocabularyCard
@@ -1259,7 +1500,7 @@ export default function LibraryPage() {
           {selectedCategory === "kanji" && (
             <AnimatedEntrance
               index={1}
-              disabled={!animationsEnabled}
+              disabled={shouldDisableLibraryEntranceAnimations}
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
               <LibraryCategorySection
@@ -1308,7 +1549,7 @@ export default function LibraryPage() {
           {selectedCategory === "grammar" && (
             <AnimatedEntrance
               index={1}
-              disabled={!animationsEnabled}
+              disabled={shouldDisableLibraryEntranceAnimations}
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
               <LibraryCategorySection
@@ -1335,7 +1576,7 @@ export default function LibraryPage() {
           {selectedCategory === "katakana" && (
             <AnimatedEntrance
               index={1}
-              disabled={!animationsEnabled}
+              disabled={shouldDisableLibraryEntranceAnimations}
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
               <LibraryCategorySection
@@ -1364,7 +1605,7 @@ export default function LibraryPage() {
           {selectedCategory === "hiragana" && (
             <AnimatedEntrance
               index={1}
-              disabled={!animationsEnabled}
+              disabled={shouldDisableLibraryEntranceAnimations}
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
               <LibraryCategorySection
@@ -1393,7 +1634,7 @@ export default function LibraryPage() {
           {selectedCategory === "themes" && (
             <AnimatedEntrance
               index={1}
-              disabled={!animationsEnabled}
+              disabled={shouldDisableLibraryEntranceAnimations}
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
               <LibraryCategorySection
@@ -1589,7 +1830,7 @@ export default function LibraryPage() {
           {selectedCategory === "recent" && (
             <AnimatedEntrance
               index={1}
-              disabled={!animationsEnabled}
+              disabled={shouldDisableLibraryEntranceAnimations}
               mode={heavyAnimationsEnabled ? "default" : "light"}
             >
               <LibraryCategorySection
@@ -1660,15 +1901,43 @@ export default function LibraryPage() {
                         );
                       }
 
-                      if (r.type === "word") {
-                        const card = wordToCard({
+                      if (r.type === "hiragana" || r.type === "katakana") {
+                        const kanaCollection = r.type === "hiragana" ? hiraganas : katakanas;
+                        const kana = kanaCollection.find((entry) => entry.id === r.id) ?? {
                           id: r.id,
-                          kanji: r.kanjiWord,
-                          hiragana: r.hiragana,
-                          meanings: Array.isArray(r.meanings)
-                            ? (r.meanings as string[])
-                            : null,
-                          icon: null,
+                          symbol: r.symbol ?? (r.type === "hiragana" ? "あ" : "ア"),
+                          kanaType: r.type,
+                          romaji: r.romaji ?? undefined,
+                          pointsToUnlock: 0,
+                        };
+                        const isLocked =
+                          r.type === "hiragana"
+                            ? lockedHiraganaIds.has(kana.id)
+                            : lockedKatakanaIds.has(kana.id);
+
+                        return (
+                          <ScriptCard
+                            key={r.id}
+                            {...(r.type === "hiragana"
+                              ? hiraganaToScriptCard(kana)
+                              : katakanaToScriptCard(kana))}
+                            index={i}
+                            locked={isLocked}
+                            unlocking={newlyUnlockedKanaIds.has(kana.id)}
+                            onClick={isLocked ? undefined : () => handleKanaClick(kana)}
+                          />
+                        );
+                      }
+
+                      if (r.type === "word") {
+                        const resolvedWord =
+                          vocabularyWordIndex.get(r.id) ?? backendWordToWord(r);
+                        const card = recentWordToCard({
+                          ...r,
+                          icon: resolvedWord.icon ?? r.icon ?? null,
+                          kanjiWord: resolvedWord.kanji ?? r.kanjiWord ?? null,
+                          hiragana: resolvedWord.hiragana ?? r.hiragana ?? null,
+                          meanings: resolvedWord.meanings ?? r.meanings ?? null,
                         });
 
                         return (

@@ -12,7 +12,6 @@ import {
   Filter,
   RefreshCw,
   Send,
-  Mic,
   TrendingUp,
   Calendar,
   Award,
@@ -35,6 +34,7 @@ import {
 } from "@/features/help/utils/contextualTours";
 import {
   dispatchHelpGuideGrammar,
+  dispatchHelpGuideChatbot,
   dispatchHelpGuideLibraryReset,
   dispatchHelpGuideSection,
   dispatchHelpGuideWriting,
@@ -155,43 +155,54 @@ export const tourDefinitions: TourDefinition[] = [
      ═══════════════════════════════════════════════════════ */
   {
     id: "review-system",
-    title: "Sistema de revisiones",
+    title: "Sistema de repasos",
     route: "/dashboard/reviews",
     steps: [
       {
-        title: "Kazu y tus repasos",
+        title: "Tu zona de repasos",
         description:
-          "Kazu muestra el estado de tu constancia. Si dejas pasar los repasos, sus colores se van apagando para avisarte que toca practicar.",
+          "Esta pantalla junta tu estado actual, la racha y la lista de repasos que tienes listos. Desde aquí controlas toda tu sesión de práctica.",
         icon: <Target className="w-6 h-6" />,
+        selector: '[data-help-surface="reviews-page"]',
+        autoScroll: false,
+        spotlightPadding: 18,
         position: "center",
       },
       {
-        title: "Mantener sus colores",
+        title: "Estado general de Kazu",
         description:
-          "Al realizar repasos, Kazu recupera color y refleja que tu conocimiento sigue activo. La racha y el estado te ayudan a leer ese progreso rápido.",
+          "La tarjeta principal de Kazu resume cómo va tu constancia. Cuando acumulas pendientes, su estado te avisa visualmente que ya conviene volver a repasar.",
         icon: <BarChart3 className="w-6 h-6" />,
-        position: "center",
+        selector: '[data-help-target="reviews-kazu-card"]',
+        spotlightPadding: 18,
+        position: "right",
       },
       {
-        title: "Sesión recomendada",
+        title: "Racha semanal",
         description:
-          "Este panel resume cuántas lecciones están listas y te da el botón principal para empezar el repaso del día.",
+          "Aquí ves si tu cadena sigue viva y cómo se distribuye tu actividad durante la semana. Es la referencia rápida para no romper el hábito.",
         icon: <Award className="w-6 h-6" />,
-        position: "center",
+        selector: '[data-help-target="reviews-streak-panel"]',
+        spotlightPadding: 16,
+        position: "left",
       },
       {
-        title: "Tipos de repaso",
+        title: "Resumen por grupo",
         description:
-          "Estas categorías separan lo urgente, lo recomendado y lo estable para que sepas qué necesita atención primero.",
+          "Estas tarjetas separan tus repasos por kanji, gramática y vocabulario para que identifiques en qué bloque se concentra tu carga actual.",
         icon: <RefreshCw className="w-6 h-6" />,
-        position: "center",
+        selector: '[data-help-target="reviews-summary-categories"]',
+        spotlightPadding: 14,
+        position: "bottom",
       },
       {
         title: "Repasos pendientes",
         description:
-          "Aquí aparecen los ítems listos para practicar. Completar esta lista mantiene activo tu progreso y ayuda a que Kazu conserve sus colores.",
+          "Aquí aparece la ruta de práctica real. Cada tarjeta te lleva directo al repaso que toca hacer y es el bloque que usarás más al entrar a esta página.",
         icon: <BookOpen className="w-6 h-6" />,
-        position: "center",
+        selector: '[data-help-target="reviews-pending"]',
+        spotlightPadding: 16,
+        position: "left",
       },
     ],
   },
@@ -232,15 +243,33 @@ export const tourDefinitions: TourDefinition[] = [
         position: "top",
       },
       {
-        title: "Entrada por voz",
+        title: "Boton de recomendaciones",
         description:
-          "Usa el micrófono para practicar tu pronunciación. El chatbot transcribirá lo que dices y te dará retroalimentación sobre tu habla.",
-        icon: <Mic className="w-6 h-6" />,
-        selector: '[data-help-target="chat-mic"]',
+          "La estrella del header abre tu espacio de recomendaciones. Desde ahi puedes ver el contenido que KAZU te sugiere estudiar despues de conversar.",
+        icon: <Star className="w-6 h-6" />,
+        selector: '[data-help-target="chat-recommendations-trigger"]',
         spotlightPadding: 14,
         position: "top-right",
       },
+      {
+        title: "Espacio de recomendaciones",
+        description:
+          "Aqui se acumulan las sugerencias activas del chat. Cada tarjeta te lleva directo a la leccion, tablero o mapa que conviene revisar a continuacion.",
+        icon: <PanelsTopLeft className="w-6 h-6" />,
+        selector: '[data-help-target="chat-recommendations-panel"]',
+        spotlightPadding: 16,
+        position: "left",
+        onEnter: () => {
+          dispatchHelpGuideChatbot("open-recommendations");
+          return () => {
+            dispatchHelpGuideChatbot("close-recommendations");
+          };
+        },
+      },
     ],
+    onClose: () => {
+      dispatchHelpGuideChatbot("close-recommendations");
+    },
   },
 
   /* ═══════════════════════════════════════════════════════
@@ -349,7 +378,7 @@ export const tourDefinitions: TourDefinition[] = [
       {
         title: "Privacidad y cuenta",
         description:
-          "Gestiona tus datos personales, seguridad de la cuenta, autenticación 2FA y opciones de privacidad todo desde un solo lugar.",
+          "Gestiona tus opciones de privacidad todo desde un solo lugar.",
         icon: <Lock className="w-6 h-6" />,
         selector: '[data-help-target="settings-privacy"]',
         spotlightPadding: 16,

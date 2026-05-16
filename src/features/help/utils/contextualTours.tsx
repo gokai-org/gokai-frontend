@@ -423,12 +423,14 @@ export function createVocabularyGraphContextTour({
   focusThemeNode,
   focusRecommendedSubtheme,
   focusWordNode,
-  focusLessonTab,
   openLesson,
   focusCultureModeAction,
   resetTourState,
 }: VocabularyGraphTourOptions): TourDefinition {
   const regionSpotlightSelector = `${scopeSelector} [data-help-target="vocabulary-selected-region"]`;
+  const themeSpotlightSelector = `${scopeSelector} [data-help-target="vocabulary-theme-node"]`;
+  const recommendedSubthemeSpotlightSelector = `${scopeSelector} [data-help-target="vocabulary-recommended-subtheme-node"]`;
+  const wordSpotlightSelector = `${scopeSelector} [data-help-target="vocabulary-word-node"]`;
 
   const steps: TourStep[] = [
     {
@@ -452,6 +454,7 @@ export function createVocabularyGraphContextTour({
       spotlightPadding: 16,
       spotlightShape: "round",
       position: "top-right",
+      stepTargetTimeout: 4000,
       onEnter: () => {
         void focusRegion();
       },
@@ -459,12 +462,13 @@ export function createVocabularyGraphContextTour({
     {
       title: "Interés desbloqueado",
       description:
-        "Aquí aparece un interés o tema disponible dentro de la región. Desde este nodo entras al grafo que organiza los subtemas que puedes estudiar ahora.",
+        "Aquí aparece el interés principal disponible dentro de la región. Este es el punto de entrada al recorrido: desde aquí bajas al subtema recomendado para empezar a estudiar.",
       icon: <Compass className="h-6 w-6" />,
-      selector: regionSpotlightSelector,
+      selector: themeSpotlightSelector,
       spotlightPadding: 16,
       spotlightShape: "round",
       position: "top-right",
+      stepTargetTimeout: 4000,
       onEnter: () => {
         void focusThemeNode();
       },
@@ -472,12 +476,13 @@ export function createVocabularyGraphContextTour({
     {
       title: "Subtema recomendado",
       description:
-        "Al entrar al tema, la plataforma destaca una recomendación para que veas cuál es la rama más útil o más alineada con tu recorrido actual.",
+        "Al entrar al interés, la guía abre el subtema recomendado para mostrarte la rama más útil o más alineada con tu recorrido actual.",
       icon: <Sparkles className="h-6 w-6" />,
-      selector: regionSpotlightSelector,
+      selector: recommendedSubthemeSpotlightSelector,
       spotlightPadding: 16,
       spotlightShape: "round",
       position: "top-right",
+      stepTargetTimeout: 6000,
       onEnter: () => {
         void focusRecommendedSubtheme();
       },
@@ -485,108 +490,39 @@ export function createVocabularyGraphContextTour({
     {
       title: "Palabra disponible",
       description:
-        "Cuando eliges el subtema, el grafo baja al nivel de palabras. Aquí ves la siguiente palabra lista para abrir y estudiar dentro de esa rama.",
+        "Después de entrar al subtema, el grafo baja al nivel de palabras. Aquí ves la siguiente palabra lista para abrir y estudiar dentro de esa rama.",
       icon: <MousePointerClick className="h-6 w-6" />,
-      selector: regionSpotlightSelector,
+      selector: wordSpotlightSelector,
       spotlightPadding: 16,
       spotlightShape: "round",
       position: "top-right",
+      stepTargetTimeout: 8000,
       onEnter: () => {
         void focusWordNode();
       },
     },
     {
-      title: "Panel lateral de estudio",
+      title: "Modal de la palabra",
       description:
-        "Aquí ves la palabra activa con significado, audio, pronunciación, escritura y acceso a los quizzes para convertir estudio en avance real.",
+        "Al abrir la palabra, aparece su modal de estudio con significado, audio, pronunciación y escritura para que entiendas qué contiene antes de empezar a practicar.",
       icon: <PanelRightOpen className="h-6 w-6" />,
       selector: `${scopeSelector} [data-help-target="lesson-drawer"]`,
       spotlightPadding: 12,
       position: "left",
+      stepTargetTimeout: 10000,
       onEnter: () => {
         void openLesson();
       },
     },
     {
-      title: "Secciones del modal",
-      description:
-        "Estas pestañas dividen el estudio en significado, audio, habla y escritura para practicar la palabra desde varios ángulos.",
-      icon: <LayoutPanelLeft className="h-6 w-6" />,
-      selector: `${scopeSelector} [data-help-target="lesson-section-tabs"]`,
-      spotlightPadding: 12,
-      position: "left",
-      onEnter: () => {
-        void focusLessonTab("meaning");
-      },
-    },
-    {
-      title: "Ejercicio de significado",
-      description:
-        "Aquí refuerzas qué idea representa la palabra para reconocerla rápido cuando aparezca en un quiz o en contexto.",
-      icon: <BookOpenText className="h-6 w-6" />,
-      selector: `${scopeSelector} [data-help-target="vocabulary-lesson-exercise-meaning"]`,
-      spotlightPadding: 12,
-      position: "left",
-      onEnter: () => {
-        void focusLessonTab("meaning");
-      },
-    },
-    {
-      title: "Ejercicio de audio",
-      description:
-        "En esta parte entrenas el oído para reconocer la palabra por sonido, ritmo y lectura asociada.",
-      icon: <Compass className="h-6 w-6" />,
-      selector: `${scopeSelector} [data-help-target="vocabulary-lesson-exercise-listening"]`,
-      spotlightPadding: 12,
-      position: "left",
-      onEnter: () => {
-        void focusLessonTab("listening");
-      },
-    },
-    {
-      title: "Ejercicio de habla",
-      description:
-        "Aquí practicas pronunciar la palabra para que no solo la reconozcas: también puedas producirla con naturalidad.",
-      icon: <MousePointerClick className="h-6 w-6" />,
-      selector: `${scopeSelector} [data-help-target="vocabulary-lesson-exercise-speaking"]`,
-      spotlightPadding: 12,
-      position: "left",
-      onEnter: () => {
-        void focusLessonTab("speaking");
-      },
-    },
-    {
-      title: "Ejercicio de escritura",
-      description:
-        "Esta sección te pide reconstruir la lectura completa, pieza por pieza, para fijar la palabra en memoria activa.",
-      icon: <Sparkles className="h-6 w-6" />,
-      selector: `${scopeSelector} [data-help-target="vocabulary-lesson-exercise-writing"]`,
-      spotlightPadding: 12,
-      position: "left",
-      onEnter: () => {
-        void focusLessonTab("writing");
-      },
-    },
-    {
-      title: "Acceso al quiz activo",
-      description:
-        "Desde aquí lanzas el tipo de práctica que estés viendo en ese momento para convertir la explicación en progreso real.",
-      icon: <MousePointerClick className="h-6 w-6" />,
-      selector: `${scopeSelector} [data-help-target="lesson-quiz-actions"]`,
-      spotlightPadding: 12,
-      position: "left",
-      onEnter: () => {
-        void focusLessonTab("writing");
-      },
-    },
-    {
       title: "Modo cultura",
       description:
-        "En el botón de ayuda también tienes este acceso para entrar al modo exploración de cultura y ver pistas culturales por región cuando quieras cambiar de enfoque.",
+        "Después de cerrar el modal, la guía vuelve al mapa y te muestra este acceso para entrar al modo cultura y explorar pistas culturales por región.",
       icon: <Compass className="h-6 w-6" />,
       selector: `${scopeSelector} [data-help-target="vocabulary-help-action-culture-exploration-mode"]`,
       spotlightPadding: 10,
       position: "left",
+      stepTargetTimeout: 6000,
       onEnter: () => {
         void focusCultureModeAction();
       },

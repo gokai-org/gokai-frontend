@@ -62,6 +62,8 @@ type SendChatMessageResponse = {
   similarity?: number;
   similatiry?: number;
   usedTokens: number;
+  pointsAwarded?: number;
+  totalPoints?: number;
 };
 
 const wait = (ms: number) =>
@@ -150,6 +152,10 @@ function normalizeRecommendations(
   return (recommendations ?? []).map(normalizeRecommendation);
 }
 
+function normalizeChatList(chats?: ChatbotApiChat[] | null) {
+  return (chats ?? []).map(normalizeChat);
+}
+
 function normalizeChat(chat: ChatbotApiChat): ReviewChat {
   return {
     id: chat.id,
@@ -209,10 +215,9 @@ function attachRecommendationsToMessages(
 }
 
 export async function listChats() {
-  const chats = await apiFetch<ChatbotApiChat[]>("/api/study/chatbot");
+  const chats = await apiFetch<ChatbotApiChat[] | null>("/api/study/chatbot");
 
-  return chats
-    .map(normalizeChat)
+  return normalizeChatList(chats)
     .sort(
       (left, right) =>
         (right.updatedAt ?? right.createdAt).getTime() -
@@ -303,6 +308,8 @@ export async function sendChatMessage(
     },
     usedTokens: response.usedTokens,
     similarity: response.similarity ?? response.similatiry,
+    pointsAwarded: response.pointsAwarded,
+    totalPoints: response.totalPoints,
   };
 }
 

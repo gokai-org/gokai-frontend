@@ -10,8 +10,8 @@ import {
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { LibraryCategorySection } from "@/features/library/components/LibraryCategorySection";
 import {
-  GrammarLibraryCardSkeleton,
   LibraryCardsSkeletonGrid,
+  VocabularyCardSkeleton,
 } from "@/shared/ui/Skeleton";
 import { useToast } from "@/shared/ui/ToastProvider";
 import { invalidateApiCache } from "@/shared/lib/api/client";
@@ -239,7 +239,7 @@ export function GrammarLibraryCollection({
         <LibraryCardsSkeletonGrid
           cards={12}
           className={className}
-          variant="grammar"
+          variant="vocabulary"
         />
       </div>
     );
@@ -278,9 +278,10 @@ export function GrammarLibraryCollection({
       <div className={className}>
         {lessons.map((item, index) => (
           item.isMock ? (
-            <GrammarLibraryCardSkeleton
+            <VocabularyCardSkeleton
               key={`grammar-library-skeleton-${item.id}-${index}`}
               className="h-full"
+              compact
             />
           ) : (
             <GrammarLibraryCard

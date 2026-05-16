@@ -17,6 +17,7 @@ import { GRAMMAR_SUGOROKU_SLOTS_VERTICAL } from "../../constants/grammarBoard";
 
 const BOARD_EASE = [0.22, 1, 0.36, 1] as const;
 const LANDSCAPE_BOARD_MARGIN = 12;
+const LANDSCAPE_BOARD_RIGHT_SHIFT = 6;
 type GrammarBoardTransitionState = "idle" | "tour-focus" | "zooming-in" | "hidden" | "zooming-out";
 
 type GrammarBoardLoadStatus = "idle" | "loading" | "error" | "success";
@@ -24,6 +25,7 @@ type GrammarBoardLoadStatus = "idle" | "loading" | "error" | "success";
 interface GrammarBoardProps {
   board: GrammarBoardViewModel;
   status: GrammarBoardLoadStatus;
+  hasMastery?: boolean;
   onSelectLesson: (lessonId: string) => void;
   onPressUnlockLesson?: (lessonId: string) => void;
   unlockingLessonId?: string | null;
@@ -37,6 +39,7 @@ interface GrammarBoardProps {
 export function GrammarBoard({
   board,
   status,
+  hasMastery = false,
   onSelectLesson,
   onPressUnlockLesson,
   unlockingLessonId = null,
@@ -323,6 +326,12 @@ export function GrammarBoard({
         : "relative mx-auto h-full w-[96%] max-w-[27rem] rounded-[24px]"
     : "relative h-full w-full rounded-[24px]";
 
+  const boardCanvasStyle = isPortrait
+    ? {
+        transform: `translateX(${isTinyPortrait ? 4 : isCompactPortrait ? 6 : 8}px)`,
+      }
+    : undefined;
+
   const boardFrameStyle = isPortrait
     ? embedded
       ? {
@@ -350,8 +359,8 @@ export function GrammarBoard({
     : embedded
       ? undefined
       : {
-          paddingLeft: `${LANDSCAPE_BOARD_MARGIN}px`,
-          paddingRight: `${LANDSCAPE_BOARD_MARGIN}px`,
+          paddingLeft: `${LANDSCAPE_BOARD_MARGIN + LANDSCAPE_BOARD_RIGHT_SHIFT}px`,
+          paddingRight: `${LANDSCAPE_BOARD_MARGIN - LANDSCAPE_BOARD_RIGHT_SHIFT}px`,
           paddingTop: `${LANDSCAPE_BOARD_MARGIN}px`,
           paddingBottom: `${LANDSCAPE_BOARD_MARGIN}px`,
         };
@@ -380,7 +389,7 @@ export function GrammarBoard({
               : undefined
           }
         >
-          <GrammarBoardLoading />
+          <GrammarBoardLoading hasMastery={hasMastery} />
         </motion.div>
       ) : (
         <motion.div
@@ -422,7 +431,7 @@ export function GrammarBoard({
             animate={boardViewportAnimation}
           >
             <div className={boardFrameClassName} style={boardFrameStyle}>
-              <div className={boardCanvasClassName}>
+              <div className={boardCanvasClassName} style={boardCanvasStyle}>
                 <div className="relative z-10 h-full w-full">
                   {activeBoard.cells.map((cell) => (
                     <GrammarBoardCell

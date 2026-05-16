@@ -28,6 +28,10 @@ import {
   writePersistentFirstRunSeenPages,
   writeFirstRunSeenPages,
 } from "@/features/help/utils/firstRunOnboardingState";
+import {
+  clearHelpContextualTourRequest,
+  readHelpContextualTourRequest,
+} from "@/features/help/utils/contextualTourLaunch";
 import { useDeferredGraphMount } from "@/features/graph/vocabulary/hooks/useDeferredGraphMount";
 import { useVocabularyGraph } from "@/features/graph/vocabulary/hooks/useVocabularyGraph";
 import { loadJapanMapAssets } from "@/features/graph/vocabulary/components/japanMap/japanMapAssets";
@@ -115,6 +119,20 @@ const UNLOCK_TRANSITION_DURATION_MS = 1080;
 const GRAPH_HISTORY_STATE_KEY = "__vocabularyGraphState";
 const GRAPH_RETURN_SNAPSHOT_STORAGE_KEY = "gokai:vocabulary-graph-return-snapshot";
 const GRAPH_RETURN_PENDING_STORAGE_KEY = "gokai:vocabulary-graph-return-pending";
+const JAPAN_LONGITUDE_COORDINATES = [
+  { label: "130E", position: "0%" },
+  { label: "134E", position: "25%" },
+  { label: "138E", position: "50%" },
+  { label: "142E", position: "75%" },
+  { label: "146E", position: "100%" },
+] as const;
+const JAPAN_LATITUDE_COORDINATES = [
+  { label: "47N", position: "0%" },
+  { label: "43N", position: "25%" },
+  { label: "39N", position: "50%" },
+  { label: "35N", position: "75%" },
+  { label: "31N", position: "100%" },
+] as const;
 
 function dispatchSidebarPreview(expanded: boolean) {
   if (typeof window === "undefined") {
@@ -766,6 +784,13 @@ export default function Page() {
   const selectedRegionLayoutRef = useRef<VocabularyRegionLayout | null>(null);
   const sceneSizeRef = useRef({ width: 0, height: 0 });
   const currentLevelRef = useRef<VocabularyViewLevel>("map");
+  const selectedRegionIdRef = useRef<VocabularyRegionId | null>(null);
+  const helpThemeRef = useRef<VocabularyRegionThemeNode | null>(null);
+  const regionGraphRef = useRef<{
+    nodes: GraphNode[];
+    edges: GraphEdge[];
+    onNodeSelected: (node: GraphNode) => void;
+  } | undefined>(undefined);
   const sceneInteractionLockedRef = useRef(false);
   const lastAutoFocusKeyRef = useRef<string | null>(null);
   const pendingHistoryRestoreRef = useRef<VocabularyGraphHistoryState | null>(null);
@@ -898,6 +923,10 @@ export default function Page() {
       null,
     [helpRegion],
   );
+
+  useEffect(() => {
+    helpThemeRef.current = helpTheme;
+  }, [helpTheme]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1624,6 +1653,21 @@ export default function Page() {
     resetVocabularyHelpState();
   }, [resetVocabularyHelpState]);
 
+  const helpRegionSelector =
+    '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-selected-region"]';
+  const helpThemeSelector =
+    '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-theme-node"]';
+  const helpRecommendedSubthemeSelector =
+    '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-recommended-subtheme-node"]';
+  const helpWordSelector =
+    '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-word-node"]';
+  const helpLessonSelector =
+    '[data-help-surface="vocabulary-graph"] [data-help-target="lesson-drawer"]';
+  const helpButtonSelector =
+    '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-help-button"]';
+  const helpCultureActionSelector =
+    '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-help-action-culture-exploration-mode"]';
+
   const waitForHelpTarget = useCallback(
     (selector: string, timeoutMs = 3200) =>
       waitForValue(
@@ -1632,6 +1676,49 @@ export default function Page() {
             ? null
             : resolveGuideTarget(selector, { includeOffscreen: true }),
         timeoutMs,
+        80,
+      ),
+    [],
+  );
+
+  const waitForHelpRecommendedNode = useCallback(
+    () =>
+      waitForValue(
+        () => {
+          if (currentLevelRef.current !== "theme") {
+            return null;
+          }
+
+          return regionGraphRef.current?.nodes.find(
+            (node) =>
+              node.id !== "home" &&
+              node.data.entityKind === "subtheme" &&
+              node.data.status !== "locked" &&
+              node.data.isAiRecommended,
+          ) ?? null;
+        },
+        6000,
+        80,
+      ),
+    [],
+  );
+
+  const waitForHelpWordGraphNode = useCallback(
+    () =>
+      waitForValue(
+        () => {
+          if (currentLevelRef.current !== "subtheme") {
+            return null;
+          }
+
+          return regionGraphRef.current?.nodes.find(
+            (node) =>
+              node.id !== "home" &&
+              node.data.entityKind === "word" &&
+              node.data.status !== "locked",
+          ) ?? null;
+        },
+        8000,
         80,
       ),
     [],
@@ -1667,52 +1754,87 @@ export default function Page() {
     dismissGraphHovers();
     handleRegionSelect(helpRegion.id);
 
-    const regionTarget = await waitForHelpTarget(
-      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-selected-region"]',
-    );
+    const regionTarget = await waitForHelpTarget(helpRegionSelector);
 
     return Boolean(regionTarget);
-  }, [dismissGraphHovers, handleRegionSelect, helpRegion, waitForHelpTarget]);
+  }, [
+    dismissGraphHovers,
+    handleRegionSelect,
+    helpRegion,
+    helpRegionSelector,
+    waitForHelpTarget,
+  ]);
+
+  const ensureHelpRegionFocused = useCallback(async () => {
+    if (!helpRegion) {
+      return false;
+    }
+
+    if (selectedRegionIdRef.current === helpRegion.id && currentLevelRef.current === "region") {
+      const regionTarget = await waitForHelpTarget(helpRegionSelector);
+      return Boolean(regionTarget);
+    }
+
+    return focusHelpRegion();
+  }, [
+    focusHelpRegion,
+    helpRegion,
+    helpRegionSelector,
+    waitForHelpTarget,
+  ]);
 
   const focusHelpThemeNode = useCallback(async () => {
     if (!helpRegion || !helpTheme) {
       return false;
     }
 
-    const regionReady = await focusHelpRegion();
+    const regionReady = await ensureHelpRegionFocused();
 
     if (!regionReady) {
       return false;
     }
 
-    const themeTarget = await waitForHelpTarget(
-      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-theme-node"]',
-    );
+    const themeTarget = await waitForHelpTarget(helpThemeSelector);
 
     return Boolean(themeTarget);
-  }, [focusHelpRegion, helpRegion, helpTheme, waitForHelpTarget]);
+  }, [
+    ensureHelpRegionFocused,
+    helpRegion,
+    helpTheme,
+    helpThemeSelector,
+    waitForHelpTarget,
+  ]);
 
   const focusHelpRecommendedSubtheme = useCallback(async () => {
-    const themeReady = await focusHelpThemeNode();
+    const freshTheme = helpThemeRef.current;
 
-    if (!themeReady) {
+    if (!freshTheme) {
       return false;
     }
 
-    const clicked = clickHelpTarget(
-      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-theme-node"]',
-    );
+    setCultureExplorationEnabled(false);
+    dismissGraphHovers();
+    await handleThemeSelected(freshTheme);
 
-    if (!clicked) {
+    const recommendedNode = await waitForHelpRecommendedNode();
+
+    if (!recommendedNode) {
       return false;
     }
 
     const recommendedTarget = await waitForHelpTarget(
-      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-recommended-subtheme-node"]',
+      helpRecommendedSubthemeSelector,
+      6000,
     );
 
     return Boolean(recommendedTarget);
-  }, [clickHelpTarget, focusHelpThemeNode, waitForHelpTarget]);
+  }, [
+    dismissGraphHovers,
+    handleThemeSelected,
+    helpRecommendedSubthemeSelector,
+    waitForHelpRecommendedNode,
+    waitForHelpTarget,
+  ]);
 
   const focusHelpWordNode = useCallback(async () => {
     const recommendedReady = await focusHelpRecommendedSubtheme();
@@ -1721,20 +1843,31 @@ export default function Page() {
       return false;
     }
 
-    const clicked = clickHelpTarget(
-      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-recommended-subtheme-node"]',
-    );
+    const recommendedNode = await waitForHelpRecommendedNode();
 
-    if (!clicked) {
+    if (!recommendedNode) {
       return false;
     }
 
-    const wordTarget = await waitForHelpTarget(
-      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-word-node"]',
-    );
+    await handleNodeSelected(recommendedNode);
+
+    const wordNode = await waitForHelpWordGraphNode();
+
+    if (!wordNode) {
+      return false;
+    }
+
+    const wordTarget = await waitForHelpTarget(helpWordSelector, 6000);
 
     return Boolean(wordTarget);
-  }, [clickHelpTarget, focusHelpRecommendedSubtheme, waitForHelpTarget]);
+  }, [
+    focusHelpRecommendedSubtheme,
+    handleNodeSelected,
+    helpWordSelector,
+    waitForHelpRecommendedNode,
+    waitForHelpWordGraphNode,
+    waitForHelpTarget,
+  ]);
 
   const openHelpLesson = useCallback(async () => {
     const ready = await focusHelpWordNode();
@@ -1743,36 +1876,59 @@ export default function Page() {
       return false;
     }
 
-    const clicked = clickHelpTarget(
-      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-word-node"]',
-    );
+    const wordNode = await waitForHelpWordGraphNode();
 
-    if (!clicked) {
+    if (!wordNode) {
       return false;
     }
 
-    const lessonTarget = await waitForHelpTarget(
-      '[data-help-surface="vocabulary-graph"] [data-help-target="lesson-drawer"]',
-    );
+    setUnlockFocusWordId(null);
+    setSelectedWordId(wordNode.data.entityId ?? wordNode.id.replace(/^word-/, ""));
+
+    const lessonTarget = await waitForHelpTarget(helpLessonSelector);
 
     return Boolean(lessonTarget);
-  }, [clickHelpTarget, focusHelpWordNode, waitForHelpTarget]);
+  }, [
+    focusHelpWordNode,
+    helpLessonSelector,
+    waitForHelpWordGraphNode,
+    waitForHelpTarget,
+  ]);
 
   const ensureHelpLessonOpen = useCallback(async () => {
-    const lessonSelector =
-      '[data-help-surface="vocabulary-graph"] [data-help-target="lesson-drawer"]';
-
     const existingLesson =
       typeof document === "undefined"
         ? null
-        : resolveGuideTarget(lessonSelector, { includeOffscreen: true });
+        : resolveGuideTarget(helpLessonSelector, { includeOffscreen: true });
 
-    if (existingLesson) {
+    const matchesGuideRegion = selectedRegionId === helpRegion?.id;
+    const matchesGuideTheme = selectedThemeId === helpTheme?.themeId;
+    const hasGuideLessonContext =
+      Boolean(existingLesson) &&
+      matchesGuideRegion &&
+      matchesGuideTheme &&
+      currentLevel === "subtheme" &&
+      Boolean(selectedSubthemeNodeId) &&
+      Boolean(selectedWordId) &&
+      isLessonOpen;
+
+    if (hasGuideLessonContext) {
       return true;
     }
 
     return openHelpLesson();
-  }, [openHelpLesson]);
+  }, [
+    currentLevel,
+    helpLessonSelector,
+    helpRegion,
+    helpTheme,
+    isLessonOpen,
+    openHelpLesson,
+    selectedRegionId,
+    selectedSubthemeNodeId,
+    selectedThemeId,
+    selectedWordId,
+  ]);
 
   const focusHelpLessonTab = useCallback(
     async (tab: "meaning" | "listening" | "speaking" | "writing") => {
@@ -1804,34 +1960,41 @@ export default function Page() {
     setUnlockFocusWordId(null);
     dismissGraphHovers();
 
-    const helpButton = await waitForHelpTarget(
-      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-help-button"]',
-    );
+    const regionReady = await ensureHelpRegionFocused();
+
+    if (!regionReady) {
+      return false;
+    }
+
+    const helpButton = await waitForHelpTarget(helpButtonSelector);
 
     if (!helpButton) {
       return false;
     }
 
-    const actionSelector =
-      '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-help-action-culture-exploration-mode"]';
     const existingAction =
       typeof document === "undefined"
         ? null
-        : resolveGuideTarget(actionSelector, { includeOffscreen: true });
+        : resolveGuideTarget(helpCultureActionSelector, { includeOffscreen: true });
 
     if (!existingAction) {
-      const opened = clickHelpTarget(
-        '[data-help-surface="vocabulary-graph"] [data-help-target="vocabulary-help-button"]',
-      );
+      const opened = clickHelpTarget(helpButtonSelector);
 
       if (!opened) {
         return false;
       }
     }
 
-    const cultureAction = await waitForHelpTarget(actionSelector);
+    const cultureAction = await waitForHelpTarget(helpCultureActionSelector);
     return Boolean(cultureAction);
-  }, [clickHelpTarget, dismissGraphHovers, waitForHelpTarget]);
+  }, [
+    clickHelpTarget,
+    dismissGraphHovers,
+    ensureHelpRegionFocused,
+    helpButtonSelector,
+    helpCultureActionSelector,
+    waitForHelpTarget,
+  ]);
 
   const buildHelpTour = useCallback(() => {
     if (!helpRegion || !helpTheme) {
@@ -1890,6 +2053,19 @@ export default function Page() {
       },
     };
   }, [buildHelpTour, markGraphFirstRunSeen]);
+
+  useEffect(() => {
+    if (loading || activeTour || pendingTour) {
+      return;
+    }
+
+    if (readHelpContextualTourRequest() !== "vocabulary-graph") {
+      return;
+    }
+
+    clearHelpContextualTourRequest();
+    startTour(buildHelpTour());
+  }, [activeTour, buildHelpTour, loading, pendingTour, startTour]);
 
   useEffect(() => {
     if (
@@ -2127,6 +2303,11 @@ export default function Page() {
       onNodeSelected: handleNodeSelected,
     };
   }, [currentLevel, graphElements, handleNodeSelected]);
+
+  useEffect(() => {
+    regionGraphRef.current = regionGraph;
+  }, [regionGraph]);
+
   const selectedRegionLayout = selectedRegion
     ? regionLayouts[selectedRegion.id]
     : null;
@@ -2326,8 +2507,9 @@ export default function Page() {
     selectedRegionLayoutRef.current = selectedRegionLayout ?? null;
     sceneSizeRef.current = sceneSize;
     currentLevelRef.current = currentLevel;
+    selectedRegionIdRef.current = selectedRegionId;
     sceneInteractionLockedRef.current = sceneInteractionLocked;
-  }, [autoTransform, currentLevel, mapFrame, sceneInteractionLocked, sceneSize, selectedRegionLayout]);
+  }, [autoTransform, currentLevel, mapFrame, sceneInteractionLocked, sceneSize, selectedRegionId, selectedRegionLayout]);
 
   useEffect(() => {
     if (!sceneInteractionLocked) {
@@ -2845,7 +3027,7 @@ export default function Page() {
       <div
         ref={sceneRef}
         data-help-target="graph-canvas"
-        className="map-scene absolute inset-0 z-0 cursor-grab overflow-hidden touch-none select-none kanji-bg-base"
+        className="map-scene vocabulary-map-surface absolute inset-0 z-0 cursor-grab overflow-hidden touch-none select-none kanji-bg-base"
         style={{
           overscrollBehavior: "contain",
           userSelect: "none",
@@ -2878,8 +3060,21 @@ export default function Page() {
             }}
           >
             <div
+              aria-hidden="true"
+              className="vocabulary-board-background kanji-bg-base pointer-events-none absolute z-0"
+              style={{
+                left: "50%",
+                top: "50%",
+                width: "max(320vw, 320vh)",
+                height: "max(320vw, 320vh)",
+                transform: "translate(-50%, -50%)",
+              }}
+            >
+            </div>
+
+            <div
               data-help-target="vocabulary-map-view"
-              className="absolute inset-0 pointer-events-none"
+              className="vocabulary-map-frame absolute inset-0 pointer-events-none"
             >
               <div className="h-full w-full pointer-events-auto">
                 <JapanRegionMap
@@ -2893,6 +3088,62 @@ export default function Page() {
                   onRegionSelect={handleMapRegionSelect}
                   onLayoutChange={handleRegionLayoutsChange}
                 />
+              </div>
+              <div className="vocabulary-map-coordinate-grid" aria-hidden="true">
+                {JAPAN_LONGITUDE_COORDINATES.map((coordinate) => (
+                  <div
+                    key={`longitude-line-${coordinate.label}`}
+                    className="vocabulary-map-coordinate-grid__line vocabulary-map-coordinate-grid__line--vertical"
+                    style={{ left: coordinate.position }}
+                  />
+                ))}
+                {JAPAN_LATITUDE_COORDINATES.map((coordinate) => (
+                  <div
+                    key={`latitude-line-${coordinate.label}`}
+                    className="vocabulary-map-coordinate-grid__line vocabulary-map-coordinate-grid__line--horizontal"
+                    style={{ top: coordinate.position }}
+                  />
+                ))}
+              </div>
+              <div className="vocabulary-map-coordinates vocabulary-map-coordinates--top">
+                {JAPAN_LONGITUDE_COORDINATES.map((coordinate) => (
+                  <span
+                    key={`top-${coordinate.label}`}
+                    style={{ left: coordinate.position }}
+                  >
+                    {coordinate.label}
+                  </span>
+                ))}
+              </div>
+              <div className="vocabulary-map-coordinates vocabulary-map-coordinates--bottom">
+                {JAPAN_LONGITUDE_COORDINATES.map((coordinate) => (
+                  <span
+                    key={`bottom-${coordinate.label}`}
+                    style={{ left: coordinate.position }}
+                  >
+                    {coordinate.label}
+                  </span>
+                ))}
+              </div>
+              <div className="vocabulary-map-coordinates vocabulary-map-coordinates--left">
+                {JAPAN_LATITUDE_COORDINATES.map((coordinate) => (
+                  <span
+                    key={`left-${coordinate.label}`}
+                    style={{ top: coordinate.position }}
+                  >
+                    {coordinate.label}
+                  </span>
+                ))}
+              </div>
+              <div className="vocabulary-map-coordinates vocabulary-map-coordinates--right">
+                {JAPAN_LATITUDE_COORDINATES.map((coordinate) => (
+                  <span
+                    key={`right-${coordinate.label}`}
+                    style={{ top: coordinate.position }}
+                  >
+                    {coordinate.label}
+                  </span>
+                ))}
               </div>
             </div>
 

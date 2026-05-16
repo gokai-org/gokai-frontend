@@ -509,8 +509,6 @@ function RegionThemeGraph({
           <g
             key={theme.id}
             data-vocabulary-node="true"
-            data-help-target={theme.id === helpTargetThemeId ? "vocabulary-theme-node" : undefined}
-            data-help-target-priority={theme.id === helpTargetThemeId ? "20" : undefined}
             className={
               theme.isAvailable && !interactionDisabled
                 ? "pointer-events-auto cursor-pointer"
@@ -548,6 +546,14 @@ function RegionThemeGraph({
                   fill={palette.fill}
                   stroke={palette.stroke}
                   strokeWidth={0.8}
+                  data-help-target={
+                    theme.id === helpTargetThemeId
+                      ? "vocabulary-theme-node"
+                      : undefined
+                  }
+                  data-help-target-priority={
+                    theme.id === helpTargetThemeId ? "20" : undefined
+                  }
                   vectorEffect="non-scaling-stroke"
                 />
                 <circle

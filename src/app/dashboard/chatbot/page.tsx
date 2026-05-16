@@ -7,12 +7,17 @@ import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { ChatbotLockedPreview } from "@/features/chatbot/components/ChatbotLockedPreview";
 import { ChatHistoryPanel } from "@/features/chatbot/components/ChatHistoryPanel";
 import { ChatInput } from "@/features/chatbot/components/ChatInput";
+import { ChatPointsBadge } from "@/features/chatbot/components/ChatPointsBadge";
 import { ChatRecommendationsPanel } from "@/features/chatbot/components/ChatRecommendationsPanel";
 import { ChatConversation } from "@/features/chatbot/components/ChatConversation";
 import { ChatSurfacePanel } from "@/features/chatbot/components/ChatSurfacePanel";
 import { ChatWritingPanel } from "@/features/chatbot/components/ChatWritingPanel";
 import type { ChatMessage } from "@/features/chatbot/types";
 import { useChatbot } from "@/features/chatbot/hooks/useChatbot";
+import {
+  HELP_GUIDE_CHATBOT_EVENT,
+  type HelpGuideChatbotDetail,
+} from "@/features/help/utils/guideEvents";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import { useResolvedPremiumAccess } from "@/shared/hooks/useResolvedPremiumAccess";
 import { PremiumLockedView } from "@/shared/ui";
@@ -65,6 +70,7 @@ function ChatbotExperience() {
   const [mobileWritingMessage, setMobileWritingMessage] = useState<ChatMessage | null>(null);
   const [mobileRecommendationsAttention, setMobileRecommendationsAttention] =
     useState(false);
+  const [recentlyCreatedChatId, setRecentlyCreatedChatId] = useState<string | null>(null);
   const previousChatIdRef = useRef<string | null>(null);
   const previousRecommendationIdsRef = useRef<string[] | null>(null);
 
@@ -96,7 +102,9 @@ function ChatbotExperience() {
 
   const handleCreateNewChat = async () => {
     setMobileRecommendationsAttention(false);
-    await createNewChat();
+    setHistoryOpen(true);
+    const nextChat = await createNewChat();
+    setRecentlyCreatedChatId(nextChat.id);
   };
 
   const handleSelectChat = async (chatId: string) => {
@@ -108,6 +116,53 @@ function ChatbotExperience() {
     desktopPanel?.kind === "writing"
       ? messages.find((message) => message.id === desktopPanel.messageId) ?? null
       : null;
+
+  useEffect(() => {
+    if (!recentlyCreatedChatId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setRecentlyCreatedChatId((current) =>
+        current === recentlyCreatedChatId ? null : current,
+      );
+    }, 1800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [recentlyCreatedChatId]);
+
+  useEffect(() => {
+    const handleHelpGuideChatbot = (event: Event) => {
+      const customEvent = event as CustomEvent<HelpGuideChatbotDetail>;
+      const action = customEvent.detail?.action;
+
+      if (action === "open-recommendations") {
+        if (isDesktop) {
+          setDesktopPanel({ kind: "recommendations" });
+          return;
+        }
+
+        setRecommendationsOpen(true);
+        return;
+      }
+
+      if (action === "close-recommendations") {
+        setDesktopPanel((current) =>
+          current?.kind === "recommendations" ? null : current,
+        );
+        setRecommendationsOpen(false);
+      }
+    };
+
+    window.addEventListener(HELP_GUIDE_CHATBOT_EVENT, handleHelpGuideChatbot);
+
+    return () => {
+      window.removeEventListener(
+        HELP_GUIDE_CHATBOT_EVENT,
+        handleHelpGuideChatbot,
+      );
+    };
+  }, [isDesktop]);
 
   useEffect(() => {
     const currentChatId = currentChat?.id ?? null;
@@ -215,11 +270,11 @@ function ChatbotExperience() {
       <button
         type="button"
         onClick={handleRecommendationsToggle}
+        data-help-target="chat-recommendations-trigger"
         className={[
-          "relative inline-flex h-11 items-center justify-center rounded-2xl border border-border-default bg-surface-elevated text-content-secondary transition hover:border-accent/20 hover:text-accent",
-          isDesktop ? "w-11" : "w-11",
+          "relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border-default bg-surface-elevated text-content-secondary transition hover:border-[#b8bcc6] hover:bg-white hover:text-content-primary",
           desktopPanel?.kind === "recommendations"
-            ? "border-accent/30 text-accent"
+            ? "border-[#b8bcc6] bg-white text-content-primary shadow-[0_10px_24px_-20px_rgba(15,23,42,0.45)]"
             : "",
           mobileRecommendationsAttention
             ? "border-red-500/40 bg-red-500/10 text-red-600 shadow-[0_0_0_6px_rgba(239,68,68,0.12)] animate-pulse dark:text-red-300"
@@ -239,16 +294,17 @@ function ChatbotExperience() {
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <path d="M6 5h12" />
-          <path d="M6 12h12" />
-          <path d="M6 19h8" />
+          <path d="m12 3.8 2.55 5.16 5.7.83-4.13 4.03.97 5.68L12 16.8l-5.09 2.7.97-5.68-4.13-4.03 5.7-.83L12 3.8Z" />
         </svg>
 
         {mobileRecommendationsAttention ? (
           <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
         ) : null}
       </button>
+
+      <ChatPointsBadge />
     </>
   );
 
@@ -297,16 +353,14 @@ function ChatbotExperience() {
               title="Tus chats"
               subtitle="Crea conversaciones por tema, vuelve a una sesion anterior o limpia las que ya no necesites."
               onClose={() => setHistoryOpen(false)}
-              mode="contained"
+              mode="page"
             >
               <ChatHistoryPanel
                 chats={chats}
                 currentChatId={currentChat?.id}
+                recentlyCreatedChatId={recentlyCreatedChatId}
                 isBusy={isLoading || isBootstrapping}
-                onCreateChat={async () => {
-                  await handleCreateNewChat();
-                  setHistoryOpen(false);
-                }}
+                onCreateChat={handleCreateNewChat}
                 onSelectChat={async (chatId) => {
                   await handleSelectChat(chatId);
                   setHistoryOpen(false);
