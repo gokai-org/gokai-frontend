@@ -21,6 +21,8 @@ export {
 export { Toast, ToastContainer } from "./Toast";
 export { PointsRewardFloat } from "./PointsRewardFloat";
 export { QuizAudioPlayer } from "./QuizAudioPlayer";
+export { PremiumFeatureGate } from "./PremiumFeatureGate";
+export { PremiumLockedView } from "./PremiumLockedView";
 export { ScreenTransitionOverlay } from "./ScreenTransitionOverlay";
 export type { ToastType } from "./Toast";
 export { ToastProvider, useToast } from "./ToastProvider";

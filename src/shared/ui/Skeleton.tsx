@@ -121,34 +121,7 @@ export function VocabularyCardSkeleton({
 }
 
 export function GrammarLibraryCardSkeleton({ className = "" }: { className?: string }) {
-  return (
-    <div
-      className={[
-        "min-h-[190px] rounded-[24px] border border-border-default/70 bg-surface-tertiary p-5 dark:border-white/[0.05] dark:bg-[#1a181c]",
-        "relative overflow-hidden",
-        className,
-      ]
-        .filter(Boolean)
-        .join(" ")}
-    >
-      <div className="absolute right-4 top-4 h-20 w-20 rounded-full bg-surface-primary/50 blur-2xl" />
-
-      <div className="relative flex h-full flex-col justify-between gap-8">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-3">
-            <SkeletonLine width="w-14" height="h-4" className="bg-surface-primary/70" />
-            <SkeletonLine width="w-20" height="h-3.5" className="bg-surface-primary/60" />
-          </div>
-          <SkeletonBox className="h-9 w-9 bg-surface-primary/60" rounded="rounded-full" />
-        </div>
-
-        <div className="space-y-3">
-          <SkeletonLine width="w-4/5" height="h-6" className="bg-surface-primary/80" />
-          <SkeletonLine width="w-2/3" height="h-3.5" className="bg-surface-primary/60" />
-        </div>
-      </div>
-    </div>
-  );
+  return <VocabularyCardSkeleton className={className} compact />;
 }
 
 const DEFAULT_LIBRARY_CARD_SKELETON_GRID_CLASSNAME =

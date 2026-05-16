@@ -365,6 +365,7 @@ export function GrammarLibraryCard({
           className="relative h-full w-full rounded-[24px] p-5 text-left"
           aria-disabled={isLockedCard || !onSelect ? true : undefined}
           aria-label={lesson.title}
+          title={hoverEnabled ? lesson.title : undefined}
         >
           <div
             className={[
@@ -419,6 +420,7 @@ export function GrammarLibraryCard({
                     "line-clamp-2 text-[16px] font-extrabold leading-snug text-content-primary dark:text-white",
                     titleHoverClass,
                   ].join(" ")}
+                  title={hoverEnabled ? lesson.title : undefined}
                 >
                   {lesson.title}
                 </h3>

@@ -2,9 +2,17 @@
 
 import { useEffect } from "react";
 import { getCurrentUser } from "@/features/auth";
+import {
+  mapOneSignalEventToNotice,
+  upsertIncomingNotice,
+} from "@/features/notices/utils/noticeMappers";
 import { getUserSettings } from "@/features/configuration/services/api";
 import { DEFAULT_SETTINGS } from "@/features/configuration/types";
-import { syncPushNotificationsForUser } from "@/features/notifications/lib/oneSignal";
+import {
+  identifyOneSignalUser,
+  subscribeToOneSignalNotifications,
+  syncPushNotificationsForUser,
+} from "@/features/notifications/lib/oneSignal";
 
 export function OneSignalBootstrap() {
   useEffect(() => {
@@ -13,6 +21,7 @@ export function OneSignalBootstrap() {
     }
 
     let cancelled = false;
+    let cleanupNotifications = () => {};
 
     const bootstrap = async () => {
       const [user, settings] = await Promise.all([
@@ -25,6 +34,7 @@ export function OneSignalBootstrap() {
       }
 
       try {
+        await identifyOneSignalUser(user.id);
         await syncPushNotificationsForUser({
           userId: user.id,
           enabled:
@@ -32,6 +42,28 @@ export function OneSignalBootstrap() {
             DEFAULT_SETTINGS.notifications.priorityAlerts,
           promptOnFirstVisit: true,
         });
+
+        cleanupNotifications = await subscribeToOneSignalNotifications({
+          foregroundWillDisplay: (event) => {
+            const notice = mapOneSignalEventToNotice(event);
+
+            if (notice) {
+              upsertIncomingNotice(user.id, notice);
+            }
+          },
+          click: (event) => {
+            const notice = mapOneSignalEventToNotice(event);
+
+            if (notice) {
+              upsertIncomingNotice(user.id, notice, { markRead: true });
+            }
+          },
+        });
+
+        if (cancelled) {
+          cleanupNotifications();
+          cleanupNotifications = () => {};
+        }
       } catch (error) {
         console.error("Error inicializando OneSignal:", error);
       }
@@ -41,6 +73,7 @@ export function OneSignalBootstrap() {
 
     return () => {
       cancelled = true;
+      cleanupNotifications();
     };
   }, []);
 

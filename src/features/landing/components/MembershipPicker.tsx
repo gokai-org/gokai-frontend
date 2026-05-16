@@ -2,10 +2,14 @@
 
 import { PlanCard } from "@/features/landing";
 
+type MembershipPickerContext = "auth" | "in-app";
+
 interface MembershipPickerProps {
   mode?: "link" | "button";
   animated?: boolean;
   queryParams?: URLSearchParams | null;
+  context?: MembershipPickerContext;
+  returnTo?: string | null;
 }
 
 function appendQuery(
@@ -25,7 +29,23 @@ export function MembershipPicker({
   mode = "link",
   animated = true,
   queryParams = null,
+  context = "auth",
+  returnTo = null,
 }: MembershipPickerProps) {
+  const safeReturnTo =
+    typeof returnTo === "string" && returnTo.startsWith("/")
+      ? returnTo
+      : null;
+  const inAppContext = context === "in-app";
+  const freeHref = inAppContext
+    ? safeReturnTo ?? "/dashboard/graph"
+    : "/auth/login?mode=register&intent=free";
+  const premiumHref = inAppContext
+    ? safeReturnTo
+      ? `/checkout?returnTo=${encodeURIComponent(safeReturnTo)}`
+      : "/checkout"
+    : "/auth/login?mode=register&intent=premium";
+
   const plans = [
     {
       title: "Gratis",
@@ -36,9 +56,14 @@ export function MembershipPicker({
         "Exploración de funciones principales",
         "Progreso guardado en tu cuenta",
       ],
-      href: "/auth/login?mode=register&intent=free",
-      ctaLabel: mode === "link" ? "Comenzar gratis" : "Seleccionar",
+      href: freeHref,
+      ctaLabel: inAppContext
+        ? "Seguir con plan gratis"
+        : mode === "link"
+          ? "Comenzar gratis"
+          : "Seleccionar",
       highlighted: false,
+      badge: inAppContext ? "Plan actual" : undefined,
     },
     {
       title: "GOKAI+",
@@ -49,8 +74,12 @@ export function MembershipPicker({
         "Funciones avanzadas y práctica extendida",
         "Experiencia más completa y personalizada",
       ],
-      href: "/auth/login?mode=register&intent=premium",
-      ctaLabel: mode === "link" ? "Desbloquear GOKAI+" : "Seleccionar",
+      href: premiumHref,
+      ctaLabel: inAppContext
+        ? "Actualizar a GOKAI+"
+        : mode === "link"
+          ? "Desbloquear GOKAI+"
+          : "Seleccionar",
       highlighted: true,
       badge: "Más popular",
     },
@@ -62,7 +91,7 @@ export function MembershipPicker({
         <PlanCard
           key={plan.title}
           {...plan}
-          href={appendQuery(plan.href, queryParams)}
+          href={appendQuery(plan.href, inAppContext ? null : queryParams)}
           animated={animated}
         />
       ))}

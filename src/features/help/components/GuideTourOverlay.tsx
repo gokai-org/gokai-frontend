@@ -41,6 +41,7 @@ export function GuideTourOverlay() {
   const [targetRect, setTargetRect] = useState<SpotlightRect | null>(null);
   const [cardHeight, setCardHeight] = useState(320);
   const [stepReady, setStepReady] = useState(false);
+  const [stepTargetTimedOut, setStepTargetTimedOut] = useState(false);
   const [viewportSize, setViewportSize] = useState(() => ({
     width: typeof window === "undefined" ? 1280 : window.innerWidth,
     height: typeof window === "undefined" ? 900 : window.innerHeight,
@@ -53,7 +54,10 @@ export function GuideTourOverlay() {
   const isLast = currentStep === totalSteps - 1;
   const progress = totalSteps > 0 ? ((currentStep + 1) / totalSteps) * 100 : 0;
   const stepHasTarget = Boolean(step?.selector);
-  const canAdvance = !!activeTour && !!step && (!stepHasTarget || stepReady);
+  const canAdvance =
+    !!activeTour &&
+    !!step &&
+    (!stepHasTarget || stepReady || stepTargetTimedOut);
 
   const handleKeyDown = useCallback(
     (event: KeyboardEvent) => {
@@ -113,6 +117,21 @@ export function GuideTourOverlay() {
   }, [activeTour]);
 
   useEffect(() => {
+    let frameId: number | null = null;
+
+    frameId = requestAnimationFrame(() => {
+      setStepReady(!step?.selector);
+      setStepTargetTimedOut(false);
+    });
+
+    return () => {
+      if (frameId !== null) {
+        cancelAnimationFrame(frameId);
+      }
+    };
+  }, [activeTour, currentStep, step?.selector]);
+
+  useEffect(() => {
     if (!activeTour || !step) {
       return;
     }
@@ -122,9 +141,17 @@ export function GuideTourOverlay() {
     }
 
     let frameId: number | null = null;
+    const timeoutId = window.setTimeout(() => {
+      setStepTargetTimedOut(true);
+    }, step.stepTargetTimeout ?? 1400);
 
     const updateStepReady = () => {
-      setStepReady(isGuideStepReady(step.selector));
+      const ready = isGuideStepReady(step.selector);
+      setStepReady(ready);
+
+      if (ready) {
+        setStepTargetTimedOut(false);
+      }
     };
 
     const queueUpdate = () => {
@@ -153,6 +180,8 @@ export function GuideTourOverlay() {
     window.addEventListener("scroll", queueUpdate, true);
 
     return () => {
+      window.clearTimeout(timeoutId);
+
       if (frameId !== null) {
         cancelAnimationFrame(frameId);
       }
@@ -344,47 +373,9 @@ export function GuideTourOverlay() {
 
   const isRoundSpotlight = step.spotlightShape === "round";
   const spotlightMaskId = `guide-tour-mask-${activeTour.id}-${currentStep}`;
-
-  const spotlightShades = spotlightMode && targetRect
-    ? [
-        {
-          key: "top",
-          style: {
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: targetRect.top,
-          },
-        },
-        {
-          key: "left",
-          style: {
-            top: targetRect.top,
-            left: 0,
-            width: targetRect.left,
-            height: targetRect.height,
-          },
-        },
-        {
-          key: "right",
-          style: {
-            top: targetRect.top,
-            left: targetRect.right,
-            width: Math.max(0, viewportSize.width - targetRect.right),
-            height: targetRect.height,
-          },
-        },
-        {
-          key: "bottom",
-          style: {
-            top: targetRect.bottom,
-            left: 0,
-            width: "100%",
-            height: Math.max(0, viewportSize.height - targetRect.bottom),
-          },
-        },
-      ]
-    : [];
+  const roundedSpotlightRadius = targetRect
+    ? Math.min(28, targetRect.width / 2, targetRect.height / 2)
+    : 28;
 
   const renderCard = (compact: boolean) => (
     <div
@@ -572,7 +563,7 @@ export function GuideTourOverlay() {
         transition={{ duration: 0.35, ease }}
         className="pointer-events-none fixed inset-0 z-[99999] isolate"
       >
-        {spotlightMode && targetRect && isRoundSpotlight ? (
+        {spotlightMode && targetRect ? (
           <motion.button
             type="button"
             className="pointer-events-auto absolute inset-0"
@@ -600,6 +591,17 @@ export function GuideTourOverlay() {
                     ry={targetRect.height / 2}
                     fill="black"
                   />
+                  {!isRoundSpotlight ? (
+                    <rect
+                      x={targetRect.left}
+                      y={targetRect.top}
+                      width={targetRect.width}
+                      height={targetRect.height}
+                      rx={roundedSpotlightRadius}
+                      ry={roundedSpotlightRadius}
+                      fill="black"
+                    />
+                  ) : null}
                 </mask>
               </defs>
 
@@ -613,22 +615,7 @@ export function GuideTourOverlay() {
               />
             </svg>
           </motion.button>
-        ) : spotlightMode && targetRect
-          ? spotlightShades.map((shade) => (
-              <motion.button
-                key={shade.key}
-                type="button"
-                className="pointer-events-auto absolute bg-black/46"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.35 }}
-                onClick={closeTour}
-                aria-label="Cerrar guía"
-                style={shade.style}
-              />
-            ))
-          : (
+        ) : (
             <motion.button
               type="button"
               className="pointer-events-auto absolute inset-0 bg-black/46"
@@ -657,6 +644,7 @@ export function GuideTourOverlay() {
                 left: targetRect.left,
                 width: targetRect.width,
                 height: targetRect.height,
+                borderRadius: isRoundSpotlight ? 9999 : roundedSpotlightRadius,
                 boxShadow: GUIDE_SPOTLIGHT_GLOW,
               }}
             />

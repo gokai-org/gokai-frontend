@@ -13,7 +13,7 @@ export interface GuideCardItem {
   description: string;
   color: string;
   bgColor: string;
-  tourIndex: number;
+  tourId: string;
 }
 
 export interface TipItem {

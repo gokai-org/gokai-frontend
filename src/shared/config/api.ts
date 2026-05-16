@@ -4,4 +4,6 @@ export const apiConfig = {
   studyApiBase: process.env.GOKAI_STUDY_API_BASE ?? "http://localhost:8086",
   subscriptionsApiBase:
     process.env.GOKAI_SUBSCRIPTIONS_API_BASE ?? "http://localhost:8084",
+  notificationsApiBase:
+    process.env.GOKAI_NOTIFICATIONS_API_BASE ?? "http://localhost:8083",
 } as const;

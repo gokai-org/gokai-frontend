@@ -122,12 +122,15 @@ function CheckoutSuccessPageContent() {
   const safeReturnTo =
     requestedReturnTo && requestedReturnTo.startsWith("/")
       ? requestedReturnTo
-      : "/dashboard/configuration";
+      : null;
+  const isCustomPremiumReturnFlow =
+    safeReturnTo !== null && !isConfigurationUpgradeFlow;
+  const fallbackDestination = isConfigurationUpgradeFlow
+    ? "/dashboard/configuration"
+    : "/dashboard/graph";
   const destination = isPremiumOnboardingFlow
     ? "/onboarding/interests?plan=premium"
-    : isConfigurationUpgradeFlow
-      ? safeReturnTo
-      : "/dashboard/graph";
+    : safeReturnTo ?? fallbackDestination;
   const routeTransitionDelayMs = platformMotion.shouldAnimate
     ? Math.max(170, Math.round(340 * platformMotion.durationScale))
     : 0;
@@ -164,12 +167,16 @@ function CheckoutSuccessPageContent() {
         ? "Abriendo tu onboarding premium"
         : isConfigurationUpgradeFlow
           ? "Volviendo a configuración"
-          : "Entrando a GOKAI",
+          : isCustomPremiumReturnFlow
+            ? "Volviendo a tu experiencia premium"
+            : "Entrando a GOKAI",
       description: isPremiumOnboardingFlow
         ? "Llevándote a tus intereses y configuración inicial con beneficios premium activos."
         : isConfigurationUpgradeFlow
           ? "Regresando con tu plan premium activo y tus beneficios desbloqueados."
-          : "Preparando tu dashboard principal y tus herramientas desbloqueadas.",
+          : isCustomPremiumReturnFlow
+            ? "Regresando a la funcionalidad premium que acabas de desbloquear."
+            : "Preparando tu dashboard principal y tus herramientas desbloqueadas.",
     });
 
     if (transitionTimeoutRef.current !== null) {
@@ -585,6 +592,8 @@ function CheckoutSuccessPageContent() {
               >
                 {isConfigurationUpgradeFlow
                   ? "Tu suscripción GOKAI+ ya está activa. Volverás a configuración para seguir administrando tu cuenta con los beneficios premium desbloqueados."
+                  : isCustomPremiumReturnFlow
+                    ? "Tu suscripción GOKAI+ ya está activa. Volverás directamente a la experiencia premium que intentabas abrir, ahora sin bloqueos."
                   : "Tu suscripción GOKAI+ está activa y todas las funciones premium ya fueron desbloqueadas para tu aprendizaje."}
               </motion.p>
 
@@ -603,6 +612,8 @@ function CheckoutSuccessPageContent() {
               >
                 {isConfigurationUpgradeFlow
                   ? "Volver a configuración"
+                  : isCustomPremiumReturnFlow
+                    ? "Abrir experiencia premium"
                   : "Comenzar a aprender"}
               </motion.button>
 
@@ -614,6 +625,8 @@ function CheckoutSuccessPageContent() {
               >
                 {isConfigurationUpgradeFlow
                   ? "Serás redirigido a la página de configuración"
+                  : isCustomPremiumReturnFlow
+                    ? "Serás redirigido a tu experiencia premium desbloqueada"
                   : "Serás redirigido al panel principal"}
               </motion.p>
             </motion.div>

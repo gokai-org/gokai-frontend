@@ -4,23 +4,30 @@ import { RecentCard } from "@/features/library/components/RecentCard";
 import { recentToCardProps } from "@/features/library/utils/libraryMappers";
 import type { BackendRecentItem } from "@/features/library/types";
 import type { Kanji } from "@/features/kanji/types";
+import type { Kana } from "@/features/kana/types";
 import { PrimaryActionButton } from "@/shared/ui/PrimaryActionButton";
 import { SkeletonRecentCard } from "@/shared/ui/Skeleton";
 
 interface LibraryRecentPanelProps {
   recentItems: BackendRecentItem[];
   kanjis: Kanji[];
+  hiraganas: Kana[];
+  katakanas: Kana[];
   loading?: boolean;
   onOpenRecent: () => void;
   onKanjiClick: (kanji: Kanji) => void;
+  onKanaClick: (kana: Kana) => void;
 }
 
 export function LibraryRecentPanel({
   recentItems,
   kanjis,
+  hiraganas,
+  katakanas,
   loading = false,
   onOpenRecent,
   onKanjiClick,
+  onKanaClick,
 }: LibraryRecentPanelProps) {
   return (
     <aside className="order-1 xl:order-2 xl:sticky xl:top-6 xl:self-start">
@@ -76,12 +83,24 @@ export function LibraryRecentPanel({
               {recentItems.slice(0, 4).map((item, i) => (
                 <RecentCard
                   key={item.id}
-                  item={recentToCardProps(item, kanjis)}
+                  item={recentToCardProps(item, kanjis, hiraganas, katakanas)}
                   index={i}
                   onClick={() => {
                     if (item.type === "kanji") {
                       const kanji = kanjis.find((k) => k.id === item.id);
                       if (kanji) onKanjiClick(kanji);
+                      return;
+                    }
+
+                    if (item.type === "hiragana") {
+                      const kana = hiraganas.find((entry) => entry.id === item.id);
+                      if (kana) onKanaClick(kana);
+                      return;
+                    }
+
+                    if (item.type === "katakana") {
+                      const kana = katakanas.find((entry) => entry.id === item.id);
+                      if (kana) onKanaClick(kana);
                     }
                   }}
                 />
@@ -100,7 +119,7 @@ export function LibraryRecentPanel({
               Aún no hay actividad
             </h4>
             <p className="text-sm leading-relaxed text-content-tertiary">
-              El contenido que abras en library aparecerá aquí para retomarlo
+              El contenido que abras en librería aparecerá aquí para retomarlo
               más rápido.
             </p>
           </div>

@@ -516,6 +516,7 @@ export function GrammarExperience({
       <GrammarBoard
         board={board}
         status={status}
+        hasMastery={hasGrammarMastery}
         onSelectLesson={handleSelectLesson}
         onPressUnlockLesson={handlePressUnlockLesson}
         unlockingLessonId={unlockPendingLessonId}

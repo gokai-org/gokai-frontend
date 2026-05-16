@@ -100,6 +100,8 @@ export function VocabularyCard({
   const isWord = variant === "word";
   const effectiveLocked = locked && !unlocking;
   const isInteractive = Boolean(onClick) && !effectiveLocked;
+  const hoverEnabled =
+    (Boolean(onClick) || Boolean(onFavoriteToggle)) && !effectiveLocked;
   const favoriteStyle = VOCABULARY_FAVORITE_STYLES[variant];
   const highlightedRecommendationTier =
     variant === "subtheme" &&
@@ -145,9 +147,8 @@ export function VocabularyCard({
           "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
           "shadow-none",
           config.shadowHover,
-          isInteractive
-            ? `cursor-pointer hover:-translate-y-[1px] hover:border-accent/20 focus:outline-none focus-visible:ring-2 ${config.ring}`
-            : "",
+          hoverEnabled ? "hover:-translate-y-[1px] hover:border-accent/20" : "",
+          isInteractive ? `cursor-pointer focus:outline-none focus-visible:ring-2 ${config.ring}` : "",
         ]
           .filter(Boolean)
           .join(" "),
@@ -187,6 +188,7 @@ export function VocabularyCard({
       subtitle={subtitle}
       thumbnail={thumbnail}
       hasOnClick={isInteractive}
+      hoverEnabled={hoverEnabled}
       config={config}
       actionAlignment={onFavoriteToggle ? "start" : "end"}
       hoverTransition={hoverTransition}
@@ -197,6 +199,7 @@ export function VocabularyCard({
       subtitle={subtitle}
       thumbnail={thumbnail}
       hasOnClick={isInteractive}
+      hoverEnabled={hoverEnabled}
       config={config}
       hoverTransition={hoverTransition}
     />

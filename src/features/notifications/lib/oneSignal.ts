@@ -12,6 +12,13 @@ export interface PushNotificationState {
   providerId: string | null;
 }
 
+export type OneSignalNotificationEventName =
+  | "click"
+  | "dismiss"
+  | "foregroundWillDisplay";
+
+export type OneSignalNotificationEventHandler = (event: unknown) => void;
+
 type OneSignalDeferredCallback = (
   oneSignal: OneSignalClient,
 ) => void | Promise<void>;
@@ -30,8 +37,18 @@ interface OneSignalClient {
     serviceWorkerPath?: string;
     serviceWorkerUpdaterPath?: string;
   }): Promise<void>;
+  login?(externalId: string): Promise<void>;
+  logout?(): Promise<void>;
   Notifications: {
     requestPermission(): Promise<void>;
+    addEventListener(
+      eventName: OneSignalNotificationEventName,
+      handler: OneSignalNotificationEventHandler,
+    ): void;
+    removeEventListener(
+      eventName: OneSignalNotificationEventName,
+      handler: OneSignalNotificationEventHandler,
+    ): void;
   };
   User: {
     PushSubscription: OneSignalPushSubscription;
@@ -240,5 +257,50 @@ export async function syncPushNotificationsForUser(options: {
     userId,
     enabled: true,
     autoPrompt: shouldAutoPrompt,
+  });
+}
+
+export function runWithOneSignal<T>(
+  operation: (oneSignal: OneSignalClient) => Promise<T>,
+) {
+  return withOneSignal(operation);
+}
+
+export async function identifyOneSignalUser(userId: string) {
+  if (!hasPushSupport()) {
+    return;
+  }
+
+  await withOneSignal(async (oneSignal) => {
+    await ensureOneSignalInitialized(oneSignal);
+    await oneSignal.login?.(userId);
+  });
+}
+
+export async function subscribeToOneSignalNotifications(
+  handlers: Partial<
+    Record<OneSignalNotificationEventName, OneSignalNotificationEventHandler>
+  >,
+) {
+  if (!hasPushSupport()) {
+    return () => {};
+  }
+
+  return withOneSignal(async (oneSignal) => {
+    await ensureOneSignalInitialized(oneSignal);
+
+    const entries = Object.entries(handlers).filter((entry) =>
+      Boolean(entry[1]),
+    ) as Array<[OneSignalNotificationEventName, OneSignalNotificationEventHandler]>;
+
+    entries.forEach(([eventName, handler]) => {
+      oneSignal.Notifications.addEventListener(eventName, handler);
+    });
+
+    return () => {
+      entries.forEach(([eventName, handler]) => {
+        oneSignal.Notifications.removeEventListener(eventName, handler);
+      });
+    };
   });
 }

@@ -5,23 +5,42 @@ import { GrammarBoardBackdrop } from "./overlays/GrammarBoardBackdrop";
 
 type TileTone = "neutral" | "accent";
 
+interface LoaderTilePalette {
+  shell: string;
+  highlight: string;
+  atmosphere: string;
+  innerBorder: string;
+  symbol: string;
+}
+
+interface GrammarLoaderTheme {
+  accentTile: LoaderTilePalette;
+  boardAtmosphere: string;
+  accentLineColor: string;
+  accentLineShadow: string;
+  accentDropShadow: string;
+  accentGlow: string;
+  pulseColor: string;
+  pulseShadow: string;
+  ringBorderColor: string;
+}
+
+interface GrammarBoardLoadingProps {
+  hasMastery?: boolean;
+}
+
 interface GrammarLoaderTileProps {
   symbol: string;
   tone: TileTone;
   width: number;
   height: number;
   symbolClassName: string;
+  accentPalette: LoaderTilePalette;
 }
 
 const TILE_PALETTES: Record<
   TileTone,
-  {
-    shell: string;
-    highlight: string;
-    atmosphere: string;
-    innerBorder: string;
-    symbol: string;
-  }
+  LoaderTilePalette
 > = {
   neutral: {
     shell:
@@ -35,6 +54,39 @@ const TILE_PALETTES: Record<
       "text-[rgba(88,82,77,0.82)] dark:text-[rgba(228,220,213,0.7)]",
   },
   accent: {
+    shell: "",
+    highlight: "",
+    atmosphere: "",
+    innerBorder: "",
+    symbol: "",
+  },
+};
+
+const DEFAULT_LOADER_THEME: GrammarLoaderTheme = {
+  accentTile: {
+    shell:
+      "bg-[#C5544D] border-[#A53F39] shadow-[0_18px_42px_rgba(197,84,77,0.24)] dark:bg-[#9F3F39] dark:border-[#F0AAA4] dark:shadow-[0_20px_46px_rgba(102,29,24,0.46)]",
+    highlight:
+      "bg-gradient-to-br from-white/18 via-transparent to-transparent dark:from-white/10",
+    atmosphere:
+      "bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.2),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.12),transparent_28%)] dark:bg-[radial-gradient(circle_at_92%_14%,rgba(255,255,255,0.14),transparent_34%),radial-gradient(circle_at_12%_88%,rgba(255,255,255,0.08),transparent_28%)]",
+    innerBorder: "border-white/30 dark:border-white/14",
+    symbol:
+      "text-[rgba(95,24,19,0.9)] dark:text-[rgba(255,227,223,0.9)]",
+  },
+  boardAtmosphere:
+    "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(197,84,77,0.1)_0%,transparent_82%)] dark:bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(239,128,120,0.14)_0%,transparent_82%)]",
+  accentLineColor: "rgba(197,84,77,0.62)",
+  accentLineShadow: "0 0 9px rgba(197,84,77,0.2)",
+  accentDropShadow: "drop-shadow(0 10px 24px rgba(197,84,77,0.26))",
+  accentGlow: "radial-gradient(circle, rgba(197,84,77,0.18) 0%, transparent 72%)",
+  pulseColor: "rgba(197,84,77,0.95)",
+  pulseShadow: "0 0 18px rgba(197,84,77,0.24)",
+  ringBorderColor: "rgba(197,84,77,0.2)",
+};
+
+const MASTERY_LOADER_THEME: GrammarLoaderTheme = {
+  accentTile: {
     shell:
       "bg-[#D4A843] border-[#B8922E] shadow-[0_18px_42px_rgba(212,168,67,0.24)] dark:bg-[#B8922E] dark:border-[#F0D27A] dark:shadow-[0_20px_46px_rgba(155,123,47,0.44)]",
     highlight:
@@ -45,6 +97,15 @@ const TILE_PALETTES: Record<
     symbol:
       "text-[rgba(111,83,20,0.88)] dark:text-[rgba(255,241,198,0.88)]",
   },
+  boardAtmosphere:
+    "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(212,168,67,0.08)_0%,transparent_82%)] dark:bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(240,210,122,0.12)_0%,transparent_82%)]",
+  accentLineColor: "rgba(212,168,67,0.55)",
+  accentLineShadow: "0 0 9px rgba(212,168,67,0.16)",
+  accentDropShadow: "drop-shadow(0 10px 24px rgba(212,168,67,0.24))",
+  accentGlow: "radial-gradient(circle, rgba(212,168,67,0.16) 0%, transparent 72%)",
+  pulseColor: "rgba(212,168,67,0.95)",
+  pulseShadow: "0 0 18px rgba(212,168,67,0.22)",
+  ringBorderColor: "rgba(212,168,67,0.18)",
 };
 
 function GrammarLoaderTile({
@@ -53,8 +114,9 @@ function GrammarLoaderTile({
   width,
   height,
   symbolClassName,
+  accentPalette,
 }: GrammarLoaderTileProps) {
-  const palette = TILE_PALETTES[tone];
+  const palette = tone === "accent" ? accentPalette : TILE_PALETTES[tone];
 
   return (
     <div
@@ -83,16 +145,18 @@ function GrammarLoaderTile({
   );
 }
 
-export default function GrammarBoardLoading() {
+export default function GrammarBoardLoading({ hasMastery = false }: GrammarBoardLoadingProps) {
+  const loaderTheme = hasMastery ? MASTERY_LOADER_THEME : DEFAULT_LOADER_THEME;
+
   return (
     <div className="absolute inset-0 overflow-hidden bg-surface-primary" data-grammar-loading="true">
-      <GrammarBoardBackdrop />
+      <GrammarBoardBackdrop mastered={hasMastery} />
 
       <div className="pointer-events-none absolute inset-0 opacity-60 [background-image:repeating-linear-gradient(0deg,transparent,transparent_159px,rgba(18,18,22,0.08)_160px),repeating-linear-gradient(90deg,transparent,transparent_159px,rgba(18,18,22,0.08)_160px)] dark:opacity-35 dark:[background-image:repeating-linear-gradient(0deg,transparent,transparent_159px,rgba(255,255,255,0.05)_160px),repeating-linear-gradient(90deg,transparent,transparent_159px,rgba(255,255,255,0.05)_160px)]" />
 
       <div
         data-grammar-loading-atmosphere="true"
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(212,168,67,0.08)_0%,transparent_82%)] dark:bg-[radial-gradient(ellipse_48%_34%_at_50%_50%,rgba(240,210,122,0.12)_0%,transparent_82%)]"
+        className={loaderTheme.boardAtmosphere}
       />
 
       <div className="relative z-10 flex h-full flex-col items-center justify-center px-4 pt-24 pb-8 sm:px-6 sm:pt-28">
@@ -102,8 +166,8 @@ export default function GrammarBoardLoading() {
             className="absolute left-[52px] top-[88px] h-[2px] origin-left rounded-full sm:left-[68px] sm:top-[110px]"
             style={{
               width: 86,
-              background: "rgba(212,168,67,0.55)",
-              boxShadow: "0 0 9px rgba(212,168,67,0.16)",
+              background: loaderTheme.accentLineColor,
+              boxShadow: loaderTheme.accentLineShadow,
             }}
             initial={{ scaleX: 0, opacity: 0.35 }}
             animate={{ scaleX: [0, 1, 1], opacity: [0.35, 1, 0.75] }}
@@ -119,8 +183,8 @@ export default function GrammarBoardLoading() {
             className="absolute left-[138px] top-[88px] h-[2px] origin-left rounded-full sm:left-[172px] sm:top-[110px]"
             style={{
               width: 86,
-              background: "rgba(212,168,67,0.55)",
-              boxShadow: "0 0 9px rgba(212,168,67,0.16)",
+              background: loaderTheme.accentLineColor,
+              boxShadow: loaderTheme.accentLineShadow,
             }}
             initial={{ scaleX: 0, opacity: 0.35 }}
             animate={{ scaleX: [0, 1, 1], opacity: [0.35, 1, 0.75] }}
@@ -148,12 +212,13 @@ export default function GrammarBoardLoading() {
               width={66}
               height={60}
               symbolClassName="text-[1.8rem] sm:text-[2rem]"
+              accentPalette={loaderTheme.accentTile}
             />
           </motion.div>
 
           <motion.div
             className="absolute left-[102px] top-[50px] z-20 sm:left-[130px] sm:top-[70px]"
-            style={{ filter: "drop-shadow(0 10px 24px rgba(212,168,67,0.24))" }}
+            style={{ filter: loaderTheme.accentDropShadow }}
             animate={{
               y: [0, 6, 0, 0, -4, 0],
               scale: [1, 1.04, 1, 1, 1.12, 1],
@@ -169,8 +234,7 @@ export default function GrammarBoardLoading() {
               data-grammar-loading-accent-glow="true"
               className="absolute inset-0 rounded-[22px]"
               style={{
-                background:
-                  "radial-gradient(circle, rgba(212,168,67,0.16) 0%, transparent 72%)",
+                background: loaderTheme.accentGlow,
               }}
               animate={{
                 opacity: [0.45, 0.75, 0.45, 0.45, 1, 0.55],
@@ -191,6 +255,7 @@ export default function GrammarBoardLoading() {
                 width={78}
                 height={78}
                 symbolClassName="text-[2.05rem] sm:text-[2.35rem]"
+                accentPalette={loaderTheme.accentTile}
               />
             </div>
           </motion.div>
@@ -221,6 +286,7 @@ export default function GrammarBoardLoading() {
                 width={66}
                 height={60}
                 symbolClassName="text-[1.8rem] sm:text-[2rem]"
+                accentPalette={loaderTheme.accentTile}
               />
             </motion.div>
           </motion.div>
@@ -229,8 +295,8 @@ export default function GrammarBoardLoading() {
             className="absolute top-[84px] z-10 h-[10px] w-[10px] rounded-full sm:top-[106px]"
             style={{
               left: "48px",
-              background: "rgba(212,168,67,0.95)",
-              boxShadow: "0 0 18px rgba(212,168,67,0.22)",
+              background: loaderTheme.pulseColor,
+              boxShadow: loaderTheme.pulseShadow,
             }}
             animate={{
               left: ["48px", "calc(50% - 5px)", "calc(50% - 5px)", "238px"],
@@ -250,7 +316,7 @@ export default function GrammarBoardLoading() {
             style={{
               width: 42,
               height: 42,
-              borderColor: "rgba(212,168,67,0.18)",
+              borderColor: loaderTheme.ringBorderColor,
             }}
             animate={{ scale: [0.85, 1.35], opacity: [0.55, 0] }}
             transition={{
@@ -265,7 +331,7 @@ export default function GrammarBoardLoading() {
             style={{
               width: 50,
               height: 50,
-              borderColor: "rgba(212,168,67,0.18)",
+              borderColor: loaderTheme.ringBorderColor,
             }}
             animate={{ scale: [0.8, 1.5], opacity: [0.4, 0] }}
             transition={{
@@ -295,8 +361,8 @@ export default function GrammarBoardLoading() {
                 style={{
                   width: 6,
                   height: 6,
-                  background: "rgba(212,168,67,0.95)",
-                  boxShadow: "0 0 12px rgba(212,168,67,0.22)",
+                  background: loaderTheme.pulseColor,
+                  boxShadow: loaderTheme.pulseShadow,
                 }}
                 animate={{
                   y: [0, -6, 0],

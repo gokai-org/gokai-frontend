@@ -25,6 +25,14 @@ export function useRecentItems() {
           ...item,
           type: item.type || "kanji",
         })),
+        ...(response.hiragana ?? []).map((item) => ({
+          ...item,
+          type: item.type || "hiragana",
+        })),
+        ...(response.katakana ?? []).map((item) => ({
+          ...item,
+          type: item.type || "katakana",
+        })),
         ...(response.grammar ?? []).map((item) => ({
           ...item,
           type: item.type || "grammar",

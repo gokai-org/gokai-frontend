@@ -1,6 +1,8 @@
 "use client";
 
+import { useEffect } from "react";
 import type { CSSProperties, ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 
 interface ChatSurfacePanelProps {
@@ -26,6 +28,19 @@ export function ChatSurfacePanel({
   bodyClassName,
   bodyStyle,
 }: ChatSurfacePanelProps) {
+  useEffect(() => {
+    if (!open || mode === "contained") {
+      return;
+    }
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mode, open]);
+
   const containerClassName =
     mode === "contained" ? "absolute inset-0 z-30" : "fixed inset-0 z-50";
 
@@ -64,7 +79,7 @@ export function ChatSurfacePanel({
         ? { opacity: 0, y: 18, scale: 0.97 }
         : { opacity: 0, x: 36 };
 
-  return (
+  const panel = (
     <AnimatePresence>
       {open ? (
         <div className={containerClassName} role="dialog" aria-modal="true">
@@ -133,4 +148,14 @@ export function ChatSurfacePanel({
       ) : null}
     </AnimatePresence>
   );
+
+  if (mode === "contained") {
+    return panel;
+  }
+
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  return createPortal(panel, document.body);
 }

@@ -25,6 +25,7 @@ export interface TourStep {
   spotlightPadding?: number;
   spotlightShape?: "rect" | "round";
   spotlightInsets?: Partial<Record<"top" | "right" | "bottom" | "left", number>>;
+  stepTargetTimeout?: number;
   position?:
     | "center"
     | "top"
@@ -108,7 +109,6 @@ export function GuideTourProvider({ children }: { children: React.ReactNode }) {
     }
 
     const token = ++activationTokenRef.current;
-    const firstStep = pendingTour.steps[0];
     let cancelled = false;
     const readinessTimeoutIds: Array<ReturnType<typeof setTimeout>> = [];
     let mutationObserver: MutationObserver | null = null;
@@ -147,14 +147,6 @@ export function GuideTourProvider({ children }: { children: React.ReactNode }) {
       });
     };
 
-    const firstTargetReady = () => {
-      if (!firstStep?.selector) {
-        return true;
-      }
-
-      return resolveGuideTarget(firstStep.selector, { includeOffscreen: true }) !== null;
-    };
-
     const pageReady = () => {
       if (typeof document === "undefined") {
         return false;
@@ -164,7 +156,7 @@ export function GuideTourProvider({ children }: { children: React.ReactNode }) {
     };
 
     const tryActivate = () => {
-      if (!pageReady() || !firstTargetReady()) {
+      if (!pageReady()) {
         return;
       }
 

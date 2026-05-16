@@ -7,7 +7,9 @@ import type {
   VocabularyGraphProgressItem,
   VocabularyWordLesson,
   VocabularyQuizSaveContext,
+  VocabularyQuizSaveResult,
 } from "@/features/graph/vocabulary";
+import { VOCABULARY_QUIZ_TYPES } from "@/features/graph/vocabulary/lib/vocabularyQuizProgress";
 
 import {
   getStatsOverview,
@@ -28,8 +30,6 @@ import {
   buildReviewItems,
   buildVocabularyReviewGraphItem,
   buildVocabularyReviewQuestion,
-  isKanjiReviewExerciseType,
-  isVocabularyReviewExerciseType,
 } from "../utils/reviewMappers";
 
 type ActiveKanjiReview = {
@@ -42,6 +42,14 @@ type ActiveVocabularyReview = {
   question: VocabularyWordLesson;
   initialType: VocabularyAnswerType;
   availableTypes: VocabularyAnswerType[];
+};
+
+type ReviewPageDataSnapshot = {
+  recommendations: ReviewItem[];
+  reviewStats: OverviewStatsResponse | null;
+  recentActivity: RecentActivityEntry[];
+  reviewStreak: ReviewStreakResponse | null;
+  error: string | null;
 };
 
 export function useReviewPageData() {
@@ -60,6 +68,66 @@ export function useReviewPageData() {
   const [activeGrammarLesson, setActiveGrammarLesson] = useState<GrammarLesson | null>(null);
   const [activeVocabularyReview, setActiveVocabularyReview] = useState<ActiveVocabularyReview | null>(null);
 
+  const applyPageSnapshot = useCallback((snapshot: ReviewPageDataSnapshot) => {
+    setRecommendations(snapshot.recommendations);
+    setReviewStats(snapshot.reviewStats);
+    setRecentActivity(snapshot.recentActivity);
+    setReviewStreak(snapshot.reviewStreak);
+    setError(snapshot.error);
+  }, []);
+
+  const requestPageSnapshot = useCallback(
+    async ({
+      syncStrategies = false,
+    }: {
+      syncStrategies?: boolean;
+    } = {}): Promise<ReviewPageDataSnapshot> => {
+      if (syncStrategies) {
+        await syncReviewRecommendationStrategies().catch(() => null);
+      }
+
+      const [recommendationsResult, statsResult, recentActivityResult, streakResult] =
+        await Promise.allSettled([
+          listReviewRecommendations(),
+          getStatsOverview(),
+          getStatsRecentActivity(),
+          getUserReviewStreak(),
+        ]);
+
+      const snapshot: ReviewPageDataSnapshot = {
+        recommendations: [],
+        reviewStats: null,
+        recentActivity: [],
+        reviewStreak: null,
+        error: null,
+      };
+
+      if (recommendationsResult.status === "fulfilled") {
+        snapshot.recommendations = buildReviewItems(
+          recommendationsResult.value.recommendations ?? [],
+        );
+      } else {
+        snapshot.error =
+          recommendationsResult.reason?.message ?? "Error al cargar repasos";
+      }
+
+      if (statsResult.status === "fulfilled") {
+        snapshot.reviewStats = statsResult.value;
+      }
+
+      if (recentActivityResult.status === "fulfilled") {
+        snapshot.recentActivity = recentActivityResult.value.activities ?? [];
+      }
+
+      if (streakResult.status === "fulfilled") {
+        snapshot.reviewStreak = streakResult.value;
+      }
+
+      return snapshot;
+    },
+    [],
+  );
+
   const fetchPageData = useCallback(
     async ({
       showLoader,
@@ -74,46 +142,16 @@ export function useReviewPageData() {
 
       setError(null);
 
-      if (syncStrategies) {
-        await syncReviewRecommendationStrategies().catch(() => null);
-      }
-
-      const [recommendationsResult, statsResult, recentActivityResult, streakResult] =
-        await Promise.allSettled([
-          listReviewRecommendations(),
-          getStatsOverview(),
-          getStatsRecentActivity(),
-          getUserReviewStreak(),
-        ]);
-
-      if (recommendationsResult.status === "fulfilled") {
-        setRecommendations(
-          buildReviewItems(recommendationsResult.value.recommendations ?? []),
-        );
-      } else {
-        setRecommendations([]);
-        setError(
-          recommendationsResult.reason?.message ?? "Error al cargar repasos",
-        );
-      }
-
-      if (statsResult.status === "fulfilled") {
-        setReviewStats(statsResult.value);
-      }
-
-      if (recentActivityResult.status === "fulfilled") {
-        setRecentActivity(recentActivityResult.value.activities ?? []);
-      }
-
-      if (streakResult.status === "fulfilled") {
-        setReviewStreak(streakResult.value);
-      }
+      const snapshot = await requestPageSnapshot({ syncStrategies });
+      applyPageSnapshot(snapshot);
 
       if (showLoader) {
         setLoading(false);
       }
+
+      return snapshot;
     },
-    [],
+    [applyPageSnapshot, requestPageSnapshot],
   );
 
   useEffect(() => {
@@ -132,8 +170,19 @@ export function useReviewPageData() {
   const reviewItems = useMemo<ReviewItem[]>(() => recommendations, [recommendations]);
 
   const refreshAfterReview = useCallback(async () => {
-    await fetchPageData({ syncStrategies: true });
+    return fetchPageData({ syncStrategies: true });
   }, [fetchPageData]);
+
+  const prepareReviewRefresh = useCallback(async () => {
+    return requestPageSnapshot({ syncStrategies: true });
+  }, [requestPageSnapshot]);
+
+  const applyPreparedReviewRefresh = useCallback(
+    (snapshot: ReviewPageDataSnapshot) => {
+      applyPageSnapshot(snapshot);
+    },
+    [applyPageSnapshot],
+  );
 
   const handleStartReview = useCallback(
     async (itemId: string) => {
@@ -146,9 +195,6 @@ export function useReviewPageData() {
         if (found.lessonType === "kanji") {
           setActiveKanjiReview({
             entityId: found.entityId,
-            quizType: isKanjiReviewExerciseType(found.exerciseType)
-              ? found.exerciseType
-              : undefined,
           });
           return;
         }
@@ -161,11 +207,8 @@ export function useReviewPageData() {
 
         const vocabularyItem = buildVocabularyReviewGraphItem(found);
         const vocabularyQuestion = buildVocabularyReviewQuestion(found);
-        const availableTypes = (found.availableExerciseTypes ?? []).filter(
-          isVocabularyReviewExerciseType,
-        );
-        const initialType = availableTypes[0]
-          ?? (isVocabularyReviewExerciseType(found.exerciseType) ? found.exerciseType : null);
+        const availableTypes = [...VOCABULARY_QUIZ_TYPES];
+        const initialType = availableTypes[0] ?? null;
 
         if (
           !vocabularyItem ||
@@ -195,7 +238,7 @@ export function useReviewPageData() {
   );
 
   const handleVocabularyQuizSaved = useCallback(
-    async (_context: VocabularyQuizSaveContext) => {
+    async (_context: VocabularyQuizSaveContext): Promise<VocabularyQuizSaveResult | void> => {
       await refreshAfterReview();
     },
     [refreshAfterReview],
@@ -216,6 +259,8 @@ export function useReviewPageData() {
     activeVocabularyReview,
     setActiveVocabularyReview,
     refreshAfterReview,
+    prepareReviewRefresh,
+    applyPreparedReviewRefresh,
     handleVocabularyQuizSaved,
     handleStartReview,
   };

@@ -56,6 +56,8 @@ export interface ChatSendResult {
   botMessage: ChatMessage;
   usedTokens: number;
   similarity?: number;
+  pointsAwarded?: number;
+  totalPoints?: number;
 }
 
 export interface ChatbotState {

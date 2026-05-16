@@ -21,44 +21,64 @@ import type { HelpTabKey } from "@/features/help/types";
 
 export const HELP_FAQS: FaqItem[] = [
   {
-    question: "¿Cómo empiezo a aprender japonés en Gokai?",
+    question: "¿Cómo empiezo en Gokai?",
     answer:
-      "Después de registrarte, completa el onboarding donde seleccionas tus intereses y nivel. Luego accede al Dashboard donde encontrarás lecciones, ejercicios y tu biblioteca de kanji personalizada. Te recomendamos comenzar con las lecciones básicas de hiragana y katakana.",
+      "Completa tu registro, elige tu nivel de kana e intereses y luego entra al dashboard. Desde ahí puedes empezar por el mapa de aprendizaje, la biblioteca o tus repasos del día.",
   },
   {
-    question: "¿Qué es el sistema de repaso espaciado (SRS)?",
+    question: "¿Dónde veo qué estudiar hoy?",
     answer:
-      "El sistema de repaso espaciado programa las revisiones en intervalos óptimos. Gokai utiliza este sistema para que repases kanji y vocabulario justo antes de que los olvides.",
+      "La página de Repasos es tu punto principal para retomar práctica. Ahí verás lo pendiente, tu racha y la recomendación más útil para continuar.",
   },
   {
-    question: "¿Cómo funciona la biblioteca de kanji?",
+    question: "¿Cómo funciona el sistema de repasos?",
     answer:
-      "La biblioteca organiza los kanji por nivel de dificultad. Puedes explorar lecturas, significados, trazos y palabras de ejemplo, además de seguir tu progreso.",
+      "Gokai prioriza el contenido que te conviene reforzar antes de olvidarlo. Mientras más constante seas con tus repasos, mejor se mantiene tu progreso.",
   },
   {
-    question: "¿Puedo usar el chatbot para practicar conversación?",
+    question: "¿Qué diferencia hay entre el mapa, la biblioteca y los repasos?",
     answer:
-      "Sí. El chatbot con IA te permite practicar conversación en japonés en tiempo real y recibir correcciones con explicaciones.",
+      "El mapa te orienta en tu progreso, la biblioteca te deja explorar contenido y los repasos te llevan directo a practicar lo que ya debes reforzar.",
   },
   {
-    question: "¿Cómo interpreto mis estadísticas de progreso?",
+    question: "¿Cómo uso la biblioteca?",
     answer:
-      "En Estadísticas encontrarás racha, precisión, kanji aprendidos y actividad reciente. Esto te ayuda a identificar patrones y áreas de mejora.",
+      "La biblioteca organiza contenido como kanji, vocabulario y gramática para explorarlo con calma. Puedes buscar, revisar detalles y guardar elementos que quieras volver a consultar.",
   },
   {
-    question: "¿Qué planes de membresía hay disponibles?",
+    question: "¿Puedo guardar contenido para revisarlo después?",
     answer:
-      "Existe un plan gratuito con acceso limitado y planes premium con más contenido, chatbot avanzado y estadísticas completas.",
+      "Sí. Puedes marcar contenido como favorito para encontrarlo más rápido después desde las vistas donde ese recurso esté disponible.",
   },
   {
-    question: "¿Cómo personalizo mi experiencia de aprendizaje?",
+    question: "¿Para qué sirve el chatbot de conversación?",
     answer:
-      "Desde Configuración puedes ajustar idioma, notificaciones, apariencia, metas diarias, accesibilidad y privacidad.",
+      "El chatbot te ayuda a practicar conversación y recibir correcciones sobre lo que escribes. Es una función premium pensada para practicar japonés de forma más libre.",
   },
   {
-    question: "¿Mis datos están seguros?",
+    question: "¿Qué desbloquea una suscripción premium?",
     answer:
-      "Sí. La plataforma utiliza medidas de protección de datos, autenticación segura y almacenamiento estructurado del progreso.",
+      "La suscripción premium amplía funciones como experiencias avanzadas de práctica y más acceso dentro de la plataforma. Si una función es premium, Gokai te lo indicará antes de entrar.",
+  },
+  {
+    question: "¿Para qué sirven las estadísticas?",
+    answer:
+      "Las estadísticas te ayudan a leer tu constancia, actividad y avance. Son útiles para detectar qué estás practicando bien y qué área necesita más atención.",
+  },
+  {
+    question: "¿Dónde cambio mis preferencias o ajustes?",
+    answer:
+      "En Configuración puedes actualizar tu perfil y ajustar opciones como notificaciones y otras preferencias de uso.",
+  },
+  {
+    question: "¿Para qué sirve el centro de avisos?",
+    answer:
+      "El centro de avisos reúne recordatorios y mensajes importantes dentro de la plataforma. Te ayuda a no perder seguimiento de actividad relevante.",
+  },
+  {
+    question: "¿Qué hago si no encuentro una función o algo no carga bien?",
+    answer:
+      "Usa el buscador del Centro de ayuda y, si no encuentras respuesta, abre soporte desde la misma página de Help. Así puedes reportar el problema directamente.",
   },
 ];
 
@@ -70,7 +90,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
       "Configura tu perfil, elige tu nivel y comienza tu primera lección de japonés.",
     color: "text-blue-600 dark:text-blue-400",
     bgColor: "bg-blue-50 dark:bg-blue-950/40",
-    tourIndex: 0,
+    tourId: "getting-started",
   },
   {
     icon: <Library className="w-6 h-6" />,
@@ -79,15 +99,15 @@ export const HELP_GUIDES: GuideCardItem[] = [
       "Descubre kanji organizados por nivel con ejemplos interactivos.",
     color: "text-purple-600 dark:text-purple-400",
     bgColor: "bg-purple-50 dark:bg-purple-950/40",
-    tourIndex: 1,
+    tourId: "explore-library",
   },
   {
     icon: <Target className="w-6 h-6" />,
-    title: "Sistema de revisiones",
-    description: "Aprende cómo funciona el SRS y cómo maximizar tu retención.",
+    title: "Sistema de repasos",
+    description: "Entiende cómo se priorizan tus repasos y dónde retomar tu siguiente sesión.",
     color: "text-emerald-600 dark:text-emerald-400",
     bgColor: "bg-emerald-50 dark:bg-emerald-950/40",
-    tourIndex: 2,
+    tourId: "review-system",
   },
   {
     icon: <MessageCircle className="w-6 h-6" />,
@@ -95,7 +115,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
     description: "Practica japonés con IA, escenarios reales y correcciones.",
     color: "text-amber-600 dark:text-amber-400",
     bgColor: "bg-amber-50 dark:bg-amber-950/40",
-    tourIndex: 3,
+    tourId: "chatbot-guide",
   },
   {
     icon: <BarChart3 className="w-6 h-6" />,
@@ -104,7 +124,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
       "Interpreta tus métricas, detecta patrones y mejora tu rutina.",
     color: "text-rose-600 dark:text-rose-400",
     bgColor: "bg-rose-50 dark:bg-rose-950/40",
-    tourIndex: 4,
+    tourId: "statistics-guide",
   },
   {
     icon: <Settings className="w-6 h-6" />,
@@ -113,7 +133,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
       "Ajusta notificaciones, metas diarias, apariencia y accesibilidad.",
     color: "text-indigo-600 dark:text-indigo-400",
     bgColor: "bg-indigo-50 dark:bg-indigo-950/40",
-    tourIndex: 5,
+    tourId: "personalization-guide",
   },
   {
     icon: <BookText className="w-6 h-6" />,
@@ -122,7 +142,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
       "Recorre el tablero de gramática y abre una lección visual paso a paso.",
     color: "text-orange-600 dark:text-orange-400",
     bgColor: "bg-orange-50 dark:bg-orange-950/40",
-    tourIndex: 8,
+    tourId: "grammar-board-guide",
   },
   {
     icon: <Languages className="w-6 h-6" />,
@@ -131,7 +151,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
       "Explora el tablero de escritura, sus nodos y la lección lateral con guía visual.",
     color: "text-fuchsia-600 dark:text-fuchsia-400",
     bgColor: "bg-fuchsia-50 dark:bg-fuchsia-950/40",
-    tourIndex: 9,
+    tourId: "hiragana-writing-guide",
   },
   {
     icon: <Bell className="w-6 h-6" />,
@@ -140,7 +160,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
       "Aprende a filtrar, fijar y gestionar tus notificaciones importantes.",
     color: "text-cyan-600 dark:text-cyan-400",
     bgColor: "bg-cyan-50 dark:bg-cyan-950/40",
-    tourIndex: 6,
+    tourId: "notices-guide",
   },
   {
     icon: <HelpCircle className="w-6 h-6" />,
@@ -149,7 +169,7 @@ export const HELP_GUIDES: GuideCardItem[] = [
       "Encuentra guías, preguntas frecuentes y soporte desde una sola pantalla.",
     color: "text-sky-600 dark:text-sky-400",
     bgColor: "bg-sky-50 dark:bg-sky-950/40",
-    tourIndex: 7,
+    tourId: "help-center-guide",
   },
 ];
 

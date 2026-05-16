@@ -348,18 +348,23 @@ function NotificationSettings({
   return (
     <>
       <SettingsSection
-        title="Notificaciones por Email"
-        description="Recibe actualizaciones importantes por correo electrónico"
+        title="Notificaciones y Recordatorios"
+        description="Controla los recordatorios automáticos y las notificaciones push"
       >
         <SettingsToggleSelectItem
           label="Frecuencia de notificaciones"
-          description="Con qué frecuencia quieres recibir notificaciones agrupadas"
+          description="Cada cuánto tiempo quieres recibir recordatorios automáticos"
           toggleEnabled={n.emailNotifications}
           onToggleChange={(v) =>
             updateSection("notifications", { emailNotifications: v })
           }
           value={n.notificationFrequency}
-          options={["Inmediato", "Cada 3 horas", "Diario", "Semanal"]}
+          options={[
+            "Cada 8 horas",
+            "Cada 16 horas",
+            "Cada 24 horas",
+            "Cada 2 días",
+          ]}
           onChange={(v) =>
             updateSection("notifications", { notificationFrequency: v })
           }

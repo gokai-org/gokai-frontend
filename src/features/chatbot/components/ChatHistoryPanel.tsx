@@ -9,6 +9,7 @@ import { AnswerConfirmationPanel } from "@/shared/ui";
 interface ChatHistoryPanelProps {
   chats: ReviewChat[];
   currentChatId?: string;
+  recentlyCreatedChatId?: string | null;
   isBusy?: boolean;
   onCreateChat: () => Promise<void> | void;
   onSelectChat: (chatId: string) => Promise<void> | void;
@@ -32,6 +33,7 @@ function formatRelativeDate(date?: Date) {
 export function ChatHistoryPanel({
   chats,
   currentChatId,
+  recentlyCreatedChatId,
   isBusy = false,
   onCreateChat,
   onSelectChat,
@@ -96,19 +98,40 @@ export function ChatHistoryPanel({
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <AnimatePresence initial={false}>
             {orderedChats.map((chat) => {
               const isCurrent = chat.id === currentChatId;
               const isEditing = editingChatId === chat.id;
+              const isRecentlyCreated = chat.id === recentlyCreatedChatId;
 
               return (
-                <div
+                <motion.div
+                  layout
                   key={chat.id}
+                  initial={
+                    isRecentlyCreated
+                      ? { opacity: 0, y: -18, scale: 0.96 }
+                      : false
+                  }
+                  animate={{
+                    opacity: 1,
+                    y: 0,
+                    scale: isRecentlyCreated ? [1, 1.015, 1] : 1,
+                  }}
+                  exit={{ opacity: 0, y: -10, scale: 0.96 }}
+                  transition={{
+                    duration: isRecentlyCreated ? 0.38 : 0.2,
+                    ease: [0.22, 1, 0.36, 1],
+                    layout: { duration: 0.24, ease: [0.22, 1, 0.36, 1] },
+                  }}
                   className={[
-                    "rounded-[24px] border px-4 py-4 transition",
+                    "mb-3 rounded-[24px] border px-4 py-4 transition",
                     isCurrent
                       ? "border-accent/30 bg-accent/5"
                       : "border-border-subtle bg-surface-elevated",
+                    isRecentlyCreated
+                      ? "shadow-[0_18px_46px_-26px_rgba(186,81,73,0.42)] ring-1 ring-accent/20"
+                      : "",
                   ].join(" ")}
                 >
                   {isEditing ? (
@@ -192,10 +215,10 @@ export function ChatHistoryPanel({
                       </div>
                     </>
                   )}
-                </div>
+                </motion.div>
               );
             })}
-          </div>
+          </AnimatePresence>
         )}
       </div>
 

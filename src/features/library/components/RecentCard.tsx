@@ -3,15 +3,52 @@
 import { motion } from "framer-motion";
 import { LibraryItem } from "@/features/library/types";
 import { useCardAnimation } from "@/features/library/hooks/useCardAnimation";
+import { VocabThumbnail } from "@/features/library/components/VocabThumbnail";
+
+type RecentCardCategory =
+  | "kanji"
+  | "hiragana"
+  | "katakana"
+  | "grammar"
+  | "word";
+
+const RECENT_CARD_THUMBNAIL_CONFIG: Record<
+  RecentCardCategory,
+  {
+    gradient: string;
+    iconColor?: "red" | "white";
+  }
+> = {
+  kanji: {
+    gradient: "from-[#993331] to-[#BA5149]",
+    iconColor: "red",
+  },
+  hiragana: {
+    gradient: "from-[#7B3F8A] to-[#A866B5]",
+    iconColor: "red",
+  },
+  katakana: {
+    gradient: "from-[#1B5078] to-[#2E82B5]",
+    iconColor: "red",
+  },
+  grammar: {
+    gradient: "from-[#6B5F57] to-[#8E7C72]",
+    iconColor: "red",
+  },
+  word: {
+    gradient: "from-[#BA5149] to-[#D98A5F]",
+    iconColor: "red",
+  },
+};
 
 export interface RecentItemProps {
   id: string;
   title: string;
   description?: string;
   thumbnail: string;
+  category?: RecentCardCategory;
   progress?: number;
   level?: string;
-  category?: string;
   lastAccessed?: string | Date;
 }
 
@@ -24,6 +61,10 @@ interface RecentCardProps {
 export function RecentCard({ item, index = 0, onClick }: RecentCardProps) {
   const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
     useCardAnimation(index, { useInView: false });
+  const category = (item.category as RecentCardCategory | undefined) ?? "word";
+  const thumbnailConfig =
+    RECENT_CARD_THUMBNAIL_CONFIG[category] ?? RECENT_CARD_THUMBNAIL_CONFIG.word;
+
   const formatTime = (timeInfo?: string | Date) => {
     if (!timeInfo) return "Hace un momento";
 
@@ -74,7 +115,12 @@ export function RecentCard({ item, index = 0, onClick }: RecentCardProps) {
             hoverTransition,
           ].join(" ")}
         >
-          {item.thumbnail}
+          <VocabThumbnail
+            thumbnail={item.thumbnail}
+            gradient={thumbnailConfig.gradient}
+            size="md"
+            iconColor={thumbnailConfig.iconColor}
+          />
         </div>
 
         <div className="min-w-0 flex-1">

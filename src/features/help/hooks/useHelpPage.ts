@@ -1,9 +1,11 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import SupportContactForm from "@/features/support/components/SupportContactForm";
 import { useGuideTour } from "@/features/help/components/GuideTourProvider";
-import { getTourByIndex } from "@/features/help/components/tourData";
+import { getTourById } from "@/features/help/components/tourData";
+import { queueHelpContextualTourRequest } from "@/features/help/utils/contextualTourLaunch";
 import { HELP_FAQS } from "@/features/help/utils/help.constants";
 import type { HelpTabKey } from "@/features/help/types";
 
@@ -13,10 +15,17 @@ export function useHelpPage() {
   const [activeTab, setActiveTab] = useState<HelpTabKey>("guides");
   const [supportOpen, setSupportOpen] = useState(false);
 
+  const router = useRouter();
   const { startTour } = useGuideTour();
 
-  const handleStartGuide = (tourIndex: number) => {
-    const tour = getTourByIndex(tourIndex);
+  const handleStartGuide = (tourId: string) => {
+    if (tourId === "getting-started") {
+      queueHelpContextualTourRequest("vocabulary-graph");
+      router.push("/dashboard/graph");
+      return;
+    }
+
+    const tour = getTourById(tourId);
     if (tour) startTour(tour);
   };
 

@@ -14,6 +14,7 @@ import {
   renameChat,
   sendChatMessage,
 } from "@/features/chatbot/services/api";
+import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 
 const RECOMMENDATION_REFRESH_DELAYS_MS = [450, 1000] as const;
 
@@ -37,6 +38,10 @@ function getReadableError(error: unknown, fallback: string) {
   }
 
   const directMessage = error.message.trim();
+
+  if (/Cannot read properties of (?:null|undefined)/i.test(directMessage)) {
+    return fallback;
+  }
 
   const match = directMessage.match(/HTTP\s+\d+:\s*(.*)$/);
   if (!match?.[1]) {
@@ -368,6 +373,9 @@ export function useChatbot() {
         }
 
         setUsedTokens(response.usedTokens);
+        if (typeof response.totalPoints === "number") {
+          dispatchMasteryProgressSync({ points: response.totalPoints });
+        }
         setChats((previous) =>
           [
             {

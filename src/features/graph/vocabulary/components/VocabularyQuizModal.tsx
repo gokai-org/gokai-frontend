@@ -59,6 +59,7 @@ type VocabularyQuizModalProps = {
   initialType: VocabularyAnswerType;
   availableTypes?: VocabularyAnswerType[];
   onClose: () => void;
+  onComplete?: () => void;
   onSaved: (
     context: VocabularyQuizSaveContext,
   ) => Promise<VocabularyQuizSaveResult | void> | VocabularyQuizSaveResult | void;
@@ -254,6 +255,7 @@ export default function VocabularyQuizModal({
   initialType,
   availableTypes,
   onClose,
+  onComplete,
   onSaved,
 }: VocabularyQuizModalProps) {
   useMiniDockBlocker(open);
@@ -588,13 +590,14 @@ export default function VocabularyQuizModal({
         }
 
         setStep("summary");
+        onComplete?.();
       } catch (saveError) {
         console.error("Error guardando quiz de vocabulario:", saveError);
         setError("No se pudo guardar este bloque del quiz.");
         setStep("error");
       }
     },
-    [applyPointsSync, currentType, item.nodeId, loadRound, onSaved, question.wordId, quizTypes, roundIndex, roundQuestions],
+    [applyPointsSync, currentType, item.nodeId, loadRound, onComplete, onSaved, question.wordId, quizTypes, roundIndex, roundQuestions],
   );
 
   const handleNextQuestion = useCallback(() => {

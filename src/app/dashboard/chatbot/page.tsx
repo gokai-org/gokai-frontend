@@ -2,16 +2,25 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { KazuSvgMascot } from "@/features/mascot";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
+import { ChatbotLockedPreview } from "@/features/chatbot/components/ChatbotLockedPreview";
 import { ChatHistoryPanel } from "@/features/chatbot/components/ChatHistoryPanel";
 import { ChatInput } from "@/features/chatbot/components/ChatInput";
+import { ChatPointsBadge } from "@/features/chatbot/components/ChatPointsBadge";
 import { ChatRecommendationsPanel } from "@/features/chatbot/components/ChatRecommendationsPanel";
 import { ChatConversation } from "@/features/chatbot/components/ChatConversation";
 import { ChatSurfacePanel } from "@/features/chatbot/components/ChatSurfacePanel";
 import { ChatWritingPanel } from "@/features/chatbot/components/ChatWritingPanel";
 import type { ChatMessage } from "@/features/chatbot/types";
 import { useChatbot } from "@/features/chatbot/hooks/useChatbot";
+import {
+  HELP_GUIDE_CHATBOT_EVENT,
+  type HelpGuideChatbotDetail,
+} from "@/features/help/utils/guideEvents";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
+import { useResolvedPremiumAccess } from "@/shared/hooks/useResolvedPremiumAccess";
+import { PremiumLockedView } from "@/shared/ui";
 
 type DesktopPanelState =
   | { kind: "recommendations" }
@@ -38,7 +47,7 @@ function useDesktopLayout(breakpoint = 1024) {
   return isDesktop;
 }
 
-export default function ChatbotPage() {
+function ChatbotExperience() {
   const {
     chats,
     messages,
@@ -61,6 +70,7 @@ export default function ChatbotPage() {
   const [mobileWritingMessage, setMobileWritingMessage] = useState<ChatMessage | null>(null);
   const [mobileRecommendationsAttention, setMobileRecommendationsAttention] =
     useState(false);
+  const [recentlyCreatedChatId, setRecentlyCreatedChatId] = useState<string | null>(null);
   const previousChatIdRef = useRef<string | null>(null);
   const previousRecommendationIdsRef = useRef<string[] | null>(null);
 
@@ -92,7 +102,9 @@ export default function ChatbotPage() {
 
   const handleCreateNewChat = async () => {
     setMobileRecommendationsAttention(false);
-    await createNewChat();
+    setHistoryOpen(true);
+    const nextChat = await createNewChat();
+    setRecentlyCreatedChatId(nextChat.id);
   };
 
   const handleSelectChat = async (chatId: string) => {
@@ -104,6 +116,53 @@ export default function ChatbotPage() {
     desktopPanel?.kind === "writing"
       ? messages.find((message) => message.id === desktopPanel.messageId) ?? null
       : null;
+
+  useEffect(() => {
+    if (!recentlyCreatedChatId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setRecentlyCreatedChatId((current) =>
+        current === recentlyCreatedChatId ? null : current,
+      );
+    }, 1800);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [recentlyCreatedChatId]);
+
+  useEffect(() => {
+    const handleHelpGuideChatbot = (event: Event) => {
+      const customEvent = event as CustomEvent<HelpGuideChatbotDetail>;
+      const action = customEvent.detail?.action;
+
+      if (action === "open-recommendations") {
+        if (isDesktop) {
+          setDesktopPanel({ kind: "recommendations" });
+          return;
+        }
+
+        setRecommendationsOpen(true);
+        return;
+      }
+
+      if (action === "close-recommendations") {
+        setDesktopPanel((current) =>
+          current?.kind === "recommendations" ? null : current,
+        );
+        setRecommendationsOpen(false);
+      }
+    };
+
+    window.addEventListener(HELP_GUIDE_CHATBOT_EVENT, handleHelpGuideChatbot);
+
+    return () => {
+      window.removeEventListener(
+        HELP_GUIDE_CHATBOT_EVENT,
+        handleHelpGuideChatbot,
+      );
+    };
+  }, [isDesktop]);
 
   useEffect(() => {
     const currentChatId = currentChat?.id ?? null;
@@ -211,11 +270,11 @@ export default function ChatbotPage() {
       <button
         type="button"
         onClick={handleRecommendationsToggle}
+        data-help-target="chat-recommendations-trigger"
         className={[
-          "relative inline-flex h-11 items-center justify-center rounded-2xl border border-border-default bg-surface-elevated text-content-secondary transition hover:border-accent/20 hover:text-accent",
-          isDesktop ? "w-11" : "w-11",
+          "relative inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-border-default bg-surface-elevated text-content-secondary transition hover:border-[#b8bcc6] hover:bg-white hover:text-content-primary",
           desktopPanel?.kind === "recommendations"
-            ? "border-accent/30 text-accent"
+            ? "border-[#b8bcc6] bg-white text-content-primary shadow-[0_10px_24px_-20px_rgba(15,23,42,0.45)]"
             : "",
           mobileRecommendationsAttention
             ? "border-red-500/40 bg-red-500/10 text-red-600 shadow-[0_0_0_6px_rgba(239,68,68,0.12)] animate-pulse dark:text-red-300"
@@ -235,16 +294,17 @@ export default function ChatbotPage() {
           stroke="currentColor"
           strokeWidth="2"
           strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <path d="M6 5h12" />
-          <path d="M6 12h12" />
-          <path d="M6 19h8" />
+          <path d="m12 3.8 2.55 5.16 5.7.83-4.13 4.03.97 5.68L12 16.8l-5.09 2.7.97-5.68-4.13-4.03 5.7-.83L12 3.8Z" />
         </svg>
 
         {mobileRecommendationsAttention ? (
           <span className="absolute right-2 top-2 h-2.5 w-2.5 rounded-full bg-red-500" />
         ) : null}
       </button>
+
+      <ChatPointsBadge />
     </>
   );
 
@@ -293,16 +353,14 @@ export default function ChatbotPage() {
               title="Tus chats"
               subtitle="Crea conversaciones por tema, vuelve a una sesion anterior o limpia las que ya no necesites."
               onClose={() => setHistoryOpen(false)}
-              mode="contained"
+              mode="page"
             >
               <ChatHistoryPanel
                 chats={chats}
                 currentChatId={currentChat?.id}
+                recentlyCreatedChatId={recentlyCreatedChatId}
                 isBusy={isLoading || isBootstrapping}
-                onCreateChat={async () => {
-                  await handleCreateNewChat();
-                  setHistoryOpen(false);
-                }}
+                onCreateChat={handleCreateNewChat}
                 onSelectChat={async (chatId) => {
                   await handleSelectChat(chatId);
                   setHistoryOpen(false);
@@ -370,4 +428,69 @@ export default function ChatbotPage() {
       </ChatSurfacePanel>
     </DashboardShell>
   );
+}
+
+export default function ChatbotPage() {
+  const { accessResolved, isPremium } = useResolvedPremiumAccess();
+
+  if (!accessResolved) {
+    return (
+      <DashboardShell
+        useContainer={false}
+        contentClassName="overflow-hidden px-4 py-4 sm:px-6 sm:py-6"
+      >
+        <div className="flex h-full min-h-0 w-full max-w-[1680px] flex-col gap-4 lg:pr-4">
+          <div className="overflow-hidden rounded-[32px] border border-[#BA5149]/14 bg-surface-primary/92">
+            <ChatbotLockedPreview />
+          </div>
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  if (!isPremium) {
+    return (
+      <DashboardShell
+        useContainer={false}
+        contentClassName="overflow-hidden px-4 py-4 sm:px-6 sm:py-6"
+      >
+        <div className="flex h-full min-h-0 w-full max-w-[1680px] flex-col gap-4 lg:pr-4">
+          <PremiumLockedView
+            preview={<ChatbotLockedPreview />}
+            title="El chat con KAZU esta bloqueado"
+            description="El chatbot premium incluye practica conversacional con IA, recomendaciones adaptativas y ejercicios guiados dentro del mismo flujo. Activa GOKAI+ para entrar a esta experiencia."
+            primaryHref="/checkout?returnTo=%2Fdashboard%2Fchatbot"
+            primaryLabel="Convertirte en Pro"
+            secondaryHref="/auth/membership?from=dashboard&returnTo=%2Fdashboard%2Fchatbot"
+            secondaryLabel="Comparar planes"
+            featureLabel="Chatbot premium"
+            detailItems={[
+              "Conversaciones ilimitadas",
+              "Historial y recomendaciones",
+              "Panel de escritura guiada",
+            ]}
+            caption="Desbloquea el chat completo con respuestas en tiempo real, recomendaciones contextuales y ejercicios conectados al mismo hilo."
+            hero={
+              <div className="relative flex h-full w-full items-center justify-center">
+                <div className="absolute inset-3 rounded-[22px] bg-white/12 blur-xl" />
+                <div className="relative flex flex-col items-center gap-1.5">
+                  <KazuSvgMascot
+                    state="idle"
+                    size={52}
+                    reducedMotion
+                    className="drop-shadow-none"
+                  />
+                  <span className="text-[10px] font-black tracking-[0.28em] text-white/92">
+                    KAZU
+                  </span>
+                </div>
+              </div>
+            }
+          />
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  return <ChatbotExperience />;
 }

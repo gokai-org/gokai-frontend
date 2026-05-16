@@ -55,6 +55,52 @@ function pickWordThumbnail(word: Word) {
   return "語";
 }
 
+function normalizeWordMeanings(
+  value: BackendFavoriteItem["meanings"] | BackendRecentItem["meanings"],
+): string[] {
+  if (!value) {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value
+      .filter((entry): entry is string => typeof entry === "string")
+      .map((entry) => entry.trim())
+      .filter(Boolean);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+
+    if (!trimmed) {
+      return [];
+    }
+
+    try {
+      return normalizeWordMeanings(
+        JSON.parse(trimmed) as BackendFavoriteItem["meanings"],
+      );
+    } catch {
+      return [trimmed];
+    }
+  }
+
+  return Object.values(value).flatMap((entry) => normalizeWordMeanings(entry));
+}
+
+export function backendWordToWord(
+  item: Pick<BackendFavoriteItem, "id" | "kanjiWord" | "hiragana" | "meanings" | "icon"> |
+    Pick<BackendRecentItem, "id" | "kanjiWord" | "hiragana" | "meanings" | "icon">,
+): Word {
+  return {
+    id: item.id,
+    kanji: item.kanjiWord ?? null,
+    hiragana: item.hiragana ?? null,
+    icon: item.icon ?? null,
+    meanings: normalizeWordMeanings(item.meanings),
+  };
+}
+
 export function kanjiToCard(kanji: Kanji) {
   const meaning = getPrimaryMeaning(kanji.meanings) || kanji.symbol;
   const reading = getPrimaryReading(kanji.readings);
@@ -179,6 +225,8 @@ export function katakanaToScriptCard(
 export function recentToCardProps(
   item: BackendRecentItem,
   kanjis: Kanji[],
+  hiraganas: Kana[],
+  katakanas: Kana[],
 ): RecentItemProps {
   switch (item.type) {
     case "kanji": {
@@ -199,25 +247,31 @@ export function recentToCardProps(
       };
     }
 
-    case "hiragana":
-      return {
-        id: item.id,
-        title: item.symbol || "Hiragana",
-        description: "Hiragana",
-        thumbnail: item.symbol || "あ",
-        category: "word",
-        lastAccessed: item.createdAt,
-      };
+    case "hiragana": {
+      const kana = hiraganas.find((entry) => entry.id === item.id);
 
-    case "katakana":
       return {
         id: item.id,
-        title: item.symbol || "Katakana",
-        description: "Katakana",
-        thumbnail: item.symbol || "ア",
-        category: "word",
+        title: kana?.symbol || item.symbol || "Hiragana",
+        description: kana?.romaji || item.romaji || "Hiragana",
+        thumbnail: kana?.symbol || item.symbol || "あ",
+        category: "hiragana",
         lastAccessed: item.createdAt,
       };
+    }
+
+    case "katakana": {
+      const kana = katakanas.find((entry) => entry.id === item.id);
+
+      return {
+        id: item.id,
+        title: kana?.symbol || item.symbol || "Katakana",
+        description: kana?.romaji || item.romaji || "Katakana",
+        thumbnail: kana?.symbol || item.symbol || "ア",
+        category: "katakana",
+        lastAccessed: item.createdAt,
+      };
+    }
 
     case "grammar_lesson":
     case "grammar":
@@ -239,7 +293,7 @@ export function recentToCardProps(
         id: item.id,
         title: item.kanjiWord || item.hiragana || "Palabra",
         description: meanings,
-        thumbnail: item.kanjiWord || item.hiragana || "言",
+        thumbnail: item.icon || item.kanjiWord || item.hiragana || "言",
         category: "word",
         lastAccessed: item.createdAt,
       };
@@ -297,21 +351,11 @@ export function katakanaFavToCard(fav: BackendFavoriteItem) {
 }
 
 export function wordFavToCard(fav: BackendFavoriteItem) {
-  let parsedMeanings: string | undefined;
+  return wordToCard(backendWordToWord(fav));
+}
 
-  if (fav.meanings) {
-    try {
-      const arr = JSON.parse(fav.meanings);
-      if (Array.isArray(arr)) parsedMeanings = arr.join(", ");
-    } catch {}
-  }
-
-  return {
-    id: fav.id,
-    title: fav.kanjiWord || fav.hiragana || "Palabra",
-    subtitle: parsedMeanings || fav.hiragana || undefined,
-    thumbnail: fav.kanjiWord || fav.hiragana || "言",
-  };
+export function recentWordToCard(item: BackendRecentItem) {
+  return wordToCard(backendWordToWord(item));
 }
 
 export function themeToCard(theme: Theme) {
