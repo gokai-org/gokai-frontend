@@ -20,6 +20,7 @@ import {
 } from "@/features/notices";
 import {
   getPushNotificationState,
+  sendLocalTestNotification,
   setPushNotificationsEnabled,
   type PushNotificationState,
 } from "@/features/notifications/lib/oneSignal";
@@ -155,18 +156,12 @@ export default function Page() {
   };
 
   const handleSendTestNotification = async () => {
-    if (!userId) {
-      toast.error("No se pudo identificar al usuario.");
-      return;
-    }
-
-    const providerId = pushState?.providerId?.trim();
     const pushEnabled =
       pushState?.supported &&
       pushState.browserPermission === "granted" &&
       pushState.optedIn;
 
-    if (!pushEnabled || !providerId) {
+    if (!pushEnabled) {
       setShowPushPrompt(true);
       toast.error("Activa las notificaciones push antes de enviar la prueba.");
       return;
@@ -175,26 +170,8 @@ export default function Page() {
     setTestNotificationLoading(true);
 
     try {
-      const response = await fetch("/api/notifications/test", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ playerId: providerId }),
-      });
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => null)) as
-          | { error?: string }
-          | null;
-
-        throw new Error(
-          payload?.error || "No se pudo enviar la notificación de prueba.",
-        );
-      }
-
-      toast.success("Notificación de prueba enviada.");
+      await sendLocalTestNotification();
+      toast.success("Notificación de prueba mostrada en este navegador.");
     } catch (error) {
       console.error("Error enviando notificación de prueba:", error);
       toast.error(
