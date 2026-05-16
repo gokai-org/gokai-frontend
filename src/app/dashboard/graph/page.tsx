@@ -10,6 +10,7 @@ import RegionThemeGraph from "@/features/graph/vocabulary/components/RegionTheme
 import RegionVectorGraph from "@/features/graph/vocabulary/components/RegionVectorGraph";
 import VocabularyNodePanel from "@/features/graph/vocabulary/components/VocabularyNodePanel";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
+import { getCurrentUser } from "@/features/auth/services/api";
 import {
   useGuideTour,
   type TourStep,
@@ -22,7 +23,9 @@ import {
 import { FIRST_RUN_SIDEBAR_PREVIEW_EVENT } from "@/features/help/utils/guideEvents";
 import {
   activateFirstRunOnboardingSession,
+  readPersistentFirstRunSeenPages,
   readFirstRunSeenPages,
+  writePersistentFirstRunSeenPages,
   writeFirstRunSeenPages,
 } from "@/features/help/utils/firstRunOnboardingState";
 import { useDeferredGraphMount } from "@/features/graph/vocabulary/hooks/useDeferredGraphMount";
@@ -778,6 +781,10 @@ export default function Page() {
   const handledDeepLinkRef = useRef<string | null>(null);
   const [hoverResetToken, setHoverResetToken] = useState(0);
   const [firstRunEnabled, setFirstRunEnabled] = useState(false);
+  const [firstRunSeenStateReady, setFirstRunSeenStateReady] = useState(false);
+  const [firstRunStorageUserId, setFirstRunStorageUserId] = useState<string | null>(
+    null,
+  );
   const [firstRunSeenPages, setFirstRunSeenPages] = useState<Set<string>>(
     () => new Set(),
   );
@@ -901,8 +908,37 @@ export default function Page() {
       }
 
       const isActive = activateFirstRunOnboardingSession();
+      const sessionSeenPages = isActive ? readFirstRunSeenPages() : new Set<string>();
+
       setFirstRunEnabled(isActive);
-      setFirstRunSeenPages(isActive ? readFirstRunSeenPages() : new Set());
+
+      void getCurrentUser()
+        .catch(() => null)
+        .then((user) => {
+          if (cancelled) {
+            return;
+          }
+
+          const nextUserId = typeof user?.id === "string" ? user.id : null;
+          const persistentSeenPages = readPersistentFirstRunSeenPages(nextUserId);
+          const mergedSeenPages = new Set([
+            ...sessionSeenPages,
+            ...persistentSeenPages,
+          ]);
+
+          setFirstRunStorageUserId(nextUserId);
+          setFirstRunSeenPages(mergedSeenPages);
+
+          if (isActive) {
+            writeFirstRunSeenPages(mergedSeenPages);
+          }
+
+          if (mergedSeenPages.size > 0) {
+            writePersistentFirstRunSeenPages(mergedSeenPages, nextUserId);
+          }
+
+          setFirstRunSeenStateReady(true);
+        });
     });
 
     return () => {
@@ -919,9 +955,10 @@ export default function Page() {
       const next = new Set(current);
       next.add("graph");
       writeFirstRunSeenPages(next);
+      writePersistentFirstRunSeenPages(next, firstRunStorageUserId);
       return next;
     });
-  }, []);
+  }, [firstRunStorageUserId]);
 
   const progressItemsRef = useRef(progressItems);
   const themeSubthemesRef = useRef(themeSubthemes);
@@ -1858,6 +1895,7 @@ export default function Page() {
     if (
       loading ||
       !firstRunEnabled ||
+      !firstRunSeenStateReady ||
       firstRunSeenPages.has("graph") ||
       activeTour ||
       pendingTour
@@ -1866,6 +1904,7 @@ export default function Page() {
     }
 
     const timeoutId = window.setTimeout(() => {
+      markGraphFirstRunSeen();
       startTour(buildFirstRunTour());
     }, 220);
 
@@ -1874,8 +1913,10 @@ export default function Page() {
     activeTour,
     buildFirstRunTour,
     firstRunEnabled,
+    firstRunSeenStateReady,
     firstRunSeenPages,
     loading,
+    markGraphFirstRunSeen,
     pendingTour,
     startTour,
   ]);

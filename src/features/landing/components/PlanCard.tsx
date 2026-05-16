@@ -83,7 +83,14 @@ export function PlanCard({
       {/* espacio fijo para badge */}
       <div className="relative z-10 mb-4 min-h-[36px]">
         {badge ? (
-          <div className="w-fit rounded-full bg-white/20 backdrop-blur-sm px-4 py-2 text-sm font-bold text-white shadow-lg shadow-black/10 ring-1 ring-white/30">
+          <div
+            className={[
+              "w-fit rounded-full px-4 py-2 text-sm font-bold backdrop-blur-sm shadow-lg shadow-black/10",
+              highlighted
+                ? "bg-white/20 text-white ring-1 ring-white/30"
+                : "border border-accent/14 bg-surface-primary text-slate-950 ring-1 ring-black/6 dark:border-white/10 dark:bg-white/82 dark:text-slate-950 dark:ring-white/10",
+            ].join(" ")}
+          >
             {badge}
           </div>
         ) : (

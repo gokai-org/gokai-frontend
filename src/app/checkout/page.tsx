@@ -74,11 +74,21 @@ function CheckoutPageContent() {
   const transitionTimeoutRef = useRef<number | null>(null);
 
   const successPath = useMemo(() => {
-    if (searchParams.get("flow") === "premium-onboarding") {
-      return "/checkout/success?flow=premium-onboarding";
+    const params = new URLSearchParams();
+    const flow = searchParams.get("flow");
+    const returnTo = searchParams.get("returnTo");
+
+    if (flow) {
+      params.set("flow", flow);
     }
 
-    return "/checkout/success";
+    if (returnTo && returnTo.startsWith("/")) {
+      params.set("returnTo", returnTo);
+    }
+
+    const query = params.toString();
+
+    return query ? `/checkout/success?${query}` : "/checkout/success";
   }, [searchParams]);
 
   const routeTransitionDelayMs = platformMotion.shouldAnimate

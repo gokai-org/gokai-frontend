@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { KazuSvgMascot } from "@/features/mascot";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
+import { ChatbotLockedPreview } from "@/features/chatbot/components/ChatbotLockedPreview";
 import { ChatHistoryPanel } from "@/features/chatbot/components/ChatHistoryPanel";
 import { ChatInput } from "@/features/chatbot/components/ChatInput";
 import { ChatRecommendationsPanel } from "@/features/chatbot/components/ChatRecommendationsPanel";
@@ -12,6 +14,8 @@ import { ChatWritingPanel } from "@/features/chatbot/components/ChatWritingPanel
 import type { ChatMessage } from "@/features/chatbot/types";
 import { useChatbot } from "@/features/chatbot/hooks/useChatbot";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
+import { useResolvedPremiumAccess } from "@/shared/hooks/useResolvedPremiumAccess";
+import { PremiumLockedView } from "@/shared/ui";
 
 type DesktopPanelState =
   | { kind: "recommendations" }
@@ -38,7 +42,7 @@ function useDesktopLayout(breakpoint = 1024) {
   return isDesktop;
 }
 
-export default function ChatbotPage() {
+function ChatbotExperience() {
   const {
     chats,
     messages,
@@ -370,4 +374,69 @@ export default function ChatbotPage() {
       </ChatSurfacePanel>
     </DashboardShell>
   );
+}
+
+export default function ChatbotPage() {
+  const { accessResolved, isPremium } = useResolvedPremiumAccess();
+
+  if (!accessResolved) {
+    return (
+      <DashboardShell
+        useContainer={false}
+        contentClassName="overflow-hidden px-4 py-4 sm:px-6 sm:py-6"
+      >
+        <div className="flex h-full min-h-0 w-full max-w-[1680px] flex-col gap-4 lg:pr-4">
+          <div className="overflow-hidden rounded-[32px] border border-[#BA5149]/14 bg-surface-primary/92">
+            <ChatbotLockedPreview />
+          </div>
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  if (!isPremium) {
+    return (
+      <DashboardShell
+        useContainer={false}
+        contentClassName="overflow-hidden px-4 py-4 sm:px-6 sm:py-6"
+      >
+        <div className="flex h-full min-h-0 w-full max-w-[1680px] flex-col gap-4 lg:pr-4">
+          <PremiumLockedView
+            preview={<ChatbotLockedPreview />}
+            title="El chat con KAZU esta bloqueado"
+            description="El chatbot premium incluye practica conversacional con IA, recomendaciones adaptativas y ejercicios guiados dentro del mismo flujo. Activa GOKAI+ para entrar a esta experiencia."
+            primaryHref="/checkout?returnTo=%2Fdashboard%2Fchatbot"
+            primaryLabel="Convertirte en Pro"
+            secondaryHref="/auth/membership?from=dashboard&returnTo=%2Fdashboard%2Fchatbot"
+            secondaryLabel="Comparar planes"
+            featureLabel="Chatbot premium"
+            detailItems={[
+              "Conversaciones ilimitadas",
+              "Historial y recomendaciones",
+              "Panel de escritura guiada",
+            ]}
+            caption="Desbloquea el chat completo con respuestas en tiempo real, recomendaciones contextuales y ejercicios conectados al mismo hilo."
+            hero={
+              <div className="relative flex h-full w-full items-center justify-center">
+                <div className="absolute inset-3 rounded-[22px] bg-white/12 blur-xl" />
+                <div className="relative flex flex-col items-center gap-1.5">
+                  <KazuSvgMascot
+                    state="idle"
+                    size={52}
+                    reducedMotion
+                    className="drop-shadow-none"
+                  />
+                  <span className="text-[10px] font-black tracking-[0.28em] text-white/92">
+                    KAZU
+                  </span>
+                </div>
+              </div>
+            }
+          />
+        </div>
+      </DashboardShell>
+    );
+  }
+
+  return <ChatbotExperience />;
 }

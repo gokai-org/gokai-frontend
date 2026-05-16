@@ -1,6 +1,7 @@
 const PENDING_KEY = "gokai:first-run-onboarding:pending";
 const SESSION_ACTIVE_KEY = "gokai:first-run-onboarding:active";
 const SESSION_SEEN_KEY = "gokai:first-run-onboarding:seen-pages";
+const PERSISTENT_SEEN_KEY = "gokai:first-run-onboarding:persistent-seen-pages";
 
 function safeSessionStorage() {
   if (typeof window === "undefined") return null;
@@ -27,6 +28,48 @@ export function readFirstRunSeenPages() {
 export function writeFirstRunSeenPages(seenPages: Set<string>) {
   safeSessionStorage()?.setItem(
     SESSION_SEEN_KEY,
+    JSON.stringify(Array.from(seenPages)),
+  );
+}
+
+function getPersistentSeenKey(userId?: string | null) {
+  const normalizedUserId = typeof userId === "string" ? userId.trim() : "";
+
+  return normalizedUserId
+    ? `${PERSISTENT_SEEN_KEY}:${normalizedUserId}`
+    : PERSISTENT_SEEN_KEY;
+}
+
+function parseSeenPages(raw: string | null) {
+  try {
+    const parsed = JSON.parse(raw ?? "[]");
+    return Array.isArray(parsed) ? parsed.filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function readPersistentFirstRunSeenPages(userId?: string | null) {
+  const storage = safeLocalStorage();
+  if (!storage) return new Set<string>();
+
+  const globalSeenPages = parseSeenPages(storage.getItem(PERSISTENT_SEEN_KEY));
+  const scopedKey = getPersistentSeenKey(userId);
+
+  if (scopedKey === PERSISTENT_SEEN_KEY) {
+    return new Set(globalSeenPages);
+  }
+
+  const scopedSeenPages = parseSeenPages(storage.getItem(scopedKey));
+  return new Set([...globalSeenPages, ...scopedSeenPages]);
+}
+
+export function writePersistentFirstRunSeenPages(
+  seenPages: Set<string>,
+  userId?: string | null,
+) {
+  safeLocalStorage()?.setItem(
+    getPersistentSeenKey(userId),
     JSON.stringify(Array.from(seenPages)),
   );
 }
