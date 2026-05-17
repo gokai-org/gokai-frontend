@@ -9,6 +9,7 @@
  *  - appearance.fontSize       → TypographyProvider (setFontSize)
  *  - appearance.japaneseFont   → TypographyProvider (setJapaneseFont)
  *  - accessibility.reduceAnimations → localStorage gokai-animations-enabled
+ *  - accessibility.audioSpeed  → localStorage gokai-audio-speed
  *  - general.confirmAnswers    → localStorage gokai-confirm-answers-enabled
  *  - accessibility.highContrast     → clase CSS high-contrast en <html>
  *
@@ -18,6 +19,7 @@
 import { useEffect, useRef } from "react";
 import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
 import { setStoredAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
+import { setStoredAudioSpeed } from "@/shared/hooks/useAudioPlaybackRate";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
 import {
@@ -48,7 +50,8 @@ export function SettingsBootstrap() {
         // ── Tipografía ─────────────────────────────────────────
         setFontSize(normalizeFontSize(settings.appearance.fontSize));
         setJapaneseFont(normalizeJapaneseFont(settings.appearance.japaneseFont));
-          setStoredAnswerConfirmationPreference(settings.general.confirmAnswers);
+        setStoredAnswerConfirmationPreference(settings.general.confirmAnswers);
+        setStoredAudioSpeed(settings.accessibility.audioSpeed);
 
         // ── Animaciones ────────────────────────────────────────
         const noAnim = settings.accessibility.reduceAnimations;

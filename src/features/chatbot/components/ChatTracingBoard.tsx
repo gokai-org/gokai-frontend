@@ -323,9 +323,9 @@ export function ChatTracingBoard({ messages }: ChatTracingBoardProps) {
 
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-border-subtle bg-surface-elevated shadow-[0_2px_18px_-8px_rgba(0,0,0,0.08)]">
-      <div className="shrink-0 border-b border-border-subtle bg-surface-primary px-4 py-4 sm:px-5">
-        <div className="flex items-start justify-between gap-3">
-          <div>
+      <div className="shrink-0 border-b border-border-subtle bg-surface-primary px-4 py-4 sm:px-5 sm:py-4">
+        <div className="flex min-h-[88px] items-center justify-between gap-3 sm:min-h-[104px]">
+          <div className="min-w-0 flex-1">
             <h3 className="text-lg font-extrabold text-content-primary">
               Trazado desde el chat
             </h3>

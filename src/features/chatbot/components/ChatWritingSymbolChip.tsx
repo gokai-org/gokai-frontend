@@ -26,6 +26,8 @@ interface ChatWritingSymbolChipProps {
   target: ChatWritingTarget;
   selected: boolean;
   onSelect: () => void;
+  isPopoverOpen: boolean;
+  onPopoverOpenChange: (open: boolean) => void;
 }
 
 function clamp(value: number, min: number, max: number) {
@@ -49,12 +51,13 @@ export function ChatWritingSymbolChip({
   target,
   selected,
   onSelect,
+  isPopoverOpen,
+  onPopoverOpenChange,
 }: ChatWritingSymbolChipProps) {
   const { theme } = useTheme();
   const buttonRef = useRef<HTMLButtonElement | null>(null);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const closeTimerRef = useRef<number | null>(null);
-  const [isActive, setIsActive] = useState(false);
   const [isSticky, setIsSticky] = useState(false);
   const [position, setPosition] = useState<SymbolPopoverPosition | null>(null);
   const [canHoverPopover, setCanHoverPopover] = useState(() =>
@@ -82,22 +85,22 @@ export function ChatWritingSymbolChip({
     (sticky: boolean) => {
       clearCloseTimer();
       setIsSticky(sticky);
-      setIsActive(true);
+      onPopoverOpenChange(true);
     },
-    [clearCloseTimer],
+    [clearCloseTimer, onPopoverOpenChange],
   );
 
   const scheduleClose = useCallback(() => {
-    if (!isActive || isSticky) {
+    if (!isPopoverOpen || isSticky) {
       return;
     }
 
     clearCloseTimer();
     closeTimerRef.current = window.setTimeout(() => {
-      setIsActive(false);
+      onPopoverOpenChange(false);
       closeTimerRef.current = null;
     }, 90);
-  }, [clearCloseTimer, isActive, isSticky]);
+  }, [clearCloseTimer, isPopoverOpen, isSticky, onPopoverOpenChange]);
 
   useEffect(() => {
     const media = window.matchMedia("(hover: hover) and (pointer: fine)");
@@ -116,7 +119,13 @@ export function ChatWritingSymbolChip({
   useEffect(() => () => clearCloseTimer(), [clearCloseTimer]);
 
   useEffect(() => {
-    if (!isActive) {
+    if (!isPopoverOpen) {
+      clearCloseTimer();
+    }
+  }, [clearCloseTimer, isPopoverOpen]);
+
+  useEffect(() => {
+    if (!isPopoverOpen) {
       return;
     }
 
@@ -128,13 +137,13 @@ export function ChatWritingSymbolChip({
         return;
       }
 
-      setIsActive(false);
+      onPopoverOpenChange(false);
       setIsSticky(false);
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
-        setIsActive(false);
+        onPopoverOpenChange(false);
         setIsSticky(false);
       }
     };
@@ -146,10 +155,10 @@ export function ChatWritingSymbolChip({
       document.removeEventListener("pointerdown", handlePointerDown, true);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isActive]);
+  }, [isPopoverOpen, onPopoverOpenChange]);
 
   useLayoutEffect(() => {
-    if (!isActive) {
+    if (!isPopoverOpen) {
       return;
     }
 
@@ -205,7 +214,7 @@ export function ChatWritingSymbolChip({
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [isActive]);
+  }, [isPopoverOpen]);
 
   return (
     <div data-chat-writing-popover-root="true" className="relative inline-flex">
@@ -213,7 +222,7 @@ export function ChatWritingSymbolChip({
         ref={buttonRef}
         type="button"
         aria-label={target.title}
-        aria-expanded={isActive}
+        aria-expanded={isPopoverOpen}
         onClick={onSelect}
         onPointerEnter={(event) => {
           if (canHoverPopover && event.pointerType === "mouse") {
@@ -227,14 +236,15 @@ export function ChatWritingSymbolChip({
         }}
         onPointerDown={(event) => {
           if (event.pointerType !== "mouse" || !canHoverPopover) {
-            setIsActive((current) => !current);
-            setIsSticky(true);
+            const nextOpen = !isPopoverOpen;
+            setIsSticky(nextOpen);
+            onPopoverOpenChange(nextOpen);
           }
         }}
         onFocus={() => {
           clearCloseTimer();
           setIsSticky(true);
-          setIsActive(true);
+          onPopoverOpenChange(true);
         }}
         className="flex h-11 min-w-11 items-center justify-center rounded-2xl border px-3 text-lg font-black transition hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 jp-text"
         style={{
@@ -254,7 +264,7 @@ export function ChatWritingSymbolChip({
         {target.symbol}
       </button>
 
-      {isActive && typeof document !== "undefined"
+      {isPopoverOpen && typeof document !== "undefined"
         ? createPortal(
             <div className="pointer-events-none fixed inset-0 z-[90]">
               <motion.div
@@ -340,7 +350,7 @@ export function ChatWritingSymbolChip({
                           className="mt-2 inline-flex items-center gap-1.5 text-xs font-black transition"
                           style={{ color: accent }}
                           onClick={() => {
-                            setIsActive(false);
+                            onPopoverOpenChange(false);
                             setIsSticky(false);
                           }}
                         >

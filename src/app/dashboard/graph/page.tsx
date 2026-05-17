@@ -786,6 +786,7 @@ export default function Page() {
   const currentLevelRef = useRef<VocabularyViewLevel>("map");
   const selectedRegionIdRef = useRef<VocabularyRegionId | null>(null);
   const helpThemeRef = useRef<VocabularyRegionThemeNode | null>(null);
+  const sceneGestureRectRef = useRef<{ left: number; top: number } | null>(null);
   const regionGraphRef = useRef<{
     nodes: GraphNode[];
     edges: GraphEdge[];
@@ -2645,6 +2646,27 @@ export default function Page() {
     [applyManualTransform, clampManualScale],
   );
 
+  const zoomAndPanAt = useCallback(
+    (center: PointerPosition, factor: number, delta: PointerPosition) => {
+      const auto = autoTransformRef.current;
+      const current = manualTransformRef.current;
+      const nextScale = clampManualScale(current.scale * factor);
+      const currentFullScale = auto.scale * current.scale;
+      const nextFullScale = auto.scale * nextScale;
+      const fullX = auto.x + current.x;
+      const fullY = auto.y + current.y;
+      const nextFullX = center.x - ((center.x - fullX) / currentFullScale) * nextFullScale;
+      const nextFullY = center.y - ((center.y - fullY) / currentFullScale) * nextFullScale;
+
+      applyManualTransform({
+        scale: nextScale,
+        x: nextFullX - auto.x + delta.x,
+        y: nextFullY - auto.y + delta.y,
+      });
+    },
+    [applyManualTransform, clampManualScale],
+  );
+
   // Native wheel handler — registered with { passive: false } so preventDefault works
   const handleWheelNative = useCallback(
     (event: WheelEvent) => {
@@ -2722,6 +2744,10 @@ export default function Page() {
 
       isNavigatingRef.current = true;
       if (sceneRef.current) sceneRef.current.style.cursor = "grabbing";
+      const sceneRect = sceneRef.current?.getBoundingClientRect();
+      sceneGestureRectRef.current = sceneRect
+        ? { left: sceneRect.left, top: sceneRect.top }
+        : null;
 
       const position = { x: event.clientX, y: event.clientY };
       pointersRef.current.set(event.pointerId, position);
@@ -2773,26 +2799,23 @@ export default function Page() {
       const position = { x: event.clientX, y: event.clientY };
       pointersRef.current.set(event.pointerId, position);
 
-      const pointers = Array.from(pointersRef.current.values());
+      const pointersIterator = pointersRef.current.values();
+      const firstPointer = pointersIterator.next().value;
+      const secondPointer = pointersIterator.next().value;
 
-      if (pointers.length >= 2) {
-        const distance = getDistance(pointers[0], pointers[1]);
-        const center = getMidpoint(pointers[0], pointers[1]);
+      if (firstPointer && secondPointer) {
+        const distance = getDistance(firstPointer, secondPointer);
+        const center = getMidpoint(firstPointer, secondPointer);
         const previous = pinchRef.current;
 
         if (previous && previous.distance > 0) {
-          const rect = sceneRef.current?.getBoundingClientRect();
+          const rect = sceneGestureRectRef.current;
           dismissGraphHovers();
-          zoomAt(
+          zoomAndPanAt(
             rect ? { x: center.x - rect.left, y: center.y - rect.top } : center,
             clamp(distance / previous.distance, 0.82, 1.22),
+            { x: center.x - previous.center.x, y: center.y - previous.center.y },
           );
-          const current = manualTransformRef.current;
-          applyManualTransform({
-            ...current,
-            x: current.x + center.x - previous.center.x,
-            y: current.y + center.y - previous.center.y,
-          });
         }
 
         pinchRef.current = { distance, center };
@@ -2825,7 +2848,7 @@ export default function Page() {
         applyManualTransform({ ...current, x: current.x + deltaX, y: current.y + deltaY });
       }
     },
-    [applyManualTransform, dismissGraphHovers, zoomAt],
+    [applyManualTransform, dismissGraphHovers, zoomAndPanAt],
   );
 
   const handlePointerEnd = useCallback(
@@ -2845,6 +2868,7 @@ export default function Page() {
           dragRef.current = null;
           pinchRef.current = null;
           isNavigatingRef.current = false;
+          sceneGestureRectRef.current = null;
           if (sceneRef.current) sceneRef.current.style.cursor = "grab";
           transformLayerRef.current?.classList.remove("is-dragging");
         }
@@ -2870,6 +2894,7 @@ export default function Page() {
         dragRef.current = null;
         pinchRef.current = null;
         isNavigatingRef.current = false;
+        sceneGestureRectRef.current = null;
         if (sceneRef.current) sceneRef.current.style.cursor = "grab";
         transformLayerRef.current?.classList.remove("is-dragging");
 

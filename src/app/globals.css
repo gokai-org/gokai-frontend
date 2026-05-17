@@ -1509,11 +1509,16 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 }
 
 .vocabulary-map-surface {
-  --vocabulary-map-radius: 32px;
+  --vocabulary-map-radius: clamp(18px, 3vw, 32px);
   border-radius: var(--vocabulary-map-radius);
 }
 
 .vocabulary-map-frame {
+  --vocabulary-map-coordinate-edge: clamp(6px, 1.2vw, 10px);
+  --vocabulary-map-coordinate-font-size: clamp(8px, 1.75vw, 10px);
+  --vocabulary-map-coordinate-inset-x: clamp(22px, 4.6vw, 48px);
+  --vocabulary-map-coordinate-inset-y: clamp(22px, 4.2vh, 34px);
+  --vocabulary-map-coordinate-side-width: clamp(16px, 3.8vw, 22px);
   border-radius: var(--vocabulary-map-radius);
   overflow: hidden;
   isolation: isolate;
@@ -1534,12 +1539,11 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 }
 
 .vocabulary-map-coordinate-grid {
-  --vocabulary-map-coordinate-inset-x: 48px;
-  --vocabulary-map-coordinate-inset-y: 34px;
   position: absolute;
   inset: var(--vocabulary-map-coordinate-inset-y) var(--vocabulary-map-coordinate-inset-x);
   pointer-events: none;
   z-index: 2;
+  contain: layout paint style;
 }
 
 .vocabulary-map-coordinate-grid__line {
@@ -1579,12 +1583,14 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   pointer-events: none;
   z-index: 5;
   color: rgba(102, 106, 116, 0.88);
-  font-size: 10px;
+  font-size: var(--vocabulary-map-coordinate-font-size);
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.42);
   overflow: visible;
+  contain: layout paint style;
+  font-variant-numeric: tabular-nums;
 }
 
 .vocabulary-map-coordinates span {
@@ -1600,32 +1606,32 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 
 .vocabulary-map-coordinates--top,
 .vocabulary-map-coordinates--bottom {
-  left: 48px;
-  right: 48px;
+  left: var(--vocabulary-map-coordinate-inset-x);
+  right: var(--vocabulary-map-coordinate-inset-x);
   height: 1px;
 }
 
 .vocabulary-map-coordinates--top {
-  top: 8px;
+  top: var(--vocabulary-map-coordinate-edge);
 }
 
 .vocabulary-map-coordinates--bottom {
-  bottom: 8px;
+  bottom: var(--vocabulary-map-coordinate-edge);
 }
 
 .vocabulary-map-coordinates--left,
 .vocabulary-map-coordinates--right {
-  top: 34px;
-  bottom: 34px;
-  width: 22px;
+  top: var(--vocabulary-map-coordinate-inset-y);
+  bottom: var(--vocabulary-map-coordinate-inset-y);
+  width: var(--vocabulary-map-coordinate-side-width);
 }
 
 .vocabulary-map-coordinates--left {
-  left: 10px;
+  left: var(--vocabulary-map-coordinate-edge);
 }
 
 .vocabulary-map-coordinates--right {
-  right: 10px;
+  right: var(--vocabulary-map-coordinate-edge);
 }
 
 .vocabulary-map-coordinates--top span {

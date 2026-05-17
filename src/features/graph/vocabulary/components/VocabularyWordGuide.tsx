@@ -314,7 +314,14 @@ function KanaLearningChip({
       <button
         ref={buttonRef}
         type="button"
-        className="flex h-11 min-w-11 items-center justify-center rounded-2xl border border-accent/18 bg-accent/8 px-3 text-lg font-black text-accent transition hover:-translate-y-0.5 hover:border-accent/35 hover:bg-accent/12 focus:outline-none focus-visible:ring-2 focus-visible:ring-accent/45 jp-text"
+        className="flex h-11 min-w-11 items-center justify-center rounded-2xl border border-border-subtle bg-surface-primary/90 px-3 text-lg font-black text-content-primary transition hover:-translate-y-0.5 hover:border-[color:var(--symbol-chip-border)] hover:bg-[color:var(--symbol-chip-soft)] hover:text-[color:var(--symbol-chip-accent)] focus:outline-none focus-visible:border-[color:var(--symbol-chip-border-strong)] focus-visible:bg-[color:var(--symbol-chip-soft)] focus-visible:text-[color:var(--symbol-chip-accent)] focus-visible:ring-2 focus-visible:ring-[color:var(--symbol-chip-ring)] jp-text"
+        style={{
+          ["--symbol-chip-accent" as string]: palette.accent,
+          ["--symbol-chip-soft" as string]: palette.soft,
+          ["--symbol-chip-border" as string]: palette.borderSoft,
+          ["--symbol-chip-border-strong" as string]: palette.borderStrong,
+          ["--symbol-chip-ring" as string]: palette.ring,
+        }}
         aria-label={info.title}
         aria-expanded={isActive}
         onPointerEnter={(event) => {

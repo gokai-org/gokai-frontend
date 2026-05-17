@@ -23,6 +23,7 @@ import {
   getWordQuizProgressPercent,
   mergeWordProgress,
 } from "../lib/vocabularyQuizProgress";
+import { getVocabularyQuiz } from "../services/api";
 import VocabularyQuizModal from "./VocabularyQuizModal";
 import VocabularyWordGuide from "./VocabularyWordGuide";
 
@@ -63,13 +64,27 @@ export default function VocabularyNodePanel({
   const [quizOpen, setQuizOpen] = useState(false);
   const [quizType, setQuizType] = useState<VocabularyAnswerType>("meaning");
   const [screen, setScreen] = useState<"mobile" | "tablet" | "desktop">("desktop");
+  const [resolvedAudioState, setResolvedAudioState] = useState<{
+    wordId: string | null;
+    audio?: string;
+  }>({
+    wordId: question?.wordId ?? null,
+    audio: question?.audio,
+  });
+  const resolvedAudio =
+    question?.wordId === resolvedAudioState.wordId
+      ? resolvedAudioState.audio ?? question?.audio
+      : question?.audio;
 
   const mastery = useMemo(() => (item ? getVocabularyNodeMastery(item) : null), [item]);
   const questionWithProgress = useMemo(
     () => question && item
-      ? mergeWordProgress(question, findWordProgress(item, question.wordId))
+      ? mergeWordProgress(
+          { ...question, audio: resolvedAudio ?? question.audio },
+          findWordProgress(item, question.wordId),
+        )
       : question,
-    [item, question],
+    [item, question, resolvedAudio],
   );
   const wordProgress = item
     ? getWordQuizProgressPercent(questionWithProgress)
@@ -83,6 +98,42 @@ export default function VocabularyNodePanel({
       queueMicrotask(() => setQuizOpen(false));
     }
   }, [open]);
+
+  useEffect(() => {
+    if (
+      !item ||
+      !question ||
+      question.audio ||
+      (resolvedAudioState.wordId === question.wordId && resolvedAudioState.audio)
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    void getVocabularyQuiz(item.nodeId, "listening", question.wordId)
+      .then((quiz) => {
+        if (cancelled) {
+          return;
+        }
+
+        const matchedQuestion = quiz.questions.find(
+          (quizQuestion) => quizQuestion.wordId === question.wordId,
+        );
+        const nextAudio = matchedQuestion?.audio;
+
+        if (nextAudio) {
+          setResolvedAudioState({ wordId: question.wordId, audio: nextAudio });
+        }
+      })
+      .catch(() => {
+        // El quiz sigue funcionando sin bloquear el modal si este refuerzo falla.
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [item, question, resolvedAudioState.audio, resolvedAudioState.wordId]);
 
   useEffect(() => {
     const updateScreen = () => {

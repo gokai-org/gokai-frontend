@@ -17,6 +17,10 @@ import type { UserSettings } from "@/features/configuration/types";
 import { AccountSettings } from "@/features/configuration/components/AccountSettings";
 import { HELP_GUIDE_SECTION_EVENT } from "@/features/help/utils/guideEvents";
 import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
+import {
+  AUDIO_SPEED_OPTIONS,
+  setStoredAudioSpeed,
+} from "@/shared/hooks/useAudioPlaybackRate";
 import { setStoredAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
@@ -95,7 +99,7 @@ export default function ConfigurationPage() {
   }, []);
 
   return (
-    <div className="flex flex-col sm:flex-row h-full bg-surface-primary">
+    <div className="flex h-full flex-col bg-surface-primary lg:flex-row">
       <SettingsSidebar
         activeItem={activeSection}
         onItemChange={setActiveSection}
@@ -588,8 +592,11 @@ function AccessibilitySettings({
           label="Velocidad de audio"
           description="Velocidad de reproducción del audio japonés"
           value={ac.audioSpeed}
-          options={["Muy lento", "Lento", "Normal", "Rápido"]}
-          onChange={(v) => updateSection("accessibility", { audioSpeed: v })}
+          options={[...AUDIO_SPEED_OPTIONS]}
+          onChange={(v) => {
+            updateSection("accessibility", { audioSpeed: v });
+            setStoredAudioSpeed(v);
+          }}
         />
       </SettingsSection>
     </>

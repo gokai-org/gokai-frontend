@@ -33,6 +33,36 @@ function getStreakLevel(days: number) {
   return Math.min(Math.floor((days - 1) / 30) + 1, STREAK_LEVEL_COLORS.length);
 }
 
+function getValueClassName(value: string, isCompact: boolean) {
+  const digitCount = value.trim().length;
+
+  if (isCompact) {
+    if (digitCount >= 3) {
+      return "text-[0.78rem]";
+    }
+
+    if (digitCount === 2) {
+      return "text-[0.96rem]";
+    }
+
+    return "text-lg";
+  }
+
+  if (digitCount >= 4) {
+    return "text-[1rem] md:text-[1.1rem] xl:text-[1.18rem]";
+  }
+
+  if (digitCount === 3) {
+    return "text-[1.18rem] md:text-[1.3rem] xl:text-[1.4rem]";
+  }
+
+  if (digitCount === 2) {
+    return "text-[1.55rem] md:text-[1.65rem] xl:text-[1.72rem]";
+  }
+
+  return "text-2xl md:text-[1.7rem] xl:text-[1.8rem]";
+}
+
 interface ReviewStreakFlameProps {
   days: number;
   size?: "compact" | "full";
@@ -49,10 +79,11 @@ export function ReviewStreakFlame({
   const glowColor = `${flameColor}55`;
   const isCompact = size === "compact";
   const value = displayValue ?? String(days);
+  const valueClassName = getValueClassName(value, isCompact);
 
   return (
     <div
-      className={isCompact ? "relative h-[4.4rem] w-[4.4rem] shrink-0" : "relative h-[6rem] w-[6rem] shrink-0 xl:h-[6.5rem] xl:w-[6.5rem]"}
+      className={isCompact ? "relative h-[4.4rem] w-[4.4rem] shrink-0" : "relative h-[6.25rem] w-[6.25rem] shrink-0 md:h-[6.7rem] md:w-[6.7rem] xl:h-[6.9rem] xl:w-[6.9rem]"}
     >
       <motion.div
         aria-hidden="true"
@@ -98,7 +129,7 @@ export function ReviewStreakFlame({
         </svg>
 
         <div className="pointer-events-none absolute left-[47.85%] top-[79.15%] flex h-[34.3%] w-[54.05%] -translate-x-1/2 -translate-y-1/2 items-center justify-center">
-          <span className={isCompact ? "text-lg font-black leading-none text-content-primary" : "text-2xl font-black leading-none text-content-primary xl:text-[1.7rem]"}>
+          <span className={`${valueClassName} font-black leading-none tracking-[-0.04em] text-black dark:text-black`}>
             {value}
           </span>
         </div>

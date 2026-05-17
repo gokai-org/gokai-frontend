@@ -32,8 +32,10 @@ const LOCKED_RECOMMENDATIONS = [
 function LockedHistorySection({ mobile = false }: { mobile?: boolean }) {
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-[#BA5149]/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,246,0.92))] shadow-[0_16px_48px_rgba(153,51,49,0.08)] dark:border-[#BA5149]/12 dark:bg-[linear-gradient(180deg,rgba(33,14,18,0.94),rgba(23,10,14,0.92))]">
-      <div className="shrink-0 border-b border-[#BA5149]/12 px-4 py-4 sm:px-5">
-        <div className="h-11 rounded-2xl bg-gradient-to-r from-[#BA5149] via-[#A83F3A] to-[#8A2F2A] shadow-[0_12px_30px_rgba(153,51,49,0.16)]" />
+      <div className="shrink-0 border-b border-[#BA5149]/12 px-4 py-4 sm:px-5 sm:py-4">
+        <div className="flex min-h-[88px] items-center sm:min-h-[104px]">
+          <div className="h-11 w-full rounded-2xl bg-gradient-to-r from-[#BA5149] via-[#A83F3A] to-[#8A2F2A] shadow-[0_12px_30px_rgba(153,51,49,0.16)]" />
+        </div>
       </div>
 
       <div className={`min-h-0 flex-1 space-y-3 px-3 py-3 sm:px-4 ${mobile ? "" : ""}`}>
@@ -73,9 +75,9 @@ function LockedHistorySection({ mobile = false }: { mobile?: boolean }) {
 function LockedRecommendationsSection({ mobile = false }: { mobile?: boolean }) {
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-[#BA5149]/14 bg-[linear-gradient(180deg,rgba(255,255,255,0.94),rgba(255,248,246,0.92))] shadow-[0_16px_48px_rgba(153,51,49,0.08)] dark:border-[#BA5149]/12 dark:bg-[linear-gradient(180deg,rgba(33,14,18,0.94),rgba(23,10,14,0.92))]">
-      <div className={`shrink-0 border-b border-[#BA5149]/12 ${mobile ? "px-3 py-3 sm:px-5 sm:py-4" : "px-4 py-4 sm:px-5"}`}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
+      <div className={`shrink-0 border-b border-[#BA5149]/12 ${mobile ? "px-3 py-3.5 sm:px-5 sm:py-4" : "px-4 py-4 sm:px-5 sm:py-4"}`}>
+        <div className="flex min-h-[88px] items-center justify-between gap-3 sm:min-h-[104px]">
+          <div className="min-w-0 flex-1">
             <div className="h-5 w-44 rounded-full bg-[#BA5149]/72 dark:bg-[#BA5149]/58" />
           </div>
           <div className="flex items-center gap-2">

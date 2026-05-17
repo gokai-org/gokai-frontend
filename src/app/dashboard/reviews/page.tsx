@@ -81,7 +81,7 @@ function ReviewPageSkeleton() {
             <SkeletonBox className="h-7 w-28 bg-surface-tertiary" rounded="rounded-full" />
           </div>
           <SkeletonBox className="mt-6 h-[360px] w-full bg-surface-tertiary" rounded="rounded-[28px]" />
-          <div className="mt-4 rounded-[24px] border border-border-subtle bg-surface-secondary p-4 lg:hidden">
+          <div className="mt-4 rounded-[24px] border border-border-subtle bg-surface-secondary p-4 md:hidden">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <SkeletonLine width="w-14" height="h-3" className="bg-surface-tertiary" />
@@ -101,7 +101,7 @@ function ReviewPageSkeleton() {
           </div>
         </div>
 
-        <div className="hidden rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm lg:block">
+        <div className="hidden rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm md:block">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(240px,1fr)] lg:items-center">
             <div>
               <div className="flex items-center gap-2">

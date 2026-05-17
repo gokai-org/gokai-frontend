@@ -222,7 +222,7 @@ export function ReviewHero({
                   Los 12 estados del fuego
                 </h3>
                 <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-content-tertiary">
-                  Cada mes activo sube el nivel visual de tu racha. El número dentro del fuego marca el mes alcanzado.
+                  Cada mes activo sube el nivel visual de tu racha. El color cambia por meses, pero el número dentro del fuego marca los días alcanzados.
                 </p>
               </div>
 
@@ -247,7 +247,6 @@ export function ReviewHero({
                       <ReviewStreakFlame
                         days={state.sampleDays}
                         size="compact"
-                        displayValue={String(state.month)}
                       />
                       <div className="min-w-0">
                         <p className="text-sm font-extrabold text-content-primary">
@@ -270,7 +269,7 @@ export function ReviewHero({
     : null;
 
   return (
-    <section className="flex min-h-[calc(100vh-8rem)] flex-col gap-5 xl:h-full xl:min-h-0">
+    <section className="flex min-h-0 flex-col gap-5">
       {kazuGuideOverlay}
       {streakGuideOverlay}
 
@@ -294,7 +293,7 @@ export function ReviewHero({
             </div>
           </div>
 
-          <div className="relative z-30 min-h-[7.5rem] pr-[7.25rem] sm:min-h-[8.25rem] sm:pr-[8.5rem] lg:min-h-0 lg:max-w-[34rem] lg:pr-0">
+          <div className="relative z-30 min-h-[7.5rem] pr-[7.25rem] sm:min-h-[8.25rem] sm:pr-[8.5rem] md:min-h-[9rem] lg:min-h-0 lg:max-w-[34rem] lg:pr-0">
             <h1 className="text-4xl font-extrabold leading-none tracking-[0.09em] text-accent sm:text-5xl lg:text-6xl">
               KAZU
             </h1>
@@ -320,7 +319,7 @@ export function ReviewHero({
 
           <div
             data-help-target="reviews-kazu-mascot"
-            className="relative z-0 mt-4 flex min-h-[16rem] flex-1 items-end justify-center pt-2 sm:mt-5 sm:min-h-[18rem] sm:pt-3 lg:min-h-[20rem]"
+            className="relative z-0 mt-4 flex min-h-[17rem] flex-[1.1] items-end justify-center pt-2 sm:mt-5 sm:min-h-[20rem] sm:flex-[1.2] sm:pt-3 md:min-h-[28rem] md:flex-[1.65] md:pt-5 lg:min-h-[20rem] lg:flex-1 xl:min-h-[22rem]"
           >
             <KazuProgress
               zones={zones}
@@ -331,7 +330,7 @@ export function ReviewHero({
             />
           </div>
 
-          <div className="mt-3 lg:hidden">
+          <div className="mt-4 md:hidden">
             <div
               data-help-target="reviews-streak-panel"
               className="rounded-[24px] border border-border-subtle bg-surface-secondary/80 p-4 shadow-sm"
@@ -360,7 +359,7 @@ export function ReviewHero({
                       </p>
                     )}
                     <span className="pb-0.5 text-xs font-bold text-content-tertiary">
-                      dias
+                      días
                     </span>
                   </div>
                 </div>
@@ -402,7 +401,7 @@ export function ReviewHero({
       <div
         data-help-target="reviews-kazu-stats"
         data-help-target-priority="2"
-        className="relative hidden overflow-hidden rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm ring-1 ring-black/[0.02] dark:bg-[#161616] dark:ring-white/[0.04] lg:block"
+        className="relative hidden overflow-hidden rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm ring-1 ring-black/[0.02] dark:bg-[#161616] dark:ring-white/[0.04] md:block"
       >
         <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-accent/10 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-12 left-8 h-28 w-28 rounded-full bg-amber-400/10 blur-2xl" />
@@ -447,7 +446,7 @@ export function ReviewHero({
           </div>
 
           <div className="rounded-[24px] border border-border-subtle bg-surface-secondary/75 p-3 sm:p-4 xl:p-3 2xl:p-5">
-            <div className="flex items-center justify-between gap-3">
+            <div>
               <div>
                 <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-content-tertiary">
                   Semana actual
@@ -458,14 +457,6 @@ export function ReviewHero({
                     : streakActive
                       ? "Tus días encendidos se marcan aquí."
                       : "Completa un repaso para volver a llenarla."}
-                </p>
-              </div>
-              <div className="rounded-2xl bg-surface-primary px-2.5 py-2 text-right shadow-sm ring-1 ring-border-subtle sm:px-3">
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-content-tertiary">
-                  Estado
-                </p>
-                <p className="mt-1 text-xs font-bold text-content-primary sm:text-sm">
-                  {loading ? "--" : streakActive ? "En curso" : "Reiniciable"}
                 </p>
               </div>
             </div>

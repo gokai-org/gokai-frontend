@@ -49,7 +49,7 @@ export function SettingsSidebar({
       {/* Mobile: horizontal scrollable tab strip */}
       <div
         data-help-target="settings-sidebar"
-        className="sm:hidden w-full border-b border-border-default bg-surface-primary overflow-x-auto flex-shrink-0"
+        className="lg:hidden w-full border-b border-border-default bg-surface-primary overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden flex-shrink-0 touch-pan-x"
       >
         <nav className="flex gap-1 px-2 py-2 min-w-max">
           {menuItems.map((item) => {
@@ -74,10 +74,10 @@ export function SettingsSidebar({
         </nav>
       </div>
 
-      {/* sm+: vertical sidebar */}
-      <aside data-help-target="settings-sidebar" className="hidden sm:block sm:w-20 md:w-72 bg-surface-primary border-r border-border-default self-stretch flex-shrink-0">
+      {/* lg+: vertical sidebar */}
+      <aside data-help-target="settings-sidebar" className="hidden lg:block lg:w-20 xl:w-72 bg-surface-primary border-r border-border-default self-stretch flex-shrink-0">
         <div className="px-2 md:pl-0 md:pr-4 py-6">
-          <h2 className="hidden md:block text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-4 pl-3">
+          <h2 className="hidden xl:block text-xs font-semibold text-content-tertiary uppercase tracking-wider mb-4 pl-3">
             Configuración
           </h2>
           <nav className="space-y-1">
@@ -88,7 +88,7 @@ export function SettingsSidebar({
                 <button
                   key={item.id}
                   onClick={() => handleItemClick(item.id)}
-                  className={`w-full flex items-center justify-center md:justify-start gap-3 px-2 md:px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-full flex items-center justify-center xl:justify-start gap-3 px-2 xl:px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     isActive
                       ? "bg-accent-subtle text-accent border border-accent/20"
                       : "text-content-secondary hover:bg-surface-secondary"
@@ -104,9 +104,9 @@ export function SettingsSidebar({
                   >
                     <IconComponent className="w-4 h-4" />
                   </div>
-                  <span className="hidden md:inline">{item.label}</span>
+                  <span className="hidden xl:inline">{item.label}</span>
                   {isActive && (
-                    <span className="hidden md:inline ml-auto w-1.5 h-1.5 bg-accent rounded-full" />
+                    <span className="hidden xl:inline ml-auto w-1.5 h-1.5 bg-accent rounded-full" />
                   )}
                 </button>
               );

@@ -100,9 +100,9 @@ export function ChatSurfacePanel({
             transition={{ duration: 0.22, ease: [0.32, 0.72, 0, 1] }}
             className={[contentClassName, panelClassName].filter(Boolean).join(" ")}
           >
-            <div className="shrink-0 border-b border-border-subtle bg-surface-elevated px-3 py-3.5 sm:px-5 sm:py-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+            <div className="shrink-0 border-b border-border-subtle bg-surface-elevated px-4 py-4 sm:px-5 sm:py-4">
+              <div className="flex min-h-[88px] items-center justify-between gap-3 sm:min-h-[104px]">
+                <div className="min-w-0 flex-1">
                   <h3 className="text-base font-extrabold text-content-primary sm:text-lg">
                     {title}
                   </h3>

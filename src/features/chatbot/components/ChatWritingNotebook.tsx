@@ -92,6 +92,9 @@ export function ChatWritingNotebook({
   const writingAreaBorder = isDark ? "rgba(255,255,255,0.08)" : "rgba(120,98,64,0.14)";
   const idleCellFill = isDark ? "rgba(255,255,255,0.03)" : "rgba(255,255,255,0.58)";
   const idleCellStroke = isDark ? "rgba(255,255,255,0.08)" : "rgba(120,98,64,0.12)";
+  const lockedCellFill = isDark ? "rgba(255,255,255,0.02)" : "rgba(148,163,184,0.16)";
+  const lockedCellStroke = isDark ? "rgba(255,255,255,0.06)" : "rgba(148,163,184,0.24)";
+  const lockedSymbolFill = isDark ? "rgba(212,212,216,0.56)" : "rgba(100,116,139,0.82)";
   const inkFallback = isDark ? "#f8fafc" : "#0f172a";
   const textTone = isDark ? "text-neutral-100" : "text-content-primary";
   const subtextTone = isDark ? "text-neutral-400" : "text-content-tertiary";
@@ -171,6 +174,8 @@ export function ChatWritingNotebook({
                 notebookMetrics.paddingY +
                 rowIndex * (notebookMetrics.cellHeight + notebookMetrics.rowGap);
               const isActive = activeTargetId === target.id;
+              const isLockedTarget = target.status !== "available";
+              const targetPalette = getWritingPalette(target.accentColor);
 
               return (
                 <g key={target.id}>
@@ -181,14 +186,18 @@ export function ChatWritingNotebook({
                     height={notebookMetrics.cellHeight + 16}
                     rx={26}
                     fill={
-                      isActive
-                        ? getWritingPalette(target.accentColor).softStrong
-                        : idleCellFill
+                      isLockedTarget
+                        ? lockedCellFill
+                        : isActive
+                          ? targetPalette.softStrong
+                          : idleCellFill
                     }
                     stroke={
-                      isActive
-                        ? getWritingPalette(target.accentColor).ring
-                        : idleCellStroke
+                      isLockedTarget
+                        ? lockedCellStroke
+                        : isActive
+                          ? targetPalette.ring
+                          : idleCellStroke
                     }
                   />
 
@@ -234,7 +243,11 @@ export function ChatWritingNotebook({
                       dominantBaseline="middle"
                       fontSize="40"
                       fontWeight="800"
-                      fill={target.accentColor ?? accentPalette.symbolSoft}
+                      fill={
+                        isLockedTarget
+                          ? lockedSymbolFill
+                          : target.accentColor ?? accentPalette.symbolSoft
+                      }
                     >
                       {target.symbol}
                     </text>

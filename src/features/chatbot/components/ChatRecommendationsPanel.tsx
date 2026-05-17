@@ -5,7 +5,6 @@ import type { ChatbotRecommendation } from "@/features/chatbot/types";
 
 interface ChatRecommendationsPanelProps {
   recommendations: ChatbotRecommendation[];
-  currentChatName?: string;
   onClose?: () => void;
 }
 
@@ -66,7 +65,6 @@ function getRecommendationAction(recommendation: ChatbotRecommendation) {
 
 export function ChatRecommendationsPanel({
   recommendations,
-  currentChatName,
   onClose,
 }: ChatRecommendationsPanelProps) {
   const router = useRouter();
@@ -77,12 +75,15 @@ export function ChatRecommendationsPanel({
       data-help-target="chat-recommendations-panel"
       className="flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-border-subtle bg-surface-elevated shadow-[0_2px_18px_-8px_rgba(0,0,0,0.08)]"
     >
-      <div className={`shrink-0 border-b border-border-subtle bg-surface-primary ${compactMobileLayout ? "px-3 py-3 sm:px-5 sm:py-4" : "px-4 py-4 sm:px-5"}`}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
+      <div className={`shrink-0 border-b border-border-subtle bg-surface-primary ${compactMobileLayout ? "px-3 py-3.5 sm:px-5 sm:py-4" : "px-4 py-4 sm:px-5 sm:py-4"}`}>
+        <div className="flex min-h-[88px] items-center justify-between gap-3 sm:min-h-[104px]">
+          <div className="min-w-0 flex-1">
             <h3 className={`${compactMobileLayout ? "text-base sm:text-lg" : "text-lg"} font-extrabold text-content-primary`}>
               Espacio de recomendaciones
             </h3>
+            <p className="mt-1 text-sm leading-6 text-content-tertiary">
+              Cada nueva recomendacion aparecera aqui para que tengas una vista fija del contenido que conviene estudiar despues de conversar con KAZU.
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
@@ -122,9 +123,6 @@ export function ChatRecommendationsPanel({
               <h4 className="text-base font-bold text-content-primary">
                 Aun no hay sugerencias activas
               </h4>
-              <p className="mt-2 text-sm leading-6 text-content-tertiary">
-                Cada nueva recomendacion aparecera aqui para que tengas una vista fija del contenido que conviene estudiar despues de conversar con KAZU.
-              </p>
             </div>
           </div>
         ) : (
