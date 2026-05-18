@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentUser } from "@/features/auth/services/api";
 import { readOnboardingInterestThemeIds } from "@/features/onboarding/lib/interestThemeStorage";
 import {
@@ -28,9 +28,13 @@ function normalizeText(value?: string | null) {
 }
 
 function isSameSubtheme(
-  item: Pick<VocabularyGraphProgressItem, "meaning" | "kanji" | "kana">,
-  subtheme: Pick<VocabularySubthemeContent, "meaning" | "kanji" | "kana">,
+  item: Pick<VocabularyGraphProgressItem, "subthemeId" | "meaning" | "kanji" | "kana">,
+  subtheme: Pick<VocabularySubthemeContent, "id" | "meaning" | "kanji" | "kana">,
 ) {
+  if (item.subthemeId && subtheme.id) {
+    return item.subthemeId === subtheme.id;
+  }
+
   return (
     normalizeText(item.meaning) === normalizeText(subtheme.meaning) &&
     normalizeText(item.kanji) === normalizeText(subtheme.kanji) &&
@@ -39,11 +43,19 @@ function isSameSubtheme(
 }
 
 function isDuplicateSubthemeError(error: unknown) {
+  const normalizedMessage = normalizeText(
+    error instanceof Error
+      ? error.message.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      : typeof error === "string"
+        ? error.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        : "",
+  );
+
   return (
-    error instanceof Error &&
-    /(HTTP 409|unique_subtheme_graph_key|duplicate key|ya está en el grafo)/i.test(
-      error.message,
-    )
+    normalizedMessage.includes("http 409") &&
+    (normalizedMessage.includes("ya esta en el grafo") ||
+      normalizedMessage.includes("unique_subtheme_graph_key") ||
+      normalizedMessage.includes("duplicate key"))
   );
 }
 
@@ -96,7 +108,7 @@ function buildTopRecommendationMap(recommendations: VocabularyRecommendation[]) 
 
 export function useVocabularyGraph() {
   const [graphs, setGraphs] = useState<VocabularyGraphSummary[]>([]);
-  const [selectedGraphId, setSelectedGraphId] = useState<string | null>(null);
+  const [selectedGraphIdState, setSelectedGraphIdState] = useState<string | null>(null);
   const [rawProgress, setRawProgress] = useState<VocabularyGraphProgress | null>(null);
   const [themeCatalog, setThemeCatalog] = useState<VocabularyThemeContent[]>([]);
   const [themeSubthemes, setThemeSubthemes] = useState<VocabularySubthemeContent[]>([]);
@@ -105,6 +117,17 @@ export function useVocabularyGraph() {
   >({});
   const [loading, setLoading] = useState(true);
   const [actionPendingId, setActionPendingId] = useState<string | null>(null);
+  const selectedGraphIdRef = useRef<string | null>(null);
+  const selectedGraphId = selectedGraphIdState;
+
+  const setSelectedGraphId = useCallback((nextGraphId: string | null) => {
+    selectedGraphIdRef.current = nextGraphId;
+    setSelectedGraphIdState(nextGraphId);
+  }, []);
+
+  useEffect(() => {
+    selectedGraphIdRef.current = selectedGraphIdState;
+  }, [selectedGraphIdState]);
 
   const selectedGraph = useMemo(
     () => graphs.find((graph) => graph.graphId === selectedGraphId) ?? null,
@@ -121,6 +144,10 @@ export function useVocabularyGraph() {
     return {
       ...rawProgress,
       items: progressItems.map((item) => {
+        if (item.subthemeId) {
+          return item;
+        }
+
         const matchedSubtheme = themeSubthemes.find((subtheme) =>
           isSameSubtheme(item, subtheme),
         );
@@ -139,12 +166,15 @@ export function useVocabularyGraph() {
     const nextGraphs = sortGraphs(await listVocabularyGraphs());
     setGraphs(nextGraphs);
 
-    setSelectedGraphId((current) => {
+    setSelectedGraphIdState((current) => {
       if (current && nextGraphs.some((graph) => graph.graphId === current)) {
+        selectedGraphIdRef.current = current;
         return current;
       }
 
-      return nextGraphs[0]?.graphId ?? null;
+      const nextSelectedGraphId = nextGraphs[0]?.graphId ?? null;
+      selectedGraphIdRef.current = nextSelectedGraphId;
+      return nextSelectedGraphId;
     });
 
     return nextGraphs;
@@ -222,10 +252,12 @@ export function useVocabularyGraph() {
     return () => {
       alive = false;
     };
-  }, [loadGraphs, loadThemeCatalog]);
+  }, [loadGraphs, loadThemeCatalog, setSelectedGraphId]);
 
-  const reloadProgress = useCallback(async () => {
-    if (!selectedGraphId) {
+  const reloadProgress = useCallback(async (graphIdOverride?: string | null) => {
+    const graphId = graphIdOverride ?? selectedGraphIdRef.current ?? selectedGraphId;
+
+    if (!graphId) {
       setRawProgress(null);
       setThemeSubthemes([]);
       setRecommendedSubthemeMetaById({});
@@ -233,7 +265,7 @@ export function useVocabularyGraph() {
     }
 
     try {
-      const nextProgress = await getVocabularyGraphProgress(selectedGraphId);
+      const nextProgress = await getVocabularyGraphProgress(graphId);
       setRawProgress(nextProgress);
       return nextProgress;
     } catch (progressError) {
@@ -247,17 +279,11 @@ export function useVocabularyGraph() {
     void reloadProgress();
   }, [reloadProgress]);
 
-  const loadThemeSubthemes = useCallback(async () => {
-    if (!selectedGraph) {
-      setThemeSubthemes([]);
-      setRecommendedSubthemeMetaById({});
-      return [] as VocabularySubthemeContent[];
-    }
-
+  const loadSubthemesForTheme = useCallback(async (themeId: string) => {
     try {
       const [subthemes, recommendations] = await Promise.all([
-        listVocabularySubthemesByThemeId(selectedGraph.themeId),
-        listVocabularyRecommendedSubthemesByThemeId(selectedGraph.themeId)
+        listVocabularySubthemesByThemeId(themeId),
+        listVocabularyRecommendedSubthemesByThemeId(themeId)
           .catch((recommendationError) => {
             console.error(
               "Error cargando recomendaciones de subtemas:",
@@ -278,7 +304,17 @@ export function useVocabularyGraph() {
       setRecommendedSubthemeMetaById({});
       return [] as VocabularySubthemeContent[];
     }
-  }, [selectedGraph]);
+  }, []);
+
+  const loadThemeSubthemes = useCallback(async () => {
+    if (!selectedGraph) {
+      setThemeSubthemes([]);
+      setRecommendedSubthemeMetaById({});
+      return [] as VocabularySubthemeContent[];
+    }
+
+    return loadSubthemesForTheme(selectedGraph.themeId);
+  }, [loadSubthemesForTheme, selectedGraph]);
 
   useEffect(() => {
     void loadThemeSubthemes();
@@ -305,35 +341,49 @@ export function useVocabularyGraph() {
         setActionPendingId(null);
       }
     },
-    [loadGraphs, loadThemeCatalog],
+    [loadGraphs, loadThemeCatalog, setSelectedGraphId],
   );
 
   const addSubthemeToGraph = useCallback(
-    async (subthemeId: string) => {
-      if (!selectedGraphId) return null;
+    async (
+      subthemeId: string,
+      options?: { graphId?: string | null; themeId?: string | null },
+    ) => {
+      const graphId = options?.graphId ?? selectedGraphIdRef.current;
+      if (!graphId) return null;
+
+      const themeId =
+        options?.themeId ??
+        selectedGraph?.themeId ??
+        graphs.find((graph) => graph.graphId === graphId)?.themeId ??
+        null;
 
       setActionPendingId(subthemeId);
 
       try {
-        const selected = await selectVocabularySubtheme(selectedGraphId, subthemeId);
-        await reloadProgress();
+        const selected = await selectVocabularySubtheme(graphId, subthemeId);
+        await reloadProgress(graphId);
         await loadGraphs();
-        await loadThemeSubthemes();
+        if (themeId) {
+          await loadSubthemesForTheme(themeId);
+        } else {
+          await loadThemeSubthemes();
+        }
         return selected.nodeId;
       } catch (actionError) {
         if (isDuplicateSubthemeError(actionError)) {
-          const [nextProgress, subthemes] = await Promise.all([
-            reloadProgress(),
-            loadThemeSubthemes(),
+          const [nextProgress, nextSubthemes] = await Promise.all([
+            reloadProgress(graphId),
+            themeId ? loadSubthemesForTheme(themeId) : loadThemeSubthemes(),
           ]);
           await loadGraphs();
 
-          const matchedSubtheme = subthemes.find(
-            (subtheme) => subtheme.id === subthemeId,
-          );
-          const existingItem = matchedSubtheme
-            ? nextProgress?.items.find((item) => isSameSubtheme(item, matchedSubtheme))
-            : null;
+          const matchedSubtheme = nextSubthemes.find((subtheme) => subtheme.id === subthemeId);
+          const existingItem =
+            nextProgress?.items.find((item) => item.subthemeId === subthemeId) ??
+            (matchedSubtheme
+              ? nextProgress?.items.find((item) => isSameSubtheme(item, matchedSubtheme))
+              : null);
 
           if (existingItem) {
             return existingItem.nodeId;
@@ -346,7 +396,7 @@ export function useVocabularyGraph() {
         setActionPendingId(null);
       }
     },
-    [loadGraphs, loadThemeSubthemes, reloadProgress, selectedGraphId],
+    [graphs, loadGraphs, loadSubthemesForTheme, loadThemeSubthemes, reloadProgress, selectedGraph],
   );
 
   return {

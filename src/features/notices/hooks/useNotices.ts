@@ -4,22 +4,66 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { getCurrentUser } from "@/features/auth";
 import type { Notice } from "@/features/notices/types";
 import {
+  deleteUserNotification,
+  getUserNotifications,
+  markAllUserNotificationsRead,
+  markUserNotificationRead,
+} from "@/features/notices/services/api";
+import {
   clearStoredReadNotices,
   deleteStoredNotice,
+  markStoredNoticeRead,
   markAllStoredNoticesRead,
+  mapBackendNotificationToNotice,
+  mergeStoredWithBackendNotices,
   readStoredNotices,
   subscribeToStoredNotices,
   toggleStoredNoticePin,
-  toggleStoredNoticeRead,
+  writeStoredNotices,
 } from "@/features/notices/utils/noticeMappers";
 
 export function useNotices() {
   const [userId, setUserId] = useState<string | null>(null);
   const [notices, setNotices] = useState<Notice[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const syncNotices = useCallback(async (nextUserId: string) => {
+    const storedNotices = readStoredNotices(nextUserId);
+    const response = await getUserNotifications(nextUserId);
+    const backendNotices = response.notifications.map(mapBackendNotificationToNotice);
+    const mergedNotices = mergeStoredWithBackendNotices(
+      storedNotices,
+      backendNotices,
+    );
+
+    writeStoredNotices(nextUserId, mergedNotices);
+    setError(null);
+
+    return mergedNotices;
+  }, []);
+
+  const reloadNotices = useCallback(() => {
+    if (!userId) {
+      return;
+    }
+
+    setIsLoading(true);
+
+    void syncNotices(userId)
+      .catch((syncError) => {
+        console.error("Error recargando notificaciones:", syncError);
+        setError("No se pudo sincronizar el historial de notificaciones.");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [syncNotices, userId]);
 
   useEffect(() => {
     let cancelled = false;
     let unsubscribe = () => {};
+    let detachVisibilityListeners = () => {};
 
     const load = async () => {
       const user = await getCurrentUser().catch(() => null);
@@ -28,6 +72,8 @@ export function useNotices() {
         if (!cancelled) {
           setUserId(null);
           setNotices([]);
+          setError(null);
+          setIsLoading(false);
         }
         return;
       }
@@ -35,6 +81,35 @@ export function useNotices() {
       setUserId(user.id);
       setNotices(readStoredNotices(user.id));
       unsubscribe = subscribeToStoredNotices(user.id, setNotices);
+
+      const refreshVisibleNotices = () => {
+        if (document.visibilityState !== "visible") {
+          return;
+        }
+
+        void syncNotices(user.id).catch((syncError) => {
+          console.error("Error sincronizando notificaciones visibles:", syncError);
+          setError("No se pudo sincronizar el historial de notificaciones.");
+        });
+      };
+
+      window.addEventListener("focus", refreshVisibleNotices);
+      document.addEventListener("visibilitychange", refreshVisibleNotices);
+      detachVisibilityListeners = () => {
+        window.removeEventListener("focus", refreshVisibleNotices);
+        document.removeEventListener("visibilitychange", refreshVisibleNotices);
+      };
+
+      try {
+        await syncNotices(user.id);
+      } catch (syncError) {
+        console.error("Error cargando historial de notificaciones:", syncError);
+        setError("No se pudo sincronizar el historial de notificaciones.");
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
     };
 
     void load();
@@ -42,8 +117,9 @@ export function useNotices() {
     return () => {
       cancelled = true;
       unsubscribe();
+      detachVisibilityListeners();
     };
-  }, []);
+  }, [syncNotices]);
 
   const unreadCount = useMemo(
     () => notices.filter((notice) => !notice.read).length,
@@ -61,9 +137,32 @@ export function useNotices() {
         return;
       }
 
-      setNotices(toggleStoredNoticeRead(userId, noticeId));
+      const currentNotices = readStoredNotices(userId);
+      const targetNotice = currentNotices.find((notice) => notice.id === noticeId);
+
+      if (!targetNotice || targetNotice.read) {
+        return;
+      }
+
+      setNotices(markStoredNoticeRead(userId, noticeId));
+
+      void markUserNotificationRead(userId, noticeId)
+        .then(() => {
+          setError(null);
+        })
+        .catch(async (mutationError) => {
+          console.error("Error marcando notificación como leída:", mutationError);
+
+          try {
+            await syncNotices(userId);
+          } catch {
+            writeStoredNotices(userId, currentNotices);
+          }
+
+          setError("No se pudo marcar la notificación como leída.");
+        });
     },
-    [userId],
+    [syncNotices, userId],
   );
 
   const togglePin = useCallback(
@@ -83,9 +182,27 @@ export function useNotices() {
         return;
       }
 
+      const currentNotices = readStoredNotices(userId);
+
       setNotices(deleteStoredNotice(userId, noticeId));
+
+      void deleteUserNotification(userId, noticeId)
+        .then(() => {
+          setError(null);
+        })
+        .catch(async (mutationError) => {
+          console.error("Error eliminando notificación:", mutationError);
+
+          try {
+            await syncNotices(userId);
+          } catch {
+            writeStoredNotices(userId, currentNotices);
+          }
+
+          setError("No se pudo eliminar la notificación.");
+        });
     },
-    [userId],
+    [syncNotices, userId],
   );
 
   const markAllRead = useCallback(() => {
@@ -93,19 +210,68 @@ export function useNotices() {
       return;
     }
 
+    const currentNotices = readStoredNotices(userId);
+    const hasUnreadNotices = currentNotices.some((notice) => !notice.read);
+
+    if (!hasUnreadNotices) {
+      return;
+    }
+
     setNotices(markAllStoredNoticesRead(userId));
-  }, [userId]);
+
+    void markAllUserNotificationsRead(userId)
+      .then(() => {
+        setError(null);
+      })
+      .catch(async (mutationError) => {
+        console.error("Error marcando todas las notificaciones como leídas:", mutationError);
+
+        try {
+          await syncNotices(userId);
+        } catch {
+          writeStoredNotices(userId, currentNotices);
+        }
+
+        setError("No se pudieron marcar todas las notificaciones como leídas.");
+      });
+  }, [syncNotices, userId]);
 
   const clearAllRead = useCallback(() => {
     if (!userId) {
       return;
     }
 
+    const currentNotices = readStoredNotices(userId);
+    const readNotices = currentNotices.filter((notice) => notice.read);
+
+    if (readNotices.length === 0) {
+      return;
+    }
+
     setNotices(clearStoredReadNotices(userId));
-  }, [userId]);
+
+    void Promise.allSettled(
+      readNotices.map((notice) => deleteUserNotification(userId, notice.id)),
+    ).then(async (results) => {
+      if (results.some((result) => result.status === "rejected")) {
+        try {
+          await syncNotices(userId);
+        } catch {
+          writeStoredNotices(userId, currentNotices);
+        }
+
+        setError("No se pudieron eliminar todas las notificaciones leídas.");
+        return;
+      }
+
+      setError(null);
+    });
+  }, [syncNotices, userId]);
 
   return {
     notices,
+    isLoading,
+    error,
     unreadCount,
     pinnedCount,
     toggleRead,
@@ -113,5 +279,6 @@ export function useNotices() {
     deleteNotice,
     markAllRead,
     clearAllRead,
+    reloadNotices,
   };
 }

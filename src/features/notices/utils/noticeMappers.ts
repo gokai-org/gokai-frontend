@@ -1,14 +1,12 @@
-import type { Notice, NoticeCategory } from "@/features/notices/types";
+import type {
+	BackendNoticeType,
+	BackendUserNotification,
+	Notice,
+	NoticeCategory,
+} from "@/features/notices/types";
 
 const NOTICE_STORAGE_KEY_PREFIX = "gokai-notices";
 const NOTICE_STORAGE_EVENT = "gokai:notices-updated";
-
-type BackendNoticeType =
-	| "daily_review"
-	| "general_announcement"
-	| "general_notice"
-	| "streak_reminder"
-	| "theme_released";
 
 type NoticeUpdateOptions = {
 	markRead?: boolean;
@@ -134,6 +132,30 @@ function getActionLabel(type: BackendNoticeType | null) {
 		default:
 			return "Abrir aviso";
 	}
+}
+
+function createNoticeFromPayload(input: {
+	id: string;
+	title: string;
+	description: string;
+	backendType: BackendNoticeType | null;
+	createdAt: string;
+	read: boolean;
+	actionHref?: string;
+}) {
+	return {
+		id: input.id,
+		title: input.title,
+		description: input.description,
+		category: mapBackendTypeToCategory(input.backendType),
+		read: input.read,
+		pinned: false,
+		createdAt: input.createdAt,
+		actionLabel: input.actionHref
+			? getActionLabel(input.backendType)
+			: undefined,
+		actionHref: input.actionHref,
+	} satisfies Notice;
 }
 
 function sortNotices(notices: Notice[]) {
@@ -287,17 +309,63 @@ export function mapOneSignalEventToNotice(event: unknown): Notice | null {
 		asString(payload.id) ??
 		`${backendType ?? "notice"}:${title}:${createdAt}`;
 
-	return {
+	return createNoticeFromPayload({
 		id,
-		title,
+		title: title,
 		description,
-		category: mapBackendTypeToCategory(backendType),
+		backendType,
 		read: false,
-		pinned: false,
 		createdAt,
-		actionLabel: actionHref ? getActionLabel(backendType) : undefined,
 		actionHref,
-	};
+	});
+}
+
+export function mapBackendNotificationToNotice(
+	notification: BackendUserNotification,
+) {
+	const backendType = getBackendType(notification.type);
+
+	return createNoticeFromPayload({
+		id: notification.id,
+		title: asString(notification.title) ?? "Notificación",
+		description:
+			asString(notification.message) ?? "Tienes una nueva notificación.",
+		backendType,
+		read: Boolean(notification.readAt),
+		createdAt: toIsoDate(notification.createdAt),
+		actionHref: getDefaultActionHref(backendType),
+	});
+}
+
+export function mergeStoredWithBackendNotices(
+	storedNotices: Notice[],
+	backendNotices: Notice[],
+) {
+	const backendNoticeIds = new Set(backendNotices.map((notice) => notice.id));
+
+	const mergedBackend = backendNotices.map((backendNotice) => {
+		const storedNotice = storedNotices.find(
+			(notice) => notice.id === backendNotice.id,
+		);
+
+		if (!storedNotice) {
+			return backendNotice;
+		}
+
+		return {
+			...backendNotice,
+			read: backendNotice.read || storedNotice.read,
+			pinned: storedNotice.pinned,
+			actionLabel: storedNotice.actionLabel ?? backendNotice.actionLabel,
+			actionHref: storedNotice.actionHref ?? backendNotice.actionHref,
+		};
+	});
+
+	const localOnlyNotices = storedNotices.filter(
+		(notice) => !backendNoticeIds.has(notice.id),
+	);
+
+	return sortNotices([...mergedBackend, ...localOnlyNotices]);
 }
 
 export function upsertIncomingNotice(
@@ -328,6 +396,14 @@ export function toggleStoredNoticeRead(userId: string, noticeId: string) {
 	return updateStoredNotices(userId, (current) =>
 		current.map((notice) =>
 			notice.id === noticeId ? { ...notice, read: !notice.read } : notice,
+		),
+	);
+}
+
+export function markStoredNoticeRead(userId: string, noticeId: string) {
+	return updateStoredNotices(userId, (current) =>
+		current.map((notice) =>
+			notice.id === noticeId ? { ...notice, read: true } : notice,
 		),
 	);
 }

@@ -117,7 +117,6 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
     themeSubthemes,
     recommendedSubthemeMetaById,
     loading,
-    actionPendingId,
     setSelectedGraphId,
     createGraphFromTheme,
     addSubthemeToGraph,
@@ -133,6 +132,7 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
   const [interestWords, setInterestWords] = useState<Word[]>([]);
   const wordsRequestIdRef = useRef(0);
   const interestPreviewRequestIdRef = useRef(0);
+  const selectedGraphIdRef = useRef<string | null>(selectedGraphId);
 
   const progressItems = useMemo(() => progress?.items ?? [], [progress?.items]);
   const themes = useMemo(
@@ -181,6 +181,10 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
     setLoadingThemes(loading);
   }, [loading]);
 
+  useEffect(() => {
+    selectedGraphIdRef.current = selectedGraphId;
+  }, [selectedGraphId]);
+
   const openTheme = useCallback(async (theme: Theme) => {
     if (theme.isUnlocked === false) {
       return false;
@@ -196,6 +200,7 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
         theme.graphId ?? graphs.find((graph) => graph.themeId === theme.id)?.graphId ?? null;
 
       if (existingGraphId) {
+        selectedGraphIdRef.current = existingGraphId;
         setSelectedGraphId(existingGraphId);
         return true;
       }
@@ -205,6 +210,7 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
         return false;
       }
 
+      selectedGraphIdRef.current = createdGraphId;
       setSelectedGraphId(createdGraphId);
       return true;
     } catch (error) {
@@ -216,9 +222,16 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
   }, [createGraphFromTheme, graphs, setSelectedGraphId]);
 
   const openSubtheme = useCallback(async (subtheme: Subtheme) => {
-    if (!selectedGraphId) {
+    const graphId = selectedGraphIdRef.current;
+    if (!graphId) {
       return false;
     }
+
+    const existingItem =
+      progressItems.find((item) => item.subthemeId === subtheme.id) ??
+      (subtheme.nodeId
+        ? progressItems.find((item) => item.nodeId === subtheme.nodeId) ?? null
+        : null);
 
     setSelectedSubthemeNodeId(subtheme.nodeId ?? null);
     setWords([]);
@@ -227,7 +240,13 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
     wordsRequestIdRef.current = requestId;
 
     try {
-      const nodeId = subtheme.nodeId ?? (await addSubthemeToGraph(subtheme.id));
+      const nodeId =
+        subtheme.nodeId ??
+        existingItem?.nodeId ??
+        (await addSubthemeToGraph(subtheme.id, {
+          graphId,
+          themeId: subtheme.themeId,
+        }));
       if (!nodeId) {
         return false;
       }
@@ -247,7 +266,8 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
           quizQuestion.audio,
         ]),
       );
-      const matchedItem = progressItems.find((item) => item.nodeId === nodeId) ?? null;
+      const matchedItem =
+        existingItem ?? progressItems.find((item) => item.nodeId === nodeId) ?? null;
       setSelectedSubthemeNodeId(nodeId);
       setWords(res.map((word) => toWordItem(word, audioByWordId, matchedItem)));
       return true;
@@ -262,7 +282,7 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
         setLoadingWords(false);
       }
     }
-  }, [addSubthemeToGraph, progressItems, selectedGraphId]);
+  }, [addSubthemeToGraph, progressItems]);
 
   useEffect(() => {
     if (!selectedSubthemeItem || words.length === 0) {

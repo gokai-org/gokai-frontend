@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCheck } from "lucide-react";
+import { AlertCircle, CheckCheck, RefreshCcw } from "lucide-react";
 import { getCurrentUser } from "@/features/auth";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
 import { useToast } from "@/shared/ui/ToastProvider";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
+import { cls } from "@/features/notices/utils/noticeConfig";
 import {
   NoticePushPromptModal,
   useNotices,
@@ -29,6 +30,8 @@ export default function Page() {
   const toast = useToast();
   const {
     notices,
+    isLoading,
+    error,
     unreadCount,
     pinnedCount,
     toggleRead,
@@ -36,6 +39,7 @@ export default function Page() {
     deleteNotice,
     markAllRead,
     clearAllRead,
+    reloadNotices,
   } = useNotices();
 
   const [pushState, setPushState] = useState<PushNotificationState | null>(null);
@@ -108,6 +112,14 @@ export default function Page() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!error) {
+      return;
+    }
+
+    toast.error(error);
+  }, [error, toast]);
+
   const handleActivatePush = async () => {
     if (!userId) {
       toast.error("No se pudo identificar al usuario.");
@@ -155,6 +167,29 @@ export default function Page() {
       setPushPromptLoading(false);
     }
   };
+
+  const renderLoadingState = () => (
+    <div className="space-y-3">
+      {Array.from({ length: 4 }).map((_, index) => (
+        <div
+          key={index}
+          className="overflow-hidden rounded-2xl border border-border-subtle bg-surface-primary p-5"
+        >
+          <div className="animate-pulse space-y-3">
+            <div className="flex items-start gap-4">
+              <div className="h-11 w-11 rounded-xl bg-surface-secondary" />
+              <div className="flex-1 space-y-2">
+                <div className="h-4 w-40 rounded-full bg-surface-secondary" />
+                <div className="h-3 w-24 rounded-full bg-surface-secondary" />
+              </div>
+            </div>
+            <div className="h-3 w-full rounded-full bg-surface-secondary" />
+            <div className="h-3 w-4/5 rounded-full bg-surface-secondary" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 
   return (
     <DashboardShell>
@@ -227,7 +262,27 @@ export default function Page() {
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
-          <div data-help-target="notices-categories">
+          <div data-help-target="notices-categories" className="space-y-3">
+            {error && (
+              <div className="flex flex-col gap-3 rounded-2xl border border-amber-300/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/30 dark:text-amber-100 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <p>
+                    Estás viendo la última copia local disponible. Reintenta para
+                    sincronizar el historial completo.
+                  </p>
+                </div>
+
+                <button
+                  onClick={reloadNotices}
+                  className="inline-flex items-center gap-2 rounded-full border border-current/20 px-3 py-1.5 text-xs font-bold transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                >
+                  <RefreshCcw className="h-3.5 w-3.5" />
+                  Reintentar
+                </button>
+              </div>
+            )}
+
             <NoticeCategoryFilter
               categories={categories}
               selectedCategory={selectedCategory}
@@ -242,17 +297,23 @@ export default function Page() {
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
           <div data-help-target="notices-list">
-            <NoticeList
-              notices={filteredNotices}
-              searchQuery={searchQuery}
-              showUnreadOnly={showUnreadOnly}
-              onReset={resetFilters}
-              onToggleRead={toggleRead}
-              onTogglePin={togglePin}
-              onDelete={deleteNotice}
-              animationsEnabled={animationsEnabled}
-              heavyAnimationsEnabled={heavyAnimationsEnabled}
-            />
+            {isLoading && notices.length === 0 ? (
+              renderLoadingState()
+            ) : (
+              <div className={cls(isLoading && "opacity-70 transition-opacity")}>
+                <NoticeList
+                  notices={filteredNotices}
+                  searchQuery={searchQuery}
+                  showUnreadOnly={showUnreadOnly}
+                  onReset={resetFilters}
+                  onToggleRead={toggleRead}
+                  onTogglePin={togglePin}
+                  onDelete={deleteNotice}
+                  animationsEnabled={animationsEnabled}
+                  heavyAnimationsEnabled={heavyAnimationsEnabled}
+                />
+              </div>
+            )}
           </div>
         </AnimatedEntrance>
 

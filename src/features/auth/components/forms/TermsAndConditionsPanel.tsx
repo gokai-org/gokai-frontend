@@ -39,15 +39,10 @@ function TermsList({ items }: { items: ReactNode[] }) {
 
 export function TermsAndConditionsPanel({ onBack, onAccept }: Props) {
   return (
-    <motion.section
+    <section
       id="register-terms-panel"
-      key="register-terms-panel"
       role="dialog"
       aria-labelledby="terms-title"
-      initial={{ opacity: 0, y: 28, scale: 0.97 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: 18, scale: 0.98 }}
-      transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
       className="h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] min-h-0 overflow-y-auto overscroll-contain pr-1 sm:h-auto sm:max-h-[78dvh] sm:min-h-[min(70dvh,760px)] md:pr-3"
     >
       <div className="border-b border-border-subtle pb-4">
@@ -415,6 +410,6 @@ export function TermsAndConditionsPanel({ onBack, onAccept }: Props) {
           Aceptar términos
         </motion.button>
       </div>
-    </motion.section>
+    </section>
   );
 }
