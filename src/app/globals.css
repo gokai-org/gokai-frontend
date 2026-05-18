@@ -1509,18 +1509,32 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 }
 
 .vocabulary-map-surface {
-  --vocabulary-map-radius: 32px;
+  --vocabulary-map-radius: clamp(18px, 3vw, 32px);
   border-radius: var(--vocabulary-map-radius);
 }
 
 .vocabulary-map-frame {
+  --vocabulary-map-coordinate-edge: clamp(8px, 1.3vw, 12px);
+  --vocabulary-map-coordinate-font-size: clamp(5.6px, 1.05vw, 6.8px);
+  --vocabulary-map-coordinate-inset-x: clamp(24px, 5vw, 52px);
+  --vocabulary-map-coordinate-inset-y: clamp(24px, 4.6vh, 38px);
+  --vocabulary-map-coordinate-side-width: clamp(18px, 4vw, 24px);
+  --vocabulary-map-coordinate-vertical-safe-offset: clamp(3px, 0.5vw, 6px);
+  --vocabulary-map-coordinate-corner-safe-offset: clamp(8px, 1.2vw, 14px);
   border-radius: var(--vocabulary-map-radius);
   overflow: hidden;
   isolation: isolate;
   clip-path: inset(0 round var(--vocabulary-map-radius));
 }
 
-.vocabulary-map-frame > .h-full {
+.vocabulary-map-safe-area {
+  border-radius: calc(var(--vocabulary-map-radius) - 8px);
+  overflow: hidden;
+  z-index: 3;
+}
+
+.vocabulary-map-frame > .h-full,
+.vocabulary-map-safe-area > .h-full {
   border-radius: inherit;
   overflow: hidden;
 }
@@ -1528,18 +1542,18 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 .vocabulary-map-frame .japan-map-stage,
 .vocabulary-map-frame .vmap-static-svg,
 .vocabulary-map-frame .vmap-hit-layer,
-.vocabulary-map-frame .vmap-cartography-layer {
+.vocabulary-map-frame .vmap-cartography-layer,
+.vocabulary-map-frame .vocabulary-map-safe-area {
   border-radius: inherit;
   overflow: hidden;
 }
 
 .vocabulary-map-coordinate-grid {
-  --vocabulary-map-coordinate-inset-x: 48px;
-  --vocabulary-map-coordinate-inset-y: 34px;
   position: absolute;
   inset: var(--vocabulary-map-coordinate-inset-y) var(--vocabulary-map-coordinate-inset-x);
   pointer-events: none;
-  z-index: 2;
+  z-index: 1;
+  contain: layout paint style;
 }
 
 .vocabulary-map-coordinate-grid__line {
@@ -1577,14 +1591,16 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 .vocabulary-map-coordinates {
   position: absolute;
   pointer-events: none;
-  z-index: 5;
+  z-index: 4;
   color: rgba(102, 106, 116, 0.88);
-  font-size: 10px;
+  font-size: var(--vocabulary-map-coordinate-font-size);
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.42);
   overflow: visible;
+  contain: layout paint style;
+  font-variant-numeric: tabular-nums;
 }
 
 .vocabulary-map-coordinates span {
@@ -1600,42 +1616,66 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 
 .vocabulary-map-coordinates--top,
 .vocabulary-map-coordinates--bottom {
-  left: 48px;
-  right: 48px;
-  height: 1px;
+  left: var(--vocabulary-map-coordinate-inset-x);
+  right: var(--vocabulary-map-coordinate-inset-x);
+  height: calc(var(--vocabulary-map-coordinate-font-size) + 8px);
 }
 
 .vocabulary-map-coordinates--top {
-  top: 8px;
+  top: var(--vocabulary-map-coordinate-edge);
 }
 
 .vocabulary-map-coordinates--bottom {
-  bottom: 8px;
+  bottom: var(--vocabulary-map-coordinate-edge);
 }
 
 .vocabulary-map-coordinates--left,
 .vocabulary-map-coordinates--right {
-  top: 34px;
-  bottom: 34px;
-  width: 22px;
+  top: calc(
+    var(--vocabulary-map-coordinate-inset-y) +
+      var(--vocabulary-map-coordinate-vertical-safe-offset)
+  );
+  bottom: calc(
+    var(--vocabulary-map-coordinate-inset-y) +
+      var(--vocabulary-map-coordinate-vertical-safe-offset)
+  );
+  width: var(--vocabulary-map-coordinate-side-width);
 }
 
 .vocabulary-map-coordinates--left {
-  left: 10px;
+  left: calc(
+    var(--vocabulary-map-coordinate-edge) +
+      var(--vocabulary-map-coordinate-vertical-safe-offset)
+  );
 }
 
 .vocabulary-map-coordinates--right {
-  right: 10px;
+  right: calc(
+    var(--vocabulary-map-coordinate-edge) +
+      var(--vocabulary-map-coordinate-vertical-safe-offset)
+  );
+}
+
+.vocabulary-map-coordinates--top span:first-child,
+.vocabulary-map-coordinates--bottom span:first-child {
+  margin-left: var(--vocabulary-map-coordinate-corner-safe-offset);
+  transform: translate(0, -50%);
+}
+
+.vocabulary-map-coordinates--top span:last-child,
+.vocabulary-map-coordinates--bottom span:last-child {
+  margin-left: calc(var(--vocabulary-map-coordinate-corner-safe-offset) * -1);
+  transform: translate(-100%, -50%);
 }
 
 .vocabulary-map-coordinates--top span {
-  top: 0;
-  transform: translate(-50%, 0);
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .vocabulary-map-coordinates--bottom span {
-  bottom: 0;
-  transform: translate(-50%, 0);
+  top: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .vocabulary-map-coordinates--left span,
@@ -1643,6 +1683,7 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   left: 50%;
   min-height: 0;
   min-width: auto;
+  transform-origin: center center;
 }
 
 .vocabulary-map-coordinates--left span {
@@ -1651,6 +1692,26 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 
 .vocabulary-map-coordinates--right span {
   transform: translate(-50%, -50%) rotate(90deg);
+}
+
+.vocabulary-map-coordinates--left span:first-child {
+  margin-top: var(--vocabulary-map-coordinate-corner-safe-offset);
+  transform: translate(-50%, 0) rotate(-90deg);
+}
+
+.vocabulary-map-coordinates--left span:last-child {
+  margin-top: calc(var(--vocabulary-map-coordinate-corner-safe-offset) * -1);
+  transform: translate(-50%, -100%) rotate(-90deg);
+}
+
+.vocabulary-map-coordinates--right span:first-child {
+  margin-top: var(--vocabulary-map-coordinate-corner-safe-offset);
+  transform: translate(-50%, 0) rotate(90deg);
+}
+
+.vocabulary-map-coordinates--right span:last-child {
+  margin-top: calc(var(--vocabulary-map-coordinate-corner-safe-offset) * -1);
+  transform: translate(-50%, -100%) rotate(90deg);
 }
 
 .dark .vocabulary-map-coordinate-grid__line--vertical {
@@ -2064,6 +2125,20 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 .vmap-cartography-water-label,
 .vmap-cartography-water {
   transition: opacity 180ms ease;
+}
+
+.vmap-cartography-text--mobile {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .vmap-cartography-text--desktop {
+    display: none;
+  }
+
+  .vmap-cartography-text--mobile {
+    display: inline;
+  }
 }
 
 .vmap-cartography-text--water {

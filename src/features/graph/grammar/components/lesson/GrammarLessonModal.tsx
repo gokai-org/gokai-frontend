@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { BookText, RefreshCw } from "lucide-react";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
+import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
 import type { GrammarLesson } from "../../types";
 import GrammarLessonContent from "./GrammarLessonContent";
 
@@ -62,6 +63,7 @@ export default function GrammarLessonModal({
   isClosing = false,
 }: GrammarLessonModalProps) {
   useMiniDockBlocker(true);
+  useStudySessionActivity("grammar-lesson");
 
   return (
     <motion.div

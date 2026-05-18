@@ -17,6 +17,8 @@ interface LibraryRecentPanelProps {
   onOpenRecent: () => void;
   onKanjiClick: (kanji: Kanji) => void;
   onKanaClick: (kana: Kana) => void;
+  onGrammarClick: (lessonId: string) => void;
+  onWordClick: (wordId: string) => void;
 }
 
 export function LibraryRecentPanel({
@@ -28,6 +30,8 @@ export function LibraryRecentPanel({
   onOpenRecent,
   onKanjiClick,
   onKanaClick,
+  onGrammarClick,
+  onWordClick,
 }: LibraryRecentPanelProps) {
   return (
     <aside className="order-1 xl:order-2 xl:sticky xl:top-6 xl:self-start">
@@ -101,6 +105,16 @@ export function LibraryRecentPanel({
                     if (item.type === "katakana") {
                       const kana = katakanas.find((entry) => entry.id === item.id);
                       if (kana) onKanaClick(kana);
+                      return;
+                    }
+
+                    if (item.type === "grammar" || item.type === "grammar_lesson") {
+                      onGrammarClick(item.id);
+                      return;
+                    }
+
+                    if (item.type === "word") {
+                      onWordClick(item.id);
                     }
                   }}
                 />

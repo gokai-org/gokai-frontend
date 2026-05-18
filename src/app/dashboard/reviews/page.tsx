@@ -81,7 +81,7 @@ function ReviewPageSkeleton() {
             <SkeletonBox className="h-7 w-28 bg-surface-tertiary" rounded="rounded-full" />
           </div>
           <SkeletonBox className="mt-6 h-[360px] w-full bg-surface-tertiary" rounded="rounded-[28px]" />
-          <div className="mt-4 rounded-[24px] border border-border-subtle bg-surface-secondary p-4 lg:hidden">
+          <div className="mt-4 rounded-[24px] border border-border-subtle bg-surface-secondary p-4 md:hidden">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <SkeletonLine width="w-14" height="h-3" className="bg-surface-tertiary" />
@@ -101,7 +101,7 @@ function ReviewPageSkeleton() {
           </div>
         </div>
 
-        <div className="hidden rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm lg:block">
+        <div className="hidden rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm md:block">
           <div className="grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(240px,1fr)] lg:items-center">
             <div>
               <div className="flex items-center gap-2">
@@ -139,7 +139,7 @@ function ReviewPageSkeleton() {
       </div>
 
       <div className="space-y-5 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:px-2 xl:pb-12 xl:pt-1">
-        <div className="hidden rounded-[32px] bg-surface-primary p-6 shadow-sm sm:p-8 lg:block lg:p-10">
+        <div className="hidden rounded-[32px] bg-surface-primary p-6 shadow-sm sm:p-8 xl:block lg:p-10">
           <SkeletonLine width="w-28" height="h-3" className="bg-surface-tertiary" />
           <SkeletonLine width="w-2/3" height="h-8" className="mt-3" />
           <SkeletonLine width="w-4/5" height="h-4" className="mt-3 bg-surface-tertiary" />
@@ -361,7 +361,7 @@ export default function Page() {
     return (
       <DashboardShell
         contentClassName="xl:overflow-hidden"
-        containerClassName="xl:h-full xl:overflow-hidden"
+        containerClassName="xl:h-full xl:overflow-hidden xl:pb-0"
       >
         <ReviewPageSkeleton />
       </DashboardShell>
@@ -371,7 +371,7 @@ export default function Page() {
   return (
     <DashboardShell
       contentClassName="xl:overflow-hidden"
-      containerClassName="xl:h-full xl:overflow-hidden"
+      containerClassName="xl:h-full xl:overflow-hidden xl:pb-0"
     >
       {reviewCelebrationOverlay}
 
@@ -420,12 +420,12 @@ export default function Page() {
       >
         <AnimatedEntrance
           index={0}
-          className="xl:h-full xl:min-h-0"
+          className="xl:self-start"
           disabled={!animationsEnabled}
           mode={heavyAnimationsEnabled ? "default" : "light"}
         >
           <div
-            className="xl:sticky xl:top-0 xl:h-full xl:min-h-0"
+            className="xl:sticky xl:top-0"
             data-help-target="reviews-kazu-progress"
           >
             <ReviewHero
@@ -439,13 +439,13 @@ export default function Page() {
           </div>
         </AnimatedEntrance>
 
-        <div className="space-y-5 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:scroll-pb-12 xl:px-2 xl:pb-12 xl:pt-1">
+        <div className="space-y-5 xl:h-full xl:min-h-0 xl:overflow-y-auto xl:scroll-pb-0 xl:px-2 xl:pb-0 xl:pt-1">
           <AnimatedEntrance
             index={1}
             disabled={!animationsEnabled}
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >
-            <div data-help-target="reviews-banner" className="hidden lg:block">
+            <div data-help-target="reviews-banner" className="hidden xl:block">
               <ReviewActiveHeader
                 activeCount={reviewProgress.activeCount}
                 eyebrow={reviewProgress.eyebrow}
@@ -473,7 +473,7 @@ export default function Page() {
 
           <AnimatedEntrance
             index={3}
-            className="pb-8"
+            className="pb-8 xl:pb-0"
             disabled={!animationsEnabled}
             mode={heavyAnimationsEnabled ? "default" : "light"}
           >

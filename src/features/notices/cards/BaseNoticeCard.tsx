@@ -3,7 +3,6 @@
 import {
   ChevronDown,
   Clock,
-  MailOpen,
   Check,
   Pin,
   PinOff,
@@ -120,19 +119,15 @@ export function BaseNoticeCard({
                 </div>
 
                 <div className="flex items-center gap-1 opacity-0 transition-opacity duration-150 group-hover:opacity-100">
-                  <button
-                    onClick={() => onToggleRead(notice.id)}
-                    className="rounded-lg p-1.5 text-content-muted transition-colors hover:bg-accent/5 hover:text-accent"
-                    title={
-                      notice.read ? "Marcar como no leída" : "Marcar como leída"
-                    }
-                  >
-                    {notice.read ? (
-                      <MailOpen className="h-4 w-4" />
-                    ) : (
+                  {!notice.read && (
+                    <button
+                      onClick={() => onToggleRead(notice.id)}
+                      className="rounded-lg p-1.5 text-content-muted transition-colors hover:bg-accent/5 hover:text-accent"
+                      title="Marcar como leída"
+                    >
                       <Check className="h-4 w-4" />
-                    )}
-                  </button>
+                    </button>
+                  )}
 
                   <button
                     onClick={() => onTogglePin(notice.id)}

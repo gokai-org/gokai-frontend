@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { motion } from "framer-motion";
 import { HeartIcon } from "@/features/library/components/ScriptCardLayout";
 import { VocabThumbnail } from "@/features/library/components/VocabThumbnail";
@@ -119,6 +120,8 @@ export function VocabularyCard({
   const lockedThumbClass = isWord
     ? "h-16 w-16 rounded-full"
     : "h-[62px] w-[62px] rounded-[20px]";
+  const hasInnerFavoriteButton =
+    variant === "word" && !effectiveLocked && Boolean(onFavoriteToggle);
   const lockedThumbnail = isUrlThumbnail(thumbnail) ? (
     <VocabThumbnail
       thumbnail={thumbnail}
@@ -292,10 +295,33 @@ export function VocabularyCard({
     </>
   );
 
-  const cardEl = isInteractive ? (
+  const handleCardKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!isInteractive) {
+      return;
+    }
+
+    if (event.key !== "Enter" && event.key !== " ") {
+      return;
+    }
+
+    event.preventDefault();
+    onClick?.();
+  };
+
+  const cardEl = isInteractive && !hasInnerFavoriteButton ? (
     <button type="button" onClick={onClick} className={cardClassName}>
       {innerContent}
     </button>
+  ) : isInteractive ? (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={handleCardKeyDown}
+      className={cardClassName}
+    >
+      {innerContent}
+    </div>
   ) : (
     <div className={cardClassName}>{innerContent}</div>
   );

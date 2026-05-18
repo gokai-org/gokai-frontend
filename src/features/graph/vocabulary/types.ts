@@ -127,6 +127,7 @@ export type VocabularyThemeContent = {
   kanji: string;
   kana: string;
   meaning: string;
+  region?: VocabularyRegionId | string | null;
   released: boolean;
   isUnlocked?: boolean | null;
   selectedAt?: string | null;
@@ -148,6 +149,7 @@ export type VocabularyWordContent = {
   hiragana?: string | null;
   icon?: string | null;
   meanings?: string[] | null;
+  learnOrder?: number | null;
   order?: number | null;
   unlockedAt?: string | null;
   completedAt?: string | null;

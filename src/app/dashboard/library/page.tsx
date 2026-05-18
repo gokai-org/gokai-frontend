@@ -29,6 +29,7 @@ import { useKanjiLockedStatus } from "@/features/library/hooks/useKanjiLockedSta
 import { useKanaLockedStatus } from "@/features/library/hooks/useKanaLockedStatus";
 import { useLibraryContent } from "@/features/library/hooks/useLibraryContent";
 import { useGrammarLessons } from "@/features/graph/grammar/hooks/useGrammarLessons";
+import { useGrammarLesson } from "@/features/graph/grammar/hooks/useGrammarLesson";
 import type { Kanji } from "@/features/kanji/types";
 import type { KanjiQuizType } from "@/features/kanji/types/quiz";
 import type { Kana } from "@/features/kana/types";
@@ -37,8 +38,11 @@ import { KanjiQuizModal } from "@/features/kanji/components/quiz";
 import { KanaQuizModal } from "@/features/kana/components/quiz";
 import { GrammarLibraryCard } from "@/features/graph/grammar/components/library/GrammarLibraryCard";
 import { GrammarLibraryCollection } from "@/features/graph/grammar/components/library/GrammarLibraryCollection";
+import GrammarLessonModal from "@/features/graph/grammar/components/lesson/GrammarLessonModal";
+import GrammarQuizModal from "@/features/graph/grammar/components/lesson/exam/GrammarQuizModal";
 import { GRAMMAR_BOARD_TOTAL } from "@/features/graph/grammar/constants/grammarBoard";
 import type { GrammarBoardProgress } from "@/features/graph/grammar/types/board";
+import type { GrammarQuizCompletionResult } from "@/features/graph/grammar/types";
 import VocabularyNodePanel from "@/features/graph/vocabulary/components/VocabularyNodePanel";
 import {
   findWordProgress,
@@ -77,6 +81,7 @@ import type {
   Word as LibraryWord,
 } from "@/features/library/types";
 import type { SearchIndexItem } from "@/features/library/types/librarySearch.types";
+import { getLibrarySearchIndex } from "@/features/library/services/librarySearch.service";
 // import { getPrimaryMeaning } from "@/features/kanji";
 
 type QuizCompletionResult = {
@@ -143,6 +148,8 @@ export default function LibraryPage() {
   const [selectedVocabularyWordId, setSelectedVocabularyWordId] = useState<string | null>(
     null,
   );
+  const [selectedGrammarLessonId, setSelectedGrammarLessonId] = useState<string | null>(null);
+  const [grammarOverlayStage, setGrammarOverlayStage] = useState<"lesson" | "quiz">("lesson");
   const [newlyUnlockedVocabularyWordIds, setNewlyUnlockedVocabularyWordIds] =
     useState<ReadonlySet<string>>(new Set());
 
@@ -164,9 +171,9 @@ export default function LibraryPage() {
   }, [drawerEntity, setBlurred]);
 
   useEffect(() => {
-    setHidden(selectedVocabularyWordId !== null);
+    setHidden(selectedVocabularyWordId !== null || selectedGrammarLessonId !== null);
     return () => setHidden(false);
-  }, [selectedVocabularyWordId, setHidden]);
+  }, [selectedGrammarLessonId, selectedVocabularyWordId, setHidden]);
 
   const clearLibraryMasteryTour = useCallback(() => {
     libraryMasteryTourTimersRef.current.forEach((timerId) => {
@@ -394,7 +401,9 @@ export default function LibraryPage() {
 
   const {
     themes,
+    subthemes,
     words,
+    interestSubthemes,
     interestWords,
     filteredThemes,
     filteredSubthemes,
@@ -419,7 +428,17 @@ export default function LibraryPage() {
   );
 
   const { recentItems, addRecentItem, loading: loadingRecentItems } = useRecentItems();
-  const { boardItems: grammarBoardItems, status: grammarStatus } = useGrammarLessons();
+  const {
+    boardItems: grammarBoardItems,
+    status: grammarStatus,
+    refetch: refetchGrammarBoard,
+  } = useGrammarLessons();
+  const {
+    lesson: selectedGrammarLesson,
+    status: selectedGrammarLessonStatus,
+    error: selectedGrammarLessonError,
+    refetch: refetchSelectedGrammarLesson,
+  } = useGrammarLesson(selectedGrammarLessonId);
 
   const {
     favoriteKanjis,
@@ -516,6 +535,24 @@ export default function LibraryPage() {
 
     return nextIndex;
   }, [interestWords, orderedVocabularyWords]);
+  const vocabularyThemeIndex = useMemo(
+    () => new Map(themes.map((theme) => [theme.id, theme])),
+    [themes],
+  );
+  const vocabularySubthemeIndex = useMemo(() => {
+    const nextIndex = new Map<string, LibrarySubtheme>();
+
+    [
+      ...subthemes,
+      ...interestSubthemes,
+      ...filteredSubthemes,
+      ...filteredInterestSubthemes,
+    ].forEach((subtheme) => {
+      nextIndex.set(subtheme.id, subtheme);
+    });
+
+    return nextIndex;
+  }, [filteredInterestSubthemes, filteredSubthemes, interestSubthemes, subthemes]);
   const vocabularyUnlockedWordIds = useMemo(() => {
     const unlockedIds = new Set<string>(selectedSubthemeItem?.unlockedWordIds ?? []);
 
@@ -607,6 +644,117 @@ export default function LibraryPage() {
       void addRecentItem("grammar", lessonId);
     },
     [addRecentItem],
+  );
+
+  const handleGrammarOverlayOpen = useCallback(
+    (lessonId: string) => {
+      setSearchQuery("");
+      setSelectedVocabularyWordId(null);
+      setSelectedGrammarLessonId(lessonId);
+      setGrammarOverlayStage("lesson");
+      void addRecentItem("grammar", lessonId);
+    },
+    [addRecentItem],
+  );
+
+  const handleGrammarOverlayClose = useCallback(() => {
+    setSelectedGrammarLessonId(null);
+    setGrammarOverlayStage("lesson");
+  }, []);
+
+  const handleGrammarQuizComplete = useCallback(
+    (result: GrammarQuizCompletionResult) => {
+      if (result.hasGrammarMastery === true) {
+        dispatchMasteryProgressSync({ hasGrammarMastery: true });
+
+        if (!mastered.has("grammar")) {
+          window.requestAnimationFrame(() => {
+            dispatchMasteryCelebrationRequest({ moduleId: "grammar" });
+          });
+        }
+      }
+
+      void refetchGrammarBoard();
+      void refetchSelectedGrammarLesson();
+    },
+    [mastered, refetchGrammarBoard, refetchSelectedGrammarLesson],
+  );
+
+  const handleLibraryWordOpenById = useCallback(
+    async (wordId: string) => {
+      setSearchQuery("");
+      setSelectedVocabularyWordId(wordId);
+
+      const word = vocabularyWordIndex.get(wordId);
+      let resolvedSubthemeId = word?.subthemeId ?? null;
+      let resolvedThemeId: string | null = null;
+
+      if (resolvedSubthemeId) {
+        resolvedThemeId = vocabularySubthemeIndex.get(resolvedSubthemeId)?.themeId ?? null;
+      }
+
+      if (!resolvedSubthemeId || !resolvedThemeId) {
+        const searchIndex = await getLibrarySearchIndex();
+        const matchedWord = searchIndex.find(
+          (item) => item.entityType === "word" && item.id === wordId,
+        );
+
+        resolvedSubthemeId = matchedWord?.subthemeId ?? null;
+        resolvedThemeId = matchedWord?.themeId ?? null;
+      }
+
+      if (!resolvedSubthemeId || !resolvedThemeId) {
+        setSelectedVocabularyWordId(null);
+        return;
+      }
+
+      const subtheme = vocabularySubthemeIndex.get(resolvedSubthemeId) ?? {
+        id: resolvedSubthemeId,
+        themeId: resolvedThemeId,
+        kanji: "",
+        kana: "",
+        meaning: "",
+      };
+
+      const theme = vocabularyThemeIndex.get(resolvedThemeId) ?? {
+        id: resolvedThemeId,
+        kanji: "",
+        kana: "",
+        meaning: "",
+        released: true,
+        isUnlocked: themeLockStateById.get(resolvedThemeId) ? false : null,
+      };
+
+      if (!theme) {
+        setSelectedVocabularyWordId(null);
+        return;
+      }
+
+      const themeOpened = await openTheme(theme);
+
+      if (!themeOpened) {
+        setSelectedVocabularyWordId(null);
+        return;
+      }
+
+      const subthemeOpened = await openSubtheme(subtheme);
+
+      if (!subthemeOpened) {
+        setSelectedVocabularyWordId(null);
+        return;
+      }
+
+      void addRecentItem("word", wordId);
+    },
+    [
+      addRecentItem,
+      themeLockStateById,
+      openSubtheme,
+      openTheme,
+      vocabularySubthemeIndex,
+      vocabularyThemeIndex,
+      vocabularyWordIndex,
+    ],
   );
 
   const handleVocabularySubthemeOpen = useCallback(
@@ -733,6 +881,8 @@ export default function LibraryPage() {
         return;
       }
 
+      setSelectedVocabularyWordId(item.id);
+
       const subthemeOpened = await openSubtheme({
         id: item.subthemeId,
         themeId: item.themeId,
@@ -742,11 +892,11 @@ export default function LibraryPage() {
       });
 
       if (!subthemeOpened) {
+        setSelectedVocabularyWordId(null);
         return;
       }
 
       void addRecentItem("word", item.id);
-      setSelectedVocabularyWordId(item.id);
     },
     [addRecentItem, handleSearchVocabularyThemeOpen, openSubtheme, openTheme, themeLockStateById],
   );
@@ -1311,6 +1461,10 @@ export default function LibraryPage() {
                     onOpenRecent={() => setSelectedCategory("recent")}
                     onKanjiClick={handleLibraryKanjiSelect}
                     onKanaClick={handleKanaClick}
+                    onGrammarClick={handleGrammarOverlayOpen}
+                    onWordClick={(wordId) => {
+                      void handleLibraryWordOpenById(wordId);
+                    }}
                   />
                 </div>
               </AnimatedEntrance>
@@ -1472,6 +1626,9 @@ export default function LibraryPage() {
                             variant="word"
                             index={i}
                             isFavorite={favoriteWords.has(fav.id)}
+                            onClick={() => {
+                              void handleLibraryWordOpenById(fav.id);
+                            }}
                             onFavoriteToggle={(id) => {
                               void toggleFavorite(id, "word");
                             }}
@@ -1894,6 +2051,7 @@ export default function LibraryPage() {
                             lesson={recentLesson}
                             index={i}
                             isFavorite={favoriteGrammar.has(r.id)}
+                            onSelect={handleGrammarOverlayOpen}
                             onToggleFavorite={(id) => {
                               void toggleFavorite(id, "grammar");
                             }}
@@ -1950,6 +2108,9 @@ export default function LibraryPage() {
                             variant="word"
                             index={i}
                             isFavorite={favoriteWords.has(r.id)}
+                            onClick={() => {
+                              void handleLibraryWordOpenById(r.id);
+                            }}
                             onFavoriteToggle={(id) => {
                               void toggleFavorite(id, "word");
                             }}
@@ -1990,11 +2151,44 @@ export default function LibraryPage() {
           <VocabularyNodePanel
             item={selectedSubthemeItem}
             question={selectedVocabularyQuestion}
+            loading={
+              selectedVocabularyWordId !== null &&
+              (loadingThemes ||
+                loadingSubthemes ||
+                loadingWords ||
+                !selectedSubthemeItem ||
+                !selectedVocabularyQuestion)
+            }
             onClose={() => {
               setSelectedVocabularyWordId(null);
             }}
             onSaved={handleVocabularyQuizSaved}
           />
+
+          {selectedGrammarLessonId !== null && grammarOverlayStage === "lesson" && (
+            <GrammarLessonModal
+              lesson={selectedGrammarLesson}
+              status={selectedGrammarLessonStatus}
+              error={selectedGrammarLessonError}
+              onClose={handleGrammarOverlayClose}
+              onRetry={() => {
+                void refetchSelectedGrammarLesson();
+              }}
+              onStartExam={() => setGrammarOverlayStage("quiz")}
+            />
+          )}
+
+          {selectedGrammarLessonId !== null &&
+            grammarOverlayStage === "quiz" &&
+            selectedGrammarLessonStatus === "success" &&
+            selectedGrammarLesson && (
+              <GrammarQuizModal
+                lesson={selectedGrammarLesson}
+                onClose={() => setGrammarOverlayStage("lesson")}
+                onExitToBoard={handleGrammarOverlayClose}
+                onComplete={handleGrammarQuizComplete}
+              />
+            )}
 
           {quizKanji !== null && (
             <KanjiQuizModal

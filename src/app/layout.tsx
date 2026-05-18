@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import {
   Montserrat,
@@ -56,6 +56,12 @@ export const metadata: Metadata = {
     shortcut: [siteIcon],
     apple: [siteIcon],
   },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 /** Inline script that runs before React hydration to prevent flash of wrong theme/font */

@@ -5,6 +5,10 @@ type StoredInterestThemeIds = {
   themeIds: string[];
 };
 
+function normalizeUserId(userId: unknown) {
+  return typeof userId === "string" ? userId.trim() : "";
+}
+
 function getLocalStorage() {
   if (typeof window === "undefined") {
     return null;
@@ -44,25 +48,53 @@ function normalizeThemeIds(themeIds: unknown) {
   );
 }
 
-function parseStoredThemeIds(raw: string | null) {
+function parseStoredThemeIds(raw: string | null): StoredInterestThemeIds | null {
   if (!raw) {
-    return [] as string[];
+    return null;
   }
 
   try {
     const parsed = JSON.parse(raw) as StoredInterestThemeIds | string[];
     if (Array.isArray(parsed)) {
-      return normalizeThemeIds(parsed);
+      return {
+        userId: "",
+        themeIds: normalizeThemeIds(parsed),
+      };
     }
 
-    return normalizeThemeIds(parsed.themeIds);
+    return {
+      userId: normalizeUserId(parsed.userId),
+      themeIds: normalizeThemeIds(parsed.themeIds),
+    };
   } catch {
-    return [] as string[];
+    return null;
   }
 }
 
-export function saveOnboardingInterestThemeIds(themeIds: string[]) {
-  const payload = JSON.stringify({ themeIds: normalizeThemeIds(themeIds) });
+function shouldUseStoredThemeIds(
+  stored: StoredInterestThemeIds | null,
+  userId?: string | null,
+) {
+  if (!stored || stored.themeIds.length === 0) {
+    return false;
+  }
+
+  const normalizedUserId = normalizeUserId(userId);
+  if (!normalizedUserId) {
+    return false;
+  }
+
+  return stored.userId === normalizedUserId;
+}
+
+export function saveOnboardingInterestThemeIds(
+  themeIds: string[],
+  userId?: string | null,
+) {
+  const payload = JSON.stringify({
+    userId: normalizeUserId(userId) || undefined,
+    themeIds: normalizeThemeIds(themeIds),
+  });
   const storages = [getLocalStorage(), getSessionStorage()].filter(
     (storage): storage is Storage => storage !== null,
   );
@@ -76,13 +108,22 @@ export function saveOnboardingInterestThemeIds(themeIds: string[]) {
   }
 }
 
-export function readOnboardingInterestThemeIds() {
+export function readOnboardingInterestThemeIds(userId?: string | null) {
+  const localStored = parseStoredThemeIds(
+    getLocalStorage()?.getItem(ONBOARDING_INTEREST_THEME_IDS_KEY) ?? null,
+  );
+  const sessionStored = parseStoredThemeIds(
+    getSessionStorage()?.getItem(ONBOARDING_INTEREST_THEME_IDS_KEY) ?? null,
+  );
+  const localThemeIds = shouldUseStoredThemeIds(localStored, userId)
+    ? (localStored?.themeIds ?? [])
+    : [];
+  const sessionThemeIds = shouldUseStoredThemeIds(sessionStored, userId)
+    ? (sessionStored?.themeIds ?? [])
+    : [];
+
   return normalizeThemeIds([
-    ...parseStoredThemeIds(
-      getLocalStorage()?.getItem(ONBOARDING_INTEREST_THEME_IDS_KEY) ?? null,
-    ),
-    ...parseStoredThemeIds(
-      getSessionStorage()?.getItem(ONBOARDING_INTEREST_THEME_IDS_KEY) ?? null,
-    ),
+    ...localThemeIds,
+    ...sessionThemeIds,
   ]);
 }

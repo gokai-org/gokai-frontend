@@ -7,6 +7,7 @@ import { GuideTourProvider } from "@/features/help/components/GuideTourProvider"
 import { GuideTourOverlay } from "@/features/help/components/GuideTourOverlay";
 import { FirstRunOnboarding } from "@/features/help/utils/firstRunOnboarding";
 import { SettingsBootstrap } from "@/features/configuration/components/SettingsBootstrap";
+import { StudySessionReminderBootstrap } from "@/features/configuration/components/StudySessionReminderBootstrap";
 import { MasteredModulesProvider } from "@/features/mastery/components/MasteredModulesProvider";
 import { AuthenticatedUserGate } from "@/features/auth/components/AuthenticatedUserGate";
 import { ProgressBootstrap } from "@/features/dashboard/components/ProgressBootstrap";
@@ -21,6 +22,7 @@ export default function Providers({ children }: { children: React.ReactNode }) {
             <MasteredModulesProvider>
               <OneSignalBootstrap />
               <SettingsBootstrap />
+              <StudySessionReminderBootstrap />
               <ProgressBootstrap />
               <FirstRunOnboarding />
               {children}

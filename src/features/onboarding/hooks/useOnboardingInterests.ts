@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { getCurrentUser } from "@/features/auth/services/api";
 import { hydrateOnboardingInterestSections } from "@/features/onboarding/data/interestSections";
 import { saveOnboardingInterestThemeIds } from "@/features/onboarding/lib/interestThemeStorage";
 import {
@@ -104,7 +105,8 @@ export function useOnboardingInterests() {
     try {
       const response = await saveOnboardingInterests(selectedThemeIds);
       const savedThemeIds = response.themes?.length ? response.themes : selectedThemeIds;
-      saveOnboardingInterestThemeIds(savedThemeIds);
+      const currentUser = await getCurrentUser().catch(() => null);
+      saveOnboardingInterestThemeIds(savedThemeIds, currentUser?.id);
       await ensureOnboardingVocabularyGraphs(savedThemeIds);
       return response;
     } catch (saveError) {

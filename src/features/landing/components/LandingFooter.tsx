@@ -5,9 +5,13 @@ import { fadeUpSoft } from "@/features/landing/lib/motionVariants";
 
 interface LandingFooterProps {
   onOpenTerms: () => void;
+  onOpenCredits: () => void;
 }
 
-export function LandingFooter({ onOpenTerms }: LandingFooterProps) {
+export function LandingFooter({
+  onOpenTerms,
+  onOpenCredits,
+}: LandingFooterProps) {
   return (
     <motion.footer
       initial="hidden"
@@ -25,6 +29,13 @@ export function LandingFooter({ onOpenTerms }: LandingFooterProps) {
             className="text-xs font-semibold text-accent transition-colors hover:text-accent-hover"
           >
             Términos y Condiciones
+          </button>
+          <button
+            type="button"
+            onClick={onOpenCredits}
+            className="text-xs font-semibold text-accent transition-colors hover:text-accent-hover"
+          >
+            Créditos y atribuciones
           </button>
         </div>
         <p className="text-content-tertiary md:max-w-md md:text-right">

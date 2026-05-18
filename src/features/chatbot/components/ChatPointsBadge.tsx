@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Sparkles } from "lucide-react";
 import { getCurrentUser } from "@/features/auth";
 import { subscribeMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
@@ -190,7 +189,7 @@ export function ChatPointsBadge() {
             animate={{ opacity: 0, scale: 1.08 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-none absolute inset-0 rounded-[22px] border border-slate-300/80 bg-slate-200/40"
+            className="pointer-events-none absolute inset-0 rounded-[22px] border border-accent/15 bg-accent/8 dark:border-accent/12 dark:bg-accent/10"
           />
         ) : null}
       </AnimatePresence>
@@ -202,15 +201,17 @@ export function ChatPointsBadge() {
             : { scale: 1 }
         }
         transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-        className="relative inline-flex h-11 min-w-[132px] items-center gap-3 overflow-hidden rounded-2xl border border-slate-200 bg-white px-3.5 py-2 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.38)]"
+        className="relative inline-flex h-11 min-w-[132px] items-center gap-3 overflow-hidden rounded-2xl border border-border-subtle bg-surface-primary px-3.5 py-2 shadow-[0_12px_28px_-24px_rgba(15,23,42,0.38)] dark:shadow-[0_18px_36px_-28px_rgba(0,0,0,0.75)]"
       >
         <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-accent-hover to-accent text-white shadow-[0_10px_20px_-14px_rgba(153,51,49,0.76)]">
           <span className="absolute inset-[3px] rounded-full border border-white/40" />
-          <Sparkles className="relative h-4 w-4" strokeWidth={2.2} />
+          <span className="relative text-sm font-black leading-none tracking-[-0.08em]">
+            五
+          </span>
         </div>
 
-        <div className="flex min-w-0 flex-col justify-center gap-0.5 leading-none">
-          <span className="block pt-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+        <div className="flex min-w-0 flex-col justify-center gap-1 leading-none">
+          <span className="block text-[9px] font-semibold uppercase tracking-[0.16em] text-content-muted">
             Puntos
           </span>
           <motion.span
@@ -221,13 +222,11 @@ export function ChatPointsBadge() {
                 : { y: 0 }
             }
             transition={{ duration: 0.32, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-1 block text-base font-extrabold tracking-[-0.04em] text-slate-700"
+            className="block text-base font-extrabold tracking-[-0.04em] text-content-primary"
           >
             {pointsFormatter.format(visiblePoints)}
           </motion.span>
         </div>
-
-        <div className="pointer-events-none absolute inset-y-0 right-0 w-14 bg-[linear-gradient(180deg,rgba(248,250,252,0),rgba(226,232,240,0.46))]" />
 
         <AnimatePresence>
           {delta && deltaValue !== 0 ? (

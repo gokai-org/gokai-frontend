@@ -31,7 +31,7 @@ const shadowTransformStyle = {
 } as CSSProperties;
 
 const mascotFrameStyle = {
-  maxWidth: "min(100%, clamp(17rem, 82vw, 31rem), max(15rem, calc(100dvh - 24rem)))",
+  maxWidth: "min(100%, clamp(18.5rem, 86vw, 34rem), max(16rem, calc(100dvh - 22rem)))",
 } as CSSProperties;
 
 const rootVariants: Variants = {

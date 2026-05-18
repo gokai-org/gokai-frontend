@@ -1,10 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { MouseEvent as ReactMouseEvent } from "react";
+import type { CSSProperties, MouseEvent as ReactMouseEvent } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { getCurrentUser } from "@/features/auth";
+import { classifyJapaneseCharacter } from "@/features/chatbot/utils/writingCharacters";
+import {
+  getWritingPalette,
+  resolveWritingAccentColor,
+} from "@/features/chatbot/utils/writingPalette";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 import { KanaWritingCanvas, type DrawnStroke } from "@/features/kana/components/KanaWritingCanvas";
 import {
@@ -18,6 +23,7 @@ import { getMockKanaStrokes } from "@/features/kana/mock/mockStrokeData";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
 import {
   AnswerConfirmationPanel,
   QuizAudioPlayer,
@@ -37,6 +43,7 @@ import {
   getQuizTypeProgress,
   getWordQuizProgressPercent,
 } from "../lib/vocabularyQuizProgress";
+import type { WritingScriptType } from "@/features/graph/writing/shared/types";
 import type {
   VocabularyAnswerType,
   VocabularyGraphProgressItem,
@@ -198,15 +205,102 @@ function getOptionCorrect(option: VocabularyQuizOption | string) {
 function WritingSymbolText({
   text,
   className,
+  colorMode = "none",
 }: {
   text: string;
   className?: string;
+  colorMode?: "none" | "hover" | "accent";
 }) {
   return (
     <span className={className}>
       {Array.from(text).map((symbol, index) => (
-        <span key={`${symbol}-${index}`}>{symbol}</span>
+        <WritingSymbolGlyph
+          key={`${symbol}-${index}`}
+          symbol={symbol}
+          colorMode={colorMode}
+        />
       ))}
+    </span>
+  );
+}
+
+function getDominantWritingScript(text: string): WritingScriptType | null {
+  let hasHiragana = false;
+  let hasKatakana = false;
+
+  for (const symbol of Array.from(text)) {
+    const scriptType = classifyJapaneseCharacter(symbol);
+
+    if (scriptType === "kanji") {
+      return "kanji";
+    }
+
+    if (scriptType === "katakana") {
+      hasKatakana = true;
+      continue;
+    }
+
+    if (scriptType === "hiragana") {
+      hasHiragana = true;
+    }
+  }
+
+  if (hasKatakana) {
+    return "katakana";
+  }
+
+  if (hasHiragana) {
+    return "hiragana";
+  }
+
+  return null;
+}
+
+function getWritingOptionToneStyle(text: string): CSSProperties | undefined {
+  const scriptType = getDominantWritingScript(text);
+  if (!scriptType) {
+    return undefined;
+  }
+
+  const accentColor = resolveWritingAccentColor(scriptType);
+  const palette = getWritingPalette(accentColor);
+
+  return {
+    ["--writing-option-accent" as string]: palette.accent,
+    ["--writing-option-soft" as string]: palette.soft,
+    ["--writing-option-soft-strong" as string]: palette.softStrong,
+    ["--writing-option-border" as string]: palette.borderSoft,
+    ["--writing-option-border-strong" as string]: palette.borderStrong,
+    ["--writing-option-ring" as string]: palette.ring,
+  };
+}
+
+function WritingSymbolGlyph({
+  symbol,
+  colorMode,
+}: {
+  symbol: string;
+  colorMode: "none" | "hover" | "accent";
+}) {
+  const scriptType = classifyJapaneseCharacter(symbol);
+
+  if (!scriptType || colorMode === "none") {
+    return <span>{symbol}</span>;
+  }
+
+  const accentColor = resolveWritingAccentColor(scriptType);
+
+  return (
+    <span
+      className={[
+        "transition-colors duration-150",
+        colorMode === "accent"
+          ? "text-[color:var(--writing-symbol-accent)]"
+          : "group-hover:text-[color:var(--writing-symbol-accent)] group-focus-visible:text-[color:var(--writing-symbol-accent)]",
+      ].join(" ")}
+      style={{ ["--writing-symbol-accent" as string]: accentColor }}
+    >
+      {symbol}
     </span>
   );
 }
@@ -259,6 +353,7 @@ export default function VocabularyQuizModal({
   onSaved,
 }: VocabularyQuizModalProps) {
   useMiniDockBlocker(open);
+  useStudySessionActivity("vocabulary-quiz", open);
 
   const platformMotion = usePlatformMotion();
   const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
@@ -929,17 +1024,21 @@ export default function VocabularyQuizModal({
                           const selected = selectedWritingOptionIndex === index;
                           const answered = step === "feedback";
                           const correct = getOptionCorrect(option);
+                          const optionLabel = getOptionLabel(option, currentType);
+                          const optionToneStyle = getWritingOptionToneStyle(optionLabel);
+                          const symbolColorMode = !answered ? "hover" : "none";
 
                           return (
                             <button
-                              key={`${activeQuestion.wordId}-writing-${getOptionLabel(option, currentType)}-${index}`}
+                              key={`${activeQuestion.wordId}-writing-${optionLabel}-${index}`}
                               type="button"
                               disabled={answered}
                               onClick={() => {
                                 setSelectedWritingOptionIndex(index);
                                 setWritingTraceScore(null);
                               }}
-                              className={`min-h-14 rounded-2xl border px-3 py-2 text-left transition disabled:cursor-default ${
+                              style={optionToneStyle}
+                              className={`group min-h-14 rounded-2xl border px-3 py-2 text-left transition disabled:cursor-default ${
                                 selected && answered
                                   ? correct
                                     ? "border-emerald-500 bg-emerald-500/10 text-emerald-700"
@@ -947,13 +1046,14 @@ export default function VocabularyQuizModal({
                                   : answered && correct
                                     ? "border-emerald-400 bg-emerald-500/5 text-emerald-700"
                                     : selected
-                                      ? "border-accent bg-accent/8 text-accent"
-                                      : "border-border-subtle bg-surface-primary text-content-primary hover:bg-surface-secondary"
+                                      ? "border-border-subtle bg-surface-secondary text-content-primary ring-1 ring-black/5 dark:ring-white/8"
+                                      : "border-border-subtle bg-surface-primary text-content-primary hover:border-[color:var(--writing-option-border)] hover:bg-[color:var(--writing-option-soft)]"
                               }`}
                             >
                               <WritingSymbolText
-                                text={getOptionLabel(option, currentType)}
+                                text={optionLabel}
                                 className="block text-lg font-black leading-tight jp-text"
+                                colorMode={symbolColorMode}
                               />
                             </button>
                           );

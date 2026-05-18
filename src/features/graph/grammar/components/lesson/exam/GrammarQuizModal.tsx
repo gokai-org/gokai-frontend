@@ -9,6 +9,7 @@ import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { AnswerConfirmationPanel } from "@/shared/ui";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
+import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
 import {
   ReaffirmedMasteryResult,
   UnlockedMasterySequence,
@@ -204,6 +205,7 @@ export default function GrammarQuizModal({
   onComplete,
 }: GrammarQuizModalProps) {
   useMiniDockBlocker(true);
+  useStudySessionActivity("grammar-quiz");
   const masteredModules = useMasteredModules();
   const isGrammarMastered = masteredModules.has("grammar");
 

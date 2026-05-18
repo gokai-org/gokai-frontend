@@ -17,7 +17,7 @@ export default function GrammarQuestionExercise({
   onSelect,
 }: Props) {
   return (
-    <div className="kanji-detail-scroll flex h-full min-h-0 flex-col gap-2.5 overflow-y-auto pr-1 sm:gap-5">
+    <div className="flex min-h-0 flex-col gap-2.5 sm:gap-5">
       <div className="relative overflow-hidden rounded-[18px] border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-3.5 py-3.5 sm:rounded-[24px] sm:px-6 sm:py-6">
         <div className="absolute -right-14 -top-14 h-28 w-28 rounded-full bg-accent/8 blur-3xl" />
         <p

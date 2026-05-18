@@ -174,19 +174,29 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
     restartMessagePractice,
     handleStrokeDrawn,
   } = useChatWritingPractice(message);
-  const [notebookOpen, setNotebookOpen] = useState(false);
-  const [dismissedCompletionSequence, setDismissedCompletionSequence] = useState(0);
+  const [activePopoverTargetId, setActivePopoverTargetId] = useState<string | null>(null);
+  const [openedNotebookMessageId, setOpenedNotebookMessageId] = useState<string | null>(null);
+  const [dismissedNotebookKey, setDismissedNotebookKey] = useState<string | null>(null);
 
   const palette = getWritingPalette(
     activeTarget?.accentColor ?? targets[0]?.accentColor,
   );
   const accent = palette.accent;
+  const currentMessageId = message?.id ?? null;
   const completedCount = completedTargetIds.size;
   const totalAvailableCount = availableTargets.length;
   const canOpenNotebook = hasCompletedMessage && notebookEntries.length > 0;
-  const shouldAutoOpenNotebook =
-    canOpenNotebook && completionSequence > dismissedCompletionSequence;
-  const isNotebookOpen = canOpenNotebook && (notebookOpen || shouldAutoOpenNotebook);
+  const autoOpenNotebookKey = currentMessageId
+    ? `${currentMessageId}:${completionSequence}`
+    : null;
+  const shouldAutoOpenNotebook = Boolean(
+    canOpenNotebook &&
+      autoOpenNotebookKey &&
+      autoOpenNotebookKey !== dismissedNotebookKey,
+  );
+  const isNotebookOpen = canOpenNotebook && (
+    openedNotebookMessageId === currentMessageId || shouldAutoOpenNotebook
+  );
   const compactMobileLayout = !onClose;
   const hasMessageCharacters = useMemo(
     () => extractJapaneseCharacters(message?.content ?? "", { unique: true }).length > 0,
@@ -196,6 +206,11 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
     Boolean(message) &&
     hasMessageCharacters &&
     (targetsLoading || (targets.length === 0 && !error && !activeTarget));
+  const visiblePopoverTargetId = targets.some(
+    (target) => target.id === activePopoverTargetId,
+  )
+    ? activePopoverTargetId
+    : null;
 
   const notebookSummary = useMemo(() => {
     if (shouldShowTargetsSkeleton) {
@@ -214,61 +229,20 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
   }, [completedCount, hasCompletedMessage, shouldShowTargetsSkeleton, totalAvailableCount]);
 
   const handleOpenNotebook = () => {
-    if (!canOpenNotebook) {
+    if (!canOpenNotebook || !currentMessageId) {
       return;
     }
 
-    setNotebookOpen(true);
+    setOpenedNotebookMessageId(currentMessageId);
   };
 
   const handleCloseNotebook = () => {
-    setNotebookOpen(false);
-    setDismissedCompletionSequence(completionSequence);
+    setOpenedNotebookMessageId(null);
+    setDismissedNotebookKey(autoOpenNotebookKey);
   };
 
   return (
     <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-[30px] border border-border-subtle bg-surface-elevated shadow-[0_2px_18px_-8px_rgba(0,0,0,0.08)]">
-      <div className="hidden shrink-0 border-b border-border-subtle bg-surface-primary px-4 py-4 sm:block sm:px-5">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <h3 className="text-lg font-extrabold text-content-primary">
-              Escritura desde el chat
-            </h3>
-            <p className="mt-1 text-sm leading-6 text-content-tertiary">
-              En el siguiente recuadro puede escribir las diferentes letras de japones que incluya el mensaje.
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            {onClose ? (
-              <button
-                type="button"
-                onClick={onClose}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border bg-surface-elevated text-content-secondary transition"
-                style={{
-                  borderColor: palette.borderSoft,
-                  color: accent,
-                  backgroundColor: palette.soft,
-                }}
-                aria-label="Cerrar escritura"
-              >
-                <svg
-                  width="18"
-                  height="18"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <path d="M6 6 18 18" />
-                  <path d="M18 6 6 18" />
-                </svg>
-              </button>
-            ) : null}
-          </div>
-        </div>
-      </div>
-
       <div
         className={`accent-scroll-area min-h-0 flex-1 overflow-y-auto ${compactMobileLayout ? "px-3 py-3 sm:px-5 sm:py-4" : "px-4 py-4 sm:px-5"}`}
         style={{
@@ -291,7 +265,7 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
           <div className={compactMobileLayout ? "space-y-3" : "space-y-4"}>
             <article className={`rounded-[24px] border border-border-subtle bg-surface-primary shadow-sm ${compactMobileLayout ? "p-3" : "p-4"}`}>
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p
                     className="text-[11px] font-black uppercase tracking-[0.16em]"
                     style={{ color: palette.symbolMuted }}
@@ -302,6 +276,33 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
                     En el siguiente recuadro puedes seleccionar las diferentes letras de japones que incluya el mensaje para practicarlas y después admirar la caligrafía.
                     </p>
                 </div>
+
+                {onClose ? (
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-2xl border bg-surface-elevated text-content-secondary transition sm:inline-flex"
+                    style={{
+                      borderColor: palette.borderSoft,
+                      color: accent,
+                      backgroundColor: palette.soft,
+                    }}
+                    aria-label="Cerrar escritura"
+                  >
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    >
+                      <path d="M6 6 18 18" />
+                      <path d="M18 6 6 18" />
+                    </svg>
+                  </button>
+                ) : null}
               </div>
 
               {shouldShowTargetsSkeleton ? (
@@ -321,6 +322,10 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
                       target={target}
                       selected={activeTarget?.id === target.id}
                       onSelect={() => selectTarget(target.id)}
+                      isPopoverOpen={visiblePopoverTargetId === target.id}
+                      onPopoverOpenChange={(open) => {
+                        setActivePopoverTargetId(open ? target.id : null);
+                      }}
                     />
                   ))}
                 </div>
@@ -533,7 +538,7 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
                         }}
                         aria-label="Ver cuaderno"
                         >
-                        <span className={`inline-flex items-center ${compactMobileLayout ? "justify-center gap-0" : "gap-2"}`}>
+                        {compactMobileLayout ? (
                           <svg
                             width="16"
                             height="16"
@@ -543,14 +548,30 @@ export function ChatWritingPanel({ message, onClose }: ChatWritingPanelProps) {
                             strokeWidth="2"
                             strokeLinecap="round"
                             strokeLinejoin="round"
+                            aria-hidden="true"
                           >
                             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                             <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
                           </svg>
-                          <span className={compactMobileLayout ? "sr-only sm:not-sr-only" : ""}>
-                            Ver cuaderno
+                        ) : (
+                          <span className="inline-flex items-center gap-2">
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              aria-hidden="true"
+                            >
+                              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+                              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+                            </svg>
+                            <span>Ver cuaderno</span>
                           </span>
-                        </span>
+                        )}
                       </button>
                     </div>
 

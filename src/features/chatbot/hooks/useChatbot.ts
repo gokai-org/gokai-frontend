@@ -224,8 +224,12 @@ export function useChatbot() {
     };
   }, [applyConversation]);
 
-  const createNewChat = useCallback(async (name?: string) => {
+  const createNewChat = useCallback(async (
+    name?: string,
+    options?: { resetConversation?: boolean },
+  ) => {
     const nextName = name?.trim() || buildDefaultChatName();
+    const resetConversation = options?.resetConversation ?? true;
     setError(null);
 
     const response = await createChat({ name: nextName });
@@ -239,7 +243,9 @@ export function useChatbot() {
 
     currentChatRef.current = nextChat;
     setCurrentChat(nextChat);
-    setMessages([]);
+    if (resetConversation) {
+      setMessages([]);
+    }
     setUsedTokens(0);
     setChats((previous) => [nextChat, ...previous.filter((item) => item.id !== nextChat.id)]);
 
@@ -251,7 +257,7 @@ export function useChatbot() {
       return currentChatRef.current;
     }
 
-    return createNewChat();
+    return createNewChat(undefined, { resetConversation: false });
   }, [createNewChat]);
 
   const selectChat = useCallback(

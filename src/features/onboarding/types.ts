@@ -3,33 +3,22 @@ export type OnboardingTheme = {
   kanji: string;
   kana?: string | null;
   meaning: string;
+  region?: string | null;
   released?: boolean;
 };
 
-export type OnboardingInterestDefinition = {
+export type OnboardingInterest = {
   id: string;
   kanji: string;
   meaning: string;
-  matchMeanings?: string[];
-  matchKanji?: string[];
-};
-
-export type OnboardingInterest = OnboardingInterestDefinition & {
   themeId: string | null;
   backendTheme: OnboardingTheme | null;
 };
 
-export type OnboardingInterestSectionDefinition = {
+export type OnboardingInterestSection = {
   id: string;
   title: string;
   description: string;
-  interests: OnboardingInterestDefinition[];
-};
-
-export type OnboardingInterestSection = Omit<
-  OnboardingInterestSectionDefinition,
-  "interests"
-> & {
   interests: OnboardingInterest[];
 };
 

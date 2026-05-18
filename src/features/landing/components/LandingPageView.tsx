@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { SECTIONS } from "@/features/landing/data/landingData";
 import { TermsAndConditionsPanel } from "@/features/auth/components/forms/TermsAndConditionsPanel";
+import { CreditsAndAttributionsPanel } from "@/features/landing/components/CreditsAndAttributionsPanel";
 import { useLandingPage } from "@/features/landing/hooks/useLandingPage";
 import { useLandingScrollTimeline } from "@/features/landing/hooks/useLandingScrollTimeline";
 import { scaleFade } from "@/features/landing/lib/motionVariants";
@@ -72,7 +73,9 @@ function SkillBlock({ section }: { section: (typeof SECTIONS)[number] }) {
 }
 
 export function LandingPageView() {
-  const [isTermsOpen, setIsTermsOpen] = useState(false);
+  const [openLegalPanel, setOpenLegalPanel] = useState<
+    "terms" | "credits" | null
+  >(null);
 
   const {
     sectionIds,
@@ -174,7 +177,7 @@ export function LandingPageView() {
   const contactSection = SECTIONS.find((section) => section.id === "contacto")!;
 
   useEffect(() => {
-    if (!isTermsOpen) return;
+    if (!openLegalPanel) return;
 
     const previousBodyOverflow = document.body.style.overflow;
     const previousDocumentOverflow = document.documentElement.style.overflow;
@@ -186,7 +189,7 @@ export function LandingPageView() {
       document.body.style.overflow = previousBodyOverflow;
       document.documentElement.style.overflow = previousDocumentOverflow;
     };
-  }, [isTermsOpen]);
+  }, [openLegalPanel]);
 
   return (
     <main className="relative min-h-screen overflow-x-clip bg-surface-primary text-content-primary">
@@ -297,30 +300,41 @@ export function LandingPageView() {
           </LandingSectionFrame>
         </div>
 
-        <LandingFooter onOpenTerms={() => setIsTermsOpen(true)} />
+        <LandingFooter
+          onOpenTerms={() => setOpenLegalPanel("terms")}
+          onOpenCredits={() => setOpenLegalPanel("credits")}
+        />
       </div>
 
-      <AnimatePresence>
-        {isTermsOpen && (
+      <AnimatePresence initial={false} mode="wait">
+        {openLegalPanel && (
           <motion.div
-            className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 p-2 backdrop-blur-[1px] sm:items-center sm:p-4"
+            className="fixed inset-0 z-[90] flex items-end justify-center bg-black/38 p-2 sm:items-center sm:p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setIsTermsOpen(false)}
+            transition={{ duration: 0.16, ease: "easeOut" }}
+            onClick={() => setOpenLegalPanel(null)}
           >
             <motion.div
-              initial={{ opacity: 0, y: 14, scale: 0.99 }}
+              initial={{ opacity: 0, y: 10, scale: 0.995 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.995 }}
-              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-              className="w-full max-w-5xl overflow-hidden rounded-[24px] border border-border-default/70 bg-surface-primary p-2 shadow-[var(--shadow-xl)] sm:p-4 md:p-5"
+              exit={{ opacity: 0, y: 8, scale: 0.995 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-5xl overflow-hidden rounded-[24px] border border-border-default/70 bg-surface-primary p-2 shadow-[var(--shadow-xl)] will-change-transform sm:p-4 md:p-5"
               onClick={(e) => e.stopPropagation()}
             >
-              <TermsAndConditionsPanel
-                onBack={() => setIsTermsOpen(false)}
-                onAccept={() => setIsTermsOpen(false)}
-              />
+              {openLegalPanel === "terms" ? (
+                <TermsAndConditionsPanel
+                  onBack={() => setOpenLegalPanel(null)}
+                  onAccept={() => setOpenLegalPanel(null)}
+                />
+              ) : (
+                <CreditsAndAttributionsPanel
+                  onBack={() => setOpenLegalPanel(null)}
+                  onAccept={() => setOpenLegalPanel(null)}
+                />
+              )}
             </motion.div>
           </motion.div>
         )}

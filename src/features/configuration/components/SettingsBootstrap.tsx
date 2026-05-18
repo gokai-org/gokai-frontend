@@ -9,6 +9,7 @@
  *  - appearance.fontSize       → TypographyProvider (setFontSize)
  *  - appearance.japaneseFont   → TypographyProvider (setJapaneseFont)
  *  - accessibility.reduceAnimations → localStorage gokai-animations-enabled
+ *  - accessibility.audioSpeed  → localStorage gokai-audio-speed
  *  - general.confirmAnswers    → localStorage gokai-confirm-answers-enabled
  *  - accessibility.highContrast     → clase CSS high-contrast en <html>
  *
@@ -18,6 +19,7 @@
 import { useEffect, useRef } from "react";
 import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
 import { setStoredAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
+import { setStoredAudioSpeed } from "@/shared/hooks/useAudioPlaybackRate";
 import { useTheme } from "@/shared/hooks/useTheme";
 import { useTypography } from "@/shared/hooks/useTypography";
 import {
@@ -25,6 +27,7 @@ import {
   normalizeJapaneseFont,
 } from "@/shared/hooks/useTypography";
 import { getUserSettings } from "@/features/configuration/services/api";
+import { setStoredStudyBreakReminderPreferences } from "@/features/configuration/lib/studySessionReminder";
 
 const ANIM_KEY = "gokai-animations-enabled";
 const HEAVY_ANIM_KEY = "gokai-heavy-animations-enabled";
@@ -48,7 +51,12 @@ export function SettingsBootstrap() {
         // ── Tipografía ─────────────────────────────────────────
         setFontSize(normalizeFontSize(settings.appearance.fontSize));
         setJapaneseFont(normalizeJapaneseFont(settings.appearance.japaneseFont));
-          setStoredAnswerConfirmationPreference(settings.general.confirmAnswers);
+        setStoredAnswerConfirmationPreference(settings.general.confirmAnswers);
+        setStoredStudyBreakReminderPreferences({
+          breakReminders: settings.general.breakReminders,
+          sessionDuration: settings.general.sessionDuration,
+        });
+        setStoredAudioSpeed(settings.accessibility.audioSpeed);
 
         // ── Animaciones ────────────────────────────────────────
         const noAnim = settings.accessibility.reduceAnimations;

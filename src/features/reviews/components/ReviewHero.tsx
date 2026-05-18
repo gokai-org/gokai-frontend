@@ -53,6 +53,7 @@ export function ReviewHero({
 }: ReviewHeroProps) {
   const [showKazuGuide, setShowKazuGuide] = useState(false);
   const [showStreakGuide, setShowStreakGuide] = useState(false);
+  const [useCompactDesktopHero, setUseCompactDesktopHero] = useState(false);
   const weekDays = ["L", "M", "X", "J", "V", "S", "D"];
   const currentWeekdayIndex = getMexicoCityWeekdayIndex();
   const showStreakFlame = !loading && streakActive && currentStreak > 0;
@@ -118,6 +119,23 @@ export function ReviewHero({
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, [showKazuGuide, showStreakGuide]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const mediaQuery = window.matchMedia("(min-width: 768px) and (max-height: 980px)");
+
+    const updateCompactHero = () => {
+      setUseCompactDesktopHero(mediaQuery.matches);
+    };
+
+    updateCompactHero();
+    mediaQuery.addEventListener("change", updateCompactHero);
+
+    return () => {
+      mediaQuery.removeEventListener("change", updateCompactHero);
+    };
+  }, []);
 
   const modalShellClassName = "fixed inset-0 z-[260] overflow-y-auto";
   const modalBackdropClassName = "fixed inset-0 bg-black/50 backdrop-blur-sm";
@@ -222,7 +240,7 @@ export function ReviewHero({
                   Los 12 estados del fuego
                 </h3>
                 <p className="mt-2 max-w-2xl text-sm font-semibold leading-relaxed text-content-tertiary">
-                  Cada mes activo sube el nivel visual de tu racha. El número dentro del fuego marca el mes alcanzado.
+                  Cada mes activo sube el nivel visual de tu racha. El color cambia por meses, pero el número dentro del fuego marca los días alcanzados.
                 </p>
               </div>
 
@@ -247,7 +265,6 @@ export function ReviewHero({
                       <ReviewStreakFlame
                         days={state.sampleDays}
                         size="compact"
-                        displayValue={String(state.month)}
                       />
                       <div className="min-w-0">
                         <p className="text-sm font-extrabold text-content-primary">
@@ -270,16 +287,16 @@ export function ReviewHero({
     : null;
 
   return (
-    <section className="flex min-h-[calc(100vh-8rem)] flex-col gap-5 xl:h-full xl:min-h-0">
+    <section className="flex min-h-0 flex-col gap-3 xl:gap-2.5">
       {kazuGuideOverlay}
       {streakGuideOverlay}
 
       <div
         data-help-target="reviews-kazu-card"
         data-help-target-priority="2"
-        className="relative min-h-0 flex-1 overflow-hidden rounded-[32px] border border-border-subtle bg-surface-primary p-5 shadow-sm dark:bg-[#161616] sm:p-6 lg:p-8 xl:flex xl:flex-col"
+        className="relative min-h-0 flex-1 overflow-hidden rounded-[32px] border border-border-subtle bg-surface-primary p-4 shadow-sm dark:bg-[#161616] sm:p-5 lg:p-5 xl:flex xl:min-h-0 xl:flex-col xl:p-6"
       >
-        <div className="relative flex min-h-full flex-1 flex-col">
+        <div className={`relative flex min-h-full flex-1 flex-col ${useCompactDesktopHero ? "md:gap-1.5 lg:gap-1" : ""}`}>
           <div className="absolute right-0 top-0 z-20 lg:hidden">
             <div className="min-w-[96px] rounded-[22px] border border-accent/70 bg-accent px-3 py-2 text-right shadow-[0_16px_36px_rgba(155,43,43,0.28)] ring-1 ring-white/10 sm:min-w-[112px] sm:px-3.5 sm:py-2.5">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/80">
@@ -294,49 +311,53 @@ export function ReviewHero({
             </div>
           </div>
 
-          <div className="relative z-30 min-h-[7.5rem] pr-[7.25rem] sm:min-h-[8.25rem] sm:pr-[8.5rem] lg:min-h-0 lg:max-w-[34rem] lg:pr-0">
-            <h1 className="text-4xl font-extrabold leading-none tracking-[0.09em] text-accent sm:text-5xl lg:text-6xl">
-              KAZU
-            </h1>
-            <div className="mt-1 flex items-center gap-2">
-              <p className="text-sm font-semibold text-content-tertiary sm:text-base">
-                Kazu refleja tu constancia
-              </p>
-              <button
-                type="button"
-                aria-label="Ver estados de Kazu"
-                onClick={() => setShowKazuGuide(true)}
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-accent/20 bg-surface-primary text-accent transition-colors hover:border-accent/35 hover:bg-accent/10"
-              >
-                <HelpCircle className="h-3.5 w-3.5" />
-              </button>
+          <div className={useCompactDesktopHero ? "md:grid md:grid-cols-[minmax(0,0.74fr)_minmax(12rem,0.86fr)] md:items-end md:gap-1.5 lg:grid-cols-[minmax(0,0.74fr)_minmax(13rem,0.86fr)]" : ""}>
+            <div className="relative z-30 min-h-[6.25rem] pr-[7rem] sm:min-h-[7rem] sm:pr-[8rem] md:min-h-[6.75rem] lg:min-h-0 lg:max-w-[34rem] lg:pr-0">
+              <h1 className="text-4xl font-extrabold leading-none tracking-[0.09em] text-accent sm:text-5xl lg:text-[4.5rem] xl:text-[5rem]">
+                KAZU
+              </h1>
+              <div className="mt-1 flex items-center gap-2">
+                <p className="text-sm font-semibold text-content-tertiary sm:text-base">
+                  Kazu refleja tu constancia
+                </p>
+                <button
+                  type="button"
+                  aria-label="Ver estados de Kazu"
+                  onClick={() => setShowKazuGuide(true)}
+                  className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-accent/20 bg-surface-primary text-accent transition-colors hover:border-accent/35 hover:bg-accent/10"
+                >
+                  <HelpCircle className="h-3.5 w-3.5" />
+                </button>
+              </div>
+              <div className={`relative flex flex-wrap items-start gap-2 ${useCompactDesktopHero ? "mt-1" : "mt-2"}`}>
+                <p className={`flex-1 text-xs font-semibold leading-relaxed text-content-muted sm:text-sm ${useCompactDesktopHero ? "max-w-[16rem] min-w-0" : "min-w-[14rem]"}`}>
+                  {useCompactDesktopHero
+                    ? "La practica mantiene tu color activo."
+                    : "Tu conocimiento se mantiene con práctica. Si dejas de repasar, el color se desvanece."}
+                </p>
+              </div>
             </div>
-            <div className="relative mt-2 flex flex-wrap items-start gap-3">
-              <p className="min-w-[14rem] flex-1 text-xs font-semibold leading-relaxed text-content-muted sm:text-sm">
-                Tu conocimiento se mantiene con práctica. Si dejas de repasar, el color se desvanece.
-              </p>
+
+            <div
+              data-help-target="reviews-kazu-mascot"
+              className={`relative z-0 mt-2.5 flex min-h-[13rem] items-end justify-center pt-0.5 sm:mt-3 sm:min-h-[16rem] sm:pt-1 md:min-h-[19rem] md:pt-2 ${useCompactDesktopHero ? "md:mt-0 md:min-h-[11.5rem] md:justify-end md:pt-0 lg:min-h-[12.5rem] xl:min-h-[13.5rem]" : "flex-[1] sm:flex-[1.05] md:flex-[1.15] lg:min-h-[17rem] lg:flex-1 lg:pt-1 xl:min-h-[19rem] xl:pt-1.5"}`}
+            >
+              <KazuProgress
+                zones={zones}
+                pendingReviewCount={loading ? 0 : activeCount}
+                state={mascotState}
+                reducedMotion={reducedMotion}
+                className={`relative z-0 mx-auto w-full ${useCompactDesktopHero ? "md:ml-auto md:max-w-[14rem] md:translate-y-1 lg:max-w-[16rem] xl:max-w-[18rem]" : "lg:max-w-[29rem] xl:max-w-[32rem] xl:-translate-y-1"}`}
+              />
             </div>
           </div>
 
-          <div
-            data-help-target="reviews-kazu-mascot"
-            className="relative z-0 mt-4 flex min-h-[16rem] flex-1 items-end justify-center pt-2 sm:mt-5 sm:min-h-[18rem] sm:pt-3 lg:min-h-[20rem]"
-          >
-            <KazuProgress
-              zones={zones}
-              pendingReviewCount={loading ? 0 : activeCount}
-              state={mascotState}
-              reducedMotion={reducedMotion}
-              className="relative z-0 mx-auto w-full"
-            />
-          </div>
-
-          <div className="mt-3 lg:hidden">
+          <div className="mt-4 md:hidden">
             <div
               data-help-target="reviews-streak-panel"
               className="rounded-[24px] border border-border-subtle bg-surface-secondary/80 p-4 shadow-sm"
             >
-              <div className="flex items-center justify-between gap-3">
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3">
                 <div>
                   <div className="flex items-center gap-2">
                     <p className="text-[11px] font-extrabold uppercase tracking-[0.14em] text-accent">
@@ -359,40 +380,35 @@ export function ReviewHero({
                         {loading ? "--" : currentStreak}
                       </p>
                     )}
-                    <span className="pb-0.5 text-xs font-bold text-content-tertiary">
-                      dias
+                    <span className="translate-y-1.5 text-sm font-extrabold text-content-tertiary sm:translate-y-0 sm:text-base">
+                      días
                     </span>
                   </div>
                 </div>
-                <div className="rounded-2xl bg-surface-primary px-3 py-2 text-right shadow-sm ring-1 ring-border-subtle">
-                  <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-content-tertiary">
-                    Estado
+                <div className="flex min-w-0 flex-col items-center justify-center">
+                  <p className="text-sm font-extrabold text-content-tertiary sm:text-base">
+                    Calendario
                   </p>
-                  <p className="mt-1 text-xs font-bold text-content-primary">
-                    {loading ? "--" : streakActive ? "Activa" : "Pausada"}
-                  </p>
+                  <div className="mt-2 grid w-full max-w-[15.5rem] grid-cols-7 justify-items-center gap-1 sm:max-w-[18rem] sm:gap-1.5">
+                    {weekDays.map((day, index) => {
+                      const distanceFromToday = (currentWeekdayIndex - index + weekDays.length) % weekDays.length;
+                      const active = distanceFromToday < activeWeekDays;
+
+                      return (
+                        <div
+                          key={`compact-${day}`}
+                          className={`flex h-7 w-full max-w-7 items-center justify-center rounded-[10px] text-[10px] font-extrabold transition-colors sm:h-8 sm:max-w-8 sm:rounded-xl sm:text-[11px] ${
+                            active
+                              ? "bg-accent text-content-inverted shadow-sm"
+                              : "bg-surface-tertiary text-content-muted"
+                          }`}
+                        >
+                          {day}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-
-              <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-1.5">
-                {weekDays.map((day, index) => {
-                  const distanceFromToday = (currentWeekdayIndex - index + weekDays.length) % weekDays.length;
-                  const active = distanceFromToday < activeWeekDays;
-
-                  return (
-                    <div key={`compact-${day}`} className="flex items-center justify-center">
-                      <div
-                        className={`flex aspect-square w-full max-w-7 items-center justify-center rounded-[10px] text-[10px] font-extrabold transition-colors sm:max-w-8 sm:rounded-xl sm:text-[11px] ${
-                          active
-                            ? "bg-accent text-content-inverted shadow-sm"
-                            : "bg-surface-tertiary text-content-muted"
-                        }`}
-                      >
-                        {day}
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
             </div>
           </div>
@@ -402,13 +418,13 @@ export function ReviewHero({
       <div
         data-help-target="reviews-kazu-stats"
         data-help-target-priority="2"
-        className="relative hidden overflow-hidden rounded-[28px] border border-border-subtle bg-surface-primary p-5 shadow-sm ring-1 ring-black/[0.02] dark:bg-[#161616] dark:ring-white/[0.04] lg:block"
+        className="relative hidden overflow-hidden rounded-[28px] border border-border-subtle bg-surface-primary p-3.5 shadow-sm ring-1 ring-black/[0.02] dark:bg-[#161616] dark:ring-white/[0.04] md:block xl:shrink-0 xl:p-3.5 2xl:p-4.5"
       >
         <div className="pointer-events-none absolute -right-10 -top-10 h-32 w-32 rounded-full bg-accent/10 blur-2xl" />
         <div className="pointer-events-none absolute -bottom-12 left-8 h-28 w-28 rounded-full bg-amber-400/10 blur-2xl" />
         <div
           data-help-target="reviews-streak-panel"
-          className="relative grid gap-5 lg:grid-cols-[minmax(0,0.85fr)_minmax(240px,1fr)] lg:items-center"
+          className="relative grid gap-3 lg:grid-cols-[minmax(0,0.82fr)_minmax(220px,1fr)] lg:items-center"
         >
           <div>
             <div className="flex items-center gap-2 text-accent">
@@ -425,34 +441,27 @@ export function ReviewHero({
                 <HelpCircle className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="mt-3 flex items-end gap-3">
+            <div className="mt-2.5 flex items-end gap-2.5">
               {showStreakFlame ? (
                 <ReviewStreakFlame days={currentStreak} />
               ) : (
-                <p className="text-5xl font-extrabold leading-none text-content-primary sm:text-6xl">
+                <p className="text-4xl font-extrabold leading-none text-content-primary sm:text-5xl">
                   {loading ? "--" : currentStreak}
                 </p>
               )}
-              <span className="pb-1 text-sm font-bold text-content-tertiary sm:text-base">
+              <span className="pb-0.5 text-sm font-extrabold text-content-tertiary sm:text-base">
                 días seguidos
               </span>
             </div>
-            <p className="mt-2 max-w-sm text-sm font-semibold leading-relaxed text-content-tertiary">
-              {loading
-                ? "--"
-                : streakActive
-                  ? "Vas sosteniendo el hábito. Mantén la cadena activa con tu próximo repaso."
-                  : "Tu cadena está en pausa. Un repaso hoy vuelve a encenderla."}
-            </p>
           </div>
 
-          <div className="rounded-[24px] border border-border-subtle bg-surface-secondary/75 p-3 sm:p-4 xl:p-3 2xl:p-5">
-            <div className="flex items-center justify-between gap-3">
+          <div className="rounded-[24px] border border-border-subtle bg-surface-secondary/75 p-3 sm:p-3.5 xl:p-3 2xl:p-4">
+            <div>
               <div>
                 <p className="text-[11px] font-extrabold uppercase tracking-[0.16em] text-content-tertiary">
                   Semana actual
                 </p>
-                <p className="mt-1 text-sm font-semibold text-content-secondary">
+                <p className="mt-1 text-xs font-semibold leading-relaxed text-content-secondary sm:text-sm">
                   {loading
                     ? "--"
                     : streakActive
@@ -460,17 +469,9 @@ export function ReviewHero({
                       : "Completa un repaso para volver a llenarla."}
                 </p>
               </div>
-              <div className="rounded-2xl bg-surface-primary px-2.5 py-2 text-right shadow-sm ring-1 ring-border-subtle sm:px-3">
-                <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-content-tertiary">
-                  Estado
-                </p>
-                <p className="mt-1 text-xs font-bold text-content-primary sm:text-sm">
-                  {loading ? "--" : streakActive ? "En curso" : "Reiniciable"}
-                </p>
-              </div>
             </div>
 
-            <div className="mt-4 grid grid-cols-7 gap-1 sm:gap-1.5">
+            <div className="mt-3 grid grid-cols-7 gap-1 sm:gap-1.5">
               {weekDays.map((day, index) => {
                 const distanceFromToday = (currentWeekdayIndex - index + weekDays.length) % weekDays.length;
                 const active = distanceFromToday < activeWeekDays;

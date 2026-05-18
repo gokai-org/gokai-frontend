@@ -17,6 +17,7 @@ interface AdminFilterDropdownProps<T extends string = string> {
   fullWidth?: boolean;
   menuAlign?: "left" | "right";
   menuDirection?: "up" | "down";
+  disabled?: boolean;
 }
 
 export function AdminFilterDropdown<T extends string = string>({
@@ -28,6 +29,7 @@ export function AdminFilterDropdown<T extends string = string>({
   fullWidth = false,
   menuAlign = "right",
   menuDirection = "down",
+  disabled = false,
 }: AdminFilterDropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -64,9 +66,10 @@ export function AdminFilterDropdown<T extends string = string>({
     <div ref={containerRef} className={["relative", className ?? ""].join(" ")}>
       <button
         type="button"
+        disabled={disabled}
         onClick={() => setOpen((prev) => !prev)}
         className={[
-          "inline-flex h-10 min-w-[240px] items-center justify-between gap-2 rounded-full border border-border-default bg-surface-primary px-4 text-sm font-semibold text-content-secondary transition-all hover:border-accent/30 hover:text-accent",
+          "inline-flex h-10 min-w-[240px] items-center justify-between gap-2 rounded-full border border-border-default bg-surface-primary px-4 text-sm font-semibold text-content-secondary transition-all hover:border-accent/30 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:border-border-default disabled:hover:text-content-secondary",
           fullWidth ? "w-full" : "",
         ].join(" ")}
         aria-haspopup="listbox"
@@ -83,7 +86,7 @@ export function AdminFilterDropdown<T extends string = string>({
         />
       </button>
 
-      {open && (
+      {open && !disabled && (
         <div
           className={[
             "absolute z-20 min-w-[280px] overflow-hidden rounded-2xl border border-border-default bg-surface-primary p-1.5 shadow-xl",

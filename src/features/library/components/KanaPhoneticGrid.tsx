@@ -1,7 +1,16 @@
 ﻿"use client";
 
+import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
 import type { Kana } from "@/features/kana/types";
 import { ScriptCard } from "@/features/library/components/ScriptCard";
@@ -83,6 +92,17 @@ function isElementInsideViewport(rect: DOMRect, padding = 20) {
   );
 }
 
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
+}
+
+type HighlightPopoverPosition = {
+  top: number;
+  left: number;
+  arrowLeft: number;
+  placement: "top" | "bottom";
+};
+
 function HighlightFrame({
   highlighted,
   pulse,
@@ -91,6 +111,9 @@ function HighlightFrame({
   onReturn,
   title,
   description,
+  accentColor,
+  accentBorder,
+  accentRgb,
   children,
   registerRef,
 }: {
@@ -101,12 +124,86 @@ function HighlightFrame({
   onReturn: (event: React.MouseEvent<HTMLButtonElement>) => void;
   title: string;
   description: string;
+  accentColor: string;
+  accentBorder: string;
+  accentRgb: string;
   children: React.ReactNode;
   registerRef?: (element: HTMLDivElement | null) => void;
 }) {
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  const popoverRef = useRef<HTMLDivElement | null>(null);
+  const [position, setPosition] = useState<HighlightPopoverPosition | null>(null);
+
+  const setRootElement = useCallback(
+    (element: HTMLDivElement | null) => {
+      rootRef.current = element;
+      registerRef?.(element);
+    },
+    [registerRef],
+  );
+
+  useLayoutEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const updatePosition = () => {
+      const anchor = rootRef.current;
+      const popover = popoverRef.current;
+
+      if (!anchor || !popover) {
+        return;
+      }
+
+      const anchorRect = anchor.getBoundingClientRect();
+      const popoverRect = popover.getBoundingClientRect();
+      const viewportWidth = window.innerWidth;
+      const viewportHeight = window.innerHeight;
+      const padding = 16;
+      const gap = 16;
+      const fitsAbove = anchorRect.top >= popoverRect.height + gap + padding;
+      const fitsBelow =
+        viewportHeight - anchorRect.bottom >= popoverRect.height + gap + padding;
+      const placement: "top" | "bottom" =
+        fitsAbove || !fitsBelow ? "top" : "bottom";
+      const desiredLeft =
+        anchorRect.left + anchorRect.width / 2 - popoverRect.width / 2;
+      const left = clamp(
+        desiredLeft,
+        padding,
+        Math.max(padding, viewportWidth - popoverRect.width - padding),
+      );
+      const desiredTop =
+        placement === "top"
+          ? anchorRect.top - popoverRect.height - gap
+          : anchorRect.bottom + gap;
+      const top = clamp(
+        desiredTop,
+        padding,
+        Math.max(padding, viewportHeight - popoverRect.height - padding),
+      );
+      const arrowLeft = clamp(
+        anchorRect.left + anchorRect.width / 2 - left,
+        24,
+        Math.max(24, popoverRect.width - 24),
+      );
+
+      setPosition({ top, left, arrowLeft, placement });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [open]);
+
   return (
     <motion.div
-      ref={registerRef}
+      ref={setRootElement}
       tabIndex={highlighted ? -1 : undefined}
       initial={false}
       animate={pulse ? { scale: [1, 1.02, 1] } : { scale: 1 }}
@@ -144,52 +241,104 @@ function HighlightFrame({
           />
 
           {open ? (
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.96 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-              className="absolute left-1/2 top-[calc(100%+1rem)] z-50 w-[min(19rem,calc(100vw-2rem))] -translate-x-1/2 lg:top-auto lg:bottom-[calc(100%+1rem)]"
-            >
-              <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_60px_rgba(15,23,42,0.22)] ring-1 ring-black/5 dark:border-slate-700 dark:bg-[#15161c] dark:shadow-[0_28px_70px_rgba(0,0,0,0.45)] dark:ring-white/10">
-                <div className="relative overflow-hidden border-b border-slate-200 bg-white px-4 py-4 dark:border-slate-700 dark:bg-[#15161c]">
-                  <div
-                    aria-hidden="true"
-                    className="pointer-events-none absolute inset-x-0 top-0 h-full"
-                    style={{
-                      background: "linear-gradient(145deg, rgba(var(--kana-highlight-rgb),0.22), rgba(var(--kana-highlight-rgb),0.1) 45%, transparent 100%)",
-                    }}
-                  />
-                  <div className="relative">
-                    <p className="text-[10px] font-black uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400">
-                    Tabla fonética
-                    </p>
-                    <p className="mt-1 text-base font-black text-slate-950 dark:text-slate-50">
-                      {title}
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                      {description}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex gap-2 bg-slate-50 px-4 py-3 dark:bg-[#111219]">
-                  <button
-                    type="button"
-                    onClick={onAccept}
-                    className="flex-1 rounded-2xl border border-slate-300 bg-white px-3 py-2.5 text-sm font-black text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-slate-400 dark:border-slate-600 dark:bg-[#1a1c24] dark:text-slate-200 dark:hover:bg-[#222531] dark:focus-visible:ring-slate-500 dark:focus-visible:ring-offset-[#111219]"
-                  >
-                    Aceptar
-                  </button>
-                  <button
-                    type="button"
-                    onClick={onReturn}
-                    className="flex-1 rounded-2xl border border-transparent bg-[color:var(--kana-highlight-accent)] px-3 py-2.5 text-sm font-black text-white transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--kana-highlight-accent)] dark:focus-visible:ring-offset-[#111219]"
-                  >
-                    Regresar
-                  </button>
-                </div>
-              </div>
-              <div className="pointer-events-none absolute left-1/2 top-0 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rotate-45 border-l border-t border-slate-200 bg-white lg:top-auto lg:bottom-0 lg:translate-y-1/2 lg:border-l-0 lg:border-t-0 lg:border-r lg:border-b dark:border-slate-700 dark:bg-[#15161c]" />
-            </motion.div>
+            typeof document !== "undefined"
+              ? createPortal(
+                  <div className="pointer-events-none fixed inset-0 z-[90]">
+                    <motion.div
+                      ref={popoverRef}
+                      initial={{
+                        opacity: 0,
+                        y: position?.placement === "bottom" ? -8 : 8,
+                        scale: 0.96,
+                      }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                      className="pointer-events-auto fixed z-50 w-[min(19rem,calc(100vw-2rem))]"
+                      style={{
+                        top: position?.top ?? -9999,
+                        left: position?.left ?? -9999,
+                      }}
+                    >
+                      <div className="relative overflow-visible">
+                        <div
+                          className="overflow-hidden rounded-3xl border bg-[#fbfaf7] shadow-[0_24px_60px_rgba(15,23,42,0.18)] ring-1 dark:bg-[#161616] dark:shadow-[0_28px_70px_rgba(0,0,0,0.52)]"
+                          style={{
+                            borderColor: accentBorder,
+                            boxShadow: `0 24px 60px rgba(15,23,42,0.18), 0 0 0 1px rgba(${accentRgb},0.12)`,
+                          }}
+                        >
+                          <div
+                            className="relative overflow-hidden border-b bg-[#fbfaf7] px-4 py-4 dark:bg-[#161616]"
+                            style={{ borderColor: accentBorder }}
+                          >
+                            <div
+                              aria-hidden="true"
+                              className="pointer-events-none absolute inset-x-0 top-0 h-full"
+                              style={{
+                                background: `linear-gradient(145deg, rgba(15,23,42,0.16), rgba(${accentRgb},0.16) 42%, transparent 100%)`,
+                              }}
+                            />
+                            <div className="relative">
+                              <p
+                                className="text-[10px] font-black uppercase tracking-[0.22em]"
+                                style={{ color: accentColor }}
+                              >
+                                Tabla fonética
+                              </p>
+                              <p className="mt-1 text-base font-black text-neutral-950 dark:text-neutral-50">
+                                {title}
+                              </p>
+                              <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+                                {description}
+                              </p>
+                            </div>
+                          </div>
+                          <div
+                            className="flex gap-2 px-4 py-3 dark:bg-[#101010]"
+                            style={{
+                              background: `linear-gradient(180deg, rgba(${accentRgb},0.08), rgba(15,23,42,0.03))`,
+                            }}
+                          >
+                            <button
+                              type="button"
+                              onClick={onAccept}
+                              className="flex-1 rounded-2xl border border-neutral-300 bg-white px-3 py-2.5 text-sm font-black text-neutral-700 transition hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-neutral-400 dark:border-white/12 dark:bg-[#1c1c1c] dark:text-neutral-200 dark:hover:bg-[#242424] dark:focus-visible:ring-neutral-500 dark:focus-visible:ring-offset-[#101010]"
+                              style={{ borderColor: accentBorder }}
+                            >
+                              Aceptar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={onReturn}
+                              className="flex-1 rounded-2xl border border-transparent bg-[color:var(--kana-highlight-accent)] px-3 py-2.5 text-sm font-black text-white transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[color:var(--kana-highlight-accent)] dark:focus-visible:ring-offset-[#111219]"
+                              style={{
+                                boxShadow: `0 10px 24px -18px rgba(${accentRgb},0.72)`,
+                              }}
+                            >
+                              Regresar
+                            </button>
+                          </div>
+                        </div>
+                        {position ? (
+                          <div
+                            className={[
+                              "pointer-events-none absolute h-4 w-4 rotate-45 bg-[#fbfaf7] dark:bg-[#161616]",
+                              position.placement === "top"
+                                ? "-bottom-2 border-b border-r"
+                                : "-top-2 border-l border-t",
+                            ].join(" ")}
+                            style={{
+                              left: position.arrowLeft - 8,
+                              borderColor: accentBorder,
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                    </motion.div>
+                  </div>,
+                  document.body,
+                )
+              : null
           ) : null}
         </>
       ) : null}
@@ -498,12 +647,18 @@ export function KanaPhoneticGrid({
   onFavoriteToggle,
 }: KanaPhoneticGridProps) {
   const table = useMemo(() => buildPhoneticTable(kanas), [kanas]);
-  const cellRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const desktopCellRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const mobileCellRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const toScriptCard = variant === "hiragana" ? hiraganaToScriptCard : katakanaToScriptCard;
   const mastered = useMasteredModules();
   const platformMotion = usePlatformMotion();
   const isMastered = mastered.has(variant);
   const c = isMastered ? GOLD_COLORS : VARIANT_COLORS[variant];
+  const [isDesktopLayout, setIsDesktopLayout] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(min-width: 1024px)").matches
+      : false,
+  );
   const [highlightPromptOpen, setHighlightPromptOpen] = useState(Boolean(highlightedSymbol));
   const highlightedKana = useMemo(
     () => highlightedSymbol
@@ -511,6 +666,17 @@ export function KanaPhoneticGrid({
       : null,
     [highlightedSymbol, kanas],
   );
+
+  useEffect(() => {
+    const media = window.matchMedia("(min-width: 1024px)");
+    const update = () => {
+      setIsDesktopLayout(media.matches);
+    };
+
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
 
   useEffect(() => {
     setHighlightPromptOpen(Boolean(highlightedSymbol));
@@ -521,7 +687,10 @@ export function KanaPhoneticGrid({
       return;
     }
 
-    const target = cellRefs.current[highlightedKana.id];
+    const activeCellRefs = isDesktopLayout
+      ? desktopCellRefs.current
+      : mobileCellRefs.current;
+    const target = activeCellRefs[highlightedKana.id];
     if (!target) {
       return;
     }
@@ -535,7 +704,7 @@ export function KanaPhoneticGrid({
         return;
       }
 
-      const element = cellRefs.current[highlightedKana.id];
+      const element = activeCellRefs[highlightedKana.id];
 
       if (!element) {
         return;
@@ -583,7 +752,7 @@ export function KanaPhoneticGrid({
       window.cancelAnimationFrame(frameId);
       window.clearTimeout(timeoutId);
     };
-  }, [highlightPromptOpen, highlightedKana]);
+  }, [highlightPromptOpen, highlightedKana, isDesktopLayout]);
 
   const presentRows = useMemo(
     () => PHONETIC_ROWS.filter((row) => table.has(row.key)),
@@ -622,7 +791,6 @@ export function KanaPhoneticGrid({
   };
 
   let cardIndex = 0;
-  let mobileCellIndex = 0;
 
   return (
     <div
@@ -671,15 +839,18 @@ export function KanaPhoneticGrid({
                   return (
                     <HighlightFrame
                       key={kana.id}
-                      highlighted={isHighlighted && highlightPromptOpen}
-                      pulse={isHighlighted && highlightPromptOpen}
-                      open={isHighlighted && highlightPromptOpen}
+                      highlighted={isDesktopLayout && isHighlighted && highlightPromptOpen}
+                      pulse={isDesktopLayout && isHighlighted && highlightPromptOpen}
+                      open={isDesktopLayout && isHighlighted && highlightPromptOpen}
                       onAccept={handleAcceptHighlight}
                       onReturn={handleReturn}
                       title={highlightTitle}
                       description={highlightDescription}
+                      accentColor={c.accent}
+                      accentBorder={c.accentBorder}
+                      accentRgb={c.unlockRgba}
                       registerRef={(element) => {
-                        cellRefs.current[kana.id] = element;
+                        desktopCellRefs.current[kana.id] = element;
                       }}
                     >
                       <ScriptCard
@@ -732,19 +903,21 @@ export function KanaPhoneticGrid({
                     return <MEmptyCell key={`empty-${row.key}-${colIndex}`} />;
                   const isLocked = lockedIds.has(kana.id);
                   const isHighlighted = highlightedKana?.id === kana.id;
-                  const idx = mobileCellIndex++;
                   return (
                     <HighlightFrame
                       key={kana.id}
-                      highlighted={isHighlighted && highlightPromptOpen}
-                      pulse={isHighlighted && highlightPromptOpen}
-                      open={isHighlighted && highlightPromptOpen}
+                      highlighted={!isDesktopLayout && isHighlighted && highlightPromptOpen}
+                      pulse={!isDesktopLayout && isHighlighted && highlightPromptOpen}
+                      open={!isDesktopLayout && isHighlighted && highlightPromptOpen}
                       onAccept={handleAcceptHighlight}
                       onReturn={handleReturn}
                       title={highlightTitle}
                       description={highlightDescription}
+                      accentColor={c.accent}
+                      accentBorder={c.accentBorder}
+                      accentRgb={c.unlockRgba}
                       registerRef={(element) => {
-                        cellRefs.current[kana.id] = element;
+                        mobileCellRefs.current[kana.id] = element;
                       }}
                     >
                       <MiniCell

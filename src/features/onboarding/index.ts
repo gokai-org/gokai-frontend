@@ -2,7 +2,6 @@ export { OnboardingInterestsExperience } from "./components/OnboardingInterestsE
 export { useOnboardingInterests } from "./hooks/useOnboardingInterests";
 export type {
   OnboardingInterest,
-  OnboardingInterestDefinition,
   OnboardingInterestSection,
   OnboardingTheme,
   SaveOnboardingInterestsResponse,

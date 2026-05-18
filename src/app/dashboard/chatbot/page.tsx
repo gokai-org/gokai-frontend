@@ -389,7 +389,6 @@ function ChatbotExperience() {
                 {desktopPanel.kind === "recommendations" ? (
                   <ChatRecommendationsPanel
                     recommendations={recommendations}
-                    currentChatName={currentChat?.name}
                     onClose={() => setDesktopPanel(null)}
                   />
                 ) : (
@@ -413,7 +412,6 @@ function ChatbotExperience() {
       >
         <ChatRecommendationsPanel
           recommendations={recommendations}
-          currentChatName={currentChat?.name}
         />
       </ChatSurfacePanel>
 

@@ -37,7 +37,7 @@ export interface LearningSettings {
 export interface AccessibilitySettings {
   highContrast: boolean;
   reduceAnimations: boolean;
-  audioSpeed: string; // "Muy lento" | "Lento" | "Normal" | "Rápido"
+  audioSpeed: string; // "Muy lento" | "Lento" | "Normal" | "Alta" | "Rápido"
 }
 
 /** Privacy settings */

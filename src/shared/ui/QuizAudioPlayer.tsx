@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useAudioPlaybackRate } from "@/shared/hooks/useAudioPlaybackRate";
 
 type QuizAudioPlayerProps = {
   audioUrl: string;
@@ -25,9 +26,20 @@ function formatTime(value: number) {
 
 export function QuizAudioPlayer({ audioUrl }: QuizAudioPlayerProps) {
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const { playbackRate } = useAudioPlaybackRate();
   const [isPlaying, setIsPlaying] = useState(false);
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+
+    if (!audio) {
+      return;
+    }
+
+    audio.playbackRate = playbackRate;
+  }, [audioUrl, playbackRate]);
 
   useEffect(() => {
     const audio = audioRef.current;

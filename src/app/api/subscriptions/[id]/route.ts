@@ -61,21 +61,6 @@ export async function GET(
 
     const data = await readJsonSafe(response);
     if (!response.ok) {
-      if (response.status === 403 || response.status === 404) {
-        const meResponse = await fetch(
-          `${apiConfig.subscriptionsApiBase}/subscriptions/me`,
-          {
-            method: "GET",
-            headers,
-          },
-        );
-
-        const meData = await readJsonSafe(meResponse);
-        if (meResponse.ok) {
-          return NextResponse.json(meData);
-        }
-      }
-
       return NextResponse.json(data, { status: response.status });
     }
 

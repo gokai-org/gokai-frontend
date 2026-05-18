@@ -26,6 +26,7 @@ import {
   UnlockedMasterySequence,
 } from "@/shared/ui/ReaffirmedMasteryResult";
 import { AnswerConfirmationPanel } from "@/shared/ui";
+import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
 
 const KANA_COMPLETION_REWARD = 5;
 
@@ -62,6 +63,7 @@ export function KanaQuizModal({
   onComplete,
 }: KanaQuizModalProps) {
   useMiniDockBlocker(true);
+  useStudySessionActivity(kanaType ? `${kanaType}-quiz` : "kana-quiz");
 
   const quiz = useKanaQuiz();
   const platformMotion = usePlatformMotion();

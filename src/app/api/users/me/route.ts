@@ -172,23 +172,17 @@ export async function GET(req: NextRequest) {
             ...(payload?.email ? { "X-User-Email": String(payload.email) } : {}),
           };
 
-          const subscriptionUrls = [
+          const subRes = await fetch(
             `${apiConfig.subscriptionsApiBase}/subscriptions/${userId}`,
-            `${apiConfig.subscriptionsApiBase}/subscriptions/me`,
-          ];
-
-          let subData: Record<string, unknown> | null = null;
-
-          for (const url of subscriptionUrls) {
-            const subRes = await fetch(url, {
+            {
               headers: subHeaders,
               cache: "no-store",
-            });
-            if (!subRes.ok) continue;
+            },
+          );
 
-            subData = await subRes.json().catch(() => null);
-            if (subData) break;
-          }
+          const subData = subRes.ok
+            ? await subRes.json().catch(() => null)
+            : null;
 
           if (subData) {
             const status = String(subData.status ?? "").toLowerCase();
@@ -376,12 +370,38 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    await fetch(`${apiConfig.usersApiBase}/users/me`, {
+    const tokenParts = token.split(".");
+
+    if (tokenParts.length !== 3) {
+      return NextResponse.json({ error: "Token inválido" }, { status: 401 });
+    }
+
+    const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
+    const userId = payload.userId || payload.sub || payload.id;
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: "No se pudo obtener el ID del usuario" },
+        { status: 401 },
+      );
+    }
+
+    const response = await fetch(`${apiConfig.usersApiBase}/users/${userId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
       },
     });
+
+    if (!response.ok) {
+      const data = await response.json().catch(() => null);
+      const error =
+        data && typeof data.error === "string"
+          ? data.error
+          : "Error al eliminar cuenta";
+
+      return NextResponse.json({ error }, { status: response.status });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

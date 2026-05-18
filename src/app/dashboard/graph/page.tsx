@@ -2,7 +2,15 @@
 
 import { animate, motion, useMotionValue } from "framer-motion";
 import { Compass, Menu, PanelsTopLeft, Sparkles } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, startTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  startTransition,
+  type CSSProperties,
+} from "react";
 import { useSearchParams } from "next/navigation";
 import type { GraphEdge, GraphNode } from "@/features/graph/lib/graphTypes";
 import JapanRegionMap from "@/features/graph/vocabulary/components/JapanRegionMap";
@@ -86,6 +94,14 @@ type SvgSceneFrame = {
   y: number;
   width: number;
   height: number;
+};
+
+type VocabularyMapOverlayMetrics = {
+  edge: number;
+  fontSize: number;
+  insetX: number;
+  insetY: number;
+  sideWidth: number;
 };
 
 type VocabularyGraphHistoryState = {
@@ -289,43 +305,81 @@ function getRegionTarget(target: EventTarget | null): VocabularyRegionId | null 
   );
 }
 
+function getVocabularyMapOverlayMetrics(
+  sceneSize: { width: number; height: number },
+): VocabularyMapOverlayMetrics {
+  return {
+    edge: clamp(sceneSize.width * 0.013, 8, 12),
+    fontSize: clamp(sceneSize.width * 0.0175, 8.5, 10.5),
+    insetX: clamp(sceneSize.width * 0.05, 24, 52),
+    insetY: clamp(sceneSize.height * 0.046, 24, 38),
+    sideWidth: clamp(sceneSize.width * 0.04, 18, 24),
+  };
+}
+
+function getVocabularyMapViewportArea(
+  sceneSize: { width: number; height: number },
+  metrics: VocabularyMapOverlayMetrics,
+) {
+  const width = Math.max(sceneSize.width - metrics.insetX * 2, 0);
+  const height = Math.max(sceneSize.height - metrics.insetY * 2, 0);
+
+  return {
+    x: metrics.insetX,
+    y: metrics.insetY,
+    width,
+    height,
+  };
+}
+
 function getRenderedSvgFrame(
   sceneSize: { width: number; height: number },
   viewport: VocabularyRegionLayout["viewport"],
+  renderArea?: { x: number; y: number; width: number; height: number },
 ): SvgSceneFrame {
+  const areaX = renderArea?.x ?? 0;
+  const areaY = renderArea?.y ?? 0;
+  const areaWidth = renderArea?.width ?? sceneSize.width;
+  const areaHeight = renderArea?.height ?? sceneSize.height;
+
   if (
-    !sceneSize.width ||
-    !sceneSize.height ||
+    !areaWidth ||
+    !areaHeight ||
     !viewport.width ||
     !viewport.height
   ) {
-    return { x: 0, y: 0, width: sceneSize.width, height: sceneSize.height };
+    return {
+      x: areaX,
+      y: areaY,
+      width: areaWidth,
+      height: areaHeight,
+    };
   }
 
   const svgAspect = viewport.width / viewport.height;
-  const sceneAspect = sceneSize.width / sceneSize.height;
+  const sceneAspect = areaWidth / areaHeight;
 
   // preserveAspectRatio="xMidYMid meet": scale to FIT (no clipping, full map visible)
   if (sceneAspect > svgAspect) {
     // viewport wider than SVG → fits by HEIGHT, letterbox left/right
-    const height = sceneSize.height;
+    const height = areaHeight;
     const width = height * svgAspect;
 
     return {
-      x: (sceneSize.width - width) / 2,
-      y: 0,
+      x: areaX + (areaWidth - width) / 2,
+      y: areaY,
       width,
       height,
     };
   }
 
   // viewport taller than SVG → fits by WIDTH, letterbox top/bottom
-  const width = sceneSize.width;
+  const width = areaWidth;
   const height = width / svgAspect;
 
   return {
-    x: 0,
-    y: (sceneSize.height - height) / 2,
+    x: areaX,
+    y: areaY + (areaHeight - height) / 2,
     width,
     height,
   };
@@ -786,6 +840,7 @@ export default function Page() {
   const currentLevelRef = useRef<VocabularyViewLevel>("map");
   const selectedRegionIdRef = useRef<VocabularyRegionId | null>(null);
   const helpThemeRef = useRef<VocabularyRegionThemeNode | null>(null);
+  const sceneGestureRectRef = useRef<{ left: number; top: number } | null>(null);
   const regionGraphRef = useRef<{
     nodes: GraphNode[];
     edges: GraphEdge[];
@@ -899,12 +954,41 @@ export default function Page() {
         : undefined) ?? Object.values(regionLayouts).find(Boolean)?.viewport,
     [regionLayouts, selectedRegion],
   );
+  const mapOverlayMetrics = useMemo(
+    () => getVocabularyMapOverlayMetrics(sceneSize),
+    [sceneSize],
+  );
+  const mapViewportArea = useMemo(
+    () => getVocabularyMapViewportArea(sceneSize, mapOverlayMetrics),
+    [mapOverlayMetrics, sceneSize],
+  );
+  const mapFrameStyle = useMemo(
+    () =>
+      ({
+        "--vocabulary-map-coordinate-edge": `${mapOverlayMetrics.edge}px`,
+        "--vocabulary-map-coordinate-font-size": `${mapOverlayMetrics.fontSize}px`,
+        "--vocabulary-map-coordinate-inset-x": `${mapOverlayMetrics.insetX}px`,
+        "--vocabulary-map-coordinate-inset-y": `${mapOverlayMetrics.insetY}px`,
+        "--vocabulary-map-coordinate-side-width": `${mapOverlayMetrics.sideWidth}px`,
+      }) as CSSProperties,
+    [mapOverlayMetrics],
+  );
+  const mapSafeAreaStyle = useMemo(
+    () =>
+      ({
+        left: mapViewportArea.x,
+        top: mapViewportArea.y,
+        width: mapViewportArea.width,
+        height: mapViewportArea.height,
+      }) satisfies CSSProperties,
+    [mapViewportArea],
+  );
   const mapFrame = useMemo(
     () =>
       mapViewport
-        ? getRenderedSvgFrame(sceneSize, mapViewport)
+        ? getRenderedSvgFrame(sceneSize, mapViewport, mapViewportArea)
         : { x: 0, y: 0, width: sceneSize.width, height: sceneSize.height },
-    [mapViewport, sceneSize],
+    [mapViewport, mapViewportArea, sceneSize],
   );
   const graphInteractionDisabled = Boolean(
     pendingThemeId || pendingGraphNodeId || actionPendingId || subthemeWordsLoading,
@@ -2416,7 +2500,11 @@ export default function Page() {
       return { scale: 1.8, x: 0, y: 0 };
     }
 
-    const svgFrame = getRenderedSvgFrame(sceneSize, layout.viewport);
+    const svgFrame = getRenderedSvgFrame(
+      sceneSize,
+      layout.viewport,
+      mapViewportArea,
+    );
     const regionFocusFrame = getRegionFocusFrame(svgFrame, bounds);
     const centeredRegionTransform = getCameraTransformForFocusFrame({
       focusFrame: regionFocusFrame,
@@ -2424,7 +2512,7 @@ export default function Page() {
       sceneSize,
       minScale: AUTO_REGION_MIN_SCALE,
       maxScale: MAX_SCENE_SCALE,
-      viewportArea: { x: 0, y: 0, width: sceneSize.width, height: sceneSize.height },
+      viewportArea: mapViewportArea,
     });
 
     if (currentLevel === "region") {
@@ -2448,13 +2536,18 @@ export default function Page() {
               Math.round(sceneSize.width * LESSON_DRAWER_MAX_VIEWPORT_RATIO),
             );
             const availableWidth = Math.max(
-              sceneSize.width - lessonDrawerWidth,
-              sceneSize.width * 0.42,
+              mapViewportArea.width - lessonDrawerWidth,
+              mapViewportArea.width * 0.42,
             );
 
-            return { x: 0, y: 0, width: availableWidth, height: sceneSize.height };
+            return {
+              x: mapViewportArea.x,
+              y: mapViewportArea.y,
+              width: availableWidth,
+              height: mapViewportArea.height,
+            };
           })()
-        : { x: 0, y: 0, width: sceneSize.width, height: sceneSize.height };
+        : mapViewportArea;
       const desiredScale = centeredRegionTransform.scale * (
         isWordFocus ? AUTO_WORD_FOCUS_SCALE : AUTO_NODE_FOCUS_SCALE
       );
@@ -2493,6 +2586,7 @@ export default function Page() {
     currentLevel,
     focusedVectorNode,
     isLessonOpen,
+    mapViewportArea,
     regionLayouts,
     sceneSize,
     selectedRegion,
@@ -2645,6 +2739,27 @@ export default function Page() {
     [applyManualTransform, clampManualScale],
   );
 
+  const zoomAndPanAt = useCallback(
+    (center: PointerPosition, factor: number, delta: PointerPosition) => {
+      const auto = autoTransformRef.current;
+      const current = manualTransformRef.current;
+      const nextScale = clampManualScale(current.scale * factor);
+      const currentFullScale = auto.scale * current.scale;
+      const nextFullScale = auto.scale * nextScale;
+      const fullX = auto.x + current.x;
+      const fullY = auto.y + current.y;
+      const nextFullX = center.x - ((center.x - fullX) / currentFullScale) * nextFullScale;
+      const nextFullY = center.y - ((center.y - fullY) / currentFullScale) * nextFullScale;
+
+      applyManualTransform({
+        scale: nextScale,
+        x: nextFullX - auto.x + delta.x,
+        y: nextFullY - auto.y + delta.y,
+      });
+    },
+    [applyManualTransform, clampManualScale],
+  );
+
   // Native wheel handler — registered with { passive: false } so preventDefault works
   const handleWheelNative = useCallback(
     (event: WheelEvent) => {
@@ -2722,6 +2837,10 @@ export default function Page() {
 
       isNavigatingRef.current = true;
       if (sceneRef.current) sceneRef.current.style.cursor = "grabbing";
+      const sceneRect = sceneRef.current?.getBoundingClientRect();
+      sceneGestureRectRef.current = sceneRect
+        ? { left: sceneRect.left, top: sceneRect.top }
+        : null;
 
       const position = { x: event.clientX, y: event.clientY };
       pointersRef.current.set(event.pointerId, position);
@@ -2773,26 +2892,23 @@ export default function Page() {
       const position = { x: event.clientX, y: event.clientY };
       pointersRef.current.set(event.pointerId, position);
 
-      const pointers = Array.from(pointersRef.current.values());
+      const pointersIterator = pointersRef.current.values();
+      const firstPointer = pointersIterator.next().value;
+      const secondPointer = pointersIterator.next().value;
 
-      if (pointers.length >= 2) {
-        const distance = getDistance(pointers[0], pointers[1]);
-        const center = getMidpoint(pointers[0], pointers[1]);
+      if (firstPointer && secondPointer) {
+        const distance = getDistance(firstPointer, secondPointer);
+        const center = getMidpoint(firstPointer, secondPointer);
         const previous = pinchRef.current;
 
         if (previous && previous.distance > 0) {
-          const rect = sceneRef.current?.getBoundingClientRect();
+          const rect = sceneGestureRectRef.current;
           dismissGraphHovers();
-          zoomAt(
+          zoomAndPanAt(
             rect ? { x: center.x - rect.left, y: center.y - rect.top } : center,
             clamp(distance / previous.distance, 0.82, 1.22),
+            { x: center.x - previous.center.x, y: center.y - previous.center.y },
           );
-          const current = manualTransformRef.current;
-          applyManualTransform({
-            ...current,
-            x: current.x + center.x - previous.center.x,
-            y: current.y + center.y - previous.center.y,
-          });
         }
 
         pinchRef.current = { distance, center };
@@ -2825,7 +2941,7 @@ export default function Page() {
         applyManualTransform({ ...current, x: current.x + deltaX, y: current.y + deltaY });
       }
     },
-    [applyManualTransform, dismissGraphHovers, zoomAt],
+    [applyManualTransform, dismissGraphHovers, zoomAndPanAt],
   );
 
   const handlePointerEnd = useCallback(
@@ -2845,6 +2961,7 @@ export default function Page() {
           dragRef.current = null;
           pinchRef.current = null;
           isNavigatingRef.current = false;
+          sceneGestureRectRef.current = null;
           if (sceneRef.current) sceneRef.current.style.cursor = "grab";
           transformLayerRef.current?.classList.remove("is-dragging");
         }
@@ -2870,6 +2987,7 @@ export default function Page() {
         dragRef.current = null;
         pinchRef.current = null;
         isNavigatingRef.current = false;
+        sceneGestureRectRef.current = null;
         if (sceneRef.current) sceneRef.current.style.cursor = "grab";
         transformLayerRef.current?.classList.remove("is-dragging");
 
@@ -3075,8 +3193,10 @@ export default function Page() {
             <div
               data-help-target="vocabulary-map-view"
               className="vocabulary-map-frame absolute inset-0 pointer-events-none"
+              style={mapFrameStyle}
             >
-              <div className="h-full w-full pointer-events-auto">
+              <div className="vocabulary-map-safe-area absolute" style={mapSafeAreaStyle}>
+                <div className="h-full w-full pointer-events-auto">
                 <JapanRegionMap
                   regions={regions}
                   selectedRegionId={activeRegionId}
@@ -3088,6 +3208,7 @@ export default function Page() {
                   onRegionSelect={handleMapRegionSelect}
                   onLayoutChange={handleRegionLayoutsChange}
                 />
+                </div>
               </div>
               <div className="vocabulary-map-coordinate-grid" aria-hidden="true">
                 {JAPAN_LONGITUDE_COORDINATES.map((coordinate) => (
@@ -3151,7 +3272,8 @@ export default function Page() {
               !graphTransitionLoading && regionThemeLayoutReady ? (
                 <div
                   data-help-target="vocabulary-region-graph"
-                  className="absolute inset-0 pointer-events-none"
+                  className="vocabulary-map-safe-area absolute pointer-events-none"
+                  style={mapSafeAreaStyle}
                 >
                   <div className="h-full w-full pointer-events-auto">
                     <RegionThemeGraph
@@ -3176,7 +3298,8 @@ export default function Page() {
             (currentLevel === "theme" || currentLevel === "subtheme") ? (
               <div
                 data-help-target="vocabulary-subtheme-graph"
-                className="absolute inset-0 pointer-events-none"
+                className="vocabulary-map-safe-area absolute pointer-events-none"
+                style={mapSafeAreaStyle}
               >
                 <div className="h-full w-full pointer-events-auto">
                   <RegionVectorGraph

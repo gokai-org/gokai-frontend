@@ -21,6 +21,7 @@ type VocabularySpeakingExerciseProps = {
 };
 
 const MIN_PRONUNCIATION_DURATION_SECONDS = 1;
+const MAX_PRONUNCIATION_DURATION_SECONDS = 5;
 const MIN_AUDIO_BLOB_SIZE_BYTES = 4096;
 const MIN_WAVEFORM_SAMPLE_COUNT = 10;
 const MIN_WAVEFORM_AVERAGE = 6.4;
@@ -39,6 +40,10 @@ function normalizePronunciationScore(score: number) {
 function getRecordingValidationError(recording: RecordedAudioResult) {
   if (recording.durationInSeconds < MIN_PRONUNCIATION_DURATION_SECONDS) {
     return "Tu grabación quedó demasiado corta. Habla al menos un instante completo antes de detenerla.";
+  }
+
+  if (recording.durationInSeconds > MAX_PRONUNCIATION_DURATION_SECONDS) {
+    return "El audio no puede durar más de 5 segundos. Se descartó el intento y debes grabar de nuevo.";
   }
 
   if (recording.blob.size < MIN_AUDIO_BLOB_SIZE_BYTES) {
@@ -72,6 +77,7 @@ export default function VocabularySpeakingExercise({
   const {
     isRecording,
     isPreparing,
+    durationInSeconds,
     formattedDuration,
     audioLevel,
     waveformBars,
@@ -94,6 +100,28 @@ export default function VocabularySpeakingExercise({
     };
   }, [attempt]);
 
+  useEffect(() => {
+    if (!isRecording || durationInSeconds <= MAX_PRONUNCIATION_DURATION_SECONDS) {
+      return;
+    }
+
+    cancelRecording();
+    clearError();
+    setRequestPending(false);
+    setFeedback(null);
+    setAttempt((current) => {
+      if (current?.url) {
+        URL.revokeObjectURL(current.url);
+      }
+
+      return null;
+    });
+    setRequestError(
+      "El audio no puede durar más de 5 segundos. Se descartó el intento y debes grabar de nuevo.",
+    );
+    onScoreChange(null);
+  }, [cancelRecording, clearError, durationInSeconds, isRecording, onScoreChange]);
+
   const attemptDuration = useMemo(
     () => (attempt ? formatAudioDuration(attempt.durationInSeconds) : "00:00"),
     [attempt],
@@ -114,6 +142,7 @@ export default function VocabularySpeakingExercise({
         const nextFeedback = await getVocabularyPronunciationFeedback(
           question.wordId,
           wavFile,
+          question.hiragana,
         );
         const nextScore = normalizePronunciationScore(nextFeedback.score);
 
@@ -161,6 +190,22 @@ export default function VocabularySpeakingExercise({
       return;
     }
 
+    const validationError = getRecordingValidationError(recording);
+    if (validationError) {
+      URL.revokeObjectURL(recording.url);
+      setAttempt((current) => {
+        if (current?.url) {
+          URL.revokeObjectURL(current.url);
+        }
+
+        return null;
+      });
+      setFeedback(null);
+      setRequestError(validationError);
+      onScoreChange(null);
+      return;
+    }
+
     setAttempt((current) => {
       if (current?.url) {
         URL.revokeObjectURL(current.url);
@@ -168,14 +213,6 @@ export default function VocabularySpeakingExercise({
 
       return recording;
     });
-
-    const validationError = getRecordingValidationError(recording);
-    if (validationError) {
-      setFeedback(null);
-      setRequestError(validationError);
-      onScoreChange(null);
-      return;
-    }
 
     await evaluateAttempt(recording);
   }, [evaluateAttempt, onScoreChange, stopRecording]);
@@ -206,7 +243,7 @@ export default function VocabularySpeakingExercise({
           Pronunciación guiada
         </p>
         <p className="mt-2 text-sm leading-relaxed text-content-secondary">
-          Graba tu intento y recibirás una evaluación automática de pronunciación para esta palabra.
+          Graba tu intento y recibirás una evaluación automática de pronunciación para esta palabra. El audio debe durar como máximo 5 segundos.
         </p>
       </div>
 

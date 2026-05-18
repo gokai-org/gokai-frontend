@@ -29,6 +29,7 @@ import {
   UnlockedMasterySequence,
 } from "@/shared/ui/ReaffirmedMasteryResult";
 import { AnswerConfirmationPanel } from "@/shared/ui";
+import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
 
 export type KanjiQuizCompletionResult = {
   score: number;
@@ -63,6 +64,7 @@ export function KanjiQuizModal({
   onComplete,
 }: KanjiQuizModalProps) {
   useMiniDockBlocker(true);
+  useStudySessionActivity("kanji-quiz");
 
   const quiz = useKanjiQuiz();
   const platformMotion = usePlatformMotion();
