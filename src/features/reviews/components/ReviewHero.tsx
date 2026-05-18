@@ -123,7 +123,7 @@ export function ReviewHero({
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const mediaQuery = window.matchMedia("(min-width: 1024px) and (max-height: 760px)");
+    const mediaQuery = window.matchMedia("(min-width: 768px) and (max-height: 900px)");
 
     const updateCompactHero = () => {
       setUseCompactDesktopHero(mediaQuery.matches);
@@ -287,16 +287,16 @@ export function ReviewHero({
     : null;
 
   return (
-    <section className="flex min-h-0 flex-col gap-5 xl:gap-4">
+    <section className="flex min-h-0 flex-col gap-4 xl:gap-3">
       {kazuGuideOverlay}
       {streakGuideOverlay}
 
       <div
         data-help-target="reviews-kazu-card"
         data-help-target-priority="2"
-        className="relative min-h-0 flex-1 overflow-hidden rounded-[32px] border border-border-subtle bg-surface-primary p-5 shadow-sm dark:bg-[#161616] sm:p-6 lg:p-8 xl:flex xl:min-h-0 xl:flex-col"
+        className="relative min-h-0 flex-1 overflow-hidden rounded-[32px] border border-border-subtle bg-surface-primary p-5 shadow-sm dark:bg-[#161616] sm:p-6 lg:p-6 xl:flex xl:min-h-0 xl:flex-col xl:p-7"
       >
-        <div className={`relative flex min-h-full flex-1 flex-col ${useCompactDesktopHero ? "lg:gap-2" : ""}`}>
+        <div className={`relative flex min-h-full flex-1 flex-col ${useCompactDesktopHero ? "md:gap-2 lg:gap-1.5" : ""}`}>
           <div className="absolute right-0 top-0 z-20 lg:hidden">
             <div className="min-w-[96px] rounded-[22px] border border-accent/70 bg-accent px-3 py-2 text-right shadow-[0_16px_36px_rgba(155,43,43,0.28)] ring-1 ring-white/10 sm:min-w-[112px] sm:px-3.5 sm:py-2.5">
               <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-white/80">
@@ -311,8 +311,8 @@ export function ReviewHero({
             </div>
           </div>
 
-          <div className={useCompactDesktopHero ? "lg:grid lg:grid-cols-[minmax(0,0.72fr)_minmax(14rem,0.9fr)] lg:items-end lg:gap-2" : ""}>
-            <div className="relative z-30 min-h-[7.5rem] pr-[7.25rem] sm:min-h-[8.25rem] sm:pr-[8.5rem] md:min-h-[9rem] lg:min-h-0 lg:max-w-[36rem] lg:pr-0">
+          <div className={useCompactDesktopHero ? "md:grid md:grid-cols-[minmax(0,0.72fr)_minmax(13rem,0.9fr)] md:items-end md:gap-2 lg:grid-cols-[minmax(0,0.72fr)_minmax(14rem,0.9fr)]" : ""}>
+            <div className="relative z-30 min-h-[6.75rem] pr-[7.25rem] sm:min-h-[7.5rem] sm:pr-[8.5rem] md:min-h-[7.5rem] lg:min-h-0 lg:max-w-[36rem] lg:pr-0">
               <h1 className="text-4xl font-extrabold leading-none tracking-[0.09em] text-accent sm:text-5xl lg:text-[4.5rem] xl:text-[5rem]">
                 KAZU
               </h1>
@@ -329,7 +329,7 @@ export function ReviewHero({
                   <HelpCircle className="h-3.5 w-3.5" />
                 </button>
               </div>
-              <div className="relative mt-2 flex flex-wrap items-start gap-3">
+              <div className={`relative flex flex-wrap items-start gap-3 ${useCompactDesktopHero ? "mt-1.5" : "mt-2"}`}>
                 <p className={`flex-1 text-xs font-semibold leading-relaxed text-content-muted sm:text-sm ${useCompactDesktopHero ? "max-w-[18rem] min-w-0" : "min-w-[14rem]"}`}>
                   {useCompactDesktopHero
                     ? "La practica mantiene tu color activo."
@@ -340,14 +340,14 @@ export function ReviewHero({
 
             <div
               data-help-target="reviews-kazu-mascot"
-              className={`relative z-0 mt-4 flex min-h-[17rem] items-end justify-center pt-2 sm:mt-5 sm:min-h-[20rem] sm:pt-3 md:min-h-[28rem] md:pt-5 ${useCompactDesktopHero ? "lg:mt-0 lg:min-h-[15.5rem] lg:justify-end lg:pt-0 xl:min-h-[17rem]" : "flex-[1.1] sm:flex-[1.2] md:flex-[1.65] lg:min-h-[21rem] lg:flex-1 lg:pt-1 xl:min-h-[23rem] xl:pt-2"}`}
+              className={`relative z-0 mt-3 flex min-h-[15rem] items-end justify-center pt-1 sm:mt-4 sm:min-h-[18rem] sm:pt-2 md:min-h-[22rem] md:pt-3 ${useCompactDesktopHero ? "md:mt-0 md:min-h-[13.5rem] md:justify-end md:pt-0 lg:min-h-[14.5rem] xl:min-h-[15.5rem]" : "flex-[1.05] sm:flex-[1.15] md:flex-[1.35] lg:min-h-[19rem] lg:flex-1 lg:pt-1 xl:min-h-[21rem] xl:pt-2"}`}
             >
               <KazuProgress
                 zones={zones}
                 pendingReviewCount={loading ? 0 : activeCount}
                 state={mascotState}
                 reducedMotion={reducedMotion}
-                className={`relative z-0 mx-auto w-full ${useCompactDesktopHero ? "lg:ml-auto lg:max-w-[20rem] lg:translate-y-3 xl:max-w-[22rem]" : "lg:max-w-[36rem] lg:-translate-y-2 xl:max-w-[38rem] xl:-translate-y-3"}`}
+                className={`relative z-0 mx-auto w-full ${useCompactDesktopHero ? "md:ml-auto md:max-w-[16rem] md:translate-y-2 lg:max-w-[18rem] xl:max-w-[20rem]" : "lg:max-w-[32rem] lg:-translate-y-1 xl:max-w-[35rem] xl:-translate-y-2"}`}
               />
             </div>
           </div>
