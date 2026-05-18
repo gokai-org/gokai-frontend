@@ -547,6 +547,10 @@ export default function VocabularyWordGuide({
   }, [activePopover, setActivePopover]);
 
   useEffect(() => {
+    if (activeTab !== "writing" || kanaCatalog) {
+      return;
+    }
+
     let cancelled = false;
 
     const loadKanaCatalog = async () => {
@@ -567,7 +571,7 @@ export default function VocabularyWordGuide({
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [activeTab, kanaCatalog]);
 
   const switchTab = useCallback((tab: VocabularyGuideTab) => {
     if (tab === activeTab) return;

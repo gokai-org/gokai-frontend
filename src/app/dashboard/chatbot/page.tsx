@@ -460,7 +460,7 @@ export default function ChatbotPage() {
             primaryHref="/checkout?returnTo=%2Fdashboard%2Fchatbot"
             primaryLabel="Convertirte en Pro"
             secondaryHref="/auth/membership?from=dashboard&returnTo=%2Fdashboard%2Fchatbot"
-            secondaryLabel="Comparar planes"
+            secondaryLabel="Ver planes"
             featureLabel="Chatbot premium"
             detailItems={[
               "Conversaciones ilimitadas",

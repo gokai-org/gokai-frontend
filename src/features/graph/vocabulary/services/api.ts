@@ -21,6 +21,28 @@ import type {
 
 const VOCABULARY_GRAPHS_CACHE_KEY = "study-vocabulary-graphs";
 const CACHE_TTL_MS = 30_000;
+const VOCABULARY_QUIZ_CACHE_TTL_MS = 15_000;
+
+function getVocabularyQuizCacheKey(
+  nodeId: string,
+  type: VocabularyAnswerType,
+  wordId?: string,
+) {
+  return [
+    "study-vocabulary-quiz",
+    nodeId,
+    type,
+    wordId?.trim() || "default",
+  ].join(":");
+}
+
+function invalidateVocabularyQuizCache(
+  nodeId: string,
+  type: VocabularyAnswerType,
+  wordId?: string,
+) {
+  invalidateApiCache(getVocabularyQuizCacheKey(nodeId, type, wordId));
+}
 
 function normalizeArrayResponse<T>(response: T[] | null | undefined) {
   return Array.isArray(response) ? response : [];
@@ -133,6 +155,12 @@ export async function getVocabularyQuiz(
 
   return apiFetch<VocabularyQuiz>(
     `/api/study/vocabulary/quiz/${nodeId}?${query.toString()}`,
+    {},
+    {
+      dedupeKey: getVocabularyQuizCacheKey(nodeId, type, wordId),
+      cacheKey: getVocabularyQuizCacheKey(nodeId, type, wordId),
+      cacheTtlMs: VOCABULARY_QUIZ_CACHE_TTL_MS,
+    },
   );
 }
 
@@ -148,6 +176,10 @@ export async function saveVocabularyNodeAnswers(
     },
   );
 
+  invalidateVocabularyQuizCache(nodeId, payload.answerType);
+  for (const answer of payload.answers) {
+    invalidateVocabularyQuizCache(nodeId, payload.answerType, answer.wordId);
+  }
   invalidateVocabularyGraphCaches();
   return response;
 }
