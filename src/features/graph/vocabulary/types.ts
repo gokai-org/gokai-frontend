@@ -127,6 +127,7 @@ export type VocabularyThemeContent = {
   kanji: string;
   kana: string;
   meaning: string;
+  region?: VocabularyRegionId | string | null;
   released: boolean;
   isUnlocked?: boolean | null;
   selectedAt?: string | null;

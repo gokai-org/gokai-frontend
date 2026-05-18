@@ -11,14 +11,14 @@ export default function AdminContentShell({
   const pathname = usePathname();
 
   const isSupport = pathname === "/admin/dashboard/support";
-  const isLessons = pathname === "/admin/dashboard/lessons";
+  const isVocabulary = pathname === "/admin/dashboard/vocabulary";
   const isStatistics = pathname === "/admin/dashboard/statistics";
   const isCoupons = pathname === "/admin/dashboard/coupons";
 
   const padDesktop = "lg:pl-[140px]";
   const padMd = "md:pl-[120px]";
 
-  if (isSupport || isLessons || isStatistics || isCoupons) {
+  if (isSupport || isVocabulary || isStatistics || isCoupons) {
     return (
       <main
         className={[

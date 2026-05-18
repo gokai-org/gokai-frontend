@@ -127,12 +127,22 @@ export function OnboardingInterestsExperience({
 
   const currentSection = sections[currentSectionIndex];
   const totalSections = sections.length;
-  const progress = ((currentSectionIndex + 1) / totalSections) * 100;
-  const currentSectionHasSelection = !!selectedInterests[currentSection.id];
+  const progress = totalSections > 0 ? ((currentSectionIndex + 1) / totalSections) * 100 : 0;
+  const currentSectionHasSelection = currentSection
+    ? !!selectedInterests[currentSection.id]
+    : false;
   const themesLoading = status === "idle" || status === "loading";
   const canFinish = !saving && selectedCount > 0 && status === "success";
   const showThemeModeToggle =
     !(step === "settings" && currentSettingsStep === "appearance");
+
+  useEffect(() => {
+    if (currentSectionIndex < totalSections) {
+      return;
+    }
+
+    setCurrentSectionIndex(Math.max(0, totalSections - 1));
+  }, [currentSectionIndex, totalSections]);
 
   const finalizeFlowTransition = useCallback((transition: FlowTransitionState) => {
     setFlowTransition(null);
@@ -181,6 +191,10 @@ export function OnboardingInterestsExperience({
   ]);
 
   const handleInterestToggle = (interest: OnboardingInterest) => {
+    if (!currentSection) {
+      return;
+    }
+
     toggleInterest(currentSection.id, interest.themeId);
   };
 
@@ -541,7 +555,7 @@ export function OnboardingInterestsExperience({
           <div className="max-w-[1600px] mx-auto">
             <AnimatePresence mode="wait" initial={false} custom={sectionDirection}>
               <motion.div
-                key={currentSection.id}
+                key={currentSection?.id ?? "empty-section"}
                 custom={sectionDirection}
                 initial={{
                   opacity: 0,
@@ -556,41 +570,54 @@ export function OnboardingInterestsExperience({
                 }}
                 transition={{ duration: 0.42, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="text-left mb-8">
-                  <motion.div
-                    initial={{ y: -20, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    <h1 className="text-3xl md:text-4xl font-bold text-content-primary leading-tight">
-                      {currentSection.title}
+                {currentSection ? (
+                  <>
+                    <div className="text-left mb-8">
+                      <motion.div
+                        initial={{ y: -20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        <h1 className="text-3xl md:text-4xl font-bold text-content-primary leading-tight">
+                          {currentSection.title}
+                        </h1>
+                        <p className="text-lg text-content-secondary mt-1">
+                          {currentSection.description}
+                          {planVariant === "premium"
+                            ? ". Elige tu tema principal ahora; podrás explorar más contenido después."
+                            : ""}
+                        </p>
+                      </motion.div>
+                    </div>
+
+                    <div className="w-full overflow-visible">
+                      <MobileInterestCarousel
+                        interests={currentSection.interests}
+                        currentSectionId={currentSection.id}
+                        selectedInterests={selectedInterests}
+                        onToggle={handleInterestToggle}
+                        isResolving={themesLoading}
+                      />
+                    </div>
+
+                    <DesktopInterestRow
+                      interests={currentSection.interests}
+                      currentSectionId={currentSection.id}
+                      selectedInterests={selectedInterests}
+                      onToggle={handleInterestToggle}
+                      isResolving={themesLoading}
+                    />
+                  </>
+                ) : (
+                  <div className="rounded-[28px] border border-border-default bg-surface-primary/80 px-6 py-10 text-center shadow-lg backdrop-blur-sm">
+                    <h1 className="text-2xl font-bold text-content-primary">
+                      No hay intereses disponibles
                     </h1>
-                    <p className="text-lg text-content-secondary mt-1">
-                      {currentSection.description}
-                      {planVariant === "premium"
-                        ? ". Elige tu tema principal ahora; podrás explorar más contenido después."
-                        : ""}
+                    <p className="mt-2 text-base text-content-secondary">
+                      Cuando el backend publique temas con región, aparecerán aquí automáticamente.
                     </p>
-                  </motion.div>
-                </div>
-
-                <div className="w-full overflow-visible">
-                  <MobileInterestCarousel
-                    interests={currentSection.interests}
-                    currentSectionId={currentSection.id}
-                    selectedInterests={selectedInterests}
-                    onToggle={handleInterestToggle}
-                    isResolving={themesLoading}
-                  />
-                </div>
-
-                <DesktopInterestRow
-                  interests={currentSection.interests}
-                  currentSectionId={currentSection.id}
-                  selectedInterests={selectedInterests}
-                  onToggle={handleInterestToggle}
-                  isResolving={themesLoading}
-                />
+                  </div>
+                )}
 
                 <div className="flex flex-col gap-5 mt-8">
                   <div className="text-center">

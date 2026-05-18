@@ -11,7 +11,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
 
-type ItemKey = "support" | "coupons" | "users" | "lessons" | "statistics" | "logout";
+type ItemKey = "support" | "coupons" | "users" | "vocabulary" | "statistics" | "logout";
 
 type NavItem = {
   key: ItemKey;
@@ -67,12 +67,12 @@ export default function AdminSidebar() {
         href: "/admin/dashboard/users",
       },
       {
-        key: "lessons",
-        label: "Lessons",
+        key: "vocabulary",
+        label: "Vocabulario",
         section: "menu",
         iconInactive: "/icons/mapa.svg",
         iconActive: "/icons/mapa-active.svg",
-        href: "/admin/dashboard/lessons",
+        href: "/admin/dashboard/vocabulary",
       },
       {
         key: "statistics",
