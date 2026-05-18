@@ -17,7 +17,7 @@ import { GRAMMAR_SUGOROKU_SLOTS_VERTICAL } from "../../constants/grammarBoard";
 
 const BOARD_EASE = [0.22, 1, 0.36, 1] as const;
 const LANDSCAPE_BOARD_MARGIN = 12;
-const LANDSCAPE_BOARD_RIGHT_SHIFT = 6;
+const LANDSCAPE_BOARD_RIGHT_SHIFT = 25;
 type GrammarBoardTransitionState = "idle" | "tour-focus" | "zooming-in" | "hidden" | "zooming-out";
 
 type GrammarBoardLoadStatus = "idle" | "loading" | "error" | "success";
@@ -328,7 +328,7 @@ export function GrammarBoard({
 
   const boardCanvasStyle = isPortrait
     ? {
-        transform: `translateX(${isTinyPortrait ? 4 : isCompactPortrait ? 6 : 8}px)`,
+        transform: `translateX(${isTinyPortrait ? 8 : isCompactPortrait ? 10 : 12}px)`,
       }
     : undefined;
 

@@ -75,9 +75,8 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           priceId,
+          successURL: finalSuccessUrl,
           successUrl: finalSuccessUrl,
-          ...(tokenUserId ? { userId: tokenUserId } : {}),
-          ...(tokenEmail ? { email: tokenEmail } : {}),
         }),
         credentials: "include",
       });

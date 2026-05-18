@@ -14,6 +14,7 @@ import {
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { AnswerConfirmationPanel } from "@/shared/ui";
+import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
 
 export interface KanaExamModalProps {
   kanaType: KanaType;
@@ -47,6 +48,8 @@ export function KanaExamModal({ kanaType, onClose }: KanaExamModalProps) {
   const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [isExitDialogOpen, setIsExitDialogOpen] = useState(false);
+
+  useStudySessionActivity(`${kanaType}-exam`);
 
   const overlayVariants = useMemo(
     () => ({

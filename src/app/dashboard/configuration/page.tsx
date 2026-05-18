@@ -15,6 +15,7 @@ import { useToast } from "@/shared/ui/ToastProvider";
 import { useSettings } from "@/features/configuration/hooks/useSettings";
 import type { UserSettings } from "@/features/configuration/types";
 import { AccountSettings } from "@/features/configuration/components/AccountSettings";
+import { KanaExamsSettings } from "@/features/configuration/components/KanaExamsSettings";
 import { HELP_GUIDE_SECTION_EVENT } from "@/features/help/utils/guideEvents";
 import { ANIMATION_PREFERENCES_EVENT } from "@/shared/hooks/useAnimationPreferences";
 import {
@@ -36,12 +37,14 @@ import {
   setPushNotificationsEnabled,
   type PushNotificationState,
 } from "@/features/notifications/lib/oneSignal";
+import { setStoredStudyBreakReminderPreferences } from "@/features/configuration/lib/studySessionReminder";
 
 const sectionTitles: Record<string, string> = {
   general: "Configuración General",
   notifications: "Notificaciones",
   appearance: "Apariencia",
   learning: "Preferencias de Estudio",
+  exams: "Examenes",
   accessibility: "Accesibilidad",
   privacy: "Privacidad",
   account: "Cuenta",
@@ -80,6 +83,21 @@ export default function ConfigurationPage() {
       setTheme(settings.appearance.darkMode ? "dark" : "light");
     }
   }, [settingsLoading, settings.appearance.darkMode, setTheme]);
+
+  useEffect(() => {
+    if (settingsLoading) {
+      return;
+    }
+
+    setStoredStudyBreakReminderPreferences({
+      breakReminders: settings.general.breakReminders,
+      sessionDuration: settings.general.sessionDuration,
+    });
+  }, [
+    settings.general.breakReminders,
+    settings.general.sessionDuration,
+    settingsLoading,
+  ]);
 
   useEffect(() => {
     const handleGuideSection = (event: Event) => {
@@ -169,6 +187,11 @@ export default function ConfigurationPage() {
                   />
                 </div>
               )}
+              {activeSection === "exams" && (
+                <div data-help-target="settings-exams" className="space-y-6">
+                  <KanaExamsSettings user={user} />
+                </div>
+              )}
               {activeSection === "accessibility" && (
                 <div data-help-target="settings-accessibility" className="space-y-6">
                   <AccessibilitySettings
@@ -231,19 +254,19 @@ function GeneralSettings({
         title="Sesiones de Estudio"
         description="Personaliza tus sesiones de práctica"
       >
-        <SettingsSelectItem
-          label="Duración de sesión"
-          description="Tiempo predeterminado para sesiones de estudio"
-          value={g.sessionDuration}
-          options={["15 min", "30 min", "45 min", "60 min"]}
-          onChange={(v) => updateSection("general", { sessionDuration: v })}
-        />
-
         <SettingsToggleItem
           label="Recordatorios de descanso"
           description="Te avisaremos cuando sea momento de descansar"
           enabled={g.breakReminders}
           onChange={(v) => updateSection("general", { breakReminders: v })}
+        />
+
+        <SettingsSelectItem
+          label="Duración de sesión"
+          description="Tiempo predeterminado para comunicarte que llevas estudiando de manera continua"
+          value={g.sessionDuration}
+          options={["15 min", "30 min", "45 min", "60 min"]}
+          onChange={(v) => updateSection("general", { sessionDuration: v })}
         />
       </SettingsSection>
     </>

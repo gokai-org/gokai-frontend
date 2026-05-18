@@ -23,6 +23,7 @@ import { getMockKanaStrokes } from "@/features/kana/mock/mockStrokeData";
 import { dispatchMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
 import {
   AnswerConfirmationPanel,
   QuizAudioPlayer,
@@ -352,6 +353,7 @@ export default function VocabularyQuizModal({
   onSaved,
 }: VocabularyQuizModalProps) {
   useMiniDockBlocker(open);
+  useStudySessionActivity("vocabulary-quiz", open);
 
   const platformMotion = usePlatformMotion();
   const { confirmAnswersEnabled } = useAnswerConfirmationPreference();

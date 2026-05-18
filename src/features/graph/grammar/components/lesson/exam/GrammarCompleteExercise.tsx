@@ -141,8 +141,8 @@ export default function GrammarCompleteExercise({
   }, [allFilled, answered, checkAnswer, onFooterStateChange]);
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="kanji-detail-scroll flex-1 min-h-0 space-y-4 overflow-y-auto pr-1 sm:space-y-6">
+    <div className="flex min-h-0 flex-col">
+      <div className="flex-1 min-h-0 space-y-4 sm:space-y-6">
         <div className="relative overflow-hidden rounded-[20px] border border-accent/15 bg-gradient-to-br from-accent/6 via-accent/3 to-transparent px-4 py-4 sm:rounded-[24px] sm:px-6 sm:py-6">
           <div className="absolute -left-14 -top-14 h-28 w-28 rounded-full bg-accent/8 blur-3xl" />
           <p className="relative text-sm leading-7 text-content-primary sm:text-lg sm:leading-10">

@@ -49,56 +49,35 @@ export async function GET(req: NextRequest) {
       (payload?.userId as string | undefined) ??
       (payload?.sub as string | undefined) ??
       (payload?.id as string | undefined);
+
+    if (!userId) {
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+    }
+
     const headers = buildHeaders(token, payload);
 
     const response = await fetch(
-      `${apiConfig.subscriptionsApiBase}/subscriptions/me`,
+      `${apiConfig.subscriptionsApiBase}/subscriptions/${userId}`,
       {
         method: "GET",
         headers,
       },
     );
 
-    const meData = await readJsonSafe(response);
-
-    if (!response.ok && (response.status === 403 || response.status === 404) && userId) {
-      const byIdResponse = await fetch(
-        `${apiConfig.subscriptionsApiBase}/subscriptions/${userId}`,
-        {
-          method: "GET",
-          headers,
-        },
-      );
-
-      const byIdData = await readJsonSafe(byIdResponse);
-
-      if (byIdResponse.ok) {
-        return NextResponse.json(byIdData);
-      }
-
-      return NextResponse.json(
-        {
-          error:
-            (byIdData as { error?: string })?.error ||
-            (meData as { error?: string })?.error ||
-            "Error al obtener suscripción",
-        },
-        { status: byIdResponse.status || response.status },
-      );
-    }
+    const data = await readJsonSafe(response);
 
     if (!response.ok) {
       return NextResponse.json(
         {
           error:
-            (meData as { error?: string })?.error ||
+            (data as { error?: string })?.error ||
             "Error al obtener suscripción",
         },
         { status: response.status },
       );
     }
 
-    return NextResponse.json(meData);
+    return NextResponse.json(data);
   } catch (error) {
     console.error("Error fetching subscription:", error);
     return NextResponse.json(

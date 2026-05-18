@@ -23,6 +23,7 @@ import type { User } from "@/features/auth/types";
 import { ChangePasswordModal } from "@/features/configuration/components/ChangePasswordModal";
 import { UpgradePlanModal } from "@/features/configuration/components/UpgradePlanModal";
 import { CancelSubscriptionModal } from "@/features/configuration/components/CancelSubscriptionModal";
+import { DeleteAccountModal } from "@/features/configuration/components/DeleteAccountModal";
 import { AccountSettingsSkeleton } from "@/features/configuration/components/AccountSettingsSkeleton";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { ScreenTransitionOverlay } from "@/shared/ui";
@@ -171,7 +172,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // Profile form state
@@ -198,6 +199,8 @@ export function AccountSettings({ user, setUser, loading }: Props) {
   // Cancel state
   const [cancelLoading, setCancelLoading] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Sync form when user loads
   useEffect(() => {
@@ -215,7 +218,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
   useEffect(() => {
     if (!user?.id) return;
     setSubLoading(true);
-    fetch("/api/subscriptions/me")
+    fetch(`/api/subscriptions/${user.id}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => { if (data) setSubscription(data); })
       .catch(console.error)
@@ -253,7 +256,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
     const updated = await getCurrentUser();
     if (!updated) return;
     setUser(updated);
-    const r = await fetch("/api/subscriptions/me");
+    const r = await fetch(`/api/subscriptions/${updated.id}`);
     if (r.ok) setSubscription(await r.json());
   };
 
@@ -336,6 +339,14 @@ export function AccountSettings({ user, setUser, loading }: Props) {
 
   const handleCancelSubscription = async () => {
     if (!user?.id) return;
+
+    if (!subscription?.has_recurring_payment) {
+      setCancelError(
+        "Las suscripciones activadas con cupón no se cancelan desde Stripe; expiran automáticamente.",
+      );
+      return;
+    }
+
     setCancelLoading(true);
     setCancelError(null);
     try {
@@ -347,6 +358,32 @@ export function AccountSettings({ user, setUser, loading }: Props) {
       await refresh();
     } catch { setCancelError("Error de red al cancelar."); }
     finally { setCancelLoading(false); }
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/users/me", { method: "DELETE" });
+      const data = await res.json().catch(() => null);
+
+      if (!res.ok || data?.success === false) {
+        const message =
+          data && typeof data.error === "string"
+            ? data.error
+            : "No se pudo eliminar la cuenta.";
+        setDeleteError(message);
+        return;
+      }
+
+      setShowDeleteModal(false);
+      setUser(null);
+      window.location.replace("/auth/login");
+    } catch {
+      setDeleteError("Error de red al eliminar la cuenta.");
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const handleSave = async (e?: FormEvent) => {
@@ -413,6 +450,16 @@ export function AccountSettings({ user, setUser, loading }: Props) {
         onConfirmCancel={handleCancelSubscription}
         loading={cancelLoading}
         error={cancelError}
+      />
+      <DeleteAccountModal
+        isOpen={showDeleteModal}
+        onClose={() => {
+          setShowDeleteModal(false);
+          setDeleteError(null);
+        }}
+        onConfirmDelete={handleDeleteAccount}
+        loading={deleteLoading}
+        error={deleteError}
       />
 
       <div className="space-y-6">
@@ -658,53 +705,23 @@ export function AccountSettings({ user, setUser, loading }: Props) {
                 <div>
                   <p className="text-sm font-semibold text-status-error">Zona de peligro</p>
                   <p className="text-xs text-status-error/70 mt-0.5">
-                    Esta acción es irreversible. Todos tus datos se eliminarán permanentemente.
+                    Esta acción es irreversible. Tu cuenta, progreso e historial se eliminarán permanentemente.
                   </p>
                 </div>
               </div>
 
-              <AnimatePresence mode="wait">
-                {showDeleteConfirm ? (
-                  <motion.div
-                    key="confirm"
-                    initial={{ opacity: 0, y: 4 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -4 }}
-                    className="flex flex-col sm:flex-row gap-2"
-                  >
-                    <button
-                      onClick={async () => {
-                        try {
-                          await fetch("/api/users/me", { method: "DELETE" });
-                          window.location.href = "/auth/login";
-                        } catch { toast.error("Error al eliminar cuenta"); }
-                      }}
-                      className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-content-inverted bg-status-error rounded-xl hover:bg-status-error/90 transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                      Sí, eliminar definitivamente
-                    </button>
-                    <button
-                      onClick={() => setShowDeleteConfirm(false)}
-                      className="px-4 py-2 text-sm font-medium text-content-secondary bg-surface-primary border border-border-default rounded-xl hover:bg-surface-secondary transition-colors"
-                    >
-                      Cancelar
-                    </button>
-                  </motion.div>
-                ) : (
-                  <motion.button
-                    key="btn"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-status-error bg-surface-primary border border-status-error/20 rounded-xl hover:bg-status-error-subtle hover:border-status-error/30 transition-colors"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                    Eliminar mi cuenta
-                  </motion.button>
-                )}
-              </AnimatePresence>
+              <motion.button
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => {
+                  setDeleteError(null);
+                  setShowDeleteModal(true);
+                }}
+                className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold text-status-error bg-surface-primary border border-status-error/20 rounded-xl hover:bg-status-error-subtle hover:border-status-error/30 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Eliminar mi cuenta
+              </motion.button>
             </div>
           </div>
         </Section>

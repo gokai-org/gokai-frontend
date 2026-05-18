@@ -11,6 +11,17 @@ import {
   User,
 } from "lucide-react";
 
+function HiraganaAIcon({ className }: { className?: string }) {
+  return (
+    <span
+      className={`inline-flex items-center justify-center font-black leading-none ${className ?? ""}`}
+      aria-hidden="true"
+    >
+      あ
+    </span>
+  );
+}
+
 interface SettingsMenuItem {
   id: string;
   label: string;
@@ -28,6 +39,7 @@ const menuItems: SettingsMenuItem[] = [
   { id: "notifications", label: "Notificaciones", icon: Bell },
   { id: "appearance", label: "Apariencia", icon: Palette },
   { id: "learning", label: "Preferencias de Estudio", icon: BookOpen },
+  { id: "exams", label: "Examenes", icon: HiraganaAIcon },
   { id: "accessibility", label: "Accesibilidad", icon: Accessibility },
   { id: "privacy", label: "Privacidad", icon: Lock },
   { id: "account", label: "Cuenta", icon: User },
