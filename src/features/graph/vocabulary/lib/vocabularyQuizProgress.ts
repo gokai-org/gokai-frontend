@@ -62,7 +62,6 @@ export function mergeWordProgress(
 
   return {
     ...word,
-    order: progress.order ?? word.order,
     unlockedAt: progress.unlockedAt ?? word.unlockedAt,
     completedAt: progress.completedAt ?? word.completedAt,
     score: progress.score ?? word.score,

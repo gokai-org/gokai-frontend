@@ -181,13 +181,12 @@ export function useVocabularyGraph() {
   }, []);
 
   const loadThemeCatalog = useCallback(async (currentGraphs: VocabularyGraphSummary[]) => {
-    const fallbackThemeIds = readOnboardingInterestThemeIds();
-
     try {
       const [themes, currentUser] = await Promise.all([
         listVocabularyThemes(),
         getCurrentUser().catch(() => null),
       ]);
+      const fallbackThemeIds = readOnboardingInterestThemeIds(currentUser?.id);
       const entitlements = getUserEntitlements(currentUser);
       let availableGraphs = currentGraphs;
 
@@ -219,6 +218,7 @@ export function useVocabularyGraph() {
           listVocabularyThemes(),
           getCurrentUser().catch(() => null),
         ]);
+        const fallbackThemeIds = readOnboardingInterestThemeIds(currentUser?.id);
         const entitlements = getUserEntitlements(currentUser);
 
         setThemeCatalog(

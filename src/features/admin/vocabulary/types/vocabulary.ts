@@ -34,6 +34,7 @@ export type AdminVocabularyWord = {
   kanji?: string | null;
   hiragana?: string | null;
   icon?: string | null;
+  learnOrder?: number | null;
   meanings?: string[] | null;
 };
 
@@ -53,5 +54,6 @@ export type AdminVocabularyFormPayload = {
   subthemeId?: string;
   hiragana?: string;
   icon?: string;
+  learnOrder?: number;
   meanings?: string[];
 };

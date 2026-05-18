@@ -6,19 +6,29 @@ import type {
   AdminVocabularyWord,
 } from "../types/vocabulary";
 
-export function getAdminVocabularyThemes() {
-  return apiFetch<AdminVocabularyTheme[]>("/admin/api/vocabulary/themes");
+function normalizeArrayResponse<T>(response: T[] | null | undefined) {
+  return Array.isArray(response) ? response : [];
 }
 
-export function getAdminVocabularySubthemes(themeId: string) {
-  return apiFetch<AdminVocabularySubtheme[]>(
-    `/admin/api/vocabulary/themes/${themeId}/subthemes`,
+export async function getAdminVocabularyThemes() {
+  return normalizeArrayResponse(
+    await apiFetch<AdminVocabularyTheme[] | null>("/admin/api/vocabulary/themes"),
   );
 }
 
-export function getAdminVocabularyWords(subthemeId: string) {
-  return apiFetch<AdminVocabularyWord[]>(
-    `/admin/api/vocabulary/subthemes/${subthemeId}/words`,
+export async function getAdminVocabularySubthemes(themeId: string) {
+  return normalizeArrayResponse(
+    await apiFetch<AdminVocabularySubtheme[] | null>(
+      `/admin/api/vocabulary/themes/${themeId}/subthemes`,
+    ),
+  );
+}
+
+export async function getAdminVocabularyWords(subthemeId: string) {
+  return normalizeArrayResponse(
+    await apiFetch<AdminVocabularyWord[] | null>(
+      `/admin/api/vocabulary/subthemes/${subthemeId}/words`,
+    ),
   );
 }
 

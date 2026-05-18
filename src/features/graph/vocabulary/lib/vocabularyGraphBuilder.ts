@@ -201,13 +201,14 @@ function getProgressiveWords(
     .map((word, index) => {
       const mergedWord = mergeWordProgress(word, findWordProgress(item, word.wordId));
       const progress = wordProgressById.get(word.wordId);
+      const baseWordOrder = getWordOrder(word, index);
 
       return {
         ...mergedWord,
-        order: progress?.order ?? getWordOrder(word, index).order,
-        unlockedAt: progress?.unlockedAt ?? getWordOrder(word, index).unlockedAt,
-        completedAt: progress?.completedAt ?? getWordOrder(word, index).completedAt,
-        score: progress?.score ?? getWordOrder(word, index).score,
+        order: baseWordOrder.order,
+        unlockedAt: progress?.unlockedAt ?? baseWordOrder.unlockedAt,
+        completedAt: progress?.completedAt ?? baseWordOrder.completedAt,
+        score: progress?.score ?? baseWordOrder.score,
       };
     })
     .sort((a, b) =>

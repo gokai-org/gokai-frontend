@@ -1,7 +1,7 @@
 "use client";
 
 import { memo, useMemo, useState } from "react";
-import { Edit3, Loader2, RefreshCcw, Rows3 } from "lucide-react";
+import { Edit3, GripVertical, Loader2, RefreshCcw, Rows3 } from "lucide-react";
 import {
   AdminFilterDropdown,
   type AdminFilterOption,
@@ -38,7 +38,19 @@ interface AdminVocabularyTableProps {
   onReload: () => void;
   onOpenItem: (item: AdminVocabularyItem) => void;
   onEditItem: (item: AdminVocabularyItem) => void;
+  onReorderItem?: (
+    draggedItemId: string,
+    targetItemId: string,
+    placement: "before" | "after",
+  ) => void;
+  movingItemId?: string | null;
+  wordMoveMetaById?: Record<string, { canMoveUp: boolean; canMoveDown: boolean; orderLabel: number }>;
 }
+
+type DropIndicator = {
+  targetItemId: string;
+  placement: "before" | "after";
+};
 
 function isTheme(item: AdminVocabularyItem): item is AdminVocabularyTheme {
   return "released" in item;
@@ -59,11 +71,12 @@ function renderColumns(level: AdminVocabularyLevel) {
     return (
       <>
         <col className="w-[15%]" />
-        <col className="w-[16%]" />
-        <col className="w-[16%]" />
-        <col className="w-[33%]" />
-        <col className="w-[12%]" />
         <col className="w-[8%]" />
+        <col className="w-[16%]" />
+        <col className="w-[16%]" />
+        <col className="w-[28%]" />
+        <col className="w-[11%]" />
+        <col className="w-[6%]" />
       </>
     );
   }
@@ -88,6 +101,11 @@ function renderHeaders(level: AdminVocabularyLevel) {
       <th className="whitespace-nowrap px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide text-content-tertiary lg:px-4">
         ID
       </th>
+      {level === "words" && (
+        <th className="whitespace-nowrap px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide text-content-tertiary lg:px-4">
+          Orden
+        </th>
+      )}
       <th className="whitespace-nowrap px-3 py-2.5 text-left text-[11px] font-semibold tracking-wide text-content-tertiary lg:px-4">
         {level === "words" ? "Kanji" : "Significado"}
       </th>
@@ -117,10 +135,15 @@ function AdminVocabularyTableBase({
   onReload,
   onOpenItem,
   onEditItem,
+  onReorderItem,
+  movingItemId,
+  wordMoveMetaById,
 }: AdminVocabularyTableProps) {
   const [page, setPage] = useState(1);
   const [pageKey, setPageKey] = useState("50:0");
   const [pageSize, setPageSize] = useState<PageSizeValue>("50");
+  const [draggedWordId, setDraggedWordId] = useState<string | null>(null);
+  const [dropIndicator, setDropIndicator] = useState<DropIndicator | null>(null);
   const pageSizeNumber = Number(pageSize);
   const totalPages = Math.max(1, Math.ceil(items.length / pageSizeNumber));
   const currentPageKey = `${pageSize}:${items.length}:${level}`;
@@ -142,9 +165,21 @@ function AdminVocabularyTableBase({
           second: "2-digit",
         });
   const canDrillDown = level !== "words";
+  const canReorderWords = level === "words" && Boolean(onReorderItem);
+  const isReorderPending = Boolean(movingItemId);
 
   return (
-    <section className="rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm">
+    <section className="relative rounded-2xl border border-border-subtle bg-surface-primary p-4 shadow-sm">
+      {isReorderPending && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center rounded-2xl bg-surface-primary/72 backdrop-blur-[2px]">
+          <div className="inline-flex items-center gap-3 rounded-2xl border border-border-default bg-surface-primary px-4 py-3 shadow-lg">
+            <Loader2 className="h-4 w-4 animate-spin text-accent" />
+            <span className="text-sm font-semibold text-content-primary">
+              Guardando nuevo orden...
+            </span>
+          </div>
+        </div>
+      )}
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <h3 className="text-base font-bold text-content-primary">
@@ -162,7 +197,7 @@ function AdminVocabularyTableBase({
           <button
             type="button"
             onClick={onReload}
-            disabled={refreshing || loading}
+            disabled={refreshing || loading || isReorderPending}
             className="inline-flex items-center gap-1.5 rounded-lg border border-border-default bg-surface-primary px-3 py-1.5 text-xs font-semibold text-content-secondary transition-colors hover:border-accent/25 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
           >
             {refreshing ? (
@@ -187,33 +222,135 @@ function AdminVocabularyTableBase({
                 const theme = isTheme(item) ? item : null;
                 const subtheme = isSubtheme(item) ? item : null;
                 const word = item as AdminVocabularyWord;
+                const wordMoveMeta = wordMoveMetaById?.[item.id];
+                const isMovingWord = movingItemId === item.id;
+                const isDraggedWord = draggedWordId === item.id;
+                const isDropTarget = dropIndicator?.targetItemId === item.id;
+                const isDropBefore = isDropTarget && dropIndicator?.placement === "before";
+                const isDropAfter = isDropTarget && dropIndicator?.placement === "after";
+                const isRowDraggable = canReorderWords && !isMovingWord && !isReorderPending;
 
                 return (
                   <tr
                     key={item.id}
+                    draggable={isRowDraggable}
+                    onDragStart={(event) => {
+                      if (!isRowDraggable) {
+                        return;
+                      }
+
+                      setDraggedWordId(item.id);
+                      setDropIndicator(null);
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", item.id);
+                    }}
+                    onDragOver={(event) => {
+                      if (!isRowDraggable || draggedWordId === item.id) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      event.dataTransfer.dropEffect = "move";
+                      const rowRect = event.currentTarget.getBoundingClientRect();
+                      const placement = event.clientY < rowRect.top + rowRect.height / 2
+                        ? "before"
+                        : "after";
+                      setDropIndicator({ targetItemId: item.id, placement });
+                    }}
+                    onDrop={(event) => {
+                      if (!isRowDraggable || !draggedWordId || draggedWordId === item.id) {
+                        return;
+                      }
+
+                      event.preventDefault();
+                      onReorderItem?.(
+                        draggedWordId,
+                        item.id,
+                        dropIndicator?.targetItemId === item.id
+                          ? dropIndicator.placement
+                          : "before",
+                      );
+                      setDraggedWordId(null);
+                      setDropIndicator(null);
+                    }}
+                    onDragLeave={(event) => {
+                      if (!isDropTarget) {
+                        return;
+                      }
+
+                      const relatedTarget = event.relatedTarget;
+                      if (
+                        relatedTarget instanceof Node &&
+                        event.currentTarget.contains(relatedTarget)
+                      ) {
+                        return;
+                      }
+
+                      setDropIndicator((current) =>
+                        current?.targetItemId === item.id ? null : current,
+                      );
+                    }}
+                    onDragEnd={() => {
+                      setDraggedWordId(null);
+                      setDropIndicator(null);
+                    }}
                     onClick={() => canDrillDown && onOpenItem(item)}
                     className={[
                       "border-t border-border-subtle transition-colors hover:bg-surface-secondary/70",
                       canDrillDown ? "cursor-pointer" : "",
+                      isRowDraggable ? "cursor-grab active:cursor-grabbing" : "",
+                      isDraggedWord ? "opacity-45" : "",
+                      isDropTarget && draggedWordId && draggedWordId !== item.id
+                        ? "bg-accent/5 ring-1 ring-inset ring-accent/25"
+                        : "",
                     ].join(" ")}
                   >
-                    <td className="px-3 py-3 text-xs font-medium text-content-tertiary lg:px-4">
+                    <td className={[
+                      "px-3 py-3 text-xs font-medium text-content-tertiary lg:px-4",
+                      isDropBefore ? "border-t-2 border-accent" : "",
+                      isDropAfter ? "border-b-2 border-accent" : "",
+                    ].join(" ")}>
                       <span className="block max-w-[140px] truncate">{item.id}</span>
                     </td>
-                    <td className="px-3 py-3 text-sm font-semibold text-content-primary lg:px-4">
+                    {level === "words" && (
+                      <td className={[
+                        "px-3 py-3 text-sm font-semibold text-content-secondary lg:px-4",
+                        isDropBefore ? "border-t-2 border-accent" : "",
+                        isDropAfter ? "border-b-2 border-accent" : "",
+                      ].join(" ")}>
+                        {wordMoveMeta?.orderLabel ?? "-"}
+                      </td>
+                    )}
+                    <td className={[
+                      "px-3 py-3 text-sm font-semibold text-content-primary lg:px-4",
+                      isDropBefore ? "border-t-2 border-accent" : "",
+                      isDropAfter ? "border-b-2 border-accent" : "",
+                    ].join(" ")}>
                       {level === "words" ? word.kanji || "-" : getPrimaryLabel(item)}
                     </td>
-                    <td className="px-3 py-3 text-sm text-content-secondary lg:px-4">
+                    <td className={[
+                      "px-3 py-3 text-sm text-content-secondary lg:px-4",
+                      isDropBefore ? "border-t-2 border-accent" : "",
+                      isDropAfter ? "border-b-2 border-accent" : "",
+                    ].join(" ")}>
                       {level === "words" ? word.hiragana || "-" : "kanji" in item ? item.kanji : "-"}
                     </td>
-                    <td className="px-3 py-3 text-sm text-content-secondary lg:px-4">
+                    <td className={[
+                      "px-3 py-3 text-sm text-content-secondary lg:px-4",
+                      isDropBefore ? "border-t-2 border-accent" : "",
+                      isDropAfter ? "border-b-2 border-accent" : "",
+                    ].join(" ")}>
                       {level === "words"
                         ? word.meanings?.join(", ") || "-"
                         : "kana" in item
                           ? item.kana
                           : "-"}
                     </td>
-                    <td className="px-3 py-3 text-sm text-content-secondary lg:px-4">
+                    <td className={[
+                      "px-3 py-3 text-sm text-content-secondary lg:px-4",
+                      isDropBefore ? "border-t-2 border-accent" : "",
+                      isDropAfter ? "border-b-2 border-accent" : "",
+                    ].join(" ")}>
                       {theme ? (
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="rounded-full bg-accent/10 px-2 py-1 text-xs font-semibold text-accent">
@@ -240,8 +377,25 @@ function AdminVocabularyTableBase({
                         </span>
                       )}
                     </td>
-                    <td className="px-3 py-3 text-center lg:px-4">
+                    <td className={[
+                      "px-3 py-3 text-center lg:px-4",
+                      isDropBefore ? "border-t-2 border-accent" : "",
+                      isDropAfter ? "border-b-2 border-accent" : "",
+                    ].join(" ")}>
                       <div className="flex justify-center gap-2">
+                        {level === "words" && (
+                          <span
+                            className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-border-default text-content-secondary"
+                            aria-hidden="true"
+                            title="Arrastra la fila para reordenar"
+                          >
+                            {isMovingWord ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <GripVertical className="h-4 w-4" />
+                            )}
+                          </span>
+                        )}
                         {canDrillDown && (
                           <button
                             type="button"
@@ -298,6 +452,7 @@ function AdminVocabularyTableBase({
               className="min-w-[88px]"
               buttonLabel={pageSize}
               menuDirection="up"
+              disabled={isReorderPending}
             />
             <button
               type="button"
@@ -305,7 +460,7 @@ function AdminVocabularyTableBase({
                 setPage((previousPage) => Math.max(1, previousPage - 1));
                 setPageKey(currentPageKey);
               }}
-              disabled={effectivePage <= 1}
+              disabled={effectivePage <= 1 || isReorderPending}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Anterior
@@ -316,7 +471,7 @@ function AdminVocabularyTableBase({
                 setPage((previousPage) => Math.min(totalPages, previousPage + 1));
                 setPageKey(currentPageKey);
               }}
-              disabled={effectivePage >= totalPages}
+              disabled={effectivePage >= totalPages || isReorderPending}
               className="rounded-md border border-border-default px-2.5 py-1 text-xs font-semibold text-content-secondary transition-colors hover:bg-surface-secondary disabled:cursor-not-allowed disabled:opacity-50"
             >
               Siguiente

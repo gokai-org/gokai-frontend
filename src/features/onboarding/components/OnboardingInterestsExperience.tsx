@@ -128,13 +128,28 @@ export function OnboardingInterestsExperience({
   const currentSection = sections[currentSectionIndex];
   const totalSections = sections.length;
   const progress = totalSections > 0 ? ((currentSectionIndex + 1) / totalSections) * 100 : 0;
+  const currentSectionStepLabel = currentSection ? String(currentSectionIndex + 1) : "0";
+  const currentSectionTitle = currentSection?.title ?? "Sin categorías disponibles";
   const currentSectionHasSelection = currentSection
     ? !!selectedInterests[currentSection.id]
     : false;
   const themesLoading = status === "idle" || status === "loading";
+  const shouldKeepInterestIntroVisible =
+    step === "interests" && themesLoading && sections.length === 0 && !error;
+  const shouldShowInterestIntro = showIntro || shouldKeepInterestIntroVisible;
   const canFinish = !saving && selectedCount > 0 && status === "success";
   const showThemeModeToggle =
     !(step === "settings" && currentSettingsStep === "appearance");
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setShowIntro(false);
+    }, ONBOARDING_INTRO_HOLD_MS);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, []);
 
   useEffect(() => {
     if (currentSectionIndex < totalSections) {
@@ -329,15 +344,12 @@ export function OnboardingInterestsExperience({
       <div className="absolute inset-0 bg-gradient-to-b from-surface-primary/20 via-surface-primary/10 to-surface-primary/30" />
 
       <AnimatePresence>
-        {showIntro && (
+        {shouldShowInterestIntro && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
-            onAnimationComplete={() => {
-              setTimeout(() => setShowIntro(false), ONBOARDING_INTRO_HOLD_MS);
-            }}
             className="absolute inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-surface-primary/40"
           >
             <div className="max-w-5xl mx-auto px-6 text-center">
@@ -528,7 +540,7 @@ export function OnboardingInterestsExperience({
                 transition={{ duration: 0.35, ease: "easeOut" }}
                 className="text-sm font-semibold text-content-secondary whitespace-nowrap"
               >
-                {currentSectionIndex + 1} / {totalSections}
+                {currentSectionStepLabel} / {totalSections}
               </motion.div>
             </div>
 
@@ -536,7 +548,7 @@ export function OnboardingInterestsExperience({
               <span className="text-content-secondary">
                 Categoría:{" "}
                 <span className="font-semibold text-content-primary">
-                  {currentSection.title}
+                  {currentSectionTitle}
                 </span>
               </span>
 
@@ -608,16 +620,7 @@ export function OnboardingInterestsExperience({
                       isResolving={themesLoading}
                     />
                   </>
-                ) : (
-                  <div className="rounded-[28px] border border-border-default bg-surface-primary/80 px-6 py-10 text-center shadow-lg backdrop-blur-sm">
-                    <h1 className="text-2xl font-bold text-content-primary">
-                      No hay intereses disponibles
-                    </h1>
-                    <p className="mt-2 text-base text-content-secondary">
-                      Cuando el backend publique temas con región, aparecerán aquí automáticamente.
-                    </p>
-                  </div>
-                )}
+                ) : null}
 
                 <div className="flex flex-col gap-5 mt-8">
                   <div className="text-center">

@@ -149,6 +149,7 @@ export type VocabularyWordContent = {
   hiragana?: string | null;
   icon?: string | null;
   meanings?: string[] | null;
+  learnOrder?: number | null;
   order?: number | null;
   unlockedAt?: string | null;
   completedAt?: string | null;

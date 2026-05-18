@@ -49,6 +49,7 @@ export function AdminVocabularyPanel() {
   const [modal, setModal] = useState<ModalState>(initialModalState);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [reorderingWordId, setReorderingWordId] = useState<string | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
 
   const {
@@ -60,6 +61,7 @@ export function AdminVocabularyPanel() {
     lastUpdatedAt,
     error,
     themes,
+    words,
     selectedTheme,
     selectedSubtheme,
     filteredItems,
@@ -78,6 +80,21 @@ export function AdminVocabularyPanel() {
         ? Math.round((summary.mappedThemes / summary.themes) * 100)
         : 0,
     [summary.mappedThemes, summary.themes],
+  );
+
+  const wordMoveMetaById = useMemo(
+    () =>
+      Object.fromEntries(
+        words.map((word, index) => [
+          word.id,
+          {
+            canMoveUp: index > 0,
+            canMoveDown: index < words.length - 1,
+            orderLabel: index + 1,
+          },
+        ]),
+      ) as Record<string, { canMoveUp: boolean; canMoveDown: boolean; orderLabel: number }>,
+    [words],
   );
 
   const openCreateModal = useCallback(() => {
@@ -182,6 +199,61 @@ export function AdminVocabularyPanel() {
     }
   }, [modal.item, modal.level, reload, toast]);
 
+  const handleReorderWord = useCallback(
+    async (
+      draggedItemId: string,
+      targetItemId: string,
+      placement: "before" | "after",
+    ) => {
+      if (level !== "words" || !selectedSubtheme) {
+        return;
+      }
+
+      if (draggedItemId === targetItemId) {
+        return;
+      }
+
+      const currentIndex = words.findIndex((entry) => entry.id === draggedItemId);
+      const targetIndex = words.findIndex((entry) => entry.id === targetItemId);
+      if (currentIndex === -1 || targetIndex === -1 || currentIndex === targetIndex) {
+        return;
+      }
+
+      const reorderedWords = [...words];
+      const [movingWord] = reorderedWords.splice(currentIndex, 1);
+      const adjustedTargetIndex = currentIndex < targetIndex ? targetIndex - 1 : targetIndex;
+      const insertionIndex = placement === "before"
+        ? adjustedTargetIndex
+        : adjustedTargetIndex + 1;
+      reorderedWords.splice(insertionIndex, 0, movingWord);
+
+      setReorderingWordId(draggedItemId);
+      try {
+        await Promise.all(
+          reorderedWords.map((entry, index) =>
+            updateAdminVocabularyWord(entry.id, {
+              subthemeId: entry.subthemeId,
+              kanji: entry.kanji ?? "",
+              hiragana: entry.hiragana ?? "",
+              icon: entry.icon ?? "",
+              meanings: entry.meanings ?? [],
+              learnOrder: index,
+            }),
+          ),
+        );
+
+        await loadWords(selectedSubtheme, true);
+        toast.success("Orden de palabras actualizado.");
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "No se pudo actualizar el orden";
+        toast.error(message);
+      } finally {
+        setReorderingWordId(null);
+      }
+    },
+    [level, loadWords, selectedSubtheme, toast, words],
+  );
+
   return (
     <AdminDashboardShell
       header={<AdminVocabularyHeader totalThemes={themes.length} />}
@@ -268,6 +340,9 @@ export function AdminVocabularyPanel() {
             onReload={reload}
             onOpenItem={handleOpenItem}
             onEditItem={openEditModal}
+            onReorderItem={handleReorderWord}
+            movingItemId={reorderingWordId}
+            wordMoveMetaById={wordMoveMetaById}
           />
         </AnimatedEntrance>
       </div>

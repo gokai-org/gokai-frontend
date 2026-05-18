@@ -22,6 +22,17 @@ import type {
 const VOCABULARY_GRAPHS_CACHE_KEY = "study-vocabulary-graphs";
 const CACHE_TTL_MS = 30_000;
 
+function normalizeArrayResponse<T>(response: T[] | null | undefined) {
+  return Array.isArray(response) ? response : [];
+}
+
+function normalizeVocabularyWordContent(word: VocabularyWordContent) {
+  return {
+    ...word,
+    order: word.learnOrder ?? word.order ?? null,
+  } satisfies VocabularyWordContent;
+}
+
 export async function listVocabularyGraphs() {
   const response = await apiFetch<VocabularyGraphsResponse>(
     "/api/study/vocabulary/graphs",
@@ -77,11 +88,17 @@ export async function selectVocabularySubtheme(
 }
 
 export async function listVocabularyThemes() {
-  return apiFetch<VocabularyThemeContent[]>("/api/content/themes");
+  return normalizeArrayResponse(
+    await apiFetch<VocabularyThemeContent[] | null>("/api/content/themes"),
+  );
 }
 
 export async function listVocabularySubthemesByThemeId(themeId: string) {
-  return apiFetch<VocabularySubthemeContent[]>(`/api/content/subthemes/${themeId}`);
+  return normalizeArrayResponse(
+    await apiFetch<VocabularySubthemeContent[] | null>(
+      `/api/content/subthemes/${themeId}`,
+    ),
+  );
 }
 
 export async function listVocabularyRecommendedSubthemesByThemeId(
@@ -99,7 +116,9 @@ export async function listVocabularyRecommendedSubthemesByThemeId(
 }
 
 export async function listVocabularyWordsBySubthemeId(subthemeId: string) {
-  return apiFetch<VocabularyWordContent[]>(`/api/content/words/${subthemeId}`);
+  return normalizeArrayResponse(
+    await apiFetch<VocabularyWordContent[] | null>(`/api/content/words/${subthemeId}`),
+  ).map(normalizeVocabularyWordContent);
 }
 
 export async function getVocabularyQuiz(
@@ -142,7 +161,11 @@ async function readPronunciationError(response: Response) {
       detail?: string;
     };
 
-    return data.error || data.detail || `HTTP ${response.status}`;
+    if (data.detail) {
+      return data.detail;
+    }
+
+    return data.error || `HTTP ${response.status}`;
   }
 
   const text = await response.text().catch(() => "");
@@ -152,10 +175,14 @@ async function readPronunciationError(response: Response) {
 export async function getVocabularyPronunciationFeedback(
   wordId: string,
   audioFile: File,
+  hiragana?: string,
 ) {
   const formData = new FormData();
   formData.append("wordId", wordId);
   formData.append("audio_file", audioFile, audioFile.name || "pronunciation.wav");
+  if (typeof hiragana === "string" && hiragana.trim()) {
+    formData.append("hiragana", hiragana.trim());
+  }
 
   const response = await fetch("/api/study/vocabulary/pronunciation-feedback", {
     method: "POST",
