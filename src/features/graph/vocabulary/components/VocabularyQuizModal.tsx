@@ -444,6 +444,25 @@ export default function VocabularyQuizModal({
     setIsConfirmDialogOpen(false);
   }, []);
 
+  const hydrateStartingPoints = useCallback(() => {
+    const sessionStartPoints = currentPointsRef.current;
+
+    void getCurrentUser()
+      .then((user) => {
+        const nextPoints = typeof user?.points === "number" ? user.points : null;
+        startingPointsRef.current = nextPoints;
+        if (currentPointsRef.current === sessionStartPoints) {
+          currentPointsRef.current = nextPoints;
+        }
+      })
+      .catch(() => {
+        startingPointsRef.current = null;
+        if (currentPointsRef.current === sessionStartPoints) {
+          currentPointsRef.current = null;
+        }
+      });
+  }, []);
+
   const loadRound = useCallback(
     async (nextRoundIndex: number) => {
       const nextType = quizTypes[nextRoundIndex] ?? quizTypes[0] ?? initialType;
@@ -485,14 +504,10 @@ export default function VocabularyQuizModal({
     setPointsDelta(0);
     setError(null);
     setIsExitDialogOpen(false);
-    void (async () => {
-      const user = await getCurrentUser().catch(() => null);
-      const nextPoints = typeof user?.points === "number" ? user.points : null;
-      startingPointsRef.current = nextPoints;
-      currentPointsRef.current = nextPoints;
-      void loadRound(Math.max(0, quizTypes.indexOf(initialType)));
-    })();
-  }, [initialType, loadRound, quizTypes]);
+    startingPointsRef.current = currentPointsRef.current;
+    void loadRound(Math.max(0, quizTypes.indexOf(initialType)));
+    hydrateStartingPoints();
+  }, [hydrateStartingPoints, initialType, loadRound, quizTypes]);
 
   useEffect(() => {
     if (!open) {

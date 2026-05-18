@@ -6,6 +6,9 @@ export const dynamic = "force-dynamic";
 
 const STUDY_TIMEOUT_MS = 15000;
 const PRONUNCIATION_TIMEOUT_MS = 15000;
+const PRONUNCIATION_SERVICE_PREFIX = "/pronunciation-evaluation";
+const PRONUNCIATION_ENDPOINT_PATH = `${PRONUNCIATION_SERVICE_PREFIX}/get-pronunciation-feedback`;
+const DERIVED_PRONUNCIATION_PORTS = ["8088", "8001", "8000"] as const;
 
 const HIRAGANA_TO_ROMAJI: Record<string, string> = {
   "あ": "a", "い": "i", "う": "u", "え": "e", "お": "o",
@@ -50,7 +53,59 @@ function buildContentUrl(path: string) {
 }
 
 function buildPronunciationUrl(baseUrl: string) {
-  return `${baseUrl.replace(/\/$/, "")}/pronunciation-evaluation/get-pronunciation-feedback`;
+  const url = new URL(baseUrl.trim());
+  const basePath = normalizeUrlPath(url.pathname);
+
+  if (!basePath) {
+    url.pathname = PRONUNCIATION_ENDPOINT_PATH;
+  } else if (
+    basePath === PRONUNCIATION_ENDPOINT_PATH ||
+    basePath.endsWith(PRONUNCIATION_ENDPOINT_PATH)
+  ) {
+    url.pathname = basePath;
+  } else if (
+    basePath === PRONUNCIATION_SERVICE_PREFIX ||
+    basePath.endsWith(PRONUNCIATION_SERVICE_PREFIX)
+  ) {
+    url.pathname = `${basePath}/get-pronunciation-feedback`.replace(/\/+/g, "/");
+  } else {
+    url.pathname = `${basePath}${PRONUNCIATION_ENDPOINT_PATH}`.replace(/\/+/g, "/");
+  }
+
+  url.search = "";
+  url.hash = "";
+
+  return url.toString();
+}
+
+function normalizeUrlPath(path: string) {
+  const trimmed = path.trim().replace(/\/+$/, "");
+
+  if (!trimmed || trimmed === "/") {
+    return "";
+  }
+
+  return trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+}
+
+function addDerivedPronunciationCandidates(
+  bases: Set<string>,
+  sourceUrl: URL,
+) {
+  for (const port of DERIVED_PRONUNCIATION_PORTS) {
+    const candidate = new URL(sourceUrl.toString());
+    candidate.port = port;
+    candidate.pathname = "";
+    candidate.search = "";
+    candidate.hash = "";
+    bases.add(candidate.toString().replace(/\/$/, ""));
+
+    if (candidate.protocol === "https:") {
+      const httpCandidate = new URL(candidate.toString());
+      httpCandidate.protocol = "http:";
+      bases.add(httpCandidate.toString().replace(/\/$/, ""));
+    }
+  }
 }
 
 function getPronunciationBaseCandidates() {
@@ -62,22 +117,14 @@ function getPronunciationBaseCandidates() {
 
   try {
     const studyUrl = new URL(apiConfig.studyApiBase);
-    const isLocalStudyHost =
-      studyUrl.hostname === "localhost" ||
-      studyUrl.hostname === "127.0.0.1";
-
-    if (isLocalStudyHost) {
-      studyUrl.port = "8000";
-      studyUrl.pathname = "";
-      studyUrl.search = "";
-      studyUrl.hash = "";
-      bases.add(studyUrl.toString().replace(/\/$/, ""));
-    }
+    addDerivedPronunciationCandidates(bases, studyUrl);
   } catch {
     // Ignore invalid base URLs and continue with local candidates.
   }
 
   if (process.env.NODE_ENV !== "production") {
+    bases.add("http://127.0.0.1:8001");
+    bases.add("http://localhost:8001");
     bases.add("http://127.0.0.1:8000");
     bases.add("http://localhost:8000");
   }
@@ -163,13 +210,19 @@ async function getExpectedSpeech(
 async function tryDirectPronunciationService(audioFile: File, expectedSpeech: string) {
   let lastError: unknown = null;
 
-  for (const baseUrl of getPronunciationBaseCandidates()) {
+  const baseCandidates = getPronunciationBaseCandidates();
+  if (baseCandidates.length === 0) {
+    throw new Error("No hay bases configuradas para el servicio de pronunciación");
+  }
+
+  for (const baseUrl of baseCandidates) {
     const formData = new FormData();
     formData.append("audio_file", audioFile, audioFile.name || "pronunciation.wav");
     formData.append("expected_speech", expectedSpeech);
 
     try {
-      const upstream = await fetch(buildPronunciationUrl(baseUrl), {
+      const endpointUrl = buildPronunciationUrl(baseUrl);
+      const upstream = await fetch(endpointUrl, {
         method: "POST",
         body: formData,
         cache: "no-store",
@@ -188,7 +241,7 @@ async function tryDirectPronunciationService(audioFile: File, expectedSpeech: st
       }
 
       return {
-        baseUrl,
+        endpointUrl,
         data,
       };
     } catch (error) {
@@ -259,12 +312,13 @@ export async function POST(req: NextRequest) {
         typeof hiragana === "string" ? hiragana : null,
       );
       const directResponse = await tryDirectPronunciationService(audioFile, expectedSpeech);
+      const directEndpointUrl = new URL(directResponse.endpointUrl);
 
       return NextResponse.json(directResponse.data, {
         status: 200,
         headers: {
-          "x-gokai-upstream": new URL(directResponse.baseUrl).host,
-          "x-gokai-upstream-path": "/pronunciation-evaluation/get-pronunciation-feedback",
+          "x-gokai-upstream": directEndpointUrl.host,
+          "x-gokai-upstream-path": directEndpointUrl.pathname,
           "x-gokai-upstream-fallback": "direct-pronunciation",
         },
       });
@@ -285,12 +339,13 @@ export async function POST(req: NextRequest) {
         typeof hiragana === "string" ? hiragana : null,
       );
       const directResponse = await tryDirectPronunciationService(audioFile, expectedSpeech);
+      const directEndpointUrl = new URL(directResponse.endpointUrl);
 
       return NextResponse.json(directResponse.data, {
         status: 200,
         headers: {
-          "x-gokai-upstream": new URL(directResponse.baseUrl).host,
-          "x-gokai-upstream-path": "/pronunciation-evaluation/get-pronunciation-feedback",
+          "x-gokai-upstream": directEndpointUrl.host,
+          "x-gokai-upstream-path": directEndpointUrl.pathname,
           "x-gokai-upstream-fallback": "direct-pronunciation",
         },
       });
