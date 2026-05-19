@@ -23,14 +23,14 @@ type PremiumThemeGateModalProps = {
 };
 
 const premiumBenefits = [
-  "Todos los intereses del mapa de Japon",
-  "Rutas completas en Graph y Library",
-  "Exploracion premium sin perder tu progreso",
+  "Todos los intereses del mapa de Japón",
+  "Rutas completas y contenido sin límite en librería",
+  "Exploración premium sin perder tu progreso",
 ];
 
 const freePlanItems = [
   "Tus intereses guardados actualmente",
-  "Acceso a kana, kanji y gramatica ya desbloqueados",
+  "Acceso a kana, kanji y gramática ya desbloqueados",
   "Tu progreso y favoritos se mantienen intactos",
 ];
 
@@ -105,7 +105,7 @@ export function PremiumThemeGateModal({
                 </h2>
 
                 <p className="mt-4 hidden text-sm leading-7 text-white/82 md:block">
-                  Este interes forma parte de las rutas premium. Activa GOKAI+ para abrirlo en graph y library sin perder tu progreso actual.
+                  Este interes forma parte de las rutas premium. Activa GOKAI+ para abrirlo en el mapa de japón y librería sin perder tu progreso actual.
                 </p>
 
                 <p className="mx-auto mt-2 max-w-[28ch] text-[12px] leading-4 text-white/82 md:hidden">
@@ -123,8 +123,6 @@ export function PremiumThemeGateModal({
               </div>
 
               <div className="hidden items-center gap-3 px-7 pb-6 text-xs text-white/52 md:flex">
-                <Star className="h-3.5 w-3.5" />
-                <span>Tu progreso, favoritos y ruta actual se mantienen</span>
               </div>
             </div>
 
@@ -147,19 +145,19 @@ export function PremiumThemeGateModal({
                   {[
                     {
                       icon: Map,
-                      title: "Todos los intereses del mapa de Japon",
+                      title: "Todos los intereses del mapa de Japón",
                       description:
                         "Accede a temas premium que no formen parte de tus intereses guardados y recorre regiones completas sin bloqueos.",
                     },
                     {
                       icon: BookOpen,
-                      title: "Graph y Library conectados",
+                      title: "Tus intereses y librería conectados",
                       description:
                         "Entra al mismo contenido premium desde el mapa o desde library con una experiencia coherente.",
                     },
                     {
                       icon: Sparkles,
-                      title: "Exploracion completa sin reiniciar nada",
+                      title: "Exploración completa sin reiniciar nada",
                       description:
                         "Mantienes tus favoritos, tu progreso actual y lo que ya desbloqueaste mientras amplias acceso.",
                     },

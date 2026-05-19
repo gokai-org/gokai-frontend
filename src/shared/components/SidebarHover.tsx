@@ -173,7 +173,12 @@ export default function SidebarOnly() {
   const platformMotion = usePlatformMotion();
   const { accessResolved, isPremium } = useResolvedPremiumAccess();
 
-  const { setExpanded, hidden: sidebarHidden, blurred: sidebarBlurred } = useSidebar();
+  const {
+    setExpanded,
+    hidden: sidebarHidden,
+    blurred: sidebarBlurred,
+    contextAction,
+  } = useSidebar();
   const [hovered, setHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [guideExpanded, setGuideExpanded] = useState(false);
@@ -523,6 +528,58 @@ export default function SidebarOnly() {
                 "overflow-y-auto no-scrollbar",
               ].join(" ")}
             >
+              <AnimatePresence initial={false}>
+                {contextAction ? (
+                  <motion.div
+                    key={contextAction.id}
+                    initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    transition={SIDEBAR_FAST_TWEEN}
+                    className={expanded ? "px-0 pt-1 pb-3" : "px-0 pt-1 pb-2"}
+                  >
+                    <motion.button
+                      type="button"
+                      onClick={contextAction.onClick}
+                      className={[
+                        "group relative flex h-12 w-full items-center overflow-hidden rounded-[22px] border border-[rgba(255,255,255,0.5)] bg-white/68 text-left text-[var(--text-primary)] ring-1 ring-[rgba(15,23,42,0.06)] shadow-[0_16px_34px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl transition-colors dark:border-white/6 dark:bg-white/6 dark:ring-white/10 dark:shadow-[var(--shadow-md)]",
+                        expanded ? "justify-start px-3.5" : "justify-center px-0",
+                      ].join(" ")}
+                      aria-label={contextAction.label}
+                      title={expanded ? undefined : contextAction.label}
+                      whileHover={expanded ? { scale: 1.01, x: 2 } : { scale: 1.02 }}
+                      whileTap={{ scale: 0.985 }}
+                      transition={SIDEBAR_GENTLE_HOVER}
+                    >
+                      <div className="absolute inset-0 rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.32),rgba(255,255,255,0.14))] opacity-80 dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))]" />
+                      <span
+                        className={[
+                          "relative z-10 flex shrink-0 items-center justify-center text-[15px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]",
+                          expanded ? "h-9 w-9 rounded-2xl bg-black/[0.035] dark:bg-white/[0.06]" : "h-full w-full",
+                        ].join(" ")}
+                        aria-hidden="true"
+                      >
+                        {expanded ? "←" : contextAction.compactLabel}
+                      </span>
+                      <motion.span
+                        className="relative z-10 min-w-0 overflow-hidden whitespace-nowrap text-[15px] font-semibold tracking-[-0.02em]"
+                        initial={false}
+                        animate={{
+                          opacity: expanded ? 1 : 0,
+                          x: expanded ? 0 : -6,
+                          maxWidth: expanded ? 180 : 0,
+                          marginLeft: expanded ? 12 : 0,
+                        }}
+                        transition={SIDEBAR_FAST_TWEEN}
+                      >
+                        {contextAction.label}
+                      </motion.span>
+                      <div className="absolute inset-0 rounded-[22px] bg-black/[0.04] opacity-0 transition-opacity group-hover:opacity-100 dark:bg-white/[0.05]" />
+                    </motion.button>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+
               <SectionLabel label="MENU" expanded={expanded} />
               <div className="mt-2 space-y-2">
                 {items

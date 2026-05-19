@@ -5,6 +5,7 @@ import { Compass, Menu, PanelsTopLeft, Sparkles } from "lucide-react";
 import {
   useCallback,
   useEffect,
+  Fragment,
   useMemo,
   useRef,
   useState,
@@ -293,6 +294,16 @@ function isOverlayTarget(target: EventTarget | null) {
   return (
     target instanceof Element &&
     Boolean(target.closest("[data-vocabulary-overlay='true']"))
+  );
+}
+
+function isEditableTarget(target: EventTarget | null) {
+  return (
+    target instanceof HTMLElement &&
+    (target.isContentEditable ||
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement)
   );
 }
 
@@ -814,7 +825,7 @@ function waitForValue<T>(
 export default function Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { setHidden } = useSidebar();
+  const { expanded: sidebarExpanded, setContextAction, setHidden } = useSidebar();
   const { activeTour, pendingTour, startTour } = useGuideTour();
   const sceneRef = useRef<HTMLDivElement | null>(null);
   const pointersRef = useRef(new Map<number, PointerPosition>());
@@ -864,6 +875,7 @@ export default function Page() {
   const unlockTransitionTimeoutRef = useRef<number | null>(null);
   const deferredRewardTimeoutRef = useRef<number | null>(null);
   const handledDeepLinkRef = useRef<string | null>(null);
+  const zoomOutIntentRef = useRef(0);
   const [hoverResetToken, setHoverResetToken] = useState(0);
   const [firstRunEnabled, setFirstRunEnabled] = useState(false);
   const [firstRunSeenStateReady, setFirstRunSeenStateReady] = useState(false);
@@ -972,6 +984,7 @@ export default function Page() {
   const requestedThemeId = searchParams.get("themeId");
   const requestedSubthemeId = searchParams.get("subthemeId");
   const isLessonOpen = Boolean(selectedSubthemeItem && selectedWord);
+  const canNavigateBack = isLessonOpen || currentLevel !== "map";
   const activeRegionId = currentLevel === "map" ? null : selectedRegionId;
   const selectedRegion = useMemo(
     () => regions.find((region) => region.id === activeRegionId) ?? null,
@@ -1751,34 +1764,135 @@ export default function Page() {
     ],
   );
 
+  const closeSelectedWord = useCallback(() => {
+    setSelectedWordId(null);
+    setUnlockFocusWordId(null);
+  }, []);
+
+  const navigateToGraphLevel = useCallback(
+    (targetLevel: VocabularyViewLevel) => {
+      if (targetLevel === "subtheme") {
+        closeSelectedWord();
+        return;
+      }
+
+      if (targetLevel === "theme") {
+        subthemeLoadRequestRef.current += 1;
+        setPendingGraphNodeId(null);
+        setSubthemeWordsLoading(false);
+        setSubthemeWords([]);
+        closeSelectedWord();
+        setCurrentLevel("theme");
+        return;
+      }
+
+      if (targetLevel === "region") {
+        setRegionThemeGraphLoading(false);
+        setPendingThemeId(null);
+        setPendingGraphNodeId(null);
+        setSubthemeWords([]);
+        setSelectedSubthemeNodeId(null);
+        closeSelectedWord();
+        setCurrentLevel("region");
+        return;
+      }
+
+      closeSelectedWord();
+      exitRegionSelection();
+    },
+    [closeSelectedWord, exitRegionSelection],
+  );
+
   const handleBack = useCallback(() => {
+    if (isLessonOpen) {
+      navigateToGraphLevel("subtheme");
+      return;
+    }
+
     if (currentLevel === "subtheme") {
-      subthemeLoadRequestRef.current += 1;
-      setPendingGraphNodeId(null);
-      setSubthemeWordsLoading(false);
-      setSubthemeWords([]);
-      setSelectedWordId(null);
-      setUnlockFocusWordId(null);
-      setCurrentLevel("theme");
+      navigateToGraphLevel("theme");
       return;
     }
 
     if (currentLevel === "theme") {
-      setRegionThemeGraphLoading(false);
-      setPendingThemeId(null);
-      setPendingGraphNodeId(null);
-      setSubthemeWords([]);
-      setSelectedSubthemeNodeId(null);
-      setSelectedWordId(null);
-      setUnlockFocusWordId(null);
-      setCurrentLevel("region");
+      navigateToGraphLevel("region");
       return;
     }
 
     if (currentLevel === "region") {
-      exitRegionSelection();
+      navigateToGraphLevel("map");
     }
-  }, [currentLevel, exitRegionSelection]);
+  }, [currentLevel, isLessonOpen, navigateToGraphLevel]);
+
+  const breadcrumbItems = useMemo(
+    () => {
+      const items: Array<{
+        id: string;
+        label: string;
+        level: VocabularyViewLevel;
+      }> = [{ id: "map", label: "Japón", level: "map" }];
+
+      if (selectedRegion && currentLevel !== "map") {
+        items.push({
+          id: `region:${selectedRegion.id}`,
+          label: selectedRegion.label,
+          level: "region",
+        });
+      }
+
+      if (
+        selectedTheme &&
+        (currentLevel === "theme" || currentLevel === "subtheme" || isLessonOpen)
+      ) {
+        items.push({
+          id: `theme:${selectedTheme.themeId ?? selectedTheme.id}`,
+          label: selectedTheme.label,
+          level: "theme",
+        });
+      }
+
+      if (selectedSubthemeItem && (currentLevel === "subtheme" || isLessonOpen)) {
+        items.push({
+          id: `subtheme:${selectedSubthemeItem.nodeId}`,
+          label: selectedSubthemeItem.meaning || selectedSubthemeItem.kanji || "Subtema",
+          level: "subtheme",
+        });
+      }
+
+      if (selectedWord && isLessonOpen) {
+        items.push({
+          id: `word:${selectedWord.wordId}`,
+          label:
+            selectedWord.kanji ||
+            selectedWord.hiragana ||
+            selectedWord.meanings?.[0] ||
+            "Palabra",
+          level: "subtheme",
+        });
+      }
+
+      return items;
+    },
+    [currentLevel, isLessonOpen, selectedRegion, selectedSubthemeItem, selectedTheme, selectedWord],
+  );
+
+  useEffect(() => {
+    if (!canNavigateBack) {
+      setContextAction(null);
+      return;
+    }
+
+    setContextAction({
+      id: "graph-back",
+      label: "Regresar",
+      compactLabel: "◀",
+      onClick: handleBack,
+    });
+
+    return () => {
+      setContextAction(null);
+    };
+  }, [canNavigateBack, handleBack, setContextAction]);
 
   const handleNavigateToLibrary = useCallback(() => {
     if (typeof window === "undefined") {
@@ -2893,7 +3007,29 @@ export default function Page() {
       }, 160);
 
       const totalScale = autoTransformRef.current.scale * manualTransformRef.current.scale;
+      if (event.deltaY <= 0) {
+        zoomOutIntentRef.current = 0;
+      }
+
+      if (
+        event.deltaY > 0 &&
+        canNavigateBack &&
+        totalScale <= MIN_SCENE_SCALE + 0.16
+      ) {
+        zoomOutIntentRef.current += Math.min(Math.abs(event.deltaY), 96);
+
+        if (zoomOutIntentRef.current >= 72) {
+          zoomOutIntentRef.current = 0;
+          dismissGraphHovers();
+          handleBack();
+          return;
+        }
+      } else if (event.deltaY > 0) {
+        zoomOutIntentRef.current = 0;
+      }
+
       if (event.deltaY > 0 && currentLevelRef.current !== "map" && totalScale <= MIN_SCENE_SCALE + 0.04) {
+        zoomOutIntentRef.current = 0;
         handleBack();
         return;
       }
@@ -3007,10 +3143,32 @@ export default function Page() {
 
         if (previous && previous.distance > 0) {
           const rect = sceneGestureRectRef.current;
+          const factor = clamp(distance / previous.distance, 0.82, 1.22);
+
+          if (
+            factor < 0.94 &&
+            canNavigateBack &&
+            autoTransformRef.current.scale * manualTransformRef.current.scale <=
+              MIN_SCENE_SCALE + 0.18
+          ) {
+            zoomOutIntentRef.current += (1 - factor) * 240;
+
+            if (zoomOutIntentRef.current >= 60) {
+              zoomOutIntentRef.current = 0;
+              dismissGraphHovers();
+              handleBack();
+              suppressRegionClickRef.current = true;
+              pinchRef.current = { distance, center };
+              return;
+            }
+          } else {
+            zoomOutIntentRef.current = 0;
+          }
+
           dismissGraphHovers();
           zoomAndPanAt(
             rect ? { x: center.x - rect.left, y: center.y - rect.top } : center,
-            clamp(distance / previous.distance, 0.82, 1.22),
+            factor,
             { x: center.x - previous.center.x, y: center.y - previous.center.y },
           );
         }
@@ -3143,6 +3301,70 @@ export default function Page() {
     };
   }, [handlePointerDown, handlePointerMove, handlePointerEnd]);
 
+  const handleSceneDoubleClick = useCallback(
+    (event: MouseEvent) => {
+      if (
+        !canNavigateBack ||
+        sceneInteractionLockedRef.current ||
+        isNodeTarget(event.target) ||
+        isOverlayTarget(event.target) ||
+        getRegionTarget(event.target)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      dismissGraphHovers();
+      handleBack();
+    },
+    [canNavigateBack, dismissGraphHovers, handleBack],
+  );
+
+  useEffect(() => {
+    const el = sceneRef.current;
+    if (!el) {
+      return;
+    }
+
+    el.addEventListener("dblclick", handleSceneDoubleClick);
+    return () => {
+      el.removeEventListener("dblclick", handleSceneDoubleClick);
+    };
+  }, [handleSceneDoubleClick]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (
+        event.key !== "Escape" ||
+        !canNavigateBack ||
+        activeTour ||
+        showMissingInterestsModal ||
+        showPremiumThemeModal ||
+        showVocabularyAccessModal ||
+        isEditableTarget(event.target)
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+      dismissGraphHovers();
+      handleBack();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [
+    activeTour,
+    canNavigateBack,
+    dismissGraphHovers,
+    handleBack,
+    showMissingInterestsModal,
+    showPremiumThemeModal,
+    showVocabularyAccessModal,
+  ]);
+
   // Pre-warm: after data is loaded and the scene is sized, trigger a
   // sub-pixel micro-movement to force the browser's compositor to promote
   // the transform layer to a GPU tile and JIT-compile the Framer Motion hot
@@ -3267,6 +3489,45 @@ export default function Page() {
           </div>
         ) : (
           <>
+          <motion.div
+            data-vocabulary-overlay="true"
+            className="pointer-events-none absolute top-4 left-4 z-30 md:left-28 md:top-5"
+            animate={{ x: sidebarExpanded ? 262 : 0, opacity: breadcrumbItems.length > 1 ? 1 : 0.72 }}
+            transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <nav
+              aria-label="Ruta del mapa"
+              className="pointer-events-auto max-w-[min(calc(100vw-2rem),28rem)] rounded-full border border-white/45 bg-white/60 px-3 py-2 shadow-[0_14px_32px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl dark:border-white/8 dark:bg-[rgba(12,12,16,0.46)] dark:shadow-[0_18px_36px_rgba(0,0,0,0.28)]"
+            >
+              <div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap text-[12px] font-medium text-slate-500 no-scrollbar dark:text-slate-400 md:text-[12.5px]">
+                {breadcrumbItems.map((item, index) => {
+                  const isLast = index === breadcrumbItems.length - 1;
+
+                  return (
+                    <Fragment key={item.id}>
+                      <button
+                        type="button"
+                        onClick={() => navigateToGraphLevel(item.level)}
+                        className={[
+                          "rounded-full px-1.5 py-0.5 transition-colors duration-200",
+                          isLast
+                            ? "text-slate-700 dark:text-slate-200"
+                            : "hover:bg-black/[0.045] hover:text-slate-700 dark:hover:bg-white/[0.05] dark:hover:text-slate-200",
+                        ].join(" ")}
+                        aria-current={isLast ? "page" : undefined}
+                      >
+                        <span className="block max-w-[8rem] truncate md:max-w-[10rem]">
+                          {item.label}
+                        </span>
+                      </button>
+                      {!isLast ? <span aria-hidden="true">/</span> : null}
+                    </Fragment>
+                  );
+                })}
+              </div>
+            </nav>
+          </motion.div>
+
           <motion.div
             ref={transformLayerRef}
             data-map-transform-layer="true"
