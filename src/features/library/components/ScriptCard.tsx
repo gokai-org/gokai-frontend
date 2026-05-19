@@ -190,6 +190,7 @@ export function ScriptCard({
       if (showLockedShakeFeedback) {
         triggerShake(id);
       }
+      onClick?.();
       return;
     }
 

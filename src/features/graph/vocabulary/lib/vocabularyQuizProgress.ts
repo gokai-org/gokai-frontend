@@ -12,6 +12,8 @@ export const VOCABULARY_QUIZ_TYPES: VocabularyAnswerType[] = [
   "writing",
 ];
 
+export const VOCABULARY_SPEAKING_PASS_SCORE = 70;
+
 export const VOCABULARY_QUIZ_TYPE_LABELS: Record<VocabularyAnswerType, string> = {
   meaning: "Significado",
   listening: "Audio",
@@ -44,6 +46,21 @@ const nodeScoreKeys: Record<VocabularyAnswerType, keyof VocabularyNodeQuizProgre
   speaking: "speakingScore",
   writing: "writingScore",
 };
+
+export function isVocabularyQuizPassingScore(
+  type: VocabularyAnswerType,
+  score: number | null | undefined,
+) {
+  if (typeof score !== "number") {
+    return false;
+  }
+
+  if (type === "speaking") {
+    return score >= VOCABULARY_SPEAKING_PASS_SCORE;
+  }
+
+  return score === 100;
+}
 
 export function findWordProgress(
   item: Pick<VocabularyGraphProgressItem, "wordProgress"> | null | undefined,
@@ -111,13 +128,15 @@ export function getQuizTypeProgress(
   progress: VocabularyWordProgress | VocabularyWordLesson | null | undefined,
   type: VocabularyAnswerType,
 ) {
-  const completed = getCompletedQuizTypes(progress).includes(type);
   const rawScore = progress?.[scoreKeys[type]];
   const score = typeof rawScore === "number" ? rawScore : null;
+  const completed =
+    getCompletedQuizTypes(progress).includes(type) ||
+    isVocabularyQuizPassingScore(type, score);
 
   return {
     completed,
-    correct: completed && score === 100,
+    correct: completed && isVocabularyQuizPassingScore(type, score),
     score,
   };
 }
@@ -128,7 +147,7 @@ export function getNodeQuizTypeProgress(
 ) {
   const score = progress?.[nodeScoreKeys[type]] ?? null;
   const normalizedScore = typeof score === "number" ? score : null;
-  const completed = normalizedScore === 100;
+  const completed = isVocabularyQuizPassingScore(type, normalizedScore);
 
   return {
     completed,

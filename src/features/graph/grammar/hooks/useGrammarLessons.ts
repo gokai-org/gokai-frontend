@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { getCurrentUser } from "@/features/auth";
+import { useKanaContentAccess } from "@/features/kana/hooks/useKanaContentAccess";
 import { invalidateApiCache } from "@/shared/lib/api/client";
 import { subscribeMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import type {
@@ -17,6 +18,7 @@ const GRAMMAR_POINTS_SYNC_TTL_MS = 30_000;
 const RECENTLY_UNLOCKED_TTL_MS = 1500;
 
 export function useGrammarLessons() {
+  const { hasKanaContentAccess } = useKanaContentAccess();
   const [lessons, setLessons] = useState<GrammarLessonSummary[]>([]);
   const [userPoints, setUserPoints] = useState(0);
   const [progress, setProgress] = useState<GrammarStudyProgress | null>(null);
@@ -148,16 +150,19 @@ export function useGrammarLessons() {
       buildGrammarBoardItems(lessons, {
         progress,
         userPoints,
+        blockedByKanaRequirement: !hasKanaContentAccess,
       }),
-    [lessons, progress, userPoints],
+    [hasKanaContentAccess, lessons, progress, userPoints],
   );
 
   const nextUnlockCandidate =
-    boardItems.find((item) => item.canUnlock) ??
-    boardItems.find((item) => item.status === "locked" && !item.isMock) ??
-    null;
+    hasKanaContentAccess
+      ? boardItems.find((item) => item.canUnlock) ??
+        boardItems.find((item) => item.status === "locked" && !item.isMock) ??
+        null
+      : null;
 
-  const canUnlockNext = nextUnlockCandidate?.canUnlock === true;
+  const canUnlockNext = hasKanaContentAccess && nextUnlockCandidate?.canUnlock === true;
 
   return {
     boardItems,
@@ -172,5 +177,6 @@ export function useGrammarLessons() {
     unlockCost: FIXED_GRAMMAR_UNLOCK_COST,
     applyOptimisticUnlock,
     recentlyUnlockedIds,
+    hasKanaContentAccess,
   };
 }

@@ -11,7 +11,16 @@ import { AnimatePresence, motion } from "framer-motion";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
 
-type ItemKey = "support" | "coupons" | "users" | "vocabulary" | "statistics" | "logout";
+type ItemKey =
+  | "support"
+  | "coupons"
+  | "users"
+  | "kanji"
+  | "lessons"
+  | "vocabulary"
+  | "statistics"
+  | "notifications"
+  | "logout";
 
 type NavItem = {
   key: ItemKey;
@@ -67,6 +76,22 @@ export default function AdminSidebar() {
         href: "/admin/dashboard/users",
       },
       {
+        key: "kanji",
+        label: "Kanjis",
+        section: "menu",
+        iconInactive: "/icons/biblioteca.svg",
+        iconActive: "/icons/biblioteca-active.svg",
+        href: "/admin/dashboard/kanji",
+      },
+      {
+        key: "lessons",
+        label: "Gramática",
+        section: "menu",
+        iconInactive: "/icons/repaso.svg",
+        iconActive: "/icons/repaso-active.svg",
+        href: "/admin/dashboard/lessons",
+      },
+      {
         key: "vocabulary",
         label: "Vocabulario",
         section: "menu",
@@ -81,6 +106,14 @@ export default function AdminSidebar() {
         iconInactive: "/icons/estadisticas.svg",
         iconActive: "/icons/estadisticas-active.svg",
         href: "/admin/dashboard/statistics",
+      },
+      {
+        key: "notifications",
+        label: "Notificaciones",
+        section: "menu",
+        iconInactive: "/icons/avisos.svg",
+        iconActive: "/icons/avisos-active.svg",
+        href: "/admin/dashboard/notifications",
       },
       {
         key: "logout",

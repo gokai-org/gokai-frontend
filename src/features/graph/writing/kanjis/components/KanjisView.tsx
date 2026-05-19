@@ -1,6 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useKanaContentAccess } from "@/features/kana/hooks/useKanaContentAccess";
+import { GraphGateModal } from "@/features/graph/components/GraphGateModal";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { KanjiQuizModal } from "@/features/kanji/components/quiz";
@@ -79,6 +82,7 @@ function getRequestErrorMessage(error: unknown, fallback: string) {
 }
 
 export default function KanjisView() {
+  const router = useRouter();
   const {
     items,
     summary,
@@ -91,7 +95,9 @@ export default function KanjisView() {
     unlockCost,
     applyOptimisticUnlock,
     recentlyUnlockedIds,
+    hasKanaContentAccess,
   } = useKanjiBoard();
+  const { blockedMessage } = useKanaContentAccess();
   const autoUnlockedKanjiRef = useRef<Set<string>>(new Set());
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useKanjiBoardQuality(graphicsProfile);
@@ -118,6 +124,7 @@ export default function KanjisView() {
   const [unlockFocusNodeId, setUnlockFocusNodeId] = useState<string | null>(
     null,
   );
+  const [showKanaRequirementModal, setShowKanaRequirementModal] = useState(false);
   const [unlockPending, setUnlockPending] = useState(false);
   const [unlockPendingNodeId, setUnlockPendingNodeId] = useState<string | null>(null);
   const [kanjiPointsReward, setKanjiPointsReward] = useState<number | null>(null);
@@ -308,6 +315,11 @@ export default function KanjisView() {
   ]);
 
   const handleUnlockNextKanji = useCallback(async (nodeId?: string) => {
+    if (!hasKanaContentAccess) {
+      setShowKanaRequirementModal(true);
+      return;
+    }
+
     if (!nextUnlockCandidate || !canUnlockNext || unlockPending) {
       return;
     }
@@ -342,12 +354,13 @@ export default function KanjisView() {
       setUnlockPending(false);
       setUnlockPendingNodeId(null);
     }
-  }, [canUnlockNext, nextUnlockCandidate, toast, unlockPending, applyOptimisticUnlock]);
+  }, [applyOptimisticUnlock, canUnlockNext, hasKanaContentAccess, nextUnlockCandidate, toast, unlockPending]);
 
   // Auto-desbloqueo de kanjis gratuitos (cost = 0): el usuario no necesita
   // mantener presionado para abrirlos. Se dispara una sola vez por id.
   useEffect(() => {
     if (loading) return;
+    if (!hasKanaContentAccess) return;
     if (unlockPending) return;
     const candidate = nextUnlockCandidate;
     if (!candidate || !canUnlockNext) return;
@@ -355,7 +368,7 @@ export default function KanjisView() {
     if (autoUnlockedKanjiRef.current.has(candidate.id)) return;
     autoUnlockedKanjiRef.current.add(candidate.id);
     void handleUnlockNextKanji(candidate.id);
-  }, [canUnlockNext, handleUnlockNextKanji, loading, nextUnlockCandidate, unlockCost, unlockPending]);
+  }, [canUnlockNext, handleUnlockNextKanji, hasKanaContentAccess, loading, nextUnlockCandidate, unlockCost, unlockPending]);
 
   const handlePressUnlockNode = useCallback(
     (nodeId: string) => {
@@ -372,13 +385,18 @@ export default function KanjisView() {
     }
 
     if (item.status === "locked") {
+      if (!hasKanaContentAccess) {
+        setShowKanaRequirementModal(true);
+        return;
+      }
+
       triggerNodeShake(nodeId);
       return;
     }
 
     setManualSelectedId(nodeId);
     setDetailNodeId(nodeId);
-  }, [triggerNodeShake]);
+  }, [hasKanaContentAccess, triggerNodeShake]);
 
   const handleCloseDetail = useCallback(() => {
     setDetailNodeId(null);
@@ -453,7 +471,7 @@ export default function KanjisView() {
           title: "Guía de Kanjis",
           scopeSelector: '[data-help-surface="kanji-board"]',
           boardLabel: "Tablero de kanji",
-          requirementLabel: "los puntos necesarios",
+          requirementLabel: hasKanaContentAccess ? "los puntos necesarios" : blockedMessage,
         });
       }
 
@@ -477,7 +495,7 @@ export default function KanjisView() {
           document.querySelector('[data-help-target="writing-script-tabs"]') !== null,
       });
     },
-    [focusHelpNode, helpNodeId, openHelpLesson, resetHelpTourState],
+    [blockedMessage, focusHelpNode, hasKanaContentAccess, helpNodeId, openHelpLesson, resetHelpTourState],
   );
 
   useEffect(() => {
@@ -653,11 +671,11 @@ export default function KanjisView() {
   }, [items]);
 
   useEffect(() => {
-    setHidden(detailNodeId !== null);
+    setHidden(detailNodeId !== null || showKanaRequirementModal);
     return () => {
       setHidden(false);
     };
-  }, [detailNodeId, setHidden]);
+  }, [detailNodeId, setHidden, showKanaRequirementModal]);
 
   const setInteractionState = useCallback((isInteracting: boolean) => {
     isInteractingRef.current = isInteracting;
@@ -966,6 +984,21 @@ export default function KanjisView() {
           points={kanjiPointsReward}
           caption="Kanji completado"
           onComplete={() => setKanjiPointsReward(null)}
+        />
+
+        <GraphGateModal
+          open={showKanaRequirementModal}
+          variant="kana-required"
+          blockedContentLabel="kanjis"
+          onClose={() => setShowKanaRequirementModal(false)}
+          onOpenHiragana={() => {
+            setShowKanaRequirementModal(false);
+            router.push("/dashboard/graph/writing?tab=hiragana");
+          }}
+          onOpenKatakana={() => {
+            setShowKanaRequirementModal(false);
+            router.push("/dashboard/graph/writing?tab=katakana");
+          }}
         />
       </div>
     </MasteryBoardWrapper>

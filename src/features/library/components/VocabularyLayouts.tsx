@@ -92,10 +92,10 @@ export function GradientCardLayout({
       <div className="relative z-10 flex-1" />
 
       {/* ── Bottom text block ────────────────────────────────────────── */}
-      <div className="relative z-10 mt-3">
+      <div className="relative z-10 mt-3 w-full">
         <h3
           className={[
-            "line-clamp-2 text-[17px] font-black leading-tight",
+            "text-[17px] font-black leading-[1.15] break-words",
             "text-content-primary group-hover:text-white",
             hoverTransition,
           ].join(" ")}
@@ -106,7 +106,7 @@ export function GradientCardLayout({
         {subtitle && (
           <p
             className={[
-              "mt-1 line-clamp-1 text-[12px] font-medium",
+              "mt-1 text-[12px] font-medium leading-[1.35] break-words",
               "text-content-muted group-hover:text-white/72",
               hoverTransition,
             ].join(" ")}

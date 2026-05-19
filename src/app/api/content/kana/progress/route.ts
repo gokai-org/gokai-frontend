@@ -2,55 +2,11 @@ import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 import { apiConfig } from "@/shared/config";
+import { normalizeKanaProgressPayload } from "@/app/api/_utils/kanaProgress";
 
 export const dynamic = "force-dynamic";
 
 const KANA_PROGRESS_TIMEOUT_MS = 20000;
-
-type RawProgressItem = {
-  kanaId?: string;
-  kana_id?: string;
-  symbol?: string;
-  kanaType?: string;
-  kana_type?: string;
-  pointsToUnlock?: number;
-  points_to_unlock?: number;
-  pointsNeeded?: number;
-  points_needed?: number;
-  exerciseType?: string;
-  exercise_type?: string;
-  completed?: boolean;
-  message?: string;
-  hasHiraganaMastery?: boolean;
-  has_hiragana_mastery?: boolean;
-  hasKatakanaMastery?: boolean;
-  has_katakana_mastery?: boolean;
-  hasKanasMastery?: boolean;
-  has_kanas_mastery?: boolean;
-};
-
-function normalizeProgressItem(raw: RawProgressItem) {
-  return {
-    kanaId: raw.kanaId ?? raw.kana_id ?? "",
-    symbol: raw.symbol ?? "",
-    kanaType:
-      raw.kanaType === "katakana" || raw.kana_type === "katakana"
-        ? "katakana"
-        : "hiragana",
-    pointsToUnlock: raw.pointsToUnlock ?? raw.points_to_unlock ?? 0,
-    pointsNeeded: raw.pointsNeeded ?? raw.points_needed ?? 0,
-    exerciseType:
-      raw.exerciseType ?? raw.exercise_type ?? "",
-    completed: raw.completed === true,
-    message: raw.message,
-    hasHiraganaMastery:
-      raw.hasHiraganaMastery === true || raw.has_hiragana_mastery === true,
-    hasKatakanaMastery:
-      raw.hasKatakanaMastery === true || raw.has_katakana_mastery === true,
-    hasKanasMastery:
-      raw.hasKanasMastery === true || raw.has_kanas_mastery === true,
-  };
-}
 
 function isTransientUpstreamFetchError(error: unknown) {
   if (!(error instanceof Error)) {
@@ -113,22 +69,8 @@ export async function GET(req: NextRequest) {
     }
 
     const data: unknown = text ? JSON.parse(text) : [];
-    const items = Array.isArray(data)
-      ? data
-      : Array.isArray((data as { progress?: unknown[] })?.progress)
-        ? (data as { progress: unknown[] }).progress
-        : Array.isArray((data as { data?: unknown[] })?.data)
-          ? (data as { data: unknown[] }).data
-          : data && typeof data === "object" && (
-                typeof (data as RawProgressItem).kanaId === "string" ||
-                typeof (data as RawProgressItem).kana_id === "string"
-              )
-            ? [data]
-          : [];
 
-    return NextResponse.json(
-      items.map((item) => normalizeProgressItem(item as RawProgressItem)),
-    );
+    return NextResponse.json(normalizeKanaProgressPayload(data));
   } catch (error) {
     if (isTransientUpstreamFetchError(error)) {
       return NextResponse.json(

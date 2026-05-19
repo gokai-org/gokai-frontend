@@ -707,6 +707,7 @@ function GrammarBoardCellComponent({
         event.preventDefault();
         event.stopPropagation();
         triggerLockedShake();
+        onSelect(progress.id, event.currentTarget);
         return;
       }
 

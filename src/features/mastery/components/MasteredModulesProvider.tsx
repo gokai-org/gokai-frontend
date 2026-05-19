@@ -8,6 +8,7 @@ import {
   type ReactNode,
 } from "react";
 import { getKanaProgress } from "@/features/kana/api/kanaApi";
+import { resolveKanaMasteryState } from "@/features/kana/lib/kanaMastery";
 import { getKanjiProgress } from "@/features/kanji/api/kanjiApi";
 import { getGrammarProgress } from "@/features/graph/grammar/api/grammarApi";
 import type { MasteryModuleId } from "../types";
@@ -37,15 +38,13 @@ async function fetchMasteredModulesFromProgress(): Promise<MasteredSet> {
   ]);
 
   const next = new Set<MasteryModuleId>();
-  const kanaMasterySource = kanaProgress.find(
-    (item) => item.hasHiraganaMastery || item.hasKatakanaMastery || item.hasKanasMastery,
-  );
+  const kanaMastery = resolveKanaMasteryState(kanaProgress);
 
-  if (kanaMasterySource?.hasHiraganaMastery || kanaMasterySource?.hasKanasMastery) {
+  if (kanaMastery.hasHiraganaMastery) {
     next.add("hiragana");
   }
 
-  if (kanaMasterySource?.hasKatakanaMastery || kanaMasterySource?.hasKanasMastery) {
+  if (kanaMastery.hasKatakanaMastery) {
     next.add("katakana");
   }
 

@@ -135,11 +135,7 @@ export function LibraryGrid({
               variant="theme"
               index={i}
               locked={item.data.isUnlocked === false}
-              onClick={
-                item.data.isUnlocked === false || !onThemeClick
-                  ? undefined
-                  : () => onThemeClick(item.data)
-              }
+              onClick={onThemeClick ? () => onThemeClick(item.data) : undefined}
             />
           );
         }
@@ -152,6 +148,7 @@ export function LibraryGrid({
               index={i}
               isFavorite={favoriteGrammar?.has(item.data.id) ?? false}
               onSelect={onGrammarClick}
+              onLockedSelect={onGrammarClick}
               onToggleFavorite={onToggleFavoriteGrammar}
             />
           );

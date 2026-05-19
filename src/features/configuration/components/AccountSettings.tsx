@@ -26,15 +26,17 @@ import { CancelSubscriptionModal } from "@/features/configuration/components/Can
 import { DeleteAccountModal } from "@/features/configuration/components/DeleteAccountModal";
 import { AccountSettingsSkeleton } from "@/features/configuration/components/AccountSettingsSkeleton";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import {
+  formatBackendCalendarDate,
+  isBackendCalendarDateOnOrAfterToday,
+} from "@/shared/lib/backendCalendarDate";
 import { ScreenTransitionOverlay } from "@/shared/ui";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
 function fmtDate(value: unknown): string {
   if (!value) return "No disponible";
-  const d = new Date(String(value));
-  if (isNaN(d.getTime())) return "No disponible";
-  return d.toLocaleDateString("es-ES", { day: "numeric", month: "long", year: "numeric" });
+  return formatBackendCalendarDate(value, "long") ?? "No disponible";
 }
 
 function fmtBirthday(value?: string | Date | null): string {
@@ -54,12 +56,6 @@ function fmtBirthdayInput(value?: string | Date | null): string {
   const m = String(d.getUTCMonth() + 1).padStart(2, "0");
   const dd = String(d.getUTCDate()).padStart(2, "0");
   return `${y}-${m}-${dd}`;
-}
-
-function parseDate(value: unknown): Date | null {
-  if (!value) return null;
-  const d = new Date(String(value));
-  return isNaN(d.getTime()) ? null : d;
 }
 
 function initials(user: User | null): string {
@@ -227,16 +223,14 @@ export function AccountSettings({ user, setUser, loading }: Props) {
 
   // ── Subscription helpers ───────────────────────────────────────────────────
 
-  const subEndDate = parseDate(
-    subscription?.current_period_end ?? subscription?.expires_at ?? subscription?.expiry_date ?? subscription?.vigency,
-  );
-  const subStartDate = parseDate(subscription?.created_at ?? subscription?.start_date);
+  const subscriptionEndValue =
+    subscription?.current_period_end ?? subscription?.expires_at ?? subscription?.expiry_date ?? subscription?.vigency;
+  const subscriptionStartValue = subscription?.created_at ?? subscription?.start_date;
   const hasRecurring = subscription?.has_recurring_payment !== false;
-  const isActive = !!(
-    (user?.subscribed && subscription?.status === "active") ||
-    subscription?.status === "active" ||
-    (user?.subscribed && subEndDate && subEndDate > new Date())
-  );
+  const subscriptionStatus = String(subscription?.status ?? "").toLowerCase();
+  const hasActiveSubscriptionStatus = new Set(["active", "trialing", "paid"]).has(subscriptionStatus);
+  const isActive =
+    hasActiveSubscriptionStatus && isBackendCalendarDateOnOrAfterToday(subscriptionEndValue);
   const isCouponBased = isActive && !hasRecurring;
   const planLabel = isActive ? "GOKAI+" : user?.plan === "premium" ? "Plan Premium" : "Plan Gratuito";
   const configurationSuccessPath = "/checkout/success?flow=configuration-upgrade&returnTo=%2Fdashboard%2Fconfiguration";
@@ -625,7 +619,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
                   <div>
                     <p className="text-[11px] text-content-muted uppercase tracking-wide font-semibold">Fecha de inicio</p>
                     <p className="text-sm font-semibold text-content-primary mt-0.5">
-                      {subLoading ? <span className="animate-pulse">…</span> : fmtDate(subStartDate)}
+                      {subLoading ? <span className="animate-pulse">…</span> : fmtDate(subscriptionStartValue)}
                     </p>
                   </div>
                 </div>
@@ -636,7 +630,7 @@ export function AccountSettings({ user, setUser, loading }: Props) {
                       {isCouponBased ? "Expira el" : "Próxima renovación"}
                     </p>
                     <p className="text-sm font-semibold text-content-primary mt-0.5">
-                      {subLoading ? <span className="animate-pulse">…</span> : fmtDate(subEndDate)}
+                      {subLoading ? <span className="animate-pulse">…</span> : fmtDate(subscriptionEndValue)}
                     </p>
                   </div>
                 </div>

@@ -108,6 +108,34 @@ function toWordItem(
   };
 }
 
+function pickPreferredSubtheme(subthemes: Subtheme[]) {
+  if (subthemes.length === 0) {
+    return null;
+  }
+
+  return [...subthemes].sort((left, right) => {
+    const leftSelected = left.isSelectedInGraph ? 1 : 0;
+    const rightSelected = right.isSelectedInGraph ? 1 : 0;
+
+    if (leftSelected !== rightSelected) {
+      return rightSelected - leftSelected;
+    }
+
+    const leftRank = left.recommendationRank ?? Number.MAX_SAFE_INTEGER;
+    const rightRank = right.recommendationRank ?? Number.MAX_SAFE_INTEGER;
+
+    if (leftRank !== rightRank) {
+      return leftRank - rightRank;
+    }
+
+    return left.meaning.localeCompare(right.meaning, "es", { sensitivity: "base" });
+  })[0];
+}
+
+type OpenThemeOptions = {
+  autoOpenSubtheme?: boolean;
+};
+
 export function useVocabularyContent(searchQuery: string, enabled = true) {
   const {
     graphs,
@@ -185,44 +213,10 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
     selectedGraphIdRef.current = selectedGraphId;
   }, [selectedGraphId]);
 
-  const openTheme = useCallback(async (theme: Theme) => {
-    if (theme.isUnlocked === false) {
-      return false;
-    }
-
-    setSelectedThemeId(theme.id);
-    setSelectedSubthemeNodeId(null);
-    setWords([]);
-    setLoadingSubthemes(true);
-
-    try {
-      const existingGraphId =
-        theme.graphId ?? graphs.find((graph) => graph.themeId === theme.id)?.graphId ?? null;
-
-      if (existingGraphId) {
-        selectedGraphIdRef.current = existingGraphId;
-        setSelectedGraphId(existingGraphId);
-        return true;
-      }
-
-      const createdGraphId = await createGraphFromTheme(theme.id);
-      if (!createdGraphId) {
-        return false;
-      }
-
-      selectedGraphIdRef.current = createdGraphId;
-      setSelectedGraphId(createdGraphId);
-      return true;
-    } catch (error) {
-      console.error("Error loading vocabulary theme:", error);
-      return false;
-    } finally {
-      setLoadingSubthemes(false);
-    }
-  }, [createGraphFromTheme, graphs, setSelectedGraphId]);
-
-  const openSubtheme = useCallback(async (subtheme: Subtheme) => {
-    const graphId = selectedGraphIdRef.current;
+  const openSubthemeWithGraphId = useCallback(async (
+    subtheme: Subtheme,
+    graphId: string | null,
+  ) => {
     if (!graphId) {
       return false;
     }
@@ -253,7 +247,7 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
 
       const [res, listeningQuiz] = await Promise.all([
         listVocabularyWordsBySubthemeId(subtheme.id),
-        getVocabularyQuiz(nodeId, "listening"),
+        getVocabularyQuiz(nodeId, "listening").catch(() => null),
       ]);
 
       if (wordsRequestIdRef.current !== requestId) {
@@ -261,7 +255,7 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
       }
 
       const audioByWordId = new Map(
-        listeningQuiz.questions.map((quizQuestion) => [
+        (listeningQuiz?.questions ?? []).map((quizQuestion) => [
           quizQuestion.wordId,
           quizQuestion.audio,
         ]),
@@ -283,6 +277,74 @@ export function useVocabularyContent(searchQuery: string, enabled = true) {
       }
     }
   }, [addSubthemeToGraph, progressItems]);
+
+  const openSubtheme = useCallback(
+    async (subtheme: Subtheme) => openSubthemeWithGraphId(subtheme, selectedGraphIdRef.current),
+    [openSubthemeWithGraphId],
+  );
+
+  const openTheme = useCallback(async (
+    theme: Theme,
+    options?: OpenThemeOptions,
+  ) => {
+    if (theme.isUnlocked === false) {
+      return false;
+    }
+
+    setSelectedThemeId(theme.id);
+    setSelectedSubthemeNodeId(null);
+    setWords([]);
+    setLoadingSubthemes(true);
+
+    try {
+      const existingGraphId =
+        theme.graphId ?? graphs.find((graph) => graph.themeId === theme.id)?.graphId ?? null;
+
+      const nextGraphId = existingGraphId ?? (await createGraphFromTheme(theme.id));
+
+      if (!nextGraphId) {
+        return false;
+      }
+
+      selectedGraphIdRef.current = nextGraphId;
+      setSelectedGraphId(nextGraphId);
+
+      if (!options?.autoOpenSubtheme) {
+        return true;
+      }
+
+      const [themeSubthemeContent, recommendations] = await Promise.all([
+        listVocabularySubthemesByThemeId(theme.id),
+        listVocabularyRecommendedSubthemesByThemeId(theme.id).catch(() => null),
+      ]);
+
+      const recommendationMetaById = Object.fromEntries(
+        (recommendations ?? []).map((recommendation, index) => [
+          recommendation.entityId,
+          {
+            rank: index + 1,
+            similarity: recommendation.similarity,
+          },
+        ]),
+      ) as Partial<Record<string, { rank: number; similarity: number }>>;
+
+      const nextSubthemes = themeSubthemeContent.map((subtheme) =>
+        toSubthemeItem(subtheme, progressItems, recommendationMetaById),
+      );
+      const preferredSubtheme = pickPreferredSubtheme(nextSubthemes);
+
+      if (!preferredSubtheme) {
+        return true;
+      }
+
+      return openSubthemeWithGraphId(preferredSubtheme, nextGraphId);
+    } catch (error) {
+      console.error("Error loading vocabulary theme:", error);
+      return false;
+    } finally {
+      setLoadingSubthemes(false);
+    }
+  }, [createGraphFromTheme, graphs, openSubthemeWithGraphId, progressItems, setSelectedGraphId]);
 
   useEffect(() => {
     if (!selectedSubthemeItem || words.length === 0) {

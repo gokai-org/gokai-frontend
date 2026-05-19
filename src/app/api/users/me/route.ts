@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { apiConfig } from "@/shared/config";
+import { isBackendCalendarDateOnOrAfterToday } from "@/shared/lib/backendCalendarDate";
 
 export const dynamic = "force-dynamic";
 
@@ -187,8 +188,13 @@ export async function GET(req: NextRequest) {
           if (subData) {
             const status = String(subData.status ?? "").toLowerCase();
             const activeStatuses = new Set(["active", "trialing", "paid"]);
+            const endDate =
+              subData.current_period_end ??
+              subData.expires_at ??
+              subData.expiry_date ??
+              subData.vigency;
 
-            if (activeStatuses.has(status)) {
+            if (activeStatuses.has(status) && isBackendCalendarDateOnOrAfterToday(endDate)) {
               plan = "premium";
               subscribed = true;
             }

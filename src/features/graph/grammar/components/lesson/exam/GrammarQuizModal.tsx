@@ -7,6 +7,7 @@ import { CheckCircle2, FlaskConical } from "lucide-react";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
+import { stopModalEvent, useModalPageLock } from "@/shared/hooks/useModalPageLock";
 import { AnswerConfirmationPanel } from "@/shared/ui";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
@@ -205,6 +206,7 @@ export default function GrammarQuizModal({
   onComplete,
 }: GrammarQuizModalProps) {
   useMiniDockBlocker(true);
+  useModalPageLock(true);
   useStudySessionActivity("grammar-quiz");
   const masteredModules = useMasteredModules();
   const isGrammarMastered = masteredModules.has("grammar");
@@ -531,6 +533,10 @@ export default function GrammarQuizModal({
       data-grammar-mastered={isGrammarMastered ? "true" : "false"}
       className="fixed inset-0 z-[75] flex items-center justify-center bg-black/50 p-3 backdrop-blur-sm sm:p-4"
       onClick={handleRequestClose}
+      onWheelCapture={stopModalEvent}
+      onPointerDown={stopModalEvent}
+      onPointerMove={stopModalEvent}
+      onTouchMoveCapture={stopModalEvent}
     >
       <motion.div
         variants={panelVariants}

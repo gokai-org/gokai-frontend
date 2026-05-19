@@ -19,6 +19,7 @@ export function useGrammarBoard() {
     unlockCost,
     applyOptimisticUnlock,
     recentlyUnlockedIds,
+    hasKanaContentAccess,
   } = useGrammarLessons();
 
   const activeId = useMemo(
@@ -45,5 +46,6 @@ export function useGrammarBoard() {
     unlockCost,
     applyOptimisticUnlock,
     recentlyUnlockedIds,
+    hasKanaContentAccess,
   };
 }

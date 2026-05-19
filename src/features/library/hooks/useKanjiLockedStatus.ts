@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Kanji } from "@/features/kanji/types";
 import type { KanjiLessonResult, KanjiStudyProgress } from "@/features/kanji/types";
+import { useKanaContentAccess } from "@/features/kana/hooks/useKanaContentAccess";
 import {
   getKanjiLessonResults,
   getKanjiProgress,
@@ -27,6 +28,7 @@ const KANJI_COMPLETION_SCORE = 70;
 const KANJI_POINTS_SYNC_TTL_MS = 30_000;
 
 export function useKanjiLockedStatus(kanjis: Kanji[]) {
+  const { hasKanaContentAccess } = useKanaContentAccess();
   const knownUserId = readKnownUserId(KANJI_USER_CACHE_KEY);
   const initialCache = useRef<LibraryKanjiStatusCache | null>((() => {
     const cached = readCache<LibraryKanjiStatusCache>(
@@ -209,13 +211,13 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
     const locked = new Set<string>();
 
     for (const kanji of kanjis) {
-      if (!unlockState.unlockedIds.has(kanji.id)) {
+      if (!hasKanaContentAccess || !unlockState.unlockedIds.has(kanji.id)) {
         locked.add(kanji.id);
       }
     }
 
     return locked;
-  }, [kanjis, unlockState.unlockedIds]);
+  }, [hasKanaContentAccess, kanjis, unlockState.unlockedIds]);
 
   const completedKanjiIds = useMemo(
     () => unlockState.completedIds,
@@ -259,8 +261,10 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
   return {
     lockedKanjiIds,
     completedKanjiIds,
-    nextUnlockCandidateId: unlockState.nextUnlockCandidateId,
-    canUnlockNext: unlockState.canUnlockNext,
+    nextUnlockCandidateId: hasKanaContentAccess
+      ? unlockState.nextUnlockCandidateId
+      : null,
+    canUnlockNext: hasKanaContentAccess && unlockState.canUnlockNext,
     unlockCost: unlockState.unlockCost,
     progress,
     userPoints,
@@ -268,5 +272,6 @@ export function useKanjiLockedStatus(kanjis: Kanji[]) {
     hasResolvedInitialStatus,
     reload: fetchPoints,
     applyOptimisticUnlock,
+    hasKanaContentAccess,
   };
 }

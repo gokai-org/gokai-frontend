@@ -8,8 +8,16 @@ import { RichText } from "../../../lib/richText";
 export default function GrammarMeaningSection({ meaning }: { meaning: ImageStepperComponent }) {
   const [idx, setIdx] = useState(0);
   const steps = meaning.content;
-  const current = steps[idx];
-  if (!current) return null;
+  const safeIndex = steps.length === 0 ? 0 : Math.min(idx, steps.length - 1);
+
+  const current = steps[safeIndex];
+  if (!current) {
+    return (
+      <div className="rounded-[18px] bg-surface-secondary/42 px-3.5 py-4 text-[13px] text-content-secondary shadow-[0_10px_24px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04] dark:ring-white/[0.08] lg:px-4 lg:py-5 lg:text-sm">
+        No hay pasos visibles para esta sección todavía.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3 lg:space-y-4">
@@ -30,22 +38,22 @@ export default function GrammarMeaningSection({ meaning }: { meaning: ImageStepp
           <button
             type="button"
             disabled={idx === 0}
-            onClick={() => setIdx((i) => i - 1)}
+            onClick={() => setIdx((i) => Math.max(i - 1, 0))}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-surface-primary/72 text-content-secondary shadow-[0_6px_18px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04] transition hover:text-accent hover:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-surface-primary/60 dark:ring-white/[0.08] dark:hover:ring-accent/40 lg:h-9 lg:w-9 lg:rounded-xl"
           >
             <ChevronLeft className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
           </button>
 
           <div className="flex items-center gap-1.5 rounded-full bg-surface-primary/82 px-2.5 py-1 text-[11px] font-semibold text-content-muted shadow-[0_6px_16px_rgba(0,0,0,0.03)] ring-1 ring-black/[0.04] dark:ring-white/[0.08] lg:text-xs">
-            <span>{idx + 1}</span>
+            <span>{safeIndex + 1}</span>
             <span>/</span>
             <span>{steps.length}</span>
           </div>
 
           <button
             type="button"
-            disabled={idx === steps.length - 1}
-            onClick={() => setIdx((i) => i + 1)}
+            disabled={safeIndex >= steps.length - 1}
+            onClick={() => setIdx((i) => Math.min(i + 1, steps.length - 1))}
             className="flex h-8 w-8 items-center justify-center rounded-[10px] bg-surface-primary/72 text-content-secondary shadow-[0_6px_18px_rgba(0,0,0,0.04)] ring-1 ring-black/[0.04] transition hover:text-accent hover:ring-accent/30 disabled:cursor-not-allowed disabled:opacity-30 dark:bg-surface-primary/60 dark:ring-white/[0.08] dark:hover:ring-accent/40 lg:h-9 lg:w-9 lg:rounded-xl"
           >
             <ChevronRight className="h-3.5 w-3.5 lg:h-4 lg:w-4" />

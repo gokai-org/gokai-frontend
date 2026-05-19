@@ -25,6 +25,7 @@ import {
   isVocabularyRegionId,
   vocabularyRegionOptions,
 } from "../utils/vocabulary";
+import { AdminFilterDropdown } from "@/features/admin/shared/components/AdminFilterDropdown";
 
 const EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
@@ -83,7 +84,7 @@ export function AdminVocabularyRecordModal({
   const [meaning, setMeaning] = useState("");
   const [kanji, setKanji] = useState("");
   const [kana, setKana] = useState("");
-  const [region, setRegion] = useState<AdminVocabularyRegionId>("kanto");
+  const [region, setRegion] = useState<AdminVocabularyRegionId | null>(null);
   const [released, setReleased] = useState(false);
   const [hiragana, setHiragana] = useState("");
   const [icon, setIcon] = useState("");
@@ -98,7 +99,7 @@ export function AdminVocabularyRecordModal({
       setMeaning(item.meaning);
       setKanji(item.kanji);
       setKana(item.kana);
-      setRegion(isVocabularyRegionId(item.region) ? item.region : "kanto");
+      setRegion(isVocabularyRegionId(item.region) ? item.region : null);
       setReleased(item.released);
       setHiragana("");
       setIcon("");
@@ -107,7 +108,7 @@ export function AdminVocabularyRecordModal({
       setMeaning(item.meaning);
       setKanji(item.kanji);
       setKana(item.kana);
-      setRegion("kanto");
+      setRegion(null);
       setReleased(false);
       setHiragana("");
       setIcon("");
@@ -117,7 +118,7 @@ export function AdminVocabularyRecordModal({
       setMeaning("");
       setKanji(word.kanji ?? "");
       setKana("");
-      setRegion("kanto");
+      setRegion(null);
       setReleased(false);
       setHiragana(word.hiragana ?? "");
       setIcon(word.icon ?? "");
@@ -126,7 +127,7 @@ export function AdminVocabularyRecordModal({
       setMeaning("");
       setKanji("");
       setKana("");
-      setRegion("kanto");
+      setRegion(null);
       setReleased(false);
       setHiragana("");
       setIcon("");
@@ -156,6 +157,10 @@ export function AdminVocabularyRecordModal({
 
   const handleSave = async () => {
     if (level === "themes") {
+      if (!region) {
+        return;
+      }
+
       await onSave({
         meaning: meaning.trim(),
         kanji: kanji.trim(),
@@ -358,17 +363,19 @@ export function AdminVocabularyRecordModal({
                       <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-content-tertiary">
                         Region del mapa *
                       </label>
-                      <select
+                      <AdminFilterDropdown
                         value={region}
-                        onChange={(event) => setRegion(event.target.value as AdminVocabularyRegionId)}
-                        className="w-full rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm text-content-primary outline-none transition-colors hover:border-border-default focus:border-accent/40"
-                      >
-                        {vocabularyRegionOptions.map((option) => (
-                          <option key={option.value} value={option.value}>
-                            {option.label}
-                          </option>
-                        ))}
-                      </select>
+                        onChange={(value) => setRegion(value as AdminVocabularyRegionId)}
+                        options={vocabularyRegionOptions}
+                        buttonLabel={
+                          vocabularyRegionOptions.find((option) => option.value === region)
+                            ?.label ?? "Selecciona una región"
+                        }
+                        fullWidth
+                        menuAlign="left"
+                        menuDirection="up"
+                        className="w-full"
+                      />
                     </div>
 
                     <label className="flex items-center gap-3 rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm font-semibold text-content-secondary">

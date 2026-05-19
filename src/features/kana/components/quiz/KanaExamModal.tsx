@@ -13,6 +13,7 @@ import {
 } from "./KanaQuizExercises";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
+import { stopModalEvent, useModalPageLock } from "@/shared/hooks/useModalPageLock";
 import { AnswerConfirmationPanel } from "@/shared/ui";
 import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
 
@@ -44,6 +45,7 @@ function getKanaAccentVars(kanaType: KanaType): React.CSSProperties {
 export function KanaExamModal({ kanaType, onClose }: KanaExamModalProps) {
   const exam = useKanaExam();
   const { startExam, reset } = exam;
+  useModalPageLock(true);
   const platformMotion = usePlatformMotion();
   const { confirmAnswersEnabled } = useAnswerConfirmationPreference();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
@@ -191,6 +193,10 @@ export function KanaExamModal({ kanaType, onClose }: KanaExamModalProps) {
         exit="exit"
         className="fixed inset-0 z-[80] flex items-center justify-center bg-surface-secondary/96 p-4"
         onClick={handleRequestClose}
+        onWheelCapture={stopModalEvent}
+        onPointerDown={stopModalEvent}
+        onPointerMove={stopModalEvent}
+        onTouchMoveCapture={stopModalEvent}
       >
         <motion.div
           variants={panelVariants}

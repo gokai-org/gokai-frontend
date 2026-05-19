@@ -16,6 +16,7 @@ import {
   type StrokeValidationResult,
 } from "@/features/kanji/lib/strokeValidation";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
+import { stopModalEvent, useModalPageLock } from "@/shared/hooks/useModalPageLock";
 
 type PracticeStep = "loading" | "demo" | "practice" | "result";
 
@@ -47,6 +48,7 @@ export function WritingPracticeModal({
   onClose,
 }: WritingPracticeModalProps) {
   const mastered = useMasteredModules();
+  useModalPageLock(true);
   const isKanjiMastered = mastered.has("kanji");
   const [step, setStep] = useState<PracticeStep>("loading");
   const [strokeData, setStrokeData] = useState<KanjiStrokeData | null>(null);
@@ -309,6 +311,10 @@ export function WritingPracticeModal({
         exit="exit"
         className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
         onClick={onClose}
+        onWheelCapture={stopModalEvent}
+        onPointerDown={stopModalEvent}
+        onPointerMove={stopModalEvent}
+        onTouchMoveCapture={stopModalEvent}
       >
         <motion.div
           variants={panelVariants}

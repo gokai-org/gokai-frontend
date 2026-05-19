@@ -77,9 +77,11 @@ export function buildGrammarBoardItems(
   options?: {
     progress?: GrammarStudyProgress | null;
     userPoints?: number;
+    blockedByKanaRequirement?: boolean;
   },
 ): GrammarBoardProgress[] {
   const hasUnlockContext = options !== undefined;
+  const blockedByKanaRequirement = options?.blockedByKanaRequirement === true;
   const unlockState = resolveGrammarUnlockState({
     lessons,
     progress: options?.progress ?? null,
@@ -99,7 +101,9 @@ export function buildGrammarBoardItems(
         symbol: extractLessonSymbol(lesson, index),
         title: lesson.title,
         pointsToUnlock: lessonUnlockCost,
-        status: hasUnlockContext
+        status: blockedByKanaRequirement
+          ? "locked"
+          : hasUnlockContext
           ? unlockState.completedIds.has(lesson.id)
             ? "completed"
             : unlockState.unlockedIds.has(lesson.id)
@@ -107,10 +111,20 @@ export function buildGrammarBoardItems(
               : "locked"
           : resolveLessonStatus(lesson),
         isMock: false,
-        isCurrent: unlockState.latestUnlockedId === lesson.id,
-        unlocked: unlockState.unlockedIds.has(lesson.id),
-        isNextUnlockCandidate: unlockState.nextUnlockCandidateId === lesson.id,
+        isCurrent:
+          blockedByKanaRequirement === true
+            ? false
+            : unlockState.latestUnlockedId === lesson.id,
+        unlocked:
+          blockedByKanaRequirement === true
+            ? false
+            : unlockState.unlockedIds.has(lesson.id),
+        isNextUnlockCandidate:
+          blockedByKanaRequirement === true
+            ? false
+            : unlockState.nextUnlockCandidateId === lesson.id,
         canUnlock:
+          blockedByKanaRequirement === false &&
           unlockState.nextUnlockCandidateId === lesson.id &&
           unlockState.canUnlockNext,
         unlockCost: lessonUnlockCost,

@@ -1,6 +1,7 @@
 "use client";
 
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
+import { LockKeyhole } from "lucide-react";
 import { motion } from "framer-motion";
 import { HeartIcon } from "@/features/library/components/ScriptCardLayout";
 import { VocabThumbnail } from "@/features/library/components/VocabThumbnail";
@@ -100,7 +101,7 @@ export function VocabularyCard({
   const config = VARIANT_CONFIG[variant];
   const isWord = variant === "word";
   const effectiveLocked = locked && !unlocking;
-  const isInteractive = Boolean(onClick) && !effectiveLocked;
+  const isInteractive = Boolean(onClick);
   const hoverEnabled =
     (Boolean(onClick) || Boolean(onFavoriteToggle)) && !effectiveLocked;
   const favoriteStyle = VOCABULARY_FAVORITE_STYLES[variant];
@@ -140,13 +141,15 @@ export function VocabularyCard({
     isWord ? "min-h-[210px]" : "min-h-[190px]",
     effectiveLocked
       ? [
-          "items-center justify-center border border-border-default/70 bg-surface-tertiary p-4 dark:border-white/[0.05] dark:bg-[#1a181c]",
+          isWord
+            ? "border border-border-default/70 bg-surface-tertiary p-5 dark:border-white/[0.05] dark:bg-[#1a181c]"
+            : "items-center justify-center border border-border-default/70 bg-surface-tertiary p-4 dark:border-white/[0.05] dark:bg-[#1a181c]",
           isInteractive
             ? `cursor-pointer focus:outline-none focus-visible:ring-2 ${config.ring}`
             : "cursor-default",
         ].join(" ")
       : [
-          "p-5",
+          isWord ? "p-5" : "px-4 py-5",
           "bg-surface-primary border border-[#E8E3E1] dark:border-[#2a2a2a]",
           "shadow-none",
           config.shadowHover,
@@ -162,17 +165,36 @@ export function VocabularyCard({
     .join(" ");
 
   const content = effectiveLocked ? (
-    <div className="relative z-10 flex flex-col items-center gap-3">
-      <div
-        className={[
-          "flex items-center justify-center bg-surface-tertiary/80 text-content-muted/60 select-none dark:bg-white/[0.06] dark:text-white/25",
-          lockedThumbClass,
-        ].join(" ")}
-      >
-        {lockedThumbnail}
-      </div>
-      <LockedStateBadge size="sm" />
-      {variant !== "word" ? (
+    isWord ? (
+      <>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-[22px] border border-border-subtle bg-surface-primary/92 text-content-muted shadow-sm dark:bg-[#242028] dark:text-white/45">
+            <LockKeyhole className="h-6 w-6" strokeWidth={2.1} />
+          </div>
+        </div>
+
+        <div className="relative z-10 mt-auto">
+          <h3 className="line-clamp-2 text-[15px] font-black leading-tight text-content-primary/72 dark:text-white/72">
+            {title}
+          </h3>
+          {subtitle ? (
+            <p className="mt-1 line-clamp-2 text-[11px] font-medium text-content-muted/78 dark:text-white/50">
+              {subtitle}
+            </p>
+          ) : null}
+        </div>
+      </>
+    ) : (
+      <div className="relative z-10 flex flex-col items-center gap-3">
+        <div
+          className={[
+            "flex items-center justify-center bg-surface-tertiary/80 text-content-muted/60 select-none dark:bg-white/[0.06] dark:text-white/25",
+            lockedThumbClass,
+          ].join(" ")}
+        >
+          {lockedThumbnail}
+        </div>
+        <LockedStateBadge size="sm" />
         <div className="max-w-[88%] text-center">
           <h3 className="line-clamp-2 text-[14px] font-extrabold leading-snug text-content-primary/82 dark:text-white/80">
             {title}
@@ -183,8 +205,8 @@ export function VocabularyCard({
             </p>
           ) : null}
         </div>
-      ) : null}
-    </div>
+      </div>
+    )
   ) : isWord ? (
     <WordCardLayout
       title={title}

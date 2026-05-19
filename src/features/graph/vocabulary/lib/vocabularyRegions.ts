@@ -166,11 +166,11 @@ export function buildVocabularyRegionViewModels(
         left.meaning.localeCompare(right.meaning, "es", { sensitivity: "base" }),
       )
       .map((theme) =>
-      buildRegionThemeNode({
-        regionId,
-        theme,
-        graph: findGraphForTheme(theme, graphs),
-      }),
+        buildRegionThemeNode({
+          regionId,
+          theme,
+          graph: findGraphForTheme(theme, graphs),
+        }),
       );
 
     const availableCount = themes.filter((theme) => theme.isAvailable).length;

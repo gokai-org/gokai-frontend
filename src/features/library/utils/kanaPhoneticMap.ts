@@ -34,6 +34,8 @@ export const DAKUTEN_ROW_KEYS = new Set(["g", "z", "d", "b", "p"]);
 
 const VOWEL_INDEX: Record<string, number> = { a: 0, i: 1, u: 2, e: 3, o: 4 };
 
+const D_ROW_JI_SYMBOLS = new Set(["ぢ", "づ", "ヂ", "ヅ"]);
+
 /** Explicit overrides for multi-char or non-obvious romaji */
 const SPECIAL_MAP: Record<string, { rowKey: string; colIndex: number }> = {
   shi: { rowKey: "s", colIndex: 1 },
@@ -55,9 +57,14 @@ const SPECIAL_MAP: Record<string, { rowKey: string; colIndex: number }> = {
  */
 export function getPhoneticPosition(
   romaji: string,
+  symbol?: string,
 ): { rowKey: string; colIndex: number } | null {
   const r = romaji.toLowerCase().trim();
   if (!r) return null;
+
+  if (symbol && (r === "ji" || r === "zu") && D_ROW_JI_SYMBOLS.has(symbol)) {
+    return { rowKey: "d", colIndex: r === "ji" ? 1 : 2 };
+  }
 
   // Standalone N (ん / ン)
   if (r === "n") return { rowKey: "n-solo", colIndex: 0 };
@@ -88,11 +95,11 @@ export type PhoneticTable<T> = Map<string, Map<number, T>>;
  * Works with any type that has an optional `romaji` string field.
  */
 export function buildPhoneticTable<T extends { romaji?: string }>(
-  kanas: T[],
+  kanas: Array<T & { symbol?: string }>,
 ): PhoneticTable<T> {
   const table: PhoneticTable<T> = new Map();
   for (const kana of kanas) {
-    const pos = getPhoneticPosition(kana.romaji ?? "");
+    const pos = getPhoneticPosition(kana.romaji ?? "", kana.symbol);
     if (!pos) continue;
     if (!table.has(pos.rowKey)) table.set(pos.rowKey, new Map());
     table.get(pos.rowKey)!.set(pos.colIndex, kana);

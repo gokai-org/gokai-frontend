@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { AdminLessonsPanel } from "@/features/admin/lessons/components/AdminLessonsPanel";
 
 export default function AdminLessonsPage() {
-  redirect("/admin/dashboard/vocabulary");
+  return <AdminLessonsPanel />;
 }

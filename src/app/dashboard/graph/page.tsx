@@ -11,7 +11,8 @@ import {
   startTransition,
   type CSSProperties,
 } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { GraphGateModal } from "@/features/graph/components/GraphGateModal";
 import type { GraphEdge, GraphNode } from "@/features/graph/lib/graphTypes";
 import JapanRegionMap from "@/features/graph/vocabulary/components/JapanRegionMap";
 import RegionThemeGraph from "@/features/graph/vocabulary/components/RegionThemeGraph";
@@ -19,6 +20,7 @@ import RegionVectorGraph from "@/features/graph/vocabulary/components/RegionVect
 import VocabularyNodePanel from "@/features/graph/vocabulary/components/VocabularyNodePanel";
 import { ContextualHelpButton } from "@/features/help/components/ContextualHelpButton";
 import { getCurrentUser } from "@/features/auth/services/api";
+import { useKanaContentAccess } from "@/features/kana/hooks/useKanaContentAccess";
 import {
   useGuideTour,
   type TourStep,
@@ -42,6 +44,7 @@ import {
 } from "@/features/help/utils/contextualTourLaunch";
 import { useDeferredGraphMount } from "@/features/graph/vocabulary/hooks/useDeferredGraphMount";
 import { useVocabularyGraph } from "@/features/graph/vocabulary/hooks/useVocabularyGraph";
+import { readOnboardingInterestThemeIds } from "@/features/onboarding/lib/interestThemeStorage";
 import { loadJapanMapAssets } from "@/features/graph/vocabulary/components/japanMap/japanMapAssets";
 import { buildRegionGraphLayout } from "@/features/graph/vocabulary/lib/regionGraphLayout";
 import {
@@ -66,6 +69,7 @@ import {
 } from "@/features/graph/vocabulary/services/api";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { useShakeFeedback } from "@/shared/hooks/useShakeFeedback";
+import { PremiumThemeGateModal } from "@/shared/ui/PremiumThemeGateModal";
 import { PointsRewardFloat } from "@/shared/ui";
 import type {
   VocabularyQuizSaveContext,
@@ -190,7 +194,7 @@ function createGraphFirstRunIntroSteps(): TourStep[] {
     {
       title: "Pantalla principal",
       description:
-        "Esta vista es tu punto de entrada en Graph: aquí orientas tu avance, eliges una ruta y bajas hasta región, tema, subtema y palabra.",
+        "Esta vista es tu punto de entrada al Mapa de Japón: aquí orientas tu avance, eliges una ruta y bajas hasta región, tema, subtema y palabra.",
       icon: <Sparkles className="h-6 w-6" />,
       selector: '[data-help-surface="vocabulary-graph"] [data-help-target="graph-canvas"]',
       spotlightPadding: 18,
@@ -808,6 +812,7 @@ function waitForValue<T>(
 }
 
 export default function Page() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { setHidden } = useSidebar();
   const { activeTour, pendingTour, startTour } = useGuideTour();
@@ -865,12 +870,22 @@ export default function Page() {
   const [firstRunStorageUserId, setFirstRunStorageUserId] = useState<string | null>(
     null,
   );
+  const [hasSavedInterests, setHasSavedInterests] = useState<boolean | null>(null);
+  const [showMissingInterestsModal, setShowMissingInterestsModal] = useState(false);
+  const [showVocabularyAccessModal, setShowVocabularyAccessModal] = useState(false);
+  const [showPremiumThemeModal, setShowPremiumThemeModal] = useState(false);
+  const [premiumThemeLabel, setPremiumThemeLabel] = useState("este interes");
   const [firstRunSeenPages, setFirstRunSeenPages] = useState<Set<string>>(
     () => new Set(),
   );
 
   const dismissGraphHovers = useCallback(() => {
     setHoverResetToken((current) => current + 1);
+  }, []);
+
+  const openPremiumThemeModal = useCallback((themeLabel?: string | null) => {
+    setPremiumThemeLabel(themeLabel?.trim() || "este interes");
+    setShowPremiumThemeModal(true);
   }, []);
 
   const [regionLayouts, setRegionLayouts] = useState<
@@ -916,12 +931,27 @@ export default function Page() {
     createGraphFromTheme,
     addSubthemeToGraph,
     reloadProgress,
+    reloadCatalog,
   } = useVocabularyGraph();
+  const { hasKanaContentAccess, blockedMessage } = useKanaContentAccess();
+
+  const handleMissingInterestsSaved = useCallback(async () => {
+    setHasSavedInterests(true);
+    await reloadCatalog();
+    setShowMissingInterestsModal(false);
+  }, [reloadCatalog]);
 
   const regions = useMemo(
     () => buildVocabularyRegionViewModels(themeCatalog, graphs),
     [graphs, themeCatalog],
   );
+  const hasAvailableInterestThemes = useMemo(
+    () =>
+      regions.some((region) => region.themes.some((theme) => theme.isAvailable)),
+    [regions],
+  );
+  const shouldPromptMissingInterests =
+    !loading && hasSavedInterests === false && !hasAvailableInterestThemes;
   const progressItems = useMemo(() => progress?.items ?? [], [progress?.items]);
   const selectedTheme = useMemo(
     () =>
@@ -991,7 +1021,10 @@ export default function Page() {
     [mapViewport, mapViewportArea, sceneSize],
   );
   const graphInteractionDisabled = Boolean(
-    pendingThemeId || pendingGraphNodeId || actionPendingId || subthemeWordsLoading,
+    pendingThemeId ||
+      pendingGraphNodeId ||
+      actionPendingId ||
+      subthemeWordsLoading,
   );
   const helpRegion = useMemo(
     () =>
@@ -1038,8 +1071,12 @@ export default function Page() {
             ...sessionSeenPages,
             ...persistentSeenPages,
           ]);
+          const savedInterestThemeIds = nextUserId
+            ? readOnboardingInterestThemeIds(nextUserId)
+            : [];
 
           setFirstRunStorageUserId(nextUserId);
+          setHasSavedInterests(nextUserId ? savedInterestThemeIds.length > 0 : null);
           setFirstRunSeenPages(mergedSeenPages);
 
           if (isActive) {
@@ -1198,7 +1235,7 @@ export default function Page() {
       try {
         const [words, listeningQuiz] = await Promise.all([
           listVocabularyWordsBySubthemeId(subthemeId),
-          getVocabularyQuiz(nodeId, "listening"),
+          getVocabularyQuiz(nodeId, "listening").catch(() => null),
         ]);
 
         if (subthemeLoadRequestRef.current !== requestId) {
@@ -1206,7 +1243,7 @@ export default function Page() {
         }
 
         const audioByWordId = new Map(
-          listeningQuiz.questions.map((quizQuestion) => [
+          (listeningQuiz?.questions ?? []).map((quizQuestion) => [
             quizQuestion.wordId,
             quizQuestion.audio,
           ]),
@@ -1271,12 +1308,31 @@ export default function Page() {
   }, [activeRegionId, currentLevel, mvScale, mvX, mvY]);
 
   useEffect(() => {
-    setHidden(isLessonOpen);
+    if (!showMissingInterestsModal || shouldPromptMissingInterests) {
+      return;
+    }
+
+    setShowMissingInterestsModal(false);
+  }, [shouldPromptMissingInterests, showMissingInterestsModal]);
+
+  useEffect(() => {
+    setHidden(
+      isLessonOpen ||
+        showMissingInterestsModal ||
+        showVocabularyAccessModal ||
+        showPremiumThemeModal,
+    );
 
     return () => {
       setHidden(false);
     };
-  }, [isLessonOpen, setHidden]);
+  }, [
+    isLessonOpen,
+    setHidden,
+    showMissingInterestsModal,
+    showPremiumThemeModal,
+    showVocabularyAccessModal,
+  ]);
 
   useEffect(() => {
     const shouldRestoreFromSession =
@@ -1369,7 +1425,9 @@ export default function Page() {
     }
 
     if (currentLevel === "subtheme" && selectedSubthemeItem) {
-      return buildVocabularySubthemeGraphElements(selectedSubthemeItem, subthemeWords);
+      return buildVocabularySubthemeGraphElements(selectedSubthemeItem, subthemeWords, {
+        hasKanaContentAccess,
+      });
     }
 
     if (currentLevel === "theme" && selectedGraph) {
@@ -1384,6 +1442,7 @@ export default function Page() {
     return null;
   }, [
     currentLevel,
+    hasKanaContentAccess,
     progressItems,
     recommendedSubthemeMetaById,
     selectedGraph,
@@ -1395,6 +1454,11 @@ export default function Page() {
 
   const handleRegionSelect = useCallback(
     (regionId: VocabularyRegionId) => {
+      if (shouldPromptMissingInterests) {
+        setShowMissingInterestsModal(true);
+        return;
+      }
+
       subthemeLoadRequestRef.current += 1;
       const nextRegion = regions.find((region) => region.id === regionId) ?? null;
       const hasUnlockedThemes = nextRegion?.themes.some((theme) => theme.isAvailable) ?? false;
@@ -1416,7 +1480,7 @@ export default function Page() {
         setSelectedGraphId(null);
       });
     },
-    [clearThemeShake, regions, setSelectedGraphId],
+    [clearThemeShake, regions, setSelectedGraphId, shouldPromptMissingInterests],
   );
 
   const handleRegionLayoutsChange = useCallback(
@@ -1434,8 +1498,18 @@ export default function Page() {
 
   const handleThemeSelected = useCallback(
     async (theme: VocabularyRegionThemeNode) => {
-      if (!theme.isAvailable || !theme.themeId) {
+      if (shouldPromptMissingInterests) {
+        setShowMissingInterestsModal(true);
+        return;
+      }
+
+      if (!theme.themeId) {
         triggerThemeShake(theme.id);
+        return;
+      }
+
+      if (!theme.isAvailable) {
+        openPremiumThemeModal(theme.label);
         return;
       }
 
@@ -1463,7 +1537,14 @@ export default function Page() {
         setCurrentLevel("theme");
       }
     },
-    [clearThemeShake, createGraphFromTheme, setSelectedGraphId, triggerThemeShake],
+    [
+      clearThemeShake,
+      createGraphFromTheme,
+      openPremiumThemeModal,
+      setSelectedGraphId,
+      shouldPromptMissingInterests,
+      triggerThemeShake,
+    ],
   );
 
   const exitRegionSelection = useCallback(() => {
@@ -1597,6 +1678,11 @@ export default function Page() {
   const handleNodeSelected = useCallback(
     async (node: GraphNode) => {
       if (node.data.entityKind === "subtheme") {
+        if (shouldPromptMissingInterests) {
+          setShowMissingInterestsModal(true);
+          return;
+        }
+
         setSelectedWordId(null);
         setPendingGraphNodeId(node.id);
         const matchedItem = progressItems.find(
@@ -1642,11 +1728,27 @@ export default function Page() {
       }
 
       if (node.data.entityKind === "word") {
+        if (shouldPromptMissingInterests) {
+          setShowMissingInterestsModal(true);
+          return;
+        }
+
+        if (!hasKanaContentAccess) {
+          setShowVocabularyAccessModal(true);
+          return;
+        }
+
         setUnlockFocusWordId(null);
         setSelectedWordId(node.data.entityId ?? node.id.replace(/^word-/, ""));
       }
     },
-    [addSubthemeToGraph, loadSubthemeWordsForNode, progressItems],
+    [
+      addSubthemeToGraph,
+      hasKanaContentAccess,
+      loadSubthemeWordsForNode,
+      progressItems,
+      shouldPromptMissingInterests,
+    ],
   );
 
   const handleBack = useCallback(() => {
@@ -2087,7 +2189,9 @@ export default function Page() {
         title: "Guía de Vocabulario",
         scopeSelector: '[data-help-surface="vocabulary-graph"]',
         boardLabel: "Mapa de vocabulario",
-        requirementLabel: "tener al menos una región y un tema disponibles",
+        requirementLabel: hasKanaContentAccess
+          ? "tener al menos una región y un tema disponibles"
+          : blockedMessage,
         targetName: "graph-canvas",
       });
     }
@@ -2121,7 +2225,7 @@ export default function Page() {
       },
       resetTourState: resetVocabularyHelpState,
     });
-  }, [focusCultureModeAction, focusHelpLessonTab, focusHelpMap, focusHelpRecommendedSubtheme, focusHelpRegion, focusHelpThemeNode, focusHelpWordNode, helpRegion, helpTheme, openHelpLesson, resetVocabularyHelpState]);
+  }, [blockedMessage, focusCultureModeAction, focusHelpLessonTab, focusHelpMap, focusHelpRecommendedSubtheme, focusHelpRegion, focusHelpThemeNode, focusHelpWordNode, hasKanaContentAccess, helpRegion, helpTheme, openHelpLesson, resetVocabularyHelpState]);
 
   const buildFirstRunTour = useCallback(() => {
     const baseTour = buildHelpTour();
@@ -3354,6 +3458,39 @@ export default function Page() {
             }}
             onNavigateToLibrary={handleNavigateToLibrary}
             onSaved={handleVocabularyQuizSaved}
+          />
+          <GraphGateModal
+            open={showMissingInterestsModal}
+            variant="missing-interests"
+            onClose={() => setShowMissingInterestsModal(false)}
+            onSaveInterests={handleMissingInterestsSaved}
+          />
+          <GraphGateModal
+            open={showVocabularyAccessModal}
+            variant="kana-required"
+            blockedContentLabel="vocabulario"
+            onClose={() => setShowVocabularyAccessModal(false)}
+            onOpenHiragana={() => {
+              setShowVocabularyAccessModal(false);
+              router.push("/dashboard/graph/writing?tab=hiragana");
+            }}
+            onOpenKatakana={() => {
+              setShowVocabularyAccessModal(false);
+              router.push("/dashboard/graph/writing?tab=katakana");
+            }}
+          />
+          <PremiumThemeGateModal
+            open={showPremiumThemeModal}
+            blockedThemeLabel={premiumThemeLabel}
+            onClose={() => setShowPremiumThemeModal(false)}
+            onOpenUpgrade={() => {
+              setShowPremiumThemeModal(false);
+              router.push("/checkout?returnTo=%2Fdashboard%2Fgraph");
+            }}
+            onOpenPlans={() => {
+              setShowPremiumThemeModal(false);
+              router.push("/auth/membership?from=dashboard&returnTo=%2Fdashboard%2Fgraph");
+            }}
           />
           </>
         )}

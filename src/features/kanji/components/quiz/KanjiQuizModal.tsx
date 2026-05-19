@@ -24,6 +24,7 @@ import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirm
 import { KanjiQuizWritingExercise } from "./KanjiQuizWritingExercise";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
+import { stopModalEvent, useModalPageLock } from "@/shared/hooks/useModalPageLock";
 import {
   ReaffirmedMasteryResult,
   UnlockedMasterySequence,
@@ -64,6 +65,7 @@ export function KanjiQuizModal({
   onComplete,
 }: KanjiQuizModalProps) {
   useMiniDockBlocker(true);
+  useModalPageLock(true);
   useStudySessionActivity("kanji-quiz");
 
   const quiz = useKanjiQuiz();
@@ -348,6 +350,10 @@ export function KanjiQuizModal({
         exit="exit"
         className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
         onClick={handleRequestClose}
+        onWheelCapture={stopModalEvent}
+        onPointerDown={stopModalEvent}
+        onPointerMove={stopModalEvent}
+        onTouchMoveCapture={stopModalEvent}
       >
         <motion.div
           variants={panelVariants}

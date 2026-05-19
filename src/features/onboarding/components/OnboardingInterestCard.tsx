@@ -48,6 +48,7 @@ type OnboardingInterestCardProps = {
   isSelected: boolean;
   onClick: () => void;
   compact?: boolean;
+  variant?: "default" | "modal";
   isResolving?: boolean;
 };
 
@@ -58,11 +59,13 @@ export function OnboardingInterestCard({
   isSelected,
   onClick,
   compact = false,
+  variant = "default",
   isResolving = false,
 }: OnboardingInterestCardProps) {
   const style = ONBOARDING_CARD_STYLES[index % ONBOARDING_CARD_STYLES.length];
   const unavailable = !interest.themeId;
   const disabled = isResolving || unavailable;
+  const compactModal = compact && variant === "modal";
 
   return (
     <motion.button
@@ -72,15 +75,21 @@ export function OnboardingInterestCard({
       whileHover={disabled ? undefined : { scale: compact ? 1.012 : 1.018, y: compact ? -2 : -4 }}
       whileTap={disabled ? undefined : { scale: 0.985 }}
       className={[
-        compact
+        compactModal
+          ? "group relative flex h-full w-full min-h-[220px] sm:min-h-[236px] md:min-h-[248px] flex-col justify-between overflow-hidden rounded-[22px] border text-left font-sans"
+          : compact
           ? "group relative flex h-full w-full min-h-[360px] sm:min-h-[430px] md:min-h-[500px] flex-col justify-between overflow-hidden rounded-[24px] sm:rounded-[26px] border text-left font-sans"
           : "group relative flex h-full w-full min-h-[360px] sm:min-h-[410px] md:min-h-[460px] lg:min-h-[520px] flex-col justify-between overflow-hidden rounded-[26px] sm:rounded-[30px] border text-left font-sans",
         "transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        compact
+        compactModal
+          ? "shadow-[0_8px_20px_rgba(0,0,0,0.08)]"
+          : compact
           ? "shadow-[0_10px_24px_rgba(0,0,0,0.08)]"
           : "shadow-[0_12px_36px_rgba(0,0,0,0.08)]",
         disabled
           ? "cursor-not-allowed opacity-55 grayscale"
+          : compactModal
+            ? "hover:shadow-[0_14px_30px_rgba(153,51,49,0.12)]"
           : compact
             ? "hover:shadow-[0_18px_38px_rgba(153,51,49,0.13)]"
             : "hover:shadow-[0_26px_64px_rgba(153,51,49,0.12)]",
@@ -89,7 +98,9 @@ export function OnboardingInterestCard({
         style.text,
         style.border,
         isSelected
-          ? compact
+          ? compactModal
+            ? "ring-2 ring-accent shadow-[0_14px_30px_rgba(153,51,49,0.18)]"
+          : compact
             ? "ring-2 ring-accent shadow-[0_14px_30px_rgba(153,51,49,0.20)]"
             : "ring-2 ring-accent scale-[1.02] shadow-[0_22px_60px_rgba(153,51,49,0.20)]"
           : "",
@@ -102,7 +113,11 @@ export function OnboardingInterestCard({
           className={[
             "font-black leading-none transition-all duration-500 select-none whitespace-pre-line",
             style.kanji,
-            compact
+            compactModal
+              ? isSelected
+                ? "text-[3rem] sm:text-[3.45rem] md:text-[4rem] opacity-[0.14] scale-105"
+                : "text-[2.8rem] sm:text-[3.25rem] md:text-[3.7rem] opacity-[0.08]"
+            : compact
               ? isSelected
                 ? "text-[4.9rem] sm:text-[6rem] md:text-[7.25rem] opacity-[0.14] scale-105"
                 : "text-[4.5rem] sm:text-[5.6rem] md:text-[6.75rem] opacity-[0.08]"
@@ -115,13 +130,25 @@ export function OnboardingInterestCard({
         </span>
       </div>
 
-      <div className={compact ? "relative z-10 p-4 sm:p-4.5 md:p-5" : "relative z-10 p-4 sm:p-5"}>
+      <div
+        className={
+          compactModal
+            ? "relative z-10 p-3 sm:p-3.5"
+            : compact
+              ? "relative z-10 p-4 sm:p-4.5 md:p-5"
+              : "relative z-10 p-4 sm:p-5"
+        }
+      >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p
               className={[
                 "font-black uppercase tracking-[0.25em] opacity-55",
-                compact ? "text-[9px] sm:text-[10px]" : "text-[10px]",
+                compactModal
+                  ? "text-[8px] sm:text-[9px]"
+                  : compact
+                    ? "text-[9px] sm:text-[10px]"
+                    : "text-[10px]",
               ].join(" ")}
             >
               Interés
@@ -129,7 +156,9 @@ export function OnboardingInterestCard({
             <h3
               className={[
                 "mt-2 font-extrabold leading-[1.08] tracking-tight",
-                compact
+                compactModal
+                  ? "text-[0.88rem] sm:text-[0.95rem] md:text-[1rem]"
+                  : compact
                   ? "text-[1rem] sm:text-[1.08rem] md:text-[1.2rem]"
                   : "text-base sm:text-lg md:text-xl lg:text-xl",
               ].join(" ")}
@@ -140,7 +169,8 @@ export function OnboardingInterestCard({
 
           <div
             className={[
-              "flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-xl backdrop-blur-sm",
+              "flex shrink-0 items-center justify-center rounded-xl backdrop-blur-sm",
+              compactModal ? "h-7 w-7 sm:h-8 sm:w-8" : "h-8 w-8 sm:h-9 sm:w-9",
               style.badge,
             ].join(" ")}
           >
@@ -163,7 +193,9 @@ export function OnboardingInterestCard({
 
       <div
         className={
-          compact
+          compactModal
+            ? "relative z-10 p-3 pt-0 sm:p-3.5 sm:pt-0"
+            : compact
             ? "relative z-10 p-4 pt-0 sm:p-4.5 sm:pt-0 md:p-5 md:pt-0"
             : "relative z-10 p-4 pt-0 sm:p-5 sm:pt-0"
         }
@@ -171,7 +203,11 @@ export function OnboardingInterestCard({
         <p
           className={[
             "font-mono tracking-[0.18em] opacity-45 mb-2",
-            compact ? "text-[9px] sm:text-[10px]" : "text-[10px]",
+            compactModal
+              ? "text-[8px] sm:text-[9px]"
+              : compact
+                ? "text-[9px] sm:text-[10px]"
+                : "text-[10px]",
           ].join(" ")}
         >
           {String(index + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
@@ -180,14 +216,18 @@ export function OnboardingInterestCard({
         <p
           className={[
             "leading-relaxed opacity-75",
-            compact ? "text-xs sm:text-sm md:text-[15px]" : "text-xs sm:text-sm md:text-[15px]",
+            compactModal
+              ? "text-[10px] sm:text-[11px] md:text-xs"
+              : compact
+                ? "text-xs sm:text-sm md:text-[15px]"
+                : "text-xs sm:text-sm md:text-[15px]",
           ].join(" ")}
         >
           {interest.kanji}
         </p>
 
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-          <span className="text-xs sm:text-sm font-semibold opacity-80">
+        <div className={compactModal ? "mt-2.5 flex flex-wrap items-center justify-between gap-2" : "mt-4 flex flex-wrap items-center justify-between gap-3"}>
+          <span className={compactModal ? "text-[10px] sm:text-[11px] font-semibold opacity-80" : "text-xs sm:text-sm font-semibold opacity-80"}>
             {isResolving
               ? "Cargando"
               : unavailable
@@ -199,7 +239,9 @@ export function OnboardingInterestCard({
 
           <span
             className={[
-              "inline-flex items-center rounded-full px-3 py-1 text-[10px] sm:text-[11px] font-semibold",
+              compactModal
+                ? "inline-flex items-center rounded-full px-2.5 py-1 text-[8px] sm:text-[9px] font-semibold"
+                : "inline-flex items-center rounded-full px-3 py-1 text-[10px] sm:text-[11px] font-semibold",
               isSelected
                 ? "bg-accent text-white"
                 : "bg-black/5 text-content-secondary dark:bg-white/10 dark:text-white/80",

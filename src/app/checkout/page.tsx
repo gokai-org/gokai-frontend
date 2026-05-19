@@ -90,6 +90,13 @@ function CheckoutPageContent() {
 
     return query ? `/checkout/success?${query}` : "/checkout/success";
   }, [searchParams]);
+  const contextualReturnTo = useMemo(() => {
+    const requestedReturnTo = searchParams.get("returnTo");
+    return requestedReturnTo && requestedReturnTo.startsWith("/")
+      ? requestedReturnTo
+      : null;
+  }, [searchParams]);
+  const fallbackExitPath = contextualReturnTo ?? "/onboarding/interests";
 
   const routeTransitionDelayMs = platformMotion.shouldAnimate
     ? Math.max(170, Math.round(320 * platformMotion.durationScale))
@@ -103,14 +110,14 @@ function CheckoutPageContent() {
 
   useEffect(() => {
     router.prefetch(successPath);
-    router.prefetch("/onboarding/interests");
+    router.prefetch(fallbackExitPath);
 
     return () => {
       if (transitionTimeoutRef.current !== null) {
         window.clearTimeout(transitionTimeoutRef.current);
       }
     };
-  }, [router, successPath]);
+  }, [fallbackExitPath, router, successPath]);
 
   const runScreenTransition = ({
     title,
@@ -488,9 +495,13 @@ function CheckoutPageContent() {
                     type="button"
                     onClick={() =>
                       runScreenTransition({
-                        title: "Volviendo al onboarding",
-                        description: "Retomando tus primeros pasos con el plan gratuito.",
-                        destination: "/onboarding/interests",
+                        title: contextualReturnTo
+                          ? "Volviendo a tu experiencia"
+                          : "Volviendo al onboarding",
+                        description: contextualReturnTo
+                          ? "Regresando al punto donde estabas antes de revisar GOKAI+."
+                          : "Retomando tus primeros pasos con el plan gratuito.",
+                        destination: fallbackExitPath,
                       })
                     }
                     className="text-sm font-medium text-content-muted transition hover:text-content-secondary"
