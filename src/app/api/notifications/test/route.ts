@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
-import { apiConfig } from "@/shared/config";
 import { serverNotificationsConfig } from "@/shared/config/serverNotifications";
 
 export const dynamic = "force-dynamic";
@@ -13,12 +12,23 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const { internalApiKey, missingInternalApiKeyMessage } =
-      serverNotificationsConfig;
+    const {
+      internalApiKey,
+      missingInternalApiKeyMessage,
+      notificationsApiBase,
+      missingNotificationsApiBaseMessage,
+    } = serverNotificationsConfig;
 
     if (!internalApiKey) {
       return NextResponse.json(
         { error: missingInternalApiKeyMessage },
+        { status: 500 },
+      );
+    }
+
+    if (!notificationsApiBase) {
+      return NextResponse.json(
+        { error: missingNotificationsApiBaseMessage },
         { status: 500 },
       );
     }
@@ -45,7 +55,7 @@ export async function POST(request: NextRequest) {
       minute: "2-digit",
     })}`;
 
-    const upstream = await fetch(`${apiConfig.notificationsApiBase}/push/`, {
+    const upstream = await fetch(`${notificationsApiBase.replace(/\/$/, "")}/push/`, {
       method: "POST",
       cache: "no-store",
       headers: {
@@ -76,8 +86,8 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("[POST /api/notifications/test]", error);
     return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 },
+      { error: "No se pudo conectar con gokai-notifications-api." },
+      { status: 502 },
     );
   }
 }

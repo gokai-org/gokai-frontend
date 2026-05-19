@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   authorizeAdmin,
-  buildNotificationsUrl,
   respondWithUpstream,
 } from "../_utils";
 import { serverNotificationsConfig } from "@/shared/config/serverNotifications";
@@ -16,8 +15,12 @@ export async function proxyNotificationDispatch(
     return auth.response;
   }
 
-  const { internalApiKey, missingInternalApiKeyMessage } =
-    serverNotificationsConfig;
+  const {
+    internalApiKey,
+    missingInternalApiKeyMessage,
+    notificationsApiBase,
+    missingNotificationsApiBaseMessage,
+  } = serverNotificationsConfig;
 
   if (!internalApiKey) {
     return NextResponse.json(
@@ -26,8 +29,15 @@ export async function proxyNotificationDispatch(
     );
   }
 
+  if (!notificationsApiBase) {
+    return NextResponse.json(
+      { error: missingNotificationsApiBaseMessage },
+      { status: 500 },
+    );
+  }
+
   try {
-    const upstream = await fetch(buildNotificationsUrl(path), {
+    const upstream = await fetch(`${notificationsApiBase.replace(/\/$/, "")}${path}`, {
       method: "POST",
       cache: "no-store",
       headers: {
@@ -41,8 +51,10 @@ export async function proxyNotificationDispatch(
   } catch (error) {
     console.error(`[POST ${path}]`, error);
     return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 },
+      {
+        error: `No se pudo conectar con gokai-notifications-api en ${notificationsApiBase}.`,
+      },
+      { status: 502 },
     );
   }
 }
