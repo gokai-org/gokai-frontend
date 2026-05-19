@@ -1,30 +1,59 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
 import { serverNotificationsConfig } from "@/shared/config/serverNotifications";
+import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 
 export const dynamic = "force-dynamic";
 
+function buildNotificationsUpstreamUrl(request: NextRequest, base: string, path: string) {
+  const normalizedBase = base.replace(/\/$/, "");
+
+  if (normalizedBase.startsWith("/")) {
+    return new URL(`${normalizedBase}${path}`, request.url).toString();
+  }
+
+  return `${normalizedBase}${path}`;
+}
+
+async function mapNotificationsUpstreamAuthError(upstream: Response) {
+  if (upstream.status !== 401) {
+    return null;
+  }
+
+  const text = await upstream.text().catch(() => "");
+  const normalized = text.trim().toLowerCase();
+
+  if (
+    normalized.includes("invalid token") ||
+    normalized.includes("token is expired") ||
+    normalized.includes("token has invalid claims")
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "gokai-notifications-api rechazo el JWT del usuario. Si estas mezclando servicios locales con servicios remotos, alinea AUTH_JWT_SECRET o usa el mismo entorno para login y notificaciones.",
+      },
+      { status: 502 },
+    );
+  }
+
+  return NextResponse.json(
+    { error: text || "No se pudo enviar la notificación de prueba" },
+    { status: upstream.status },
+  );
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const token = getTokenFromRequest(request);
+    const rawToken = getTokenFromRequest(request);
+    const token = rawToken ? normalizeBearerToken(rawToken) : null;
 
     if (!token) {
       return NextResponse.json({ error: "No autenticado" }, { status: 401 });
     }
 
-    const {
-      internalApiKey,
-      missingInternalApiKeyMessage,
-      notificationsApiBase,
-      missingNotificationsApiBaseMessage,
-    } = serverNotificationsConfig;
-
-    if (!internalApiKey) {
-      return NextResponse.json(
-        { error: missingInternalApiKeyMessage },
-        { status: 500 },
-      );
-    }
+    const { notificationsApiBase, missingNotificationsApiBaseMessage } =
+      serverNotificationsConfig;
 
     if (!notificationsApiBase) {
       return NextResponse.json(
@@ -55,12 +84,12 @@ export async function POST(request: NextRequest) {
       minute: "2-digit",
     })}`;
 
-    const upstream = await fetch(`${notificationsApiBase.replace(/\/$/, "")}/push/`, {
+    const upstream = await fetch(buildNotificationsUpstreamUrl(request, notificationsApiBase, "/push/"), {
       method: "POST",
       cache: "no-store",
       headers: {
         "Content-Type": "application/json",
-        "X-Gokai-Key": internalApiKey,
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         player_ids: [playerId],
@@ -70,12 +99,10 @@ export async function POST(request: NextRequest) {
     });
 
     if (!upstream.ok) {
-      const errorText = await upstream.text().catch(() => "");
-
-      return NextResponse.json(
-        { error: errorText || "No se pudo enviar la notificación de prueba" },
-        { status: upstream.status },
-      );
+      const mappedAuthError = await mapNotificationsUpstreamAuthError(upstream);
+      if (mappedAuthError) {
+        return mappedAuthError;
+      }
     }
 
     return NextResponse.json({
