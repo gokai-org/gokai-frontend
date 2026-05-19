@@ -26,6 +26,7 @@ import type {
   KanaType,
   UserKanaProgressDetailedResponse,
 } from "@/features/kana/types";
+import { resolveKanaMasteryState } from "@/features/kana/lib/kanaMastery";
 import { WRITING_COMPLETION_SCORE } from "../types";
 import type { WritingBoardProgress, WritingBoardSummary } from "../types";
 
@@ -127,18 +128,13 @@ type KanaMasteryFlags = {
 function extractKanaMasteryFlags(
   items: readonly UserKanaProgressDetailedResponse[],
 ): KanaMasteryFlags {
-  return items.reduce<KanaMasteryFlags>(
-    (acc, item) => ({
-      hasHiraganaMastery: acc.hasHiraganaMastery || item.hasHiraganaMastery === true || item.hasKanasMastery === true,
-      hasKatakanaMastery: acc.hasKatakanaMastery || item.hasKatakanaMastery === true || item.hasKanasMastery === true,
-      hasKanasMastery: acc.hasKanasMastery || item.hasKanasMastery === true,
-    }),
-    {
-      hasHiraganaMastery: false,
-      hasKatakanaMastery: false,
-      hasKanasMastery: false,
-    },
-  );
+  const mastery = resolveKanaMasteryState(items);
+
+  return {
+    hasHiraganaMastery: mastery.hasHiraganaMastery,
+    hasKatakanaMastery: mastery.hasKatakanaMastery,
+    hasKanasMastery: mastery.hasKanasMastery,
+  };
 }
 
 export type KanaLookupMap = ReadonlyMap<string, Kana>;

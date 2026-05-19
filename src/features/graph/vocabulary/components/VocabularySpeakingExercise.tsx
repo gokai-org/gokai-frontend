@@ -8,6 +8,7 @@ import {
   type RecordedAudioResult,
 } from "@/features/chatbot/hooks/useAudioRecorder";
 import { convertAudioBlobToMonoWavFile } from "@/shared/lib/audio/wav";
+import { VOCABULARY_SPEAKING_PASS_SCORE } from "../lib/vocabularyQuizProgress";
 import { getVocabularyPronunciationFeedback } from "../services/api";
 import type {
   VocabularyPronunciationFeedbackResponse,
@@ -35,6 +36,22 @@ function formatAudioDuration(totalSeconds: number) {
 
 function normalizePronunciationScore(score: number) {
   return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function getRecommendedPronunciationStrategy(
+  feedback: VocabularyPronunciationFeedbackResponse,
+) {
+  const firstSuggestion = feedback.feedback.find(
+    (item) => typeof item === "string" && item.trim().length > 0,
+  );
+
+  if (firstSuggestion) {
+    return firstSuggestion.trim();
+  }
+
+  return normalizePronunciationScore(feedback.score) >= VOCABULARY_SPEAKING_PASS_SCORE
+    ? "Mantén esta pronunciación y busca que cada repetición suene igual de estable."
+    : "Repite la palabra más despacio y separa mejor cada sílaba antes del siguiente intento.";
 }
 
 function getRecordingValidationError(recording: RecordedAudioResult) {
@@ -160,7 +177,7 @@ export default function VocabularySpeakingExercise({
         setRequestPending(false);
       }
     },
-    [onScoreChange, question.wordId],
+    [onScoreChange, question.hiragana, question.wordId],
   );
 
   const handleStartRecording = useCallback(async () => {
@@ -235,6 +252,9 @@ export default function VocabularySpeakingExercise({
   }, [attempt, evaluateAttempt, step]);
 
   const scoreLabel = feedback ? normalizePronunciationScore(feedback.score) : null;
+  const recommendedStrategy = feedback
+    ? getRecommendedPronunciationStrategy(feedback)
+    : null;
 
   return (
     <div className="space-y-3">
@@ -288,9 +308,9 @@ export default function VocabularySpeakingExercise({
             </div>
           ) : null}
 
-          {feedback ? (
+          {step === "feedback" && feedback ? (
             <div className="rounded-2xl border border-border-subtle bg-surface-primary p-4">
-              <div className="flex flex-wrap items-end justify-between gap-3">
+              <div className="space-y-4">
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wide text-content-tertiary">
                     Resultado de pronunciación
@@ -300,30 +320,15 @@ export default function VocabularySpeakingExercise({
                   </p>
                 </div>
 
-                <div className="rounded-2xl bg-surface-secondary px-3 py-2 text-right">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-content-tertiary">
-                    Romaji detectado
+                <div className="rounded-2xl bg-surface-secondary px-4 py-3">
+                  <p className="text-[11px] font-bold uppercase tracking-wide text-content-tertiary">
+                    Estrategia recomendada
                   </p>
-                  <p className="mt-1 text-sm font-bold text-content-secondary">
-                    {feedback.recognized_speech || "Sin resultado"}
+                  <p className="mt-2 text-sm leading-relaxed text-content-secondary">
+                    {recommendedStrategy}
                   </p>
                 </div>
               </div>
-
-              {feedback.feedback.length > 0 ? (
-                <div className="mt-4 rounded-2xl bg-surface-secondary px-4 py-3">
-                  <p className="text-[11px] font-bold uppercase tracking-wide text-content-tertiary">
-                    Tips para mejorar
-                  </p>
-                  <ul className="mt-2 space-y-2 text-sm text-content-secondary">
-                    {feedback.feedback.map((item) => (
-                      <li key={item} className="leading-relaxed">
-                        • {item}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
             </div>
           ) : null}
 

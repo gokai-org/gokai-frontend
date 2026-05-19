@@ -126,6 +126,7 @@ export interface GrammarLibraryCardProps {
   unlockPending?: boolean;
   justUnlocked?: boolean;
   onSelect?: (lessonId: string) => void;
+  onLockedSelect?: (lessonId: string) => void;
   onToggleFavorite?: (lessonId: string) => void;
   onPressUnlock?: (lessonId: string) => void;
 }
@@ -137,6 +138,7 @@ export function GrammarLibraryCard({
   unlockPending = false,
   justUnlocked = false,
   onSelect,
+  onLockedSelect,
   onToggleFavorite,
   onPressUnlock,
 }: GrammarLibraryCardProps) {
@@ -278,12 +280,17 @@ export function GrammarLibraryCard({
         event.preventDefault();
         event.stopPropagation();
         triggerLockedShake();
+
+        if (isLockedCard) {
+          onLockedSelect?.(lesson.id);
+        }
+
         return;
       }
 
       onSelect?.(lesson.id);
     },
-    [isComingSoon, isLockedCard, lesson.id, onSelect, triggerLockedShake],
+    [isComingSoon, isLockedCard, lesson.id, onLockedSelect, onSelect, triggerLockedShake],
   );
 
   const handleFavoriteClick = useCallback(

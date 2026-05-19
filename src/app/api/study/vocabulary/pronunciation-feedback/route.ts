@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiConfig } from "@/shared/config";
-import { getBearerTokenFromRequest } from "@/app/api/_utils/auth";
+import { requireKanaContentAccess } from "@/app/api/_utils/kanaContentAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -266,12 +266,13 @@ async function readUpstreamBody(upstream: Response) {
 }
 
 export async function POST(req: NextRequest) {
-  const token = getBearerTokenFromRequest(req);
+  const access = await requireKanaContentAccess(req);
 
-  if (!token) {
-    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
+  const { token } = access;
   const formData = await req.formData().catch(() => null);
   const wordId = formData?.get("wordId");
   const hiragana = formData?.get("hiragana");

@@ -1,10 +1,15 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 
 const defaultEase = [0.22, 1, 0.36, 1] as [number, number, number, number];
+const SSR_DURATION_SCALE = 0.72;
+
+function subscribeToHydration() {
+  return () => {};
+}
 
 interface AnimatedEntranceProps {
   children: ReactNode;
@@ -34,14 +39,25 @@ export function AnimatedEntrance({
   mode = "default",
 }: AnimatedEntranceProps) {
   const platformMotion = usePlatformMotion();
-  const shouldDisable = disabled || !platformMotion.shouldAnimate;
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
+
+  const shouldAnimate = isHydrated ? platformMotion.shouldAnimate : true;
+  const entranceMode = isHydrated ? platformMotion.entranceMode : "light";
+  const durationScale = isHydrated
+    ? platformMotion.durationScale
+    : SSR_DURATION_SCALE;
+  const shouldDisable = disabled || !shouldAnimate;
 
   if (shouldDisable) {
     return <div className={className}>{children}</div>;
   }
 
   const effectiveMode =
-    mode === "light" || platformMotion.entranceMode === "light"
+    mode === "light" || entranceMode === "light"
       ? "light"
       : "default";
   const isLight = effectiveMode === "light";
@@ -64,7 +80,7 @@ export function AnimatedEntrance({
         scale: 1,
         transition: {
           delay: index * delayStep,
-          duration: (isLight ? 0.28 : duration) * platformMotion.durationScale,
+          duration: (isLight ? 0.28 : duration) * durationScale,
           ease: defaultEase,
         },
       }}
@@ -73,7 +89,7 @@ export function AnimatedEntrance({
         y: isLight ? 6 : exitOffsetY,
         scale: isLight ? 1 : 0.985,
         transition: {
-          duration: (isLight ? 0.2 : 0.28) * platformMotion.durationScale,
+          duration: (isLight ? 0.2 : 0.28) * durationScale,
           ease: defaultEase,
         },
       }}

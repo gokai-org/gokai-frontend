@@ -31,8 +31,18 @@ const shadowTransformStyle = {
 } as CSSProperties;
 
 const mascotFrameStyle = {
-  maxWidth: "min(100%, clamp(18.5rem, 86vw, 34rem), max(16rem, calc(100dvh - 22rem)))",
+  maxWidth: "min(100%, clamp(24rem, 98vw, 64rem), max(18rem, calc(100dvh - 10rem)))",
 } as CSSProperties;
+
+const tallMascotFrameStyle = {
+  aspectRatio: "650 / 1080",
+  height: "100%",
+  maxHeight: "min(100%, calc(100dvh - 7rem))",
+  maxWidth: "min(100%, 54rem)",
+} as CSSProperties;
+
+const DEFAULT_VIEWBOX = "0 0 1254 1254";
+const TALL_VIEWBOX = "300 70 650 1080";
 
 const rootVariants: Variants = {
   idle: {
@@ -250,6 +260,8 @@ interface KazuProgressProps {
   reducedMotion?: boolean;
   className?: string;
   minimumVitality?: number;
+  preferHeight?: boolean;
+  preferTallCrop?: boolean;
 }
 
 export const KazuProgress = memo(function KazuProgress({
@@ -259,6 +271,8 @@ export const KazuProgress = memo(function KazuProgress({
   reducedMotion,
   className,
   minimumVitality = 0.22,
+  preferHeight = false,
+  preferTallCrop = false,
 }: KazuProgressProps) {
   const prefersReducedMotion = useReducedMotion();
   const paths = useKazuSvgPaths();
@@ -282,11 +296,14 @@ export const KazuProgress = memo(function KazuProgress({
   return (
     <div className={className}>
       <div
-        className="relative mx-auto aspect-square w-full"
-        style={mascotFrameStyle}
+        className={preferHeight
+          ? "relative mx-auto h-full w-auto max-w-full"
+          : "relative mx-auto aspect-square w-full"
+        }
+        style={preferHeight ? tallMascotFrameStyle : mascotFrameStyle}
       >
         <motion.svg
-          viewBox="0 0 1254 1254"
+          viewBox={preferTallCrop ? TALL_VIEWBOX : DEFAULT_VIEWBOX}
           role="img"
           aria-label="Kazu muestra tu estado actual de constancia"
           className="relative z-10 h-full w-full drop-shadow-[0_22px_34px_rgba(31,26,48,0.13)]"

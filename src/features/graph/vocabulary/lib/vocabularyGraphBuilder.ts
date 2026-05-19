@@ -338,7 +338,11 @@ export function buildVocabularyThemeGraphElements(
 export function buildVocabularySubthemeGraphElements(
   item: VocabularyGraphProgressItem,
   words: VocabularyWordLesson[],
+  options?: {
+    hasKanaContentAccess?: boolean;
+  },
 ) {
+  const hasKanaContentAccess = options?.hasKanaContentAccess !== false;
   const visibleWords = getProgressiveWords(item, words);
   const mastery = getVocabularyNodeMastery(item);
   const isSubthemeCompleted = mastery.completedTypes === mastery.total;
@@ -354,7 +358,11 @@ export function buildVocabularySubthemeGraphElements(
       type: pickNodeType(index),
       label: getWordLabel(word),
       description: getWordLabel(word),
-      status: isSubthemeCompleted ? "completed" : getWordNodeStatus(visibleWords, index),
+      status: !hasKanaContentAccess
+        ? "locked"
+        : isSubthemeCompleted
+          ? "completed"
+          : getWordNodeStatus(visibleWords, index),
       imageUrl: word.icon ?? null,
       order: wordMetadata.order,
       unlockedAt: wordMetadata.unlockedAt,

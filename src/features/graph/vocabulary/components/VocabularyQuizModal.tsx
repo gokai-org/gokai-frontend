@@ -42,6 +42,7 @@ import {
   VOCABULARY_QUIZ_TYPE_LABELS,
   getQuizTypeProgress,
   getWordQuizProgressPercent,
+  isVocabularyQuizPassingScore,
 } from "../lib/vocabularyQuizProgress";
 import type { WritingScriptType } from "@/features/graph/writing/shared/types";
 import type {
@@ -566,6 +567,10 @@ export default function VocabularyQuizModal({
 
     return getOptionCorrect(choiceOptions[selectedOptionIndex]) ? 100 : 0;
   }, [activeQuestion, choiceOptions, currentType, selectedOptionIndex, selectedWritingOption, selectedWritingOptionIsCorrect, speakingScore, step, writingTraceScore]);
+  const currentAnswerPassed = useMemo(
+    () => isVocabularyQuizPassingScore(currentType, currentScore),
+    [currentScore, currentType],
+  );
 
   const audioSrc = buildAudioSrc(activeQuestion?.audio);
   const questionProgress = roundQuestions.length
@@ -1127,7 +1132,7 @@ export default function VocabularyQuizModal({
                       animate={{ opacity: 1, y: 0 }}
                       className="space-y-3"
                     >
-                      {currentType === "writing" && selectedWritingOptionIsCorrect && currentScore < 100 ? (
+                      {currentType === "writing" && selectedWritingOptionIsCorrect && !currentAnswerPassed ? (
                         <motion.button
                           type="button"
                           whileHover={{ scale: 1.02 }}
@@ -1139,7 +1144,7 @@ export default function VocabularyQuizModal({
                         </motion.button>
                       ) : null}
 
-                      {(!selectedWritingOptionIsCorrect || currentType !== "writing") && currentScore < 100 ? (
+                      {(!selectedWritingOptionIsCorrect || currentType !== "writing") && !currentAnswerPassed ? (
                         <motion.button
                           type="button"
                           whileHover={{ scale: 1.02 }}
@@ -1151,19 +1156,19 @@ export default function VocabularyQuizModal({
                         </motion.button>
                       ) : null}
 
-                      {currentType !== "writing" || currentScore === 100 || !selectedWritingOptionIsCorrect ? (
+                      {currentType !== "writing" || currentAnswerPassed || !selectedWritingOptionIsCorrect ? (
                         <motion.button
                           type="button"
                           whileHover={{ scale: 1.02 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={handleNextQuestion}
                           className={
-                            currentScore < 100
+                            !currentAnswerPassed
                               ? "w-full rounded-2xl border border-border-subtle bg-surface-secondary px-4 py-3.5 text-sm font-bold text-content-secondary transition hover:bg-surface-tertiary"
                               : "w-full rounded-2xl bg-gradient-to-r from-accent to-accent-hover py-3.5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/15 transition-all"
                           }
                         >
-                          {currentScore < 100
+                          {!currentAnswerPassed
                             ? questionIndex >= roundQuestions.length - 1
                               ? hasNextRound && nextRoundType
                                 ? `Continuar con ${VOCABULARY_QUIZ_TYPE_LABELS[nextRoundType].toLowerCase()}`
@@ -1597,7 +1602,10 @@ function RoundDots({
         const persisted = getQuizTypeProgress(question, type);
         const isDone = Boolean(result) || persisted.completed;
         const isCurrent = type === current;
-        const isPerfect = (result?.score ?? persisted.score ?? 0) === 100;
+        const isPerfect = isVocabularyQuizPassingScore(
+          type,
+          result?.score ?? persisted.score ?? null,
+        );
         const shouldShowCurrentMarker = isCurrent && !isDone;
         const baseClasses = isDone
           ? isPerfect
@@ -1670,7 +1678,7 @@ function VocabularyRoundResultCard({
   score: number | null;
   delay: number;
 }) {
-  const isPerfect = score === 100;
+  const isPerfect = isVocabularyQuizPassingScore(type, score);
   const isDone = score !== null;
 
   return (
@@ -1713,7 +1721,7 @@ function VocabularyRoundResultCard({
         <span className="text-xl font-extrabold text-content-muted">-</span>
       )}
       <span className="text-[0.6875rem] text-content-muted">
-        {isPerfect ? "Perfecta" : isDone ? "Por mejorar" : "Pendiente"}
+        {isPerfect ? (score === 100 ? "Perfecta" : "Completada") : isDone ? "Por mejorar" : "Pendiente"}
       </span>
     </motion.div>
   );
@@ -1740,21 +1748,31 @@ function VocabularyQuizSummary({
   onRetry: () => void;
   onClose: () => void;
 }) {
-  const success = finalScore === 100;
+  const perfectRun = finalScore === 100;
   const completedTypes = quizTypes.filter((type) => {
     const result = results.find((round) => round.type === type);
     const persisted = getQuizTypeProgress(question, type);
-    return (result?.score ?? persisted.score ?? 0) === 100;
+    return isVocabularyQuizPassingScore(
+      type,
+      result?.score ?? persisted.score ?? null,
+    );
   }).length;
+  const success = completedTypes === quizTypes.length;
   const totalQuizProgress = Math.max(
     getWordQuizProgressPercent(question),
     quizTypes.length > 0 ? Math.round((completedTypes / quizTypes.length) * 100) : 0,
   );
   const earnedPoints = pointsDelta > 0 && typeof userPoints === "number";
-  const statusLabel = success ? "Aprobada" : "Requiere reintento";
-  const subtitle = success
+  const statusLabel = perfectRun
+    ? "Aprobada"
+    : success
+      ? "Completada"
+      : "Requiere reintento";
+  const subtitle = perfectRun
     ? `Completaste ${getNodeTitle(item).toLowerCase()} con todos los ejercicios correctos.`
-    : `Este intento se guardo, pero necesitas 100 para completar ${getNodeTitle(item).toLowerCase()}.`;
+    : success
+      ? `Este intento se guardo y ya cuenta como completado para ${getNodeTitle(item).toLowerCase()}.`
+      : `Este intento se guardo, pero aun faltan ejercicios por completar en ${getNodeTitle(item).toLowerCase()}.`;
   const scoreStyle = success ? { color: "var(--accent)" } : undefined;
   const accentPanelStyle = {
     backgroundColor: "var(--accent-subtle)",
@@ -1799,7 +1817,7 @@ function VocabularyQuizSummary({
               {statusLabel}
             </p>
             <p className="mt-1 text-sm text-content-secondary">
-              {completedTypes} de {quizTypes.length} tipos perfectos
+              {completedTypes} de {quizTypes.length} tipos completados
             </p>
           </div>
         </div>

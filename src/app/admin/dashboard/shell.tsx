@@ -11,6 +11,8 @@ export default function AdminContentShell({
   const pathname = usePathname();
 
   const isSupport = pathname === "/admin/dashboard/support";
+  const isKanji = pathname === "/admin/dashboard/kanji";
+  const isLessons = pathname === "/admin/dashboard/lessons";
   const isVocabulary = pathname === "/admin/dashboard/vocabulary";
   const isStatistics = pathname === "/admin/dashboard/statistics";
   const isCoupons = pathname === "/admin/dashboard/coupons";
@@ -18,7 +20,14 @@ export default function AdminContentShell({
   const padDesktop = "lg:pl-[140px]";
   const padMd = "md:pl-[120px]";
 
-  if (isSupport || isVocabulary || isStatistics || isCoupons) {
+  if (
+    isSupport ||
+    isKanji ||
+    isLessons ||
+    isVocabulary ||
+    isStatistics ||
+    isCoupons
+  ) {
     return (
       <main
         className={[

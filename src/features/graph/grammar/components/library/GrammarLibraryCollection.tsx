@@ -29,6 +29,8 @@ type GrammarLibraryStage = "grid" | "lesson" | "quiz";
 export interface GrammarLibraryCollectionProps {
   favoriteIds?: ReadonlySet<string>;
   filterIds?: ReadonlySet<string>;
+  canOpenLessons?: boolean;
+  onBlockedLessonOpen?: (lessonId: string) => void;
   onToggleFavorite?: (lessonId: string) => void;
   onLessonOpen?: (lessonId: string) => void;
   className?: string;
@@ -47,6 +49,8 @@ function getRequestErrorMessage(error: unknown, fallback: string) {
 export function GrammarLibraryCollection({
   favoriteIds,
   filterIds,
+  canOpenLessons = true,
+  onBlockedLessonOpen,
   onToggleFavorite,
   onLessonOpen,
   className = "grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
@@ -163,7 +167,16 @@ export function GrammarLibraryCollection({
 
       const targetLesson = boardItems.find((item) => item.id === lessonId);
 
-      if (!targetLesson || targetLesson.status === "locked" || targetLesson.isMock) {
+      if (!targetLesson || targetLesson.isMock) {
+        return;
+      }
+
+      if (!canOpenLessons) {
+        onBlockedLessonOpen?.(lessonId);
+        return;
+      }
+
+      if (targetLesson.status === "locked") {
         return;
       }
 
@@ -171,7 +184,7 @@ export function GrammarLibraryCollection({
       setSelectedLessonId(lessonId);
       setStage("lesson");
     },
-    [boardItems, onLessonOpen, stage],
+    [boardItems, canOpenLessons, onBlockedLessonOpen, onLessonOpen, stage],
   );
 
   const handleCloseLesson = useCallback(() => {
@@ -292,6 +305,7 @@ export function GrammarLibraryCollection({
               unlockPending={unlockPendingLessonId === item.id}
               justUnlocked={recentlyUnlockedIds.has(item.id)}
               onSelect={handleSelectLesson}
+              onLockedSelect={handleSelectLesson}
               onToggleFavorite={onToggleFavorite}
               onPressUnlock={handleUnlockNextLesson}
             />

@@ -3,44 +3,26 @@ import type {
   AdminCouponStatus,
   BackendCoupon,
 } from "../types/coupons";
+import {
+  formatBackendCalendarDate,
+  isBackendCalendarDateOnOrAfterToday,
+  toBackendCalendarInputDate,
+} from "@/shared/lib/backendCalendarDate";
 
 function deriveCouponStatus(vigency: string): AdminCouponStatus {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const vigencyDate = new Date(vigency);
-  vigencyDate.setHours(0, 0, 0, 0);
-
-  if (vigencyDate < today) return "expired";
-  return "active";
+  return isBackendCalendarDateOnOrAfterToday(vigency) ? "active" : "expired";
 }
 
 export function formatCouponDate(isoDate: string): string {
-  const d = new Date(isoDate);
-  if (Number.isNaN(d.getTime())) return isoDate;
-
-  return d.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return formatBackendCalendarDate(isoDate, "short") ?? isoDate;
 }
 
 export function formatVigencyDate(isoDate: string): string {
-  const d = new Date(isoDate);
-  if (Number.isNaN(d.getTime())) return isoDate;
-
-  return d.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  return formatBackendCalendarDate(isoDate, "short") ?? isoDate;
 }
 
 export function toInputDate(isoDate: string): string {
-  const d = new Date(isoDate);
-  if (Number.isNaN(d.getTime())) return "";
-
-  return d.toISOString().split("T")[0];
+  return toBackendCalendarInputDate(isoDate);
 }
 
 export function mapBackendCouponToAdmin(coupon: BackendCoupon): AdminCoupon {

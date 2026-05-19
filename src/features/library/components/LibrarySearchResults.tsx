@@ -35,6 +35,7 @@ type LibrarySearchResultsProps = {
   nextUnlockCandidateId: string | null;
   unlockPendingKanjiId: string | null;
   userPoints: number;
+  vocabularyAccessLocked?: boolean;
   onKanjiSelect: (item: SearchIndexItem) => void;
   onKanaSelect: (item: SearchIndexItem) => void;
   onGrammarSelect: (item: SearchIndexItem) => void;
@@ -80,6 +81,7 @@ export function LibrarySearchResults({
   nextUnlockCandidateId,
   unlockPendingKanjiId,
   userPoints,
+  vocabularyAccessLocked = false,
   onKanjiSelect,
   onKanaSelect,
   onGrammarSelect,
@@ -235,6 +237,7 @@ export function LibrarySearchResults({
                     index={index}
                     isFavorite={favoriteGrammar.has(item.id)}
                     onSelect={() => onGrammarSelect(item)}
+                    onLockedSelect={() => onGrammarSelect(item)}
                     onToggleFavorite={() => onToggleFavoriteGrammar(item.id)}
                   />
                 ))}
@@ -259,7 +262,9 @@ export function LibrarySearchResults({
                   const isWordLocked = item.entityType === "word"
                     ? (wordLockStateById.get(item.id) ?? false)
                     : false;
-                  const isLocked = isThemeLocked || isWordLocked;
+                  const isLocked = vocabularyAccessLocked || isThemeLocked || isWordLocked;
+                  const canOpenFromResult =
+                    item.entityType === "theme" ? true : !isLocked;
 
                   return (
                     <Fragment key={`${item.entityType}-${item.id}`}>
@@ -272,7 +277,7 @@ export function LibrarySearchResults({
                         index={index}
                         locked={isLocked}
                         isFavorite={item.entityType === "word" ? favoriteWords.has(item.id) : false}
-                        onClick={isLocked ? undefined : () => onVocabularySelect(item)}
+                        onClick={canOpenFromResult ? () => onVocabularySelect(item) : undefined}
                         onFavoriteToggle={
                           item.entityType === "word" && !isLocked
                             ? () => onToggleFavoriteWord(item.id)

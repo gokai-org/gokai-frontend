@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiConfig } from "@/shared/config";
-import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
-import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
+import { requireKanaContentAccess } from "@/app/api/_utils/kanaContentAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -16,14 +15,14 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const raw = getTokenFromRequest(req);
+  const access = await requireKanaContentAccess(req);
 
-  if (!raw) {
-    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
   const { id } = await params;
-  const token = normalizeBearerToken(raw);
+  const { token } = access;
   const upstreamUrl = buildStudyUrl(`/kanji/${id}`);
 
   try {

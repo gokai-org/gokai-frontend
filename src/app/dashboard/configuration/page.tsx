@@ -542,28 +542,6 @@ function LearningSettings({
           onChange={(v) => updateSection("learning", { dailyGoal: v })}
         />
       </SettingsSection>
-
-      <SettingsSection
-        title="Sistema de Repaso"
-        description="Configura el sistema de repetición espaciada"
-      >
-        <SettingsSelectItem
-          label="Repasos diarios"
-          description="Cantidad máxima de repasos por día"
-          value={l.dailyReviews}
-          options={["10 tarjetas", "20 tarjetas", "30 tarjetas", "Ilimitado"]}
-          onChange={(v) => updateSection("learning", { dailyReviews: v })}
-        />
-
-        <SettingsToggleItem
-          label="Notificar repasos pendientes"
-          description="Recibir recordatorios de contenido por repasar"
-          enabled={l.notifyPendingReviews}
-          onChange={(v) =>
-            updateSection("learning", { notifyPendingReviews: v })
-          }
-        />
-      </SettingsSection>
     </>
   );
 }

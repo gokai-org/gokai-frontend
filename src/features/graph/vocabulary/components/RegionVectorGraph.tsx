@@ -733,7 +733,10 @@ function RegionVectorGraph({
 
         {layout.nodes.map(({ node, x, y }, index) => {
         const isWordNode = node.data.entityKind === "word";
+        const isLockedWordNode = isWordNode && node.data.status === "locked";
         const isInteractive = node.data.status !== "locked" && !interactionDisabled;
+        const canHandleLockedWord = isLockedWordNode && !interactionDisabled;
+        const canHandleClick = isInteractive || canHandleLockedWord;
         const nodeRadius = getNodeRadius(node, visualScale);
         const variant = getNodeVariant(node, index);
         const palette = getVariantPalette(node, variant, idPrefix);
@@ -768,7 +771,7 @@ function RegionVectorGraph({
               : visualScale.nodeFontSize * 0.86,
         );
         const activateNode = () => {
-          if (!isInteractive) {
+          if (!canHandleClick) {
             return;
           }
 
@@ -780,8 +783,10 @@ function RegionVectorGraph({
             data-vocabulary-node="true"
             data-ai-recommended={node.data.isAiRecommended ? "true" : undefined}
             className={[
-              node.data.status === "locked"
-                ? "cursor-default"
+              canHandleLockedWord
+                ? "pointer-events-auto cursor-pointer"
+                : node.data.status === "locked"
+                  ? "cursor-default"
                 : interactionDisabled
                   ? "cursor-progress"
                   : "pointer-events-auto cursor-pointer",
@@ -791,7 +796,7 @@ function RegionVectorGraph({
               .join(" ")}
             transform={`translate(${x} ${y})`}
             onClick={activateNode}
-            style={{ pointerEvents: isAiRecommended || isInteractive ? "all" : "none" }}
+            style={{ pointerEvents: isAiRecommended || canHandleClick ? "all" : "none" }}
             onPointerEnter={isAiRecommended ? (event) => handleRecommendedHover(event, node) : undefined}
             onPointerMove={isAiRecommended ? (event) => handleRecommendedHover(event, node) : undefined}
             onPointerLeave={isAiRecommended ? clearRecommendedHover : undefined}

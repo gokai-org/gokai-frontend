@@ -235,6 +235,12 @@ export function useVocabularyGraph() {
     }
   }, [loadGraphs]);
 
+  const reloadCatalog = useCallback(async () => {
+    const nextGraphs = await loadGraphs();
+    await loadThemeCatalog(nextGraphs);
+    return nextGraphs;
+  }, [loadGraphs, loadThemeCatalog]);
+
   useEffect(() => {
     let alive = true;
 
@@ -413,5 +419,6 @@ export function useVocabularyGraph() {
     createGraphFromTheme,
     addSubthemeToGraph,
     reloadProgress,
+    reloadCatalog,
   };
 }

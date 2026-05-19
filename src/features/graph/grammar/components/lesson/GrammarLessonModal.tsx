@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { BookText, RefreshCw } from "lucide-react";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
 import { useStudySessionActivity } from "@/features/configuration/lib/studySessionReminder";
+import { stopModalEvent, useModalPageLock } from "@/shared/hooks/useModalPageLock";
 import type { GrammarLesson } from "../../types";
 import GrammarLessonContent from "./GrammarLessonContent";
 
@@ -63,6 +64,7 @@ export default function GrammarLessonModal({
   isClosing = false,
 }: GrammarLessonModalProps) {
   useMiniDockBlocker(true);
+  useModalPageLock(true);
   useStudySessionActivity("grammar-lesson");
 
   return (
@@ -73,6 +75,10 @@ export default function GrammarLessonModal({
       animate={isClosing ? "closing" : "visible"}
       className="fixed inset-0 z-[70] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={onClose}
+      onWheelCapture={stopModalEvent}
+      onPointerDown={stopModalEvent}
+      onPointerMove={stopModalEvent}
+      onTouchMoveCapture={stopModalEvent}
     >
       <motion.div
         variants={panelVariants}

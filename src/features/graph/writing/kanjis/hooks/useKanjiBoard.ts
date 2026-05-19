@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useKanaContentAccess } from "@/features/kana/hooks/useKanaContentAccess";
 import {
   getKanjiLessonResults,
   getKanjiProgress,
@@ -141,6 +142,7 @@ function buildSummary(items: KanjiBoardProgress[]): KanjiBoardSummary {
 }
 
 export function useKanjiBoard() {
+  const { hasKanaContentAccess } = useKanaContentAccess();
   const knownUserId = readKnownUserId(KANJI_USER_CACHE_KEY);
   const sharedContentCache = readFreshCache<LibraryContentCache>(
     LIBRARY_CONTENT_CACHE_KEY,
@@ -437,11 +439,13 @@ export function useKanjiBoard() {
       const isCompleted = unlockState.completedIds.has(kanji.id);
       const isUnlocked = unlockState.unlockedIds.has(kanji.id);
       const canUnlock = unlockState.nextUnlockCandidateId === kanji.id;
-      const status = isCompleted
-        ? "completed"
-        : isUnlocked
-          ? "available"
-          : "locked";
+      const status = !hasKanaContentAccess
+        ? "locked"
+        : isCompleted
+          ? "completed"
+          : isUnlocked
+            ? "available"
+            : "locked";
 
       return {
         id: kanji.id,
@@ -454,13 +458,13 @@ export function useKanjiBoard() {
         completionScore: KANJI_COMPLETION_SCORE,
         progressPercent: bestScore ?? 0,
         bestResult: resultData?.bestResult ?? null,
-        unlocked: isUnlocked,
-        canUnlock: canUnlock && unlockState.canUnlockNext,
+        unlocked: hasKanaContentAccess && isUnlocked,
+        canUnlock: hasKanaContentAccess && canUnlock && unlockState.canUnlockNext,
         unlockCost: unlockState.unlockCost,
-        isCurrent: progress?.kanjiId === kanji.id,
+        isCurrent: hasKanaContentAccess && progress?.kanjiId === kanji.id,
       };
     });
-  }, [kanjis, progress, resultsByKanji, unlockState]);
+  }, [hasKanaContentAccess, kanjis, progress, resultsByKanji, unlockState]);
 
   const summary = useMemo(() => buildSummary(items), [items]);
 
@@ -504,8 +508,8 @@ export function useKanjiBoard() {
     userPoints,
     hasKanjiMastery: progress?.hasKanjiMastery === true,
     progress,
-    nextUnlockCandidate: unlockState.nextUnlockCandidate,
-    canUnlockNext: unlockState.canUnlockNext,
+    nextUnlockCandidate: hasKanaContentAccess ? unlockState.nextUnlockCandidate : null,
+    canUnlockNext: hasKanaContentAccess && unlockState.canUnlockNext,
     unlockCost: unlockState.unlockCost,
     latestUnlockedId: unlockState.latestUnlockedId,
     loading,
@@ -513,5 +517,6 @@ export function useKanjiBoard() {
     reload,
     applyOptimisticUnlock,
     recentlyUnlockedIds,
+    hasKanaContentAccess,
   };
 }

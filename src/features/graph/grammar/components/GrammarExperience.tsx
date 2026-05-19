@@ -3,6 +3,9 @@
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Node } from "reactflow";
+import { useRouter } from "next/navigation";
+import { GraphGateModal } from "@/features/graph/components/GraphGateModal";
+import { useKanaContentAccess } from "@/features/kana/hooks/useKanaContentAccess";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { MasteryBoardWrapper } from "@/features/mastery/components/MasteryBoardWrapper";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
@@ -62,6 +65,7 @@ export function GrammarExperience({
   className,
   showHelpButton = !embedded,
 }: GrammarExperienceProps) {
+  const router = useRouter();
   const {
     board,
     status,
@@ -70,7 +74,9 @@ export function GrammarExperience({
     recentlyUnlockedIds,
     nextUnlockCandidate,
     hasGrammarMastery,
+    hasKanaContentAccess,
   } = useGrammarBoard();
+  const { blockedMessage } = useKanaContentAccess();
   const autoUnlockedRef = useRef<Set<string>>(new Set());
   const boardQuality = useGrammarBoardQuality();
   const { setHidden } = useSidebar();
@@ -81,6 +87,7 @@ export function GrammarExperience({
   const [stage, setStage] = useState<GrammarViewStage>("board");
   const [unlockPending, setUnlockPending] = useState(false);
   const [unlockPendingLessonId, setUnlockPendingLessonId] = useState<string | null>(null);
+  const [showKanaRequirementModal, setShowKanaRequirementModal] = useState(false);
   const pathPreviewTimeoutsRef = useRef<number[]>([]);
 
   const { lesson, status: lessonStatus, error, refetch } = useGrammarLesson(selectedLessonId);
@@ -178,16 +185,21 @@ export function GrammarExperience({
   }, [boardQuality.shouldAnimateBoardZoom, stage, zoomDurationMs, zoomOutDurationMs]);
 
   useEffect(() => {
-    if (stage === "lesson" || stage === "quiz") {
+    if (stage === "lesson" || stage === "quiz" || showKanaRequirementModal) {
       setHidden(true);
     } else if (stage === "board") {
       setHidden(false);
     }
 
     return () => setHidden(false);
-  }, [setHidden, stage]);
+  }, [setHidden, showKanaRequirementModal, stage]);
 
   const handleUnlockNextLesson = useCallback(async (lessonId: string) => {
+    if (!hasKanaContentAccess) {
+      setShowKanaRequirementModal(true);
+      return;
+    }
+
     if (unlockPending) {
       return;
     }
@@ -219,11 +231,12 @@ export function GrammarExperience({
       setUnlockPending(false);
       setUnlockPendingLessonId(null);
     }
-  }, [applyOptimisticUnlock, board.cells, clearPathPreview, refetchBoard, toast, unlockPending]);
+  }, [applyOptimisticUnlock, board.cells, clearPathPreview, hasKanaContentAccess, refetchBoard, toast, unlockPending]);
 
   useEffect(() => {
     if (status !== "success") return;
     if (stage !== "board") return;
+    if (!hasKanaContentAccess) return;
     if (unlockPending) return;
     const candidate = nextUnlockCandidate;
     if (!candidate || !candidate.canUnlock) return;
@@ -231,7 +244,7 @@ export function GrammarExperience({
     if (autoUnlockedRef.current.has(candidate.id)) return;
     autoUnlockedRef.current.add(candidate.id);
     void handleUnlockNextLesson(candidate.id);
-  }, [handleUnlockNextLesson, nextUnlockCandidate, stage, status, unlockPending]);
+  }, [handleUnlockNextLesson, hasKanaContentAccess, nextUnlockCandidate, stage, status, unlockPending]);
 
   const handlePressUnlockLesson = useCallback(
     (lessonId: string) => {
@@ -250,6 +263,11 @@ export function GrammarExperience({
         return;
       }
 
+      if (!hasKanaContentAccess) {
+        setShowKanaRequirementModal(true);
+        return;
+      }
+
       const targetCell = board.cells.find((cell) => cell.progress.id === lessonId);
 
       if (!targetCell || !targetCell.interactive || targetCell.progress.isMock) {
@@ -265,6 +283,7 @@ export function GrammarExperience({
     },
     [
       board.cells,
+      hasKanaContentAccess,
       boardQuality.shouldAnimateBoardZoom,
       stage,
     ],
@@ -391,7 +410,7 @@ export function GrammarExperience({
           title: "Guía de Gramática",
           scopeSelector: '[data-help-surface="grammar-board"]',
           boardLabel: "Tablero de gramática",
-          requirementLabel: "35 puntos",
+          requirementLabel: hasKanaContentAccess ? "35 puntos" : blockedMessage,
           targetName: "grammar-board-canvas",
         });
       }
@@ -415,7 +434,7 @@ export function GrammarExperience({
         },
       });
     },
-    [helpLessonId],
+    [blockedMessage, hasKanaContentAccess, helpLessonId],
   );
 
   useEffect(() => clearPathPreview, [clearPathPreview]);
@@ -553,6 +572,21 @@ export function GrammarExperience({
             onComplete={handleQuizComplete}
           />
         ) : null}
+
+        <GraphGateModal
+          open={showKanaRequirementModal}
+          variant="kana-required"
+          blockedContentLabel="gramatica"
+          onClose={() => setShowKanaRequirementModal(false)}
+          onOpenHiragana={() => {
+            setShowKanaRequirementModal(false);
+            router.push("/dashboard/graph/writing?tab=hiragana");
+          }}
+          onOpenKatakana={() => {
+            setShowKanaRequirementModal(false);
+            router.push("/dashboard/graph/writing?tab=katakana");
+          }}
+        />
       </AnimatePresence>
     </div>
   );

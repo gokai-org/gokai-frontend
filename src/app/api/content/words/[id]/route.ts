@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
-import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 import { apiConfig } from "@/shared/config";
+import { getBearerTokenFromRequest } from "@/app/api/_utils/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -10,13 +9,12 @@ export async function GET(
   context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const raw = getTokenFromRequest(req);
+    const token = getBearerTokenFromRequest(req);
 
-    if (!raw) {
+    if (!token) {
       return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
     }
 
-    const token = normalizeBearerToken(raw);
     const { id } = await context.params;
 
     const upstream = await fetch(

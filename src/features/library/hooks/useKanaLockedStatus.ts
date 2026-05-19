@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getCurrentUser } from "@/features/auth";
 import { getKanaProgress } from "@/features/kana/api/kanaApi";
+import { resolveKanaMasteryState } from "@/features/kana/lib/kanaMastery";
 import { subscribeMasteryProgressSync } from "@/features/mastery/utils/masteryProgressSync";
 import type { Kana, UserKanaProgressDetailedResponse } from "@/features/kana/types";
 import {
@@ -165,6 +166,10 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
     () => createProgressMap(progressItems),
     [progressItems],
   );
+  const kanaMastery = useMemo(
+    () => resolveKanaMasteryState(progressItems),
+    [progressItems],
+  );
 
   const lockedHiraganaIds = useMemo(() => {
     const locked = new Set<string>();
@@ -201,6 +206,8 @@ export function useKanaLockedStatus(hiraganas: Kana[], katakanas: Kana[]) {
     loading,
     hasResolvedInitialStatus,
     progressById,
+    kanaMastery,
+    hasKanaContentAccess: kanaMastery.hasKanaContentAccess,
     reload: fetchStatus,
   };
 }

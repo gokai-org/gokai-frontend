@@ -14,6 +14,7 @@ import {
   getFeedbackColor,
   type StrokeValidationResult,
 } from "@/features/kana/lib/strokeValidation";
+import { stopModalEvent, useModalPageLock } from "@/shared/hooks/useModalPageLock";
 
 type PracticeStep = "loading" | "demo" | "practice" | "result";
 
@@ -44,6 +45,7 @@ export function KanaWritingPracticeModal({
   kana,
   onClose,
 }: KanaWritingPracticeModalProps) {
+  useModalPageLock(true);
   const [step, setStep] = useState<PracticeStep>("loading");
   const [strokeData, setStrokeData] = useState<KanaStrokeData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -317,6 +319,10 @@ export function KanaWritingPracticeModal({
         exit="exit"
         className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
         onClick={onClose}
+        onWheelCapture={stopModalEvent}
+        onPointerDown={stopModalEvent}
+        onPointerMove={stopModalEvent}
+        onTouchMoveCapture={stopModalEvent}
       >
         <motion.div
           variants={panelVariants}

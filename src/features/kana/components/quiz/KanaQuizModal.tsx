@@ -21,6 +21,7 @@ import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
 import { useAnswerConfirmationPreference } from "@/shared/hooks/useAnswerConfirmationPreference";
 import { useMasteredModules } from "@/features/mastery/components/MasteredModulesProvider";
 import { useMiniDockBlocker } from "@/features/dashboard/utils/miniDockBlockers";
+import { stopModalEvent, useModalPageLock } from "@/shared/hooks/useModalPageLock";
 import {
   ReaffirmedMasteryResult,
   UnlockedMasterySequence,
@@ -63,6 +64,7 @@ export function KanaQuizModal({
   onComplete,
 }: KanaQuizModalProps) {
   useMiniDockBlocker(true);
+  useModalPageLock(true);
   useStudySessionActivity(kanaType ? `${kanaType}-quiz` : "kana-quiz");
 
   const quiz = useKanaQuiz();
@@ -370,6 +372,10 @@ export function KanaQuizModal({
         exit="exit"
         className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60] p-4"
         onClick={handleRequestClose}
+        onWheelCapture={stopModalEvent}
+        onPointerDown={stopModalEvent}
+        onPointerMove={stopModalEvent}
+        onTouchMoveCapture={stopModalEvent}
       >
         <motion.div
           variants={panelVariants}

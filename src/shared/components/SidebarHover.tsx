@@ -2,9 +2,22 @@
 
 import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { motion, AnimatePresence, MotionConfig, animate, useMotionValue } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  CalendarDays,
+  History,
+  MessageSquare,
+  Sparkles,
+  TrendingUp,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import { getCurrentUser } from "@/features/auth";
 import { useSidebar } from "@/shared/components/SidebarContext";
 import { usePlatformMotion } from "@/shared/hooks/usePlatformMotion";
+import { hasPremiumAccess } from "@/shared/lib/userAccess";
+import { PremiumFeatureAccessModal } from "@/shared/ui/PremiumFeatureAccessModal";
+import { useResolvedPremiumAccess } from "@/shared/hooks/useResolvedPremiumAccess";
 import { FIRST_RUN_SIDEBAR_PREVIEW_EVENT } from "@/features/help/utils/guideEvents";
 import { clearFirstRunOnboardingSession } from "@/features/help/utils/firstRunOnboardingState";
 
@@ -28,6 +41,111 @@ type NavItem = {
   href: string;
   danger?: boolean;
 };
+
+type PremiumRouteKey = "estadisticas" | "chatbot";
+
+type PremiumRouteModalConfig = {
+  returnTo: string;
+  badgeLabel: string;
+  title: string;
+  description: string;
+  panelSubtitle: string;
+  panelHighlights: string[];
+  features: Array<{
+    icon: LucideIcon;
+    title: string;
+    description: string;
+  }>;
+  currentPlanItems: string[];
+  footerText: string;
+};
+
+const PREMIUM_ROUTE_MODAL_CONFIG: Record<PremiumRouteKey, PremiumRouteModalConfig> = {
+  estadisticas: {
+    returnTo: "/dashboard/statistics",
+    badgeLabel: "Estadisticas premium",
+    title: "Tus estadisticas avanzadas estan bloqueadas",
+    description:
+      "GOKAI+ desbloquea reportes mas profundos, actividad por periodos, progreso por habilidades y seguimiento detallado de tus rachas.",
+    panelSubtitle: "Desbloquea tu progreso completo",
+    panelHighlights: [
+      "Resumen avanzado por periodos",
+      "Actividad y habilidades en detalle",
+      "Seguimiento completo de tus rachas",
+    ],
+    features: [
+      {
+        icon: BarChart3,
+        title: "Resumen avanzado",
+        description:
+          "Visualiza mejor tu rendimiento global con indicadores premium y comparativas claras.",
+      },
+      {
+        icon: TrendingUp,
+        title: "Actividad y habilidades",
+        description:
+          "Detecta patrones de estudio y fortalezas por habilidad sin salir del dashboard.",
+      },
+      {
+        icon: CalendarDays,
+        title: "Rachas detalladas",
+        description:
+          "Sigue tu constancia con mas contexto semanal y mensual sobre tu avance.",
+      },
+    ],
+    currentPlanItems: [
+      "Tu progreso y respuestas actuales se mantienen",
+      "Tus secciones gratuitas siguen disponibles",
+      "No pierdes historial ni configuraciones guardadas",
+    ],
+    footerText:
+      "Activa GOKAI+ para abrir estadisticas avanzadas ahora mismo y seguir midiendo tu avance sin perder nada.",
+  },
+  chatbot: {
+    returnTo: "/dashboard/chatbot",
+    badgeLabel: "Chatbot premium",
+    title: "El chat con KAZU esta bloqueado",
+    description:
+      "El chatbot premium incluye practica conversacional con IA, recomendaciones adaptativas y ejercicios guiados dentro del mismo flujo.",
+    panelSubtitle: "Practica conversacional con IA",
+    panelHighlights: [
+      "Conversaciones ilimitadas con KAZU",
+      "Historial y recomendaciones conectadas",
+      "Panel de escritura guiada dentro del chat",
+    ],
+    features: [
+      {
+        icon: MessageSquare,
+        title: "Conversaciones ilimitadas",
+        description:
+          "Practica dialogos con IA dentro de una experiencia continua y enfocada en estudio real.",
+      },
+      {
+        icon: History,
+        title: "Historial y recomendaciones",
+        description:
+          "Recupera sesiones anteriores y recibe sugerencias conectadas al mismo hilo de chat.",
+      },
+      {
+        icon: Sparkles,
+        title: "Escritura guiada",
+        description:
+          "Activa ejercicios de escritura y practica simbolos sin salir del flujo conversacional.",
+      },
+    ],
+    currentPlanItems: [
+      "Tu progreso actual y favoritos se mantienen",
+      "El resto del dashboard sigue disponible",
+      "No se pierde ninguna preferencia de estudio",
+    ],
+    footerText:
+      "Activa GOKAI+ para abrir el chat con KAZU ahora mismo y entrar a la experiencia completa de conversacion.",
+  },
+};
+
+function isPremiumRouteKey(key: ItemKey): key is PremiumRouteKey {
+  return key === "estadisticas" || key === "chatbot";
+}
 
 const ACCENT = "var(--text-primary)";
 const MUTED = "var(--text-muted)";
@@ -53,14 +171,21 @@ export default function SidebarOnly() {
   const router = useRouter();
   const pathname = usePathname();
   const platformMotion = usePlatformMotion();
+  const { accessResolved, isPremium } = useResolvedPremiumAccess();
 
-  const { setExpanded, hidden: sidebarHidden, blurred: sidebarBlurred } = useSidebar();
+  const {
+    setExpanded,
+    hidden: sidebarHidden,
+    blurred: sidebarBlurred,
+    contextAction,
+  } = useSidebar();
   const [hovered, setHovered] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [guideExpanded, setGuideExpanded] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 16, y: 16 });
   const [isDragging, setIsDragging] = useState(false);
   const [wasDragged, setWasDragged] = useState(false);
+  const [premiumRouteModal, setPremiumRouteModal] = useState<PremiumRouteKey | null>(null);
   const dragStart = useRef({ x: 0, y: 0 });
 
   const items = useMemo<NavItem[]>(
@@ -168,8 +293,26 @@ export default function SidebarOnly() {
       return;
     }
 
+    if (isPremiumRouteKey(item.key)) {
+      let hasAccess = isPremium;
+
+      if (!accessResolved) {
+        const currentUser = await getCurrentUser();
+        hasAccess = hasPremiumAccess(currentUser);
+      }
+
+      if (!hasAccess) {
+        setPremiumRouteModal(item.key);
+        return;
+      }
+    }
+
     if (pathname !== item.href) router.push(item.href);
   };
+
+  const premiumRouteModalConfig = premiumRouteModal
+    ? PREMIUM_ROUTE_MODAL_CONFIG[premiumRouteModal]
+    : null;
 
   const expanded = hovered || guideExpanded;
   const sidebarReducedMotion = platformMotion.shouldAnimate ? "never" : "always";
@@ -364,10 +507,10 @@ export default function SidebarOnly() {
               "dark:[--sidebar-desktop-shadow-rest:var(--shadow-md)]",
               "dark:[--sidebar-desktop-shadow-hover:var(--shadow-xl)]",
               "flex flex-col overflow-hidden",
-              "w-[320px] md:w-[78px]",
+              "w-[340px] md:w-[78px]",
             ].join(" ")}
             animate={{
-              width: expanded ? 320 : 78,
+              width: expanded ? 340 : 78,
               boxShadow: hovered
                 ? "var(--sidebar-desktop-shadow-hover)"
                 : "var(--sidebar-desktop-shadow-rest)",
@@ -385,6 +528,58 @@ export default function SidebarOnly() {
                 "overflow-y-auto no-scrollbar",
               ].join(" ")}
             >
+              <AnimatePresence initial={false}>
+                {contextAction ? (
+                  <motion.div
+                    key={contextAction.id}
+                    initial={{ opacity: 0, y: -10, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.98 }}
+                    transition={SIDEBAR_FAST_TWEEN}
+                    className={expanded ? "px-0 pt-1 pb-3" : "px-0 pt-1 pb-2"}
+                  >
+                    <motion.button
+                      type="button"
+                      onClick={contextAction.onClick}
+                      className={[
+                        "group relative flex h-12 w-full items-center overflow-hidden rounded-[22px] border border-[rgba(255,255,255,0.5)] bg-white/68 text-left text-[var(--text-primary)] ring-1 ring-[rgba(15,23,42,0.06)] shadow-[0_16px_34px_rgba(15,23,42,0.12),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl transition-colors dark:border-white/6 dark:bg-white/6 dark:ring-white/10 dark:shadow-[var(--shadow-md)]",
+                        expanded ? "justify-start px-3.5" : "justify-center px-0",
+                      ].join(" ")}
+                      aria-label={contextAction.label}
+                      title={expanded ? undefined : contextAction.label}
+                      whileHover={expanded ? { scale: 1.01, x: 2 } : { scale: 1.02 }}
+                      whileTap={{ scale: 0.985 }}
+                      transition={SIDEBAR_GENTLE_HOVER}
+                    >
+                      <div className="absolute inset-0 rounded-[22px] bg-[linear-gradient(180deg,rgba(255,255,255,0.32),rgba(255,255,255,0.14))] opacity-80 dark:bg-[linear-gradient(180deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02))]" />
+                      <span
+                        className={[
+                          "relative z-10 flex shrink-0 items-center justify-center text-[15px] font-semibold tracking-[-0.02em] text-[var(--text-primary)]",
+                          expanded ? "h-9 w-9 rounded-2xl bg-black/[0.035] dark:bg-white/[0.06]" : "h-full w-full",
+                        ].join(" ")}
+                        aria-hidden="true"
+                      >
+                        {expanded ? "←" : contextAction.compactLabel}
+                      </span>
+                      <motion.span
+                        className="relative z-10 min-w-0 overflow-hidden whitespace-nowrap text-[15px] font-semibold tracking-[-0.02em]"
+                        initial={false}
+                        animate={{
+                          opacity: expanded ? 1 : 0,
+                          x: expanded ? 0 : -6,
+                          maxWidth: expanded ? 180 : 0,
+                          marginLeft: expanded ? 12 : 0,
+                        }}
+                        transition={SIDEBAR_FAST_TWEEN}
+                      >
+                        {contextAction.label}
+                      </motion.span>
+                      <div className="absolute inset-0 rounded-[22px] bg-black/[0.04] opacity-0 transition-opacity group-hover:opacity-100 dark:bg-white/[0.05]" />
+                    </motion.button>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+
               <SectionLabel label="MENU" expanded={expanded} />
               <div className="mt-2 space-y-2">
                 {items
@@ -410,6 +605,9 @@ export default function SidebarOnly() {
                         active={isActive(item.href)}
                         danger={!!item.danger}
                         expanded={expanded}
+                        premiumBadge={
+                          accessResolved && !isPremium && isPremiumRouteKey(item.key)
+                        }
                         onClick={() => onPick(item)}
                       />
                     </motion.div>
@@ -442,6 +640,7 @@ export default function SidebarOnly() {
                         active={isActive(item.href)}
                         danger={!!item.danger}
                         expanded={expanded}
+                        premiumBadge={false}
                         onClick={() => onPick(item)}
                       />
                     </motion.div>
@@ -557,6 +756,9 @@ export default function SidebarOnly() {
                           active={isActive(item.href)}
                           danger={!!item.danger}
                           expanded={true}
+                          premiumBadge={
+                            accessResolved && !isPremium && isPremiumRouteKey(item.key)
+                          }
                           onClick={() => onPick(item)}
                         />
                       </motion.div>
@@ -586,6 +788,7 @@ export default function SidebarOnly() {
                           active={isActive(item.href)}
                           danger={!!item.danger}
                           expanded={true}
+                          premiumBadge={false}
                           onClick={() => onPick(item)}
                         />
                       </motion.div>
@@ -598,6 +801,33 @@ export default function SidebarOnly() {
           </>
         )}
       </AnimatePresence>
+
+      {premiumRouteModalConfig ? (
+        <PremiumFeatureAccessModal
+          open
+          tone="accent"
+          badgeLabel={premiumRouteModalConfig.badgeLabel}
+          title={premiumRouteModalConfig.title}
+          description={premiumRouteModalConfig.description}
+          panelSubtitle={premiumRouteModalConfig.panelSubtitle}
+          panelHighlights={premiumRouteModalConfig.panelHighlights}
+          panelFootnote="Tu progreso actual se mantiene intacto al cambiar de plan."
+          features={premiumRouteModalConfig.features}
+          currentPlanItems={premiumRouteModalConfig.currentPlanItems}
+          footerText={premiumRouteModalConfig.footerText}
+          onClose={() => setPremiumRouteModal(null)}
+          onOpenUpgrade={() => {
+            const returnTo = premiumRouteModalConfig.returnTo;
+            setPremiumRouteModal(null);
+            router.push(`/checkout?returnTo=${encodeURIComponent(returnTo)}`);
+          }}
+          onOpenPlans={() => {
+            const returnTo = premiumRouteModalConfig.returnTo;
+            setPremiumRouteModal(null);
+            router.push(`/auth/membership?from=dashboard&returnTo=${encodeURIComponent(returnTo)}`);
+          }}
+        />
+      ) : null}
       </>
     </MotionConfig>
   );
@@ -750,6 +980,7 @@ function SidebarItem({
   active,
   danger,
   expanded,
+  premiumBadge,
   onClick,
 }: {
   label: string;
@@ -758,6 +989,7 @@ function SidebarItem({
   active: boolean;
   danger: boolean;
   expanded: boolean;
+  premiumBadge: boolean;
   disabled?: boolean;
   onClick: () => void;
 }) {
@@ -817,21 +1049,28 @@ function SidebarItem({
       </motion.div>
 
       <motion.div
-        className="relative z-10 overflow-hidden"
+        className="relative z-10 min-w-0 overflow-hidden"
         initial={false}
         animate={{
           opacity: expanded ? 1 : 0,
           x: expanded ? 0 : -6,
-          maxWidth: expanded ? 180 : 0,
+          maxWidth: expanded ? 228 : 0,
         }}
         transition={SIDEBAR_FAST_TWEEN}
       >
-        <span
-          className="block whitespace-nowrap text-[18px] font-semibold tracking-normal"
-          style={{ color: textColor }}
-        >
-          {label}
-        </span>
+        <div className="flex min-w-0 items-center gap-2 whitespace-nowrap">
+          <span
+            className="block min-w-0 text-[18px] font-semibold tracking-normal"
+            style={{ color: textColor }}
+          >
+            {label}
+          </span>
+          {premiumBadge ? (
+            <span className="inline-flex shrink-0 items-center rounded-full border border-accent/15 bg-accent/10 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.14em] text-accent">
+              GOKAI+
+            </span>
+          ) : null}
+        </div>
       </motion.div>
 
       <div

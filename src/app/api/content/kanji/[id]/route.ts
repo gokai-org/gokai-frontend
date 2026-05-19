@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getTokenFromRequest } from "@/shared/lib/auth/cookies";
-import { normalizeBearerToken } from "@/shared/lib/auth/normalizeToken";
 import { apiConfig } from "@/shared/config";
+import { requireKanaContentAccess } from "@/app/api/_utils/kanaContentAccess";
 import {
   normalizeKanjiCatalogUnlockCosts,
   normalizeKanjiDetailUnlockCost,
@@ -400,13 +399,13 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const raw = getTokenFromRequest(req);
+  const access = await requireKanaContentAccess(req);
 
-  if (!raw) {
-    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const token = normalizeBearerToken(raw);
+  const { token } = access;
   const { id } = await params;
   const resource = req.nextUrl.searchParams.get("resource");
   const requestedQuizType = req.nextUrl.searchParams.get("quizType");
@@ -572,13 +571,13 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const raw = getTokenFromRequest(req);
+  const access = await requireKanaContentAccess(req);
 
-  if (!raw) {
-    return NextResponse.json({ error: "No auth cookie" }, { status: 401 });
+  if (access.response) {
+    return access.response;
   }
 
-  const token = normalizeBearerToken(raw);
+  const { token } = access;
   const { id } = await params;
   const resource = req.nextUrl.searchParams.get("resource");
 
