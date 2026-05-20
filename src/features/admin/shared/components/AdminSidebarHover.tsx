@@ -8,6 +8,18 @@ import React, {
   useState,
 } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import type { LucideIcon } from "lucide-react";
+import {
+  BarChart3,
+  BellRing,
+  BookMarked,
+  BookOpenCheck,
+  LifeBuoy,
+  LogOut,
+  Languages,
+  Ticket,
+  Users,
+} from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useSidebar } from "@/shared/components/SidebarContext";
 
@@ -26,8 +38,7 @@ type NavItem = {
   key: ItemKey;
   label: string;
   section: "menu" | "general";
-  iconInactive: string;
-  iconActive: string;
+  icon: LucideIcon;
   href: string;
   danger?: boolean;
 };
@@ -53,74 +64,65 @@ export default function AdminSidebar() {
     () => [
       {
         key: "support",
-        label: "Support",
+        label: "Soporte",
         section: "menu",
-        iconInactive: "/icons/ayuda.svg",
-        iconActive: "/icons/ayuda-active.svg",
+        icon: LifeBuoy,
         href: "/admin/dashboard/support",
       },
       {
         key: "coupons",
         label: "Cupones",
         section: "menu",
-        iconInactive: "/icons/cupones.svg",
-        iconActive: "/icons/cupones-active.svg",
+        icon: Ticket,
         href: "/admin/dashboard/coupons",
       },
       {
         key: "users",
         label: "Usuarios",
         section: "menu",
-        iconInactive: "/icons/usuarios.svg",
-        iconActive: "/icons/usuarios-active.svg",
+        icon: Users,
         href: "/admin/dashboard/users",
       },
       {
         key: "kanji",
-        label: "Kanjis",
+        label: "Kanji",
         section: "menu",
-        iconInactive: "/icons/biblioteca.svg",
-        iconActive: "/icons/biblioteca-active.svg",
+        icon: Languages,
         href: "/admin/dashboard/kanji",
       },
       {
         key: "lessons",
-        label: "Gramática",
+        label: "Lecciones",
         section: "menu",
-        iconInactive: "/icons/repaso.svg",
-        iconActive: "/icons/repaso-active.svg",
+        icon: BookOpenCheck,
         href: "/admin/dashboard/lessons",
       },
       {
         key: "vocabulary",
         label: "Vocabulario",
         section: "menu",
-        iconInactive: "/icons/mapa.svg",
-        iconActive: "/icons/mapa-active.svg",
+        icon: BookMarked,
         href: "/admin/dashboard/vocabulary",
       },
       {
         key: "statistics",
         label: "Estadisticas",
         section: "menu",
-        iconInactive: "/icons/estadisticas.svg",
-        iconActive: "/icons/estadisticas-active.svg",
+        icon: BarChart3,
         href: "/admin/dashboard/statistics",
       },
       {
         key: "notifications",
         label: "Notificaciones",
         section: "menu",
-        iconInactive: "/icons/avisos.svg",
-        iconActive: "/icons/avisos-active.svg",
+        icon: BellRing,
         href: "/admin/dashboard/notifications",
       },
       {
         key: "logout",
         label: "Cerrar sesion",
         section: "general",
-        iconInactive: "/icons/logout.svg",
-        iconActive: "/icons/logout-active.svg",
+        icon: LogOut,
         href: "/",
         danger: true,
       },
@@ -346,8 +348,7 @@ export default function AdminSidebar() {
                     >
                       <SidebarItem
                         label={item.label}
-                        iconInactive={item.iconInactive}
-                        iconActive={item.iconActive}
+                        icon={item.icon}
                         active={isActive(item.href)}
                         danger={!!item.danger}
                         expanded={expanded}
@@ -491,8 +492,7 @@ export default function AdminSidebar() {
                       >
                         <SidebarItem
                           label={item.label}
-                          iconInactive={item.iconInactive}
-                          iconActive={item.iconActive}
+                          icon={item.icon}
                           active={isActive(item.href)}
                           danger={!!item.danger}
                           expanded={true}
@@ -632,16 +632,14 @@ function SectionLabel({
 
 function SidebarItem({
   label,
-  iconInactive,
-  iconActive,
+  icon: Icon,
   active,
   danger,
   expanded,
   onClick,
 }: {
   label: string;
-  iconInactive: string;
-  iconActive: string;
+  icon: LucideIcon;
   active: boolean;
   danger: boolean;
   expanded: boolean;
@@ -650,7 +648,7 @@ function SidebarItem({
   const accentBg = danger ? "rgba(220,38,38,0.10)" : "rgba(153,51,49,0.10)";
   const hoverBg = danger ? "rgba(220,38,38,0.08)" : "rgba(153,51,49,0.07)";
   const textColor = active ? (danger ? "rgb(220,38,38)" : ACCENT) : MUTED;
-  const iconSrc = active ? iconActive : iconInactive;
+  const iconColor = active ? (danger ? "rgb(220,38,38)" : ACCENT) : MUTED;
 
   if (!expanded) {
     return (
@@ -679,14 +677,13 @@ function SidebarItem({
             transition={{ type: "spring", stiffness: 300, damping: 20 }}
           />
         )}
-        <motion.img
-          src={iconSrc}
-          alt=""
-          draggable={false}
-          className="relative h-[24px] w-[24px] object-contain opacity-90 group-hover:opacity-100"
-          whileHover={{ rotate: [0, -10, 10, 0] }}
-          transition={{ duration: 0.3 }}
-        />
+          <motion.div
+            className="relative"
+            whileHover={{ rotate: [0, -10, 10, 0] }}
+            transition={{ duration: 0.3 }}
+          >
+            <Icon className="h-6 w-6" strokeWidth={2.2} style={{ color: iconColor }} />
+          </motion.div>
         <div
           className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity"
           style={{ background: hoverBg, pointerEvents: "none" }}
@@ -706,14 +703,12 @@ function SidebarItem({
       transition={{ type: "spring", stiffness: 400, damping: 17 }}
     >
       <div className="grid h-11 w-11 place-items-center">
-        <motion.img
-          src={iconSrc}
-          alt=""
-          draggable={false}
-          className="h-[24px] w-[24px] object-contain opacity-90 group-hover:opacity-100"
+        <motion.div
           whileHover={{ scale: 1.1 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}
-        />
+        >
+          <Icon className="h-6 w-6" strokeWidth={2.2} style={{ color: iconColor }} />
+        </motion.div>
       </div>
 
       <motion.span

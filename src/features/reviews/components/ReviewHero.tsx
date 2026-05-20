@@ -278,12 +278,12 @@ export function ReviewHero({
               className={modalBackdropClassName}
               onClick={() => setShowStreakGuide(false)}
             />
-            <div className="flex min-h-full items-center justify-center p-4 sm:p-6">
+            <div className="flex min-h-full items-start justify-center px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-4 sm:items-center sm:p-6">
               <div
                 role="dialog"
                 aria-modal="true"
                 aria-label="Estados de racha"
-                className={`${modalDialogClassName} max-w-5xl`}
+                className={`${modalDialogClassName} flex max-h-[calc(100dvh-3rem)] max-w-5xl flex-col sm:max-h-[calc(100dvh-3.5rem)]`}
               >
                 <div className="flex items-start justify-between gap-4 border-b border-border-subtle px-5 py-5 sm:px-6 lg:px-8">
                   <div>
@@ -308,7 +308,7 @@ export function ReviewHero({
                   </button>
                 </div>
 
-                <div className="max-h-[calc(min(90vh,52rem)-7.5rem)] overflow-y-auto px-5 py-5 sm:px-6 lg:px-8">
+                <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5 pb-6 sm:px-6 sm:pb-6 lg:px-8">
                   <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                     {streakStates.map((state) => (
                       <div
@@ -368,22 +368,22 @@ export function ReviewHero({
           </div>
 
           <div className={`relative z-50 min-h-[9rem] max-w-[28rem] pr-[7rem] sm:min-h-[9.5rem] sm:max-w-[30rem] sm:pr-[8rem] md:min-h-[10rem] md:max-w-[32rem] lg:max-w-[34rem] lg:pr-0 xl:min-h-[10.5rem] ${KAZU_HEADER_BOTTOM_SPACING_CLASSNAME}`}>
-            <h1 className="text-4xl font-extrabold leading-none tracking-[0.09em] text-accent sm:text-5xl lg:text-[4.5rem] xl:text-[5rem]">
-              KAZU
-            </h1>
-            <div className="mt-1 flex items-center gap-2">
-              <p className="text-sm font-semibold text-content-tertiary sm:text-base">
-                Kazu refleja tu constancia
-              </p>
+            <div className="flex items-start gap-2 sm:gap-2.5">
+              <h1 className="text-4xl font-extrabold leading-none tracking-[0.09em] text-accent sm:text-5xl lg:text-[4.5rem] xl:text-[5rem]">
+                KAZU
+              </h1>
               <button
                 type="button"
                 aria-label="Ver estados de Kazu"
                 onClick={() => setShowKazuGuide(true)}
-                className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-accent/20 bg-surface-primary text-accent transition-colors hover:border-accent/35 hover:bg-accent/10"
+                className="mt-1 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-accent/20 bg-surface-primary text-accent transition-colors hover:border-accent/35 hover:bg-accent/10 sm:mt-1.5"
               >
                 <HelpCircle className="h-3.5 w-3.5" />
               </button>
             </div>
+            <p className="mt-1 text-sm font-semibold text-content-tertiary sm:text-base">
+              Kazu refleja tu constancia
+            </p>
           </div>
 
           <div

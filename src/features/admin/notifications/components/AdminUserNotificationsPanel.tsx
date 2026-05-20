@@ -107,7 +107,7 @@ export function AdminUserNotificationsPanel({
           </label>
         </div>
 
-        <div className="max-h-[540px] space-y-2 overflow-y-auto p-3">
+        <div className="space-y-2 p-3">
           {usersLoading ? (
             <div className="flex items-center justify-center py-10 text-sm text-content-tertiary">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

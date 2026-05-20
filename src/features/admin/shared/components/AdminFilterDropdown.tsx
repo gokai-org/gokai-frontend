@@ -132,7 +132,7 @@ export function AdminFilterDropdown<T extends string = string>({
     <div
       ref={containerRef}
       className={[
-        fullWidth ? "relative isolate z-[70] block" : "relative isolate z-[70] inline-block",
+        fullWidth ? "relative isolate block" : "relative isolate inline-block",
         className ?? "",
       ].join(" ")}
     >
@@ -162,7 +162,7 @@ export function AdminFilterDropdown<T extends string = string>({
         ? createPortal(
             <div
               ref={menuRef}
-              className="fixed z-[140] overflow-hidden rounded-2xl border border-border-default bg-surface-primary p-1.5 shadow-xl"
+              className="fixed z-[45] overflow-hidden rounded-2xl border border-border-default bg-surface-primary p-1.5 shadow-xl"
               style={{ visibility: "hidden" }}
               role="listbox"
             >

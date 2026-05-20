@@ -1,7 +1,7 @@
 "use client";
 
 import { animate, motion, useMotionValue } from "framer-motion";
-import { Compass, Menu, PanelsTopLeft, Sparkles } from "lucide-react";
+import { ArrowLeft, Compass, Menu, PanelsTopLeft, Sparkles } from "lucide-react";
 import {
   useCallback,
   useEffect,
@@ -825,7 +825,7 @@ function waitForValue<T>(
 export default function Page() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { expanded: sidebarExpanded, setContextAction, setHidden } = useSidebar();
+  const { expanded: sidebarExpanded, setHidden } = useSidebar();
   const { activeTour, pendingTour, startTour } = useGuideTour();
   const sceneRef = useRef<HTMLDivElement | null>(null);
   const pointersRef = useRef(new Map<number, PointerPosition>());
@@ -1875,24 +1875,6 @@ export default function Page() {
     },
     [currentLevel, isLessonOpen, selectedRegion, selectedSubthemeItem, selectedTheme, selectedWord],
   );
-
-  useEffect(() => {
-    if (!canNavigateBack) {
-      setContextAction(null);
-      return;
-    }
-
-    setContextAction({
-      id: "graph-back",
-      label: "Regresar",
-      compactLabel: "◀",
-      onClick: handleBack,
-    });
-
-    return () => {
-      setContextAction(null);
-    };
-  }, [canNavigateBack, handleBack, setContextAction]);
 
   const handleNavigateToLibrary = useCallback(() => {
     if (typeof window === "undefined") {
@@ -3495,37 +3477,51 @@ export default function Page() {
             animate={{ x: sidebarExpanded ? 262 : 0, opacity: breadcrumbItems.length > 1 ? 1 : 0.72 }}
             transition={{ duration: 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
-            <nav
-              aria-label="Ruta del mapa"
-              className="pointer-events-auto max-w-[min(calc(100vw-2rem),28rem)] rounded-full border border-white/45 bg-white/60 px-3 py-2 shadow-[0_14px_32px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl dark:border-white/8 dark:bg-[rgba(12,12,16,0.46)] dark:shadow-[0_18px_36px_rgba(0,0,0,0.28)]"
-            >
-              <div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap text-[12px] font-medium text-slate-500 no-scrollbar dark:text-slate-400 md:text-[12.5px]">
-                {breadcrumbItems.map((item, index) => {
-                  const isLast = index === breadcrumbItems.length - 1;
+            <div className="pointer-events-auto flex max-w-[min(calc(100vw-2rem),34rem)] items-center gap-2 rounded-[1.6rem] border border-white/45 bg-white/60 p-2 shadow-[0_14px_32px_rgba(15,23,42,0.08),inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-xl dark:border-white/8 dark:bg-[rgba(12,12,16,0.46)] dark:shadow-[0_18px_36px_rgba(0,0,0,0.28)]">
+              {canNavigateBack ? (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-3 text-[12px] font-semibold text-slate-700 shadow-[0_10px_24px_rgba(15,23,42,0.08)] transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 dark:border-white/10 dark:bg-white/[0.06] dark:text-slate-100 dark:hover:border-white/20 dark:hover:bg-white/[0.1] md:h-11 md:px-4 md:text-[12.5px]"
+                  aria-label="Regresar al nivel anterior"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Regresar</span>
+                </button>
+              ) : null}
 
-                  return (
-                    <Fragment key={item.id}>
-                      <button
-                        type="button"
-                        onClick={() => navigateToGraphLevel(item.level)}
-                        className={[
-                          "rounded-full px-1.5 py-0.5 transition-colors duration-200",
-                          isLast
-                            ? "text-slate-700 dark:text-slate-200"
-                            : "hover:bg-black/[0.045] hover:text-slate-700 dark:hover:bg-white/[0.05] dark:hover:text-slate-200",
-                        ].join(" ")}
-                        aria-current={isLast ? "page" : undefined}
-                      >
-                        <span className="block max-w-[8rem] truncate md:max-w-[10rem]">
-                          {item.label}
-                        </span>
-                      </button>
-                      {!isLast ? <span aria-hidden="true">/</span> : null}
-                    </Fragment>
-                  );
-                })}
-              </div>
-            </nav>
+              <nav
+                aria-label="Ruta del mapa"
+                className="min-w-0 flex-1 overflow-hidden rounded-full border border-white/55 bg-white/45 px-3 py-2 dark:border-white/8 dark:bg-white/[0.03]"
+              >
+                <div className="flex items-center gap-1.5 overflow-x-auto whitespace-nowrap text-[12px] font-medium text-slate-500 no-scrollbar dark:text-slate-400 md:text-[12.5px]">
+                  {breadcrumbItems.map((item, index) => {
+                    const isLast = index === breadcrumbItems.length - 1;
+
+                    return (
+                      <Fragment key={item.id}>
+                        <button
+                          type="button"
+                          onClick={() => navigateToGraphLevel(item.level)}
+                          className={[
+                            "rounded-full px-1.5 py-0.5 transition-colors duration-200",
+                            isLast
+                              ? "text-slate-700 dark:text-slate-200"
+                              : "hover:bg-black/[0.045] hover:text-slate-700 dark:hover:bg-white/[0.05] dark:hover:text-slate-200",
+                          ].join(" ")}
+                          aria-current={isLast ? "page" : undefined}
+                        >
+                          <span className="block max-w-[8rem] truncate md:max-w-[10rem]">
+                            {item.label}
+                          </span>
+                        </button>
+                        {!isLast ? <span aria-hidden="true">/</span> : null}
+                      </Fragment>
+                    );
+                  })}
+                </div>
+              </nav>
+            </div>
           </motion.div>
 
           <motion.div
