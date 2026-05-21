@@ -46,7 +46,10 @@ import {
 import { useDeferredGraphMount } from "@/features/graph/vocabulary/hooks/useDeferredGraphMount";
 import { useVocabularyGraph } from "@/features/graph/vocabulary/hooks/useVocabularyGraph";
 import { readOnboardingInterestThemeIds } from "@/features/onboarding/lib/interestThemeStorage";
-import { loadJapanMapAssets } from "@/features/graph/vocabulary/components/japanMap/japanMapAssets";
+import {
+  loadJapanMapAssets,
+  warmJapanMapSource,
+} from "@/features/graph/vocabulary/components/japanMap/japanMapAssets";
 import { buildRegionGraphLayout } from "@/features/graph/vocabulary/lib/regionGraphLayout";
 import {
   buildVocabularySubthemeGraphElements,
@@ -876,6 +879,7 @@ export default function Page() {
   const deferredRewardTimeoutRef = useRef<number | null>(null);
   const handledDeepLinkRef = useRef<string | null>(null);
   const zoomOutIntentRef = useRef(0);
+  const gestureHoversDismissedRef = useRef(false);
   const [hoverResetToken, setHoverResetToken] = useState(0);
   const [firstRunEnabled, setFirstRunEnabled] = useState(false);
   const [firstRunSeenStateReady, setFirstRunSeenStateReady] = useState(false);
@@ -1201,6 +1205,7 @@ export default function Page() {
   }, []);
 
   useEffect(() => {
+    void warmJapanMapSource().catch(() => null);
     void loadJapanMapAssets().catch(() => null);
   }, []);
 
@@ -3048,6 +3053,10 @@ export default function Page() {
         return;
       }
 
+      if (pointersRef.current.size === 0) {
+        gestureHoversDismissedRef.current = false;
+      }
+
       // Cancel any running level-transition animation and sync manual ref from live values
       cancelTransformAnim();
       const auto = autoTransformRef.current;
@@ -3092,6 +3101,7 @@ export default function Page() {
           distance: getDistance(pointers[0], pointers[1]),
           center: getMidpoint(pointers[0], pointers[1]),
         };
+        transformLayerRef.current?.classList.add("is-zooming");
       }
     },
     [cancelTransformAnim, mvScale, mvX, mvY],
@@ -3147,7 +3157,12 @@ export default function Page() {
             zoomOutIntentRef.current = 0;
           }
 
-          dismissGraphHovers();
+          if (!gestureHoversDismissedRef.current) {
+            dismissGraphHovers();
+            gestureHoversDismissedRef.current = true;
+          }
+
+          transformLayerRef.current?.classList.add("is-zooming");
           zoomAndPanAt(
             rect ? { x: center.x - rect.left, y: center.y - rect.top } : center,
             factor,
@@ -3207,7 +3222,8 @@ export default function Page() {
           isNavigatingRef.current = false;
           sceneGestureRectRef.current = null;
           if (sceneRef.current) sceneRef.current.style.cursor = "grab";
-          transformLayerRef.current?.classList.remove("is-dragging");
+          transformLayerRef.current?.classList.remove("is-dragging", "is-zooming");
+          gestureHoversDismissedRef.current = false;
         }
 
         return;
@@ -3233,7 +3249,8 @@ export default function Page() {
         isNavigatingRef.current = false;
         sceneGestureRectRef.current = null;
         if (sceneRef.current) sceneRef.current.style.cursor = "grab";
-        transformLayerRef.current?.classList.remove("is-dragging");
+        transformLayerRef.current?.classList.remove("is-dragging", "is-zooming");
+        gestureHoversDismissedRef.current = false;
 
         if (selectedRegionFromTarget && !suppressRegionClickRef.current) {
           handleRegionSelect(selectedRegionFromTarget);
@@ -3259,6 +3276,7 @@ export default function Page() {
           regionTarget: null, // transitioning from pinch — no region click
         };
         pinchRef.current = null;
+        transformLayerRef.current?.classList.remove("is-zooming");
       }
     },
     [clearSelectedRegionIfOffscreen, handleRegionSelect],
@@ -3347,34 +3365,47 @@ export default function Page() {
     showVocabularyAccessModal,
   ]);
 
-  // Pre-warm: after data is loaded and the scene is sized, trigger a
-  // sub-pixel micro-movement to force the browser's compositor to promote
-  // the transform layer to a GPU tile and JIT-compile the Framer Motion hot
-  // path. Without this, the very first drag may stutter while V8 compiles
-  // and the rasterizer promotes the layer.
+  // Pre-warm pan + pinch zoom after data is loaded and the scene is sized.
+  // Touch browsers often compile/promote the scale path lazily on the first
+  // gesture, so exercise x/y/scale once before the user interacts.
   useEffect(() => {
     if (loading || !sceneSize.width || !sceneSize.height) {
       return;
     }
 
+    const layer = transformLayerRef.current;
+    const baseX = mvX.get();
+    const baseY = mvY.get();
+    const baseScale = mvScale.get();
     let secondFrame = 0;
+    let cleanupFrame = 0;
+
+    layer?.classList.add("is-prewarming", "is-zooming");
 
     const firstFrame = window.requestAnimationFrame(() => {
-      mvX.set(0.001);
-      mvY.set(0.001);
+      mvX.set(baseX + 0.001);
+      mvY.set(baseY + 0.001);
+      mvScale.set(baseScale * 1.0008);
 
       secondFrame = window.requestAnimationFrame(() => {
-        mvX.set(0);
-        mvY.set(0);
+        mvX.set(baseX);
+        mvY.set(baseY);
+        mvScale.set(baseScale);
+
+        cleanupFrame = window.requestAnimationFrame(() => {
+          layer?.classList.remove("is-prewarming", "is-zooming");
+        });
       });
     });
 
     return () => {
       window.cancelAnimationFrame(firstFrame);
       window.cancelAnimationFrame(secondFrame);
+      window.cancelAnimationFrame(cleanupFrame);
+      layer?.classList.remove("is-prewarming", "is-zooming");
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, sceneSize.width, sceneSize.height]); // mvX/mvY are stable MotionValues
+  }, [loading, sceneSize.width, sceneSize.height]); // MotionValues are stable
 
   const handleMapRegionSelect = useCallback(
     (regionId: VocabularyRegionId) => {
@@ -3565,7 +3596,7 @@ export default function Page() {
                   layoutCountsByRegion={layoutCountsByRegion}
                   hoverResetToken={hoverResetToken}
                   cultureHoverEnabled={cultureExplorationEnabled}
-                  interactionDisabled={currentLevel !== "map"}
+                  interactionDisabled={graphInteractionDisabled || isLessonOpen}
                   onRegionSelect={handleMapRegionSelect}
                   onLayoutChange={handleRegionLayoutsChange}
                 />
@@ -3636,7 +3667,7 @@ export default function Page() {
                   className="vocabulary-map-safe-area absolute pointer-events-none"
                   style={mapSafeAreaStyle}
                 >
-                  <div className="h-full w-full pointer-events-auto">
+                  <div className="h-full w-full pointer-events-none">
                     <RegionThemeGraph
                       region={selectedRegion}
                       regionBounds={selectedRegionLayout?.bounds ?? null}
@@ -3662,7 +3693,7 @@ export default function Page() {
                 className="vocabulary-map-safe-area absolute pointer-events-none"
                 style={mapSafeAreaStyle}
               >
-                <div className="h-full w-full pointer-events-auto">
+                <div className="h-full w-full pointer-events-none">
                   <RegionVectorGraph
                     nodes={regionGraph.nodes}
                     edges={regionGraph.edges as GraphEdge[]}

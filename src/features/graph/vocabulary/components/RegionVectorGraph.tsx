@@ -609,6 +609,11 @@ function RegionVectorGraph({
       event: ReactPointerEvent<Element> | ReactMouseEvent<Element>,
       node: FlowGraphNode,
     ) => {
+      if ("pointerType" in event && event.pointerType !== "mouse") {
+        setHoveredRecommendedNode(null);
+        return;
+      }
+
       if (!node.data.isAiRecommended || node.id === "home") {
         setHoveredRecommendedNode(null);
         return;

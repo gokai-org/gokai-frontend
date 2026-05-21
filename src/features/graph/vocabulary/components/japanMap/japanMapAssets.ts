@@ -16,9 +16,55 @@ export type ParsedJapanMap = {
 
 let cache: ParsedJapanMap | null = null;
 let pending: Promise<ParsedJapanMap> | null = null;
+let sourceWarmPending: Promise<void> | null = null;
+let sourceWarmImage: HTMLImageElement | null = null;
 
 export function getCachedJapanMap(): ParsedJapanMap | null {
   return cache;
+}
+
+export function warmJapanMapSource(): Promise<void> {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return Promise.resolve();
+  }
+
+  if (sourceWarmPending) {
+    return sourceWarmPending;
+  }
+
+  const existingPreload = document.querySelector<HTMLLinkElement>(
+    `link[rel="preload"][href="${MAP_SOURCE_URL}"]`,
+  );
+
+  if (!existingPreload) {
+    const link = document.createElement("link");
+    link.rel = "preload";
+    link.as = "image";
+    link.href = MAP_SOURCE_URL;
+    document.head.appendChild(link);
+  }
+
+  sourceWarmImage = new Image();
+  sourceWarmImage.decoding = "async";
+  sourceWarmImage.setAttribute("fetchpriority", "high");
+  sourceWarmImage.src = MAP_SOURCE_URL;
+
+  sourceWarmPending = (typeof sourceWarmImage.decode === "function"
+    ? sourceWarmImage.decode()
+    : new Promise<void>((resolve) => {
+        if (!sourceWarmImage) {
+          resolve();
+          return;
+        }
+
+        sourceWarmImage.onload = () => resolve();
+        sourceWarmImage.onerror = () => resolve();
+      })
+  )
+    .catch(() => undefined)
+    .then(() => undefined);
+
+  return sourceWarmPending;
 }
 
 export function loadJapanMapAssets(): Promise<ParsedJapanMap> {
@@ -29,6 +75,8 @@ export function loadJapanMapAssets(): Promise<ParsedJapanMap> {
   if (pending) {
     return pending;
   }
+
+  void warmJapanMapSource();
 
   pending = fetch(MAP_SOURCE_URL)
     .then((response) => response.text())

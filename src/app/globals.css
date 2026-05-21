@@ -1962,8 +1962,10 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   transform-origin: 0 0;
   contain: layout paint style;
   isolation: isolate;
+  backface-visibility: hidden;
 }
 
+.map-transform-layer.is-prewarming,
 .map-transform-layer.is-dragging,
 .map-transform-layer.is-zooming {
   will-change: transform;
@@ -2074,7 +2076,10 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
 
 .map-transform-layer.is-dragging .vmap-hit-layer,
 .map-transform-layer.is-dragging .region-graph-layer,
-.map-transform-layer.is-dragging .region-graph-layer * {
+.map-transform-layer.is-dragging .region-graph-layer *,
+.map-transform-layer.is-zooming .vmap-hit-layer,
+.map-transform-layer.is-zooming .region-graph-layer,
+.map-transform-layer.is-zooming .region-graph-layer * {
   pointer-events: none !important;
 }
 
@@ -2093,6 +2098,7 @@ html:not(.dark) [data-kanji-quality="low"] .kanji-bg-parallax-layer {
   filter: none;
   mix-blend-mode: normal;
   opacity: 1;
+  backface-visibility: hidden;
 }
 .dark .vmap-static-base {
   filter: none;
