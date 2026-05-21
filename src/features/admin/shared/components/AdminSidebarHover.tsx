@@ -376,8 +376,7 @@ export default function AdminSidebar() {
                     >
                       <SidebarItem
                         label={item.label}
-                        iconInactive={item.iconInactive}
-                        iconActive={item.iconActive}
+                        icon={item.icon}
                         active={isActive(item.href)}
                         danger={!!item.danger}
                         expanded={expanded}
@@ -520,8 +519,7 @@ export default function AdminSidebar() {
                       >
                         <SidebarItem
                           label={item.label}
-                          iconInactive={item.iconInactive}
-                          iconActive={item.iconActive}
+                          icon={item.icon}
                           active={isActive(item.href)}
                           danger={!!item.danger}
                           expanded={true}
@@ -648,7 +646,11 @@ function SidebarItem({
   const accentBg = danger ? "rgba(220,38,38,0.10)" : "rgba(153,51,49,0.10)";
   const hoverBg = danger ? "rgba(220,38,38,0.08)" : "rgba(153,51,49,0.07)";
   const textColor = active ? (danger ? "rgb(220,38,38)" : ACCENT) : MUTED;
-  const iconColor = active ? (danger ? "rgb(220,38,38)" : ACCENT) : MUTED;
+  const iconColor = active
+    ? danger
+      ? "rgb(220,38,38)"
+      : "var(--accent)"
+    : "var(--text-muted)";
 
   if (!expanded) {
     return (
