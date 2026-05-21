@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect, useRef } from "react";
+import { useSearchParams } from "next/navigation";
 import type { NodeTypes, EdgeTypes } from "reactflow";
 import { WritingBoardView } from "../../shared/components/WritingBoardView";
 import type { WritingBoardProgress } from "../../shared/types";
@@ -50,9 +51,11 @@ function isKanaQuizType(
 }
 
 export default function KatakanaView() {
+  const searchParams = useSearchParams();
   const { items, summary, loading, error, reload, userPoints, hasModuleMastery } = useKatakanaBoard();
   const { setHidden } = useSidebar();
   const mastered = useMasteredModules();
+  const handledRecommendationEntityIdRef = useRef<string | null>(null);
 
   const [manualSelectedId, setManualSelectedId] = useState<string | null>(null);
   const [detailNodeId, setDetailNodeId] = useState<string | null>(null);
@@ -72,6 +75,7 @@ export default function KatakanaView() {
   const celebrationFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pathPreviewTimeoutsRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const [suppressUnlockPointsDuringUnlock, setSuppressUnlockPointsDuringUnlock] = useState(false);
+  const requestedEntityId = searchParams.get("entityId");
 
   const selectedId = useMemo(() => {
     if (detailNodeId && items.some((item) => item.id === detailNodeId)) {
@@ -183,6 +187,26 @@ export default function KatakanaView() {
   }, [clearPathPreview]);
 
   useEffect(() => clearPathPreview, [clearPathPreview]);
+
+  useEffect(() => {
+    if (!requestedEntityId) {
+      return;
+    }
+
+    if (handledRecommendationEntityIdRef.current === requestedEntityId) {
+      return;
+    }
+
+    if (!items.some((item) => item.id === requestedEntityId)) {
+      return;
+    }
+
+    clearPathPreview();
+    setDetailNodeId(null);
+    setManualSelectedId(null);
+    setHelpSelectedNodeId(requestedEntityId);
+    handledRecommendationEntityIdRef.current = requestedEntityId;
+  }, [clearPathPreview, items, requestedEntityId]);
 
   const buildHelpTour = useCallback(
     () => {

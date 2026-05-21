@@ -3,7 +3,8 @@
 import { AnimatePresence } from "framer-motion";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Node } from "reactflow";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import { GraphGateModal } from "@/features/graph/components/GraphGateModal";
 import { useKanaContentAccess } from "@/features/kana/hooks/useKanaContentAccess";
 import { useSidebar } from "@/shared/components/SidebarContext";
@@ -66,6 +67,7 @@ export function GrammarExperience({
   showHelpButton = !embedded,
 }: GrammarExperienceProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     board,
     status,
@@ -75,9 +77,14 @@ export function GrammarExperience({
     nextUnlockCandidate,
     hasGrammarMastery,
     hasKanaContentAccess,
+    progress,
+    userPoints,
   } = useGrammarBoard();
   const { blockedMessage } = useKanaContentAccess();
   const autoUnlockedRef = useRef<Set<string>>(new Set());
+  const handledRecommendationLessonIdRef = useRef<string | null>(null);
+  const recommendationFocusTimeoutRef = useRef<number | null>(null);
+  const recommendationModalTimeoutRef = useRef<number | null>(null);
   const boardQuality = useGrammarBoardQuality();
   const { setHidden } = useSidebar();
   const mastered = useMasteredModules();
@@ -88,7 +95,15 @@ export function GrammarExperience({
   const [unlockPending, setUnlockPending] = useState(false);
   const [unlockPendingLessonId, setUnlockPendingLessonId] = useState<string | null>(null);
   const [showKanaRequirementModal, setShowKanaRequirementModal] = useState(false);
+  const [recommendationLockedLesson, setRecommendationLockedLesson] = useState<{
+    title: string;
+    requiresKana: boolean;
+    remainingUnlockSteps: number;
+    totalUnlockPoints: number;
+    additionalPointsNeeded: number;
+  } | null>(null);
   const pathPreviewTimeoutsRef = useRef<number[]>([]);
+  const requestedLessonId = searchParams.get("lessonId");
 
   const { lesson, status: lessonStatus, error, refetch } = useGrammarLesson(selectedLessonId);
 
@@ -136,6 +151,20 @@ export function GrammarExperience({
   const clearPathPreview = useCallback(() => {
     pathPreviewTimeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
     pathPreviewTimeoutsRef.current = [];
+  }, []);
+
+  const clearRecommendationFocusTimeout = useCallback(() => {
+    if (recommendationFocusTimeoutRef.current !== null) {
+      window.clearTimeout(recommendationFocusTimeoutRef.current);
+      recommendationFocusTimeoutRef.current = null;
+    }
+  }, []);
+
+  const clearRecommendationModalTimeout = useCallback(() => {
+    if (recommendationModalTimeoutRef.current !== null) {
+      window.clearTimeout(recommendationModalTimeoutRef.current);
+      recommendationModalTimeoutRef.current = null;
+    }
   }, []);
 
   const playHelpPathPreview = useCallback(() => {
@@ -397,10 +426,16 @@ export function GrammarExperience({
 
   const resetHelpTourState = useCallback(() => {
     clearPathPreview();
+    clearRecommendationFocusTimeout();
+    clearRecommendationModalTimeout();
     setHelpFocusedLessonId(null);
     setSelectedLessonId(null);
     setStage("board");
-  }, [clearPathPreview]);
+  }, [
+    clearPathPreview,
+    clearRecommendationFocusTimeout,
+    clearRecommendationModalTimeout,
+  ]);
 
   const buildHelpTour = useCallback(
     () => {
@@ -438,6 +473,84 @@ export function GrammarExperience({
   );
 
   useEffect(() => clearPathPreview, [clearPathPreview]);
+
+  useEffect(() => {
+    if (status !== "success" || !requestedLessonId) {
+      return;
+    }
+
+    if (handledRecommendationLessonIdRef.current === requestedLessonId) {
+      return;
+    }
+
+    if (!board.cells.some((cell) => cell.progress.id === requestedLessonId)) {
+      return;
+    }
+
+    const requestedCell =
+      board.cells.find((cell) => cell.progress.id === requestedLessonId) ?? null;
+    const currentLessonIndex = progress?.grammarId
+      ? (board.cells.find((cell) => cell.progress.id === progress.grammarId)?.progress.index ?? -1)
+      : -1;
+
+    clearPathPreview();
+    clearRecommendationFocusTimeout();
+    clearRecommendationModalTimeout();
+    setShowKanaRequirementModal(false);
+    setRecommendationLockedLesson(null);
+    setSelectedLessonId(null);
+    setHelpFocusedLessonId(requestedLessonId);
+    setStage("board");
+
+    recommendationFocusTimeoutRef.current = window.setTimeout(() => {
+      setHelpFocusedLessonId((currentLessonId) =>
+        currentLessonId === requestedLessonId ? null : currentLessonId,
+      );
+      recommendationFocusTimeoutRef.current = null;
+    }, 1800);
+
+    if (
+      requestedCell?.progress.status === "locked" &&
+      requestedCell.progress.canUnlock !== true
+    ) {
+      const unlockCostPerStep =
+        requestedCell.progress.unlockCost ??
+        requestedCell.progress.pointsToUnlock ??
+        0;
+      const remainingUnlockSteps = Math.max(
+        0,
+        requestedCell.progress.index - currentLessonIndex,
+      );
+      const totalUnlockPoints = remainingUnlockSteps * unlockCostPerStep;
+
+      recommendationModalTimeoutRef.current = window.setTimeout(() => {
+        setRecommendationLockedLesson({
+          title: requestedCell.progress.title,
+          requiresKana: !hasKanaContentAccess,
+          remainingUnlockSteps,
+          totalUnlockPoints,
+          additionalPointsNeeded: Math.max(0, totalUnlockPoints - userPoints),
+        });
+        recommendationModalTimeoutRef.current = null;
+      }, 900);
+    }
+
+    handledRecommendationLessonIdRef.current = requestedLessonId;
+  }, [
+    board.cells,
+    clearPathPreview,
+    clearRecommendationFocusTimeout,
+    clearRecommendationModalTimeout,
+    hasKanaContentAccess,
+    progress?.grammarId,
+    requestedLessonId,
+    status,
+    userPoints,
+  ]);
+
+  useEffect(() => clearRecommendationFocusTimeout, [clearRecommendationFocusTimeout]);
+
+  useEffect(() => clearRecommendationModalTimeout, [clearRecommendationModalTimeout]);
 
   useEffect(() => {
     if (!showHelpButton) {
@@ -587,6 +700,105 @@ export function GrammarExperience({
             router.push("/dashboard/graph/writing?tab=katakana");
           }}
         />
+
+        <AnimatePresence>
+          {recommendationLockedLesson ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[96] flex items-center justify-center bg-black/55 p-3 backdrop-blur-sm sm:p-4"
+              onClick={() => setRecommendationLockedLesson(null)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 18 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.97, y: 14 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+                className="relative w-full max-w-xl overflow-hidden rounded-[26px] bg-surface-primary shadow-[0_24px_64px_rgba(0,0,0,0.18)] ring-1 ring-border-subtle"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="px-5 pb-5 pt-5 sm:px-7 sm:pb-7 sm:pt-7">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="max-w-xl">
+                      <span className="inline-flex items-center gap-2 rounded-full border border-accent/15 bg-accent/10 px-3 py-1 text-[10px] font-black uppercase tracking-[0.22em] text-accent">
+                        Esta recomendacion aun esta bloqueada
+                      </span>
+
+                      <h2 className="mt-4 max-w-[18ch] text-2xl font-black leading-tight text-content-primary dark:text-white sm:text-4xl">
+                        Aun no llegas a esta leccion de gramatica
+                      </h2>
+
+                      <p className="mt-4 text-sm leading-7 text-content-secondary dark:text-white/66 sm:text-base">
+                        {recommendationLockedLesson.title} sigue bloqueada dentro de tu recorrido actual. Continua avanzando en el tablero y desbloquea las lecciones previas para poder abrirla.
+                      </p>
+
+                      {recommendationLockedLesson.requiresKana ? (
+                        <p className="mt-3 text-sm font-semibold text-content-primary dark:text-white">
+                          Antes de llegar aqui tambien necesitas desbloquear hiragana y katakana.
+                        </p>
+                      ) : null}
+
+                      {recommendationLockedLesson.totalUnlockPoints > 0 ? (
+                        <p className="mt-3 text-sm font-semibold text-content-primary dark:text-white">
+                          {recommendationLockedLesson.remainingUnlockSteps === 1
+                            ? `Te falta 1 desbloqueo de gramatica para llegar a esta leccion, equivalente a ${recommendationLockedLesson.totalUnlockPoints} puntos en total.`
+                            : `Te faltan ${recommendationLockedLesson.remainingUnlockSteps} desbloqueos de gramatica para llegar a esta leccion, equivalentes a ${recommendationLockedLesson.totalUnlockPoints} puntos en total.`}
+                        </p>
+                      ) : null}
+
+                      {recommendationLockedLesson.additionalPointsNeeded > 0 ? (
+                        <p className="mt-2 text-sm text-content-secondary dark:text-white/66">
+                          Con tu saldo actual, todavia necesitas reunir {recommendationLockedLesson.additionalPointsNeeded} puntos mas para completar ese recorrido.
+                        </p>
+                      ) : null}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setRecommendationLockedLesson(null)}
+                      className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border-subtle bg-surface-secondary text-content-tertiary shadow-sm transition-colors hover:bg-surface-tertiary hover:text-content-primary"
+                      aria-label="Cerrar modal"
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      >
+                        <path d="M6 6 18 18" />
+                        <path d="M18 6 6 18" />
+                      </svg>
+                    </button>
+                  </div>
+
+                  <div className="mt-7 flex flex-col gap-3 rounded-[26px] border border-[#E8C4BD] bg-[#FFF4F2] px-5 py-4 dark:border-[#50302E] dark:bg-[#1D1716] sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <p className="text-sm font-black text-content-primary dark:text-white">
+                        La recomendacion ya quedo enfocada en tu tablero
+                      </p>
+
+                      <p className="mt-1 text-sm leading-6 text-content-secondary dark:text-white/66">
+                        Puedes usar este foco visual para ubicar la leccion y seguir el camino que te falta dentro del board.
+                      </p>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setRecommendationLockedLesson(null)}
+                      className="inline-flex min-h-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-r from-accent to-accent-hover px-5 text-sm font-bold text-content-inverted shadow-lg shadow-accent/20 transition-all duration-200 hover:-translate-y-[1px] hover:shadow-xl hover:shadow-accent/25 focus:outline-none focus:ring-4 focus:ring-accent/20"
+                    >
+                      Entendido
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          ) : null}
+        </AnimatePresence>
       </AnimatePresence>
     </div>
   );

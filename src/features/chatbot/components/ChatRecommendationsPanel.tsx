@@ -14,6 +14,8 @@ function getLessonTypeLabel(lessonType: string) {
       return "Subtema";
     case "theme":
       return "Tema";
+    case "word":
+      return "Palabra";
     case "grammar":
       return "Gramatica";
     case "kanji":
@@ -27,7 +29,9 @@ function getRecommendationAction(recommendation: ChatbotRecommendation) {
   switch (recommendation.lessonType) {
     case "subtheme":
       return {
-        href: `/dashboard/graph?subthemeId=${encodeURIComponent(recommendation.entityId)}`,
+        href: recommendation.themeId
+          ? `/dashboard/graph?themeId=${encodeURIComponent(recommendation.themeId)}&subthemeId=${encodeURIComponent(recommendation.entityId)}`
+          : `/dashboard/graph?subthemeId=${encodeURIComponent(recommendation.entityId)}`,
         label: "Ir al mapa",
       };
     case "theme":
@@ -35,24 +39,29 @@ function getRecommendationAction(recommendation: ChatbotRecommendation) {
         href: `/dashboard/graph?themeId=${encodeURIComponent(recommendation.entityId)}`,
         label: "Ir al mapa",
       };
+    case "word":
+      return {
+        href: "/dashboard/graph",
+        label: "Abrir mapa",
+      };
     case "grammar":
       return {
-        href: "/dashboard/graph/grammar",
+        href: `/dashboard/graph/grammar?lessonId=${encodeURIComponent(recommendation.entityId)}`,
         label: "Ir al tablero",
       };
     case "kanji":
       return {
-        href: `/dashboard/library?category=kanji&entityId=${encodeURIComponent(recommendation.entityId)}`,
+        href: `/dashboard/graph/writing?tab=kanji&entityId=${encodeURIComponent(recommendation.entityId)}`,
         label: "Ir a kanji",
       };
     case "hiragana":
       return {
-        href: `/dashboard/library?category=hiragana&entityId=${encodeURIComponent(recommendation.entityId)}`,
+        href: `/dashboard/graph/writing?tab=hiragana&entityId=${encodeURIComponent(recommendation.entityId)}`,
         label: "Ir a hiragana",
       };
     case "katakana":
       return {
-        href: `/dashboard/library?category=katakana&entityId=${encodeURIComponent(recommendation.entityId)}`,
+        href: `/dashboard/graph/writing?tab=katakana&entityId=${encodeURIComponent(recommendation.entityId)}`,
         label: "Ir a katakana",
       };
     default:

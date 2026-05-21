@@ -19,6 +19,7 @@ type ChatbotApiRecommendation = {
   reviewChatId: string;
   lessonType: string;
   entityId: string;
+  themeId?: string;
   description: string;
   createdAt: string;
 };
@@ -141,6 +142,7 @@ function normalizeRecommendation(
     reviewChatId: recommendation.reviewChatId,
     lessonType: recommendation.lessonType,
     entityId: recommendation.entityId,
+    themeId: recommendation.themeId,
     description: recommendation.description,
     createdAt: parseDate(recommendation.createdAt),
   };

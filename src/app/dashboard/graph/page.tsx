@@ -2484,6 +2484,18 @@ export default function Page() {
           .find((theme) => theme.themeId === requestedThemeId);
 
         if (matchedTheme?.themeId) {
+          if (!matchedTheme.isAvailable) {
+            setSelectedRegionId(matchedTheme.regionId);
+            setSelectedThemeId(matchedTheme.themeId);
+            setSelectedSubthemeNodeId(null);
+            setSelectedWordId(null);
+            setSubthemeWords([]);
+            setCurrentLevel("region");
+            openPremiumThemeModal(matchedTheme.label);
+            handledDeepLinkRef.current = deepLinkKey;
+            return;
+          }
+
           setSelectedRegionId(matchedTheme.regionId);
           setSelectedThemeId(matchedTheme.themeId);
           setSelectedSubthemeNodeId(null);
@@ -2572,6 +2584,7 @@ export default function Page() {
     createGraphFromTheme,
     loadSubthemeWordsForNode,
     loading,
+    openPremiumThemeModal,
     progressItems,
     regions,
     requestedSubthemeId,
