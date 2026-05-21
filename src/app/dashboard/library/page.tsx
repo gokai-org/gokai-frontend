@@ -2,7 +2,7 @@
 
 import { useAnimationPreferences } from "@/shared/hooks/useAnimationPreferences";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DashboardShell } from "@/features/dashboard/components/DashboardShell";
 import { SectionHeader } from "@/shared/ui/SectionHeader";
 import { AnimatedEntrance } from "@/shared/ui/AnimatedEntrance";
@@ -1274,15 +1274,17 @@ export default function LibraryPage() {
     };
   }, [selectedCategory]);
 
-  const handleCategoryChange = (cat: string | null) => {
-    setSelectedCategory(cat);
-    setSearchQuery("");
-    setSelectedVocabularyWordId(null);
+  const handleCategoryChange = useCallback((cat: string | null) => {
+    startTransition(() => {
+      setSelectedCategory(cat);
+      setSearchQuery("");
+      setSelectedVocabularyWordId(null);
 
-    if (cat !== "themes") {
-      resetVocabularyView();
-    }
-  };
+      if (cat !== "themes") {
+        resetVocabularyView();
+      }
+    });
+  }, [resetVocabularyView]);
 
   const handleSearchChange = useCallback(
     (value: string) => {
@@ -1591,6 +1593,7 @@ export default function LibraryPage() {
                         onKanaClick={handleKanaClick}
                         onThemeClick={handleAllContentThemeOpen}
                         onGrammarClick={handleAllContentGrammarOpen}
+                        optimizeForLargeCollection
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center py-16">

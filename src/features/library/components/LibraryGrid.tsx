@@ -1,6 +1,14 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useState } from "react";
+import {
+  memo,
+  startTransition,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { ScriptCard } from "@/features/library/components/ScriptCard";
 import { VocabularyCard } from "@/features/library/components/VocabularyCard";
 import { GrammarLibraryCard } from "@/features/graph/grammar/components/library/GrammarLibraryCard";
@@ -18,7 +26,17 @@ import {
 
 const INITIAL_BATCH_SIZE = 24;
 const SUBSEQUENT_BATCH_SIZE = 24;
+const TOUCH_INITIAL_BATCH_SIZE = 14;
+const TOUCH_SUBSEQUENT_BATCH_SIZE = 14;
+const TOUCH_BATCH_DELAY_MS = 42;
+const DEFAULT_BATCH_DELAY_MS = 24;
 const TAIL_SKELETON_COUNT = 6;
+
+const GRID_ITEM_RENDER_CONTAINMENT_STYLE: CSSProperties = {
+  contentVisibility: "auto",
+  containIntrinsicSize: "210px",
+  contain: "layout paint style",
+};
 
 export type LibraryGridItem =
   | { type: "kanji"; data: Kanji }
@@ -50,8 +68,125 @@ interface LibraryGridProps {
   onKanaClick: (kana: Kana) => void;
   onThemeClick?: (theme: Theme) => void;
   onGrammarClick?: (lessonId: string) => void;
+  optimizeForLargeCollection?: boolean;
   className?: string;
 }
+
+type LibraryGridCardProps = Omit<LibraryGridProps, "items" | "className"> & {
+  item: LibraryGridItem;
+  index: number;
+};
+
+const LibraryGridCard = memo(function LibraryGridCard({
+  item,
+  index,
+  favoriteKanjis,
+  favoriteHiraganas,
+  favoriteKatakanas,
+  favoriteGrammar,
+  lockedKanjiIds,
+  nextUnlockReadyKanjiId,
+  unlockPendingKanjiId,
+  currentKanjiPoints,
+  lockedHiraganaIds,
+  lockedKatakanaIds,
+  newlyUnlockedKanjiIds,
+  newlyUnlockedKanaIds,
+  toggleFavoriteKanji,
+  toggleFavoriteHiragana,
+  toggleFavoriteKatakana,
+  onToggleFavoriteGrammar,
+  onKanjiClick,
+  onKanjiPressUnlock,
+  onKanaClick,
+  onThemeClick,
+  onGrammarClick,
+}: LibraryGridCardProps) {
+  if (item.type === "theme") {
+    const card = themeToCard(item.data);
+
+    return (
+      <VocabularyCard
+        id={item.data.id}
+        title={card.title}
+        subtitle={card.subtitle}
+        thumbnail={card.thumbnail}
+        variant="theme"
+        index={index}
+        locked={item.data.isUnlocked === false}
+        onClick={onThemeClick ? () => onThemeClick(item.data) : undefined}
+      />
+    );
+  }
+
+  if (item.type === "grammar") {
+    return (
+      <GrammarLibraryCard
+        lesson={item.data}
+        index={index}
+        isFavorite={favoriteGrammar?.has(item.data.id) ?? false}
+        onSelect={onGrammarClick}
+        onLockedSelect={onGrammarClick}
+        onToggleFavorite={onToggleFavoriteGrammar}
+      />
+    );
+  }
+
+  if (item.type === "kanji") {
+    const isLocked = lockedKanjiIds?.has(item.data.id) ?? false;
+    return (
+      <ScriptCard
+        {...kanjiToScriptCard(
+          item.data,
+          favoriteKanjis.has(item.data.id),
+        )}
+        index={index}
+        locked={isLocked}
+        unlockReady={
+          isLocked && nextUnlockReadyKanjiId === item.data.id
+        }
+        unlockPending={unlockPendingKanjiId === item.data.id}
+        unlocking={newlyUnlockedKanjiIds?.has(item.data.id) ?? false}
+        currentPoints={currentKanjiPoints}
+        onClick={() => onKanjiClick(item.data)}
+        onPressUnlock={onKanjiPressUnlock}
+        onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
+      />
+    );
+  }
+
+  if (item.type === "hiragana") {
+    const isLocked = lockedHiraganaIds?.has(item.data.id) ?? false;
+    return (
+      <ScriptCard
+        {...hiraganaToScriptCard(
+          item.data,
+          favoriteHiraganas.has(item.data.id),
+        )}
+        index={index}
+        locked={isLocked}
+        unlocking={newlyUnlockedKanaIds?.has(item.data.id) ?? false}
+        onClick={isLocked ? undefined : () => onKanaClick(item.data)}
+        onFavoriteToggle={isLocked ? undefined : toggleFavoriteHiragana}
+      />
+    );
+  }
+
+  const isLocked = lockedKatakanaIds?.has(item.data.id) ?? false;
+  return (
+    <ScriptCard
+      {...katakanaToScriptCard(
+        item.data,
+        favoriteKatakanas.has(item.data.id),
+      )}
+      index={index}
+      locked={isLocked}
+      unlocking={newlyUnlockedKanaIds?.has(item.data.id) ?? false}
+      onClick={isLocked ? undefined : () => onKanaClick(item.data)}
+      onFavoriteToggle={isLocked ? undefined : toggleFavoriteKatakana}
+    />
+  );
+});
 
 export function LibraryGrid({
   items,
@@ -76,18 +211,40 @@ export function LibraryGrid({
   onKanaClick,
   onThemeClick,
   onGrammarClick,
+  optimizeForLargeCollection = false,
   className = "grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 xl:gap-4 2xl:grid-cols-5",
 }: LibraryGridProps) {
-  const [visibleCount, setVisibleCount] = useState(() =>
-    Math.min(items.length, INITIAL_BATCH_SIZE),
+  const itemsRef = useRef(items);
+  const [isCoarsePointer] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(pointer: coarse)").matches
+      : false,
   );
+  const useTouchBatches = optimizeForLargeCollection && isCoarsePointer;
+  const initialBatchSize = useTouchBatches
+    ? TOUCH_INITIAL_BATCH_SIZE
+    : INITIAL_BATCH_SIZE;
+  const subsequentBatchSize = useTouchBatches
+    ? TOUCH_SUBSEQUENT_BATCH_SIZE
+    : SUBSEQUENT_BATCH_SIZE;
+  const batchDelayMs = useTouchBatches
+    ? TOUCH_BATCH_DELAY_MS
+    : DEFAULT_BATCH_DELAY_MS;
+  const [visibleCount, setVisibleCount] = useState(() =>
+    Math.min(items.length, initialBatchSize),
+  );
+  const itemsChanged = itemsRef.current !== items;
+  const effectiveVisibleCount = itemsChanged
+    ? Math.min(items.length, initialBatchSize)
+    : Math.min(items.length, visibleCount);
 
   useEffect(() => {
-    setVisibleCount(Math.min(items.length, INITIAL_BATCH_SIZE));
-  }, [items]);
+    itemsRef.current = items;
+    setVisibleCount(Math.min(items.length, initialBatchSize));
+  }, [initialBatchSize, items]);
 
   useEffect(() => {
-    if (visibleCount >= items.length) {
+    if (effectiveVisibleCount >= items.length) {
       return;
     }
 
@@ -96,10 +253,10 @@ export function LibraryGrid({
       timeoutId = window.setTimeout(() => {
         startTransition(() => {
           setVisibleCount((currentVisibleCount) =>
-            Math.min(items.length, currentVisibleCount + SUBSEQUENT_BATCH_SIZE),
+            Math.min(items.length, currentVisibleCount + subsequentBatchSize),
           );
         });
-      }, 24);
+      }, batchDelayMs);
     });
 
     return () => {
@@ -108,114 +265,56 @@ export function LibraryGrid({
         window.clearTimeout(timeoutId);
       }
     };
-  }, [items.length, visibleCount]);
+  }, [batchDelayMs, effectiveVisibleCount, items.length, subsequentBatchSize]);
 
   const visibleItems = useMemo(
-    () => items.slice(0, visibleCount),
-    [items, visibleCount],
+    () => items.slice(0, effectiveVisibleCount),
+    [effectiveVisibleCount, items],
   );
   const trailingSkeletonCount =
-    visibleCount < items.length
-      ? Math.min(TAIL_SKELETON_COUNT, items.length - visibleCount)
+    effectiveVisibleCount < items.length
+      ? Math.min(TAIL_SKELETON_COUNT, items.length - effectiveVisibleCount)
       : 0;
 
   return (
     <div className={className}>
-      {visibleItems.map((item, i) => {
-        if (item.type === "theme") {
-          const card = themeToCard(item.data);
-
-          return (
-            <VocabularyCard
-              key={item.data.id}
-              id={item.data.id}
-              title={card.title}
-              subtitle={card.subtitle}
-              thumbnail={card.thumbnail}
-              variant="theme"
-              index={i}
-              locked={item.data.isUnlocked === false}
-              onClick={onThemeClick ? () => onThemeClick(item.data) : undefined}
-            />
-          );
-        }
-
-        if (item.type === "grammar") {
-          return (
-            <GrammarLibraryCard
-              key={item.data.id}
-              lesson={item.data}
-              index={i}
-              isFavorite={favoriteGrammar?.has(item.data.id) ?? false}
-              onSelect={onGrammarClick}
-              onLockedSelect={onGrammarClick}
-              onToggleFavorite={onToggleFavoriteGrammar}
-            />
-          );
-        }
-
-        if (item.type === "kanji") {
-          const isLocked = lockedKanjiIds?.has(item.data.id) ?? false;
-          return (
-            <ScriptCard
-              key={item.data.id}
-              {...kanjiToScriptCard(
-                item.data,
-                favoriteKanjis.has(item.data.id),
-              )}
-              index={i}
-              locked={isLocked}
-              unlockReady={
-                isLocked && nextUnlockReadyKanjiId === item.data.id
-              }
-              unlockPending={unlockPendingKanjiId === item.data.id}
-              unlocking={newlyUnlockedKanjiIds?.has(item.data.id) ?? false}
-              currentPoints={currentKanjiPoints}
-              onClick={() => onKanjiClick(item.data)}
-              onPressUnlock={onKanjiPressUnlock}
-              onFavoriteToggle={isLocked ? undefined : toggleFavoriteKanji}
-            />
-          );
-        }
-
-        if (item.type === "hiragana") {
-          const isLocked = lockedHiraganaIds?.has(item.data.id) ?? false;
-          return (
-            <ScriptCard
-              key={item.data.id}
-              {...hiraganaToScriptCard(
-                item.data,
-                favoriteHiraganas.has(item.data.id),
-              )}
-              index={i}
-              locked={isLocked}
-              unlocking={newlyUnlockedKanaIds?.has(item.data.id) ?? false}
-              onClick={isLocked ? undefined : () => onKanaClick(item.data)}
-              onFavoriteToggle={isLocked ? undefined : toggleFavoriteHiragana}
-            />
-          );
-        }
-
-        // katakana
-        const isLocked = lockedKatakanaIds?.has(item.data.id) ?? false;
-        return (
-          <ScriptCard
-            key={item.data.id}
-            {...katakanaToScriptCard(
-              item.data,
-              favoriteKatakanas.has(item.data.id),
-            )}
-            index={i}
-            locked={isLocked}
-            unlocking={newlyUnlockedKanaIds?.has(item.data.id) ?? false}
-            onClick={isLocked ? undefined : () => onKanaClick(item.data)}
-            onFavoriteToggle={isLocked ? undefined : toggleFavoriteKatakana}
+      {visibleItems.map((item, index) => (
+        <div
+          key={`${item.type}-${item.data.id}`}
+          className="h-full"
+          style={GRID_ITEM_RENDER_CONTAINMENT_STYLE}
+        >
+          <LibraryGridCard
+            item={item}
+            index={index}
+            favoriteKanjis={favoriteKanjis}
+            favoriteHiraganas={favoriteHiraganas}
+            favoriteKatakanas={favoriteKatakanas}
+            favoriteGrammar={favoriteGrammar}
+            lockedKanjiIds={lockedKanjiIds}
+            nextUnlockReadyKanjiId={nextUnlockReadyKanjiId}
+            unlockPendingKanjiId={unlockPendingKanjiId}
+            currentKanjiPoints={currentKanjiPoints}
+            lockedHiraganaIds={lockedHiraganaIds}
+            lockedKatakanaIds={lockedKatakanaIds}
+            newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
+            newlyUnlockedKanaIds={newlyUnlockedKanaIds}
+            toggleFavoriteKanji={toggleFavoriteKanji}
+            toggleFavoriteHiragana={toggleFavoriteHiragana}
+            toggleFavoriteKatakana={toggleFavoriteKatakana}
+            onToggleFavoriteGrammar={onToggleFavoriteGrammar}
+            onKanjiClick={onKanjiClick}
+            onKanjiPressUnlock={onKanjiPressUnlock}
+            onKanaClick={onKanaClick}
+            onThemeClick={onThemeClick}
+            onGrammarClick={onGrammarClick}
+            optimizeForLargeCollection={optimizeForLargeCollection}
           />
-        );
-      })}
+        </div>
+      ))}
 
       {Array.from({ length: trailingSkeletonCount }).map((_, index) => (
-        <SkeletonCard key={`library-grid-skeleton-${visibleCount + index}`} />
+        <SkeletonCard key={`library-grid-skeleton-${effectiveVisibleCount + index}`} />
       ))}
     </div>
   );

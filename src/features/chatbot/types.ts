@@ -7,6 +7,7 @@ export interface ChatbotRecommendation {
   reviewChatId: string;
   lessonType: string;
   entityId: string;
+  themeId?: string;
   description: string;
   createdAt: Date;
 }

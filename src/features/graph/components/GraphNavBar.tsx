@@ -51,7 +51,7 @@ export default function GraphNavBar() {
   const navRef = useRef<HTMLDivElement | null>(null);
   const [writingMenuOpen, setWritingMenuOpen] = useState(false);
   const [pendingWritingTab, setPendingWritingTab] = useState<WritingTab | null>(null);
-  const [useBottomDockedLayout, setUseBottomDockedLayout] = useState(false);
+  const useBottomDockedLayout = true;
 
   const activeWritingTab = useMemo(() => {
     if (!pathname.startsWith("/dashboard/graph/writing")) {
@@ -92,22 +92,6 @@ export default function GraphNavBar() {
     window.addEventListener("pointerdown", handlePointerDown);
     return () => window.removeEventListener("pointerdown", handlePointerDown);
   }, [writingMenuOpen]);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
-      return;
-    }
-
-    const mediaQuery = window.matchMedia("(orientation: portrait) and (max-width: 1024px)");
-    const updateLayout = (event?: MediaQueryListEvent) => {
-      setUseBottomDockedLayout(event?.matches ?? mediaQuery.matches);
-    };
-
-    updateLayout();
-    mediaQuery.addEventListener("change", updateLayout);
-
-    return () => mediaQuery.removeEventListener("change", updateLayout);
-  }, []);
 
   return (
     <div

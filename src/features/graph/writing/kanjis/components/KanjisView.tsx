@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useKanaContentAccess } from "@/features/kana/hooks/useKanaContentAccess";
 import { GraphGateModal } from "@/features/graph/components/GraphGateModal";
 import LessonDrawer from "@/features/lessons/components/LessonDrawer";
@@ -83,6 +83,7 @@ function getRequestErrorMessage(error: unknown, fallback: string) {
 
 export default function KanjisView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     items,
     summary,
@@ -99,6 +100,7 @@ export default function KanjisView() {
   } = useKanjiBoard();
   const { blockedMessage } = useKanaContentAccess();
   const autoUnlockedKanjiRef = useRef<Set<string>>(new Set());
+  const handledRecommendationEntityIdRef = useRef<string | null>(null);
   const { graphicsProfile } = usePlatformMotion();
   const qualityProfile = useKanjiBoardQuality(graphicsProfile);
   const { setHidden } = useSidebar();
@@ -128,6 +130,7 @@ export default function KanjisView() {
   const [unlockPending, setUnlockPending] = useState(false);
   const [unlockPendingNodeId, setUnlockPendingNodeId] = useState<string | null>(null);
   const [kanjiPointsReward, setKanjiPointsReward] = useState<number | null>(null);
+  const requestedEntityId = searchParams.get("entityId");
   const lockedIdsBeforeQuizRef = useRef<Set<string> | null>(null);
   const shouldResolveUnlocksRef = useRef(false);
   const unlockAnimationTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
@@ -408,6 +411,26 @@ export default function KanjisView() {
     });
     pathPreviewTimeoutsRef.current = [];
   }, []);
+
+  useEffect(() => {
+    if (!requestedEntityId) {
+      return;
+    }
+
+    if (handledRecommendationEntityIdRef.current === requestedEntityId) {
+      return;
+    }
+
+    if (!items.some((item) => item.id === requestedEntityId)) {
+      return;
+    }
+
+    clearPathPreview();
+    setDetailNodeId(null);
+    setManualSelectedId(null);
+    setHelpSelectedNodeId(requestedEntityId);
+    handledRecommendationEntityIdRef.current = requestedEntityId;
+  }, [clearPathPreview, items, requestedEntityId]);
 
   const playHelpPathPreview = useCallback(() => {
     clearPathPreview();
