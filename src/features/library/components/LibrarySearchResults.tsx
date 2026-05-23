@@ -46,18 +46,6 @@ type LibrarySearchResultsProps = {
   onPressUnlockKanji: (id: string) => void;
 };
 
-function buildGrammarFallback(item: SearchIndexItem, index: number): GrammarBoardProgress {
-  return {
-    id: item.id,
-    index,
-    symbol: "",
-    title: item.title,
-    pointsToUnlock: item.pointsToUnlock ?? 0,
-    status: "available",
-    isMock: false,
-  };
-}
-
 export function LibrarySearchResults({
   query,
   groupedResults,
@@ -96,10 +84,15 @@ export function LibrarySearchResults({
 
   const grammarResults = useMemo(
     () =>
-      groupedResults.grammar.map((item, index) => ({
-        item,
-        lesson: grammarLessonsById.get(item.id) ?? buildGrammarFallback(item, index),
-      })),
+      groupedResults.grammar.flatMap((item) => {
+        const lesson = grammarLessonsById.get(item.id);
+
+        if (!lesson) {
+          return [];
+        }
+
+        return [{ item, lesson }];
+      }),
     [grammarLessonsById, groupedResults.grammar],
   );
 
@@ -236,8 +229,7 @@ export function LibrarySearchResults({
                     lesson={lesson}
                     index={index}
                     isFavorite={favoriteGrammar.has(item.id)}
-                    onSelect={() => onGrammarSelect(item)}
-                    onLockedSelect={() => onGrammarSelect(item)}
+                    onSelect={lesson.status === "locked" ? undefined : () => onGrammarSelect(item)}
                     onToggleFavorite={() => onToggleFavoriteGrammar(item.id)}
                   />
                 ))}
@@ -256,8 +248,9 @@ export function LibrarySearchResults({
             >
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                 {groupedResults.vocabulary.map((item, index) => {
-                  const isThemeLocked = item.entityType === "theme"
-                    ? (themeLockStateById.get(item.id) ?? false)
+                  const themeLockId = item.entityType === "theme" ? item.id : item.themeId;
+                  const isThemeLocked = themeLockId
+                    ? (themeLockStateById.get(themeLockId) ?? false)
                     : false;
                   const isWordLocked = item.entityType === "word"
                     ? (wordLockStateById.get(item.id) ?? false)

@@ -14,7 +14,10 @@ import {
   GradientCardLayout,
   WordCardLayout,
 } from "@/features/library/components/VocabularyLayouts";
+import { useShakeFeedback } from "@/shared/hooks/useShakeFeedback";
 import { LockedStateBadge } from "@/shared/ui/LockedStateIndicator";
+
+const LOCKED_SHAKE_DURATION_MS = 580;
 
 const VOCABULARY_FAVORITE_STYLES = {
   theme: {
@@ -98,10 +101,13 @@ export function VocabularyCard({
 }: VocabularyCardProps) {
   const { animationsEnabled, motionProps, hoverTransition, cardTransition } =
     useCardAnimation(index);
+  const { shakingKey, triggerShake } = useShakeFeedback<string>(
+    LOCKED_SHAKE_DURATION_MS,
+  );
   const config = VARIANT_CONFIG[variant];
   const isWord = variant === "word";
   const effectiveLocked = locked && !unlocking;
-  const isInteractive = Boolean(onClick);
+  const isInteractive = Boolean(onClick) || effectiveLocked;
   const hoverEnabled =
     (Boolean(onClick) || Boolean(onFavoriteToggle)) && !effectiveLocked;
   const favoriteStyle = VOCABULARY_FAVORITE_STYLES[variant];
@@ -159,6 +165,7 @@ export function VocabularyCard({
           .filter(Boolean)
           .join(" "),
     cardTransition,
+        shakingKey === id ? "grammar-board-cell-shaking" : "",
     unlocking ? "gokai-unlock-burst" : "",
   ]
     .filter(Boolean)
@@ -327,18 +334,29 @@ export function VocabularyCard({
     }
 
     event.preventDefault();
+    if (effectiveLocked) {
+      triggerShake(id);
+    }
+    onClick?.();
+  };
+
+  const handleCardClick = () => {
+    if (effectiveLocked) {
+      triggerShake(id);
+    }
+
     onClick?.();
   };
 
   const cardEl = isInteractive && !hasInnerFavoriteButton ? (
-    <button type="button" onClick={onClick} className={cardClassName}>
+    <button type="button" onClick={handleCardClick} className={cardClassName}>
       {innerContent}
     </button>
   ) : isInteractive ? (
     <div
       role="button"
       tabIndex={0}
-      onClick={onClick}
+      onClick={handleCardClick}
       onKeyDown={handleCardKeyDown}
       className={cardClassName}
     >

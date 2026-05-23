@@ -432,6 +432,7 @@ export default function LibraryPage() {
     filteredSubthemes,
     filteredWords,
     filteredInterestSubthemes,
+    allProgressItems,
     selectedSubthemeItem,
     selectedTheme,
     selectedSubtheme,
@@ -869,6 +870,75 @@ export default function LibraryPage() {
     hasNoResults: librarySearchHasNoResults,
   } = useLibrarySearch(searchQuery);
 
+  const vocabularySearchUnlockedWordIds = useMemo(() => {
+    const unlockedIds = new Set<string>();
+
+    allProgressItems.forEach((item) => {
+      if (item.currentWordId) {
+        unlockedIds.add(item.currentWordId);
+      }
+
+      item.unlockedWordIds?.forEach((wordId) => {
+        unlockedIds.add(wordId);
+      });
+
+      item.wordProgress?.forEach((wordProgress) => {
+        const hasRecordedProgress = Boolean(
+          wordProgress.unlockedAt ||
+            wordProgress.completedAt ||
+            wordProgress.meaningCompleted ||
+            wordProgress.listeningCompleted ||
+            wordProgress.speakingCompleted ||
+            wordProgress.writingCompleted ||
+            (wordProgress.completedQuizTypes?.length ?? 0) > 0,
+        );
+
+        if (hasRecordedProgress) {
+          unlockedIds.add(wordProgress.wordId);
+        }
+      });
+    });
+
+    vocabularyWordIndex.forEach((word) => {
+      if (
+        word.unlockedAt ||
+        word.completedAt ||
+        isWordFullyCompleted(toVocabularyWordLesson(word))
+      ) {
+        unlockedIds.add(word.id);
+      }
+    });
+
+    if (selectedSubthemeItem?.currentWordId) {
+      unlockedIds.add(selectedSubthemeItem.currentWordId);
+    }
+
+    selectedSubthemeItem?.unlockedWordIds?.forEach((wordId) => {
+      unlockedIds.add(wordId);
+    });
+
+    const firstSelectedWordId = orderedVocabularyWords[0]?.id;
+    if (firstSelectedWordId) {
+      unlockedIds.add(firstSelectedWordId);
+    }
+
+    return unlockedIds;
+  }, [allProgressItems, orderedVocabularyWords, selectedSubthemeItem, vocabularyWordIndex]);
+
+  const vocabularySearchWordLockStateById = useMemo(() => {
+    const nextState = new Map(vocabularyWordLockStateById);
+
+    groupedSearchResults.vocabulary.forEach((item) => {
+      if (item.entityType !== "word" || nextState.has(item.id)) {
+        return;
+      }
+
+      nextState.set(item.id, !vocabularySearchUnlockedWordIds.has(item.id));
+    });
+
+    return nextState;
+  }, [groupedSearchResults.vocabulary, vocabularySearchUnlockedWordIds, vocabularyWordLockStateById]);
+
   function handleSearchKanjiSelect(item: SearchIndexItem) {
     const kanji = kanjis.find((entry) => entry.id === item.id);
 
@@ -947,6 +1017,10 @@ export default function LibraryPage() {
         return;
       }
 
+      if (vocabularySearchWordLockStateById.get(item.id) ?? false) {
+        return;
+      }
+
       const subthemeOpened = await openSubtheme({
         id: item.subthemeId,
         themeId: item.themeId,
@@ -968,7 +1042,16 @@ export default function LibraryPage() {
       setSelectedVocabularyWordId(item.id);
       void addRecentItem("word", item.id);
     },
-    [addRecentItem, handleSearchVocabularyThemeOpen, hasKanaContentAccess, openKanaRequirementModal, openSubtheme, openTheme, themeLockStateById],
+    [
+      addRecentItem,
+      handleSearchVocabularyThemeOpen,
+      hasKanaContentAccess,
+      openKanaRequirementModal,
+      openSubtheme,
+      openTheme,
+      themeLockStateById,
+      vocabularySearchWordLockStateById,
+    ],
   );
 
   const startVocabularyUnlockAnimation = useCallback((ids: string[]) => {
@@ -1491,7 +1574,7 @@ export default function LibraryPage() {
                   lockedHiraganaIds={lockedHiraganaIds}
                   lockedKatakanaIds={lockedKatakanaIds}
                   themeLockStateById={themeLockStateById}
-                  wordLockStateById={vocabularyWordLockStateById}
+                  wordLockStateById={vocabularySearchWordLockStateById}
                   newlyUnlockedKanjiIds={newlyUnlockedKanjiIds}
                   newlyUnlockedKanaIds={newlyUnlockedKanaIds}
                   canUnlockNext={canUnlockNext}

@@ -110,6 +110,9 @@ export function useVocabularyGraph() {
   const [graphs, setGraphs] = useState<VocabularyGraphSummary[]>([]);
   const [selectedGraphIdState, setSelectedGraphIdState] = useState<string | null>(null);
   const [rawProgress, setRawProgress] = useState<VocabularyGraphProgress | null>(null);
+  const [progressByGraphId, setProgressByGraphId] = useState<
+    Record<string, VocabularyGraphProgress>
+  >({});
   const [themeCatalog, setThemeCatalog] = useState<VocabularyThemeContent[]>([]);
   const [themeSubthemes, setThemeSubthemes] = useState<VocabularySubthemeContent[]>([]);
   const [recommendedSubthemeMetaById, setRecommendedSubthemeMetaById] = useState<
@@ -161,6 +164,49 @@ export function useVocabularyGraph() {
       }),
     };
   }, [rawProgress, themeSubthemes]);
+
+  const allProgressItems = useMemo(
+    () =>
+      Object.values(progressByGraphId).flatMap((graphProgress) => graphProgress.items ?? []),
+    [progressByGraphId],
+  );
+
+  const reloadAllProgress = useCallback(async (graphList?: VocabularyGraphSummary[]) => {
+    const targetGraphs = graphList ?? graphs;
+
+    if (targetGraphs.length === 0) {
+      setProgressByGraphId({});
+      return {} as Record<string, VocabularyGraphProgress>;
+    }
+
+    const settledProgress = await Promise.all(
+      targetGraphs.map(async (graph) => {
+        try {
+          const graphProgress = await getVocabularyGraphProgress(graph.graphId);
+          return [graph.graphId, graphProgress] as const;
+        } catch (progressError) {
+          console.error("Error cargando progreso global de vocabulario:", progressError);
+          return null;
+        }
+      }),
+    );
+
+    const nextProgressByGraphId = settledProgress.reduce<Record<string, VocabularyGraphProgress>>(
+      (result, entry) => {
+        if (!entry) {
+          return result;
+        }
+
+        const [graphId, graphProgress] = entry;
+        result[graphId] = graphProgress;
+        return result;
+      },
+      {},
+    );
+
+    setProgressByGraphId(nextProgressByGraphId);
+    return nextProgressByGraphId;
+  }, [graphs]);
 
   const loadGraphs = useCallback(async () => {
     const nextGraphs = sortGraphs(await listVocabularyGraphs());
@@ -260,6 +306,10 @@ export function useVocabularyGraph() {
     };
   }, [loadGraphs, loadThemeCatalog, setSelectedGraphId]);
 
+  useEffect(() => {
+    void reloadAllProgress();
+  }, [reloadAllProgress]);
+
   const reloadProgress = useCallback(async (graphIdOverride?: string | null) => {
     const graphId = graphIdOverride ?? selectedGraphIdRef.current ?? selectedGraphId;
 
@@ -273,6 +323,10 @@ export function useVocabularyGraph() {
     try {
       const nextProgress = await getVocabularyGraphProgress(graphId);
       setRawProgress(nextProgress);
+      setProgressByGraphId((current) => ({
+        ...current,
+        [graphId]: nextProgress,
+      }));
       return nextProgress;
     } catch (progressError) {
       console.error("Error cargando progreso de vocabulario:", progressError);
@@ -410,6 +464,7 @@ export function useVocabularyGraph() {
     selectedGraph,
     selectedGraphId,
     progress,
+    allProgressItems,
     themeCatalog,
     themeSubthemes,
     recommendedSubthemeMetaById,

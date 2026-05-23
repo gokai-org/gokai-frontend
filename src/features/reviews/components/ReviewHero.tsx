@@ -396,7 +396,6 @@ export function ReviewHero({
               state={mascotState}
               reducedMotion={reducedMotion}
               preferHeight={useLargeDesktopMascot}
-              preferTallCrop={useLargeDesktopMascot}
               className={`relative z-0 mx-auto shrink-0 ${kazuMascotClassName}`}
             />
           </div>
