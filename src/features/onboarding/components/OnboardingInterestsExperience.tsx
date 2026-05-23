@@ -12,9 +12,6 @@ import {
   Sparkles,
 } from "lucide-react";
 import AnimatedGraphBackground from "@/features/graph/components/AnimatedGraphBackground";
-import {
-  MAX_ONBOARDING_SELECTIONS,
-} from "@/features/onboarding/data/interestSections";
 import { useOnboardingInterests } from "@/features/onboarding/hooks/useOnboardingInterests";
 import {
   InitialExperienceSettings,
@@ -102,6 +99,7 @@ export function OnboardingInterestsExperience({
     saving,
     selectedInterests,
     selectedCount,
+    hasCompletedAllSections,
     retryLoadThemes,
     toggleInterest,
     saveSelections,
@@ -131,13 +129,18 @@ export function OnboardingInterestsExperience({
   const currentSectionStepLabel = currentSection ? String(currentSectionIndex + 1) : "0";
   const currentSectionTitle = currentSection?.title ?? "Sin categorías disponibles";
   const currentSectionHasSelection = currentSection
-    ? !!selectedInterests[currentSection.id]
+    ? currentSection.interests.some(
+        (interest) =>
+          !!interest.themeId && selectedInterests[currentSection.id] === interest.themeId,
+      )
     : false;
   const themesLoading = status === "idle" || status === "loading";
   const shouldKeepInterestIntroVisible =
     step === "interests" && themesLoading && sections.length === 0 && !error;
   const shouldShowInterestIntro = showIntro || shouldKeepInterestIntroVisible;
-  const canFinish = !saving && selectedCount > 0 && status === "success";
+  const canAdvanceSection = currentSectionHasSelection && !themesLoading && !saving;
+  const canFinish = !saving && hasCompletedAllSections && status === "success";
+  const remainingSections = Math.max(totalSections - selectedCount, 0);
   const showThemeModeToggle =
     !(step === "settings" && currentSettingsStep === "appearance");
 
@@ -214,6 +217,10 @@ export function OnboardingInterestsExperience({
   };
 
   const handleNext = () => {
+    if (!canAdvanceSection) {
+      return;
+    }
+
     if (currentSectionIndex < totalSections - 1) {
       setSectionDirection(1);
       setCurrentSectionIndex((current) => current + 1);
@@ -557,7 +564,7 @@ export function OnboardingInterestsExperience({
                   currentSectionHasSelection ? "text-green-600" : "text-accent"
                 }`}
               >
-                {currentSectionHasSelection ? "✓ Seleccionado" : "Selecciona uno"}
+                {currentSectionHasSelection ? "✓ Seleccionado" : "Debes seleccionar uno"}
               </span>
             </div>
           </div>
@@ -651,7 +658,10 @@ export function OnboardingInterestsExperience({
                             <span className="font-bold text-accent text-base">
                               {selectedCount}
                             </span>{" "}
-                            de {MAX_ONBOARDING_SELECTIONS} categorías completadas
+                            de {totalSections} categorías completadas
+                            {remainingSections > 0
+                              ? ` · faltan ${remainingSections}`
+                              : " · onboarding listo"}
                           </p>
                         )}
                       </motion.div>
@@ -673,7 +683,8 @@ export function OnboardingInterestsExperience({
                       <button
                         type="button"
                         onClick={handleNext}
-                        className="w-[150px] sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl sm:rounded-2xl bg-accent text-white font-semibold shadow-lg hover:opacity-95 transition"
+                        disabled={!canAdvanceSection}
+                        className="w-[150px] sm:w-auto px-4 sm:px-6 py-2.5 sm:py-3 text-sm sm:text-base rounded-xl sm:rounded-2xl bg-accent text-white font-semibold shadow-lg disabled:opacity-50 disabled:cursor-not-allowed hover:opacity-95 transition"
                       >
                         Siguiente
                       </button>

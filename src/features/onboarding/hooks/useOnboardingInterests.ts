@@ -73,6 +73,20 @@ export function useOnboardingInterests() {
 
   const selectedCount = selectedThemeIds.length;
 
+  const hasCompletedAllSections = useMemo(
+    () =>
+      sections.length > 0 &&
+      sections.every((section) => {
+        const selectedThemeId = selectedInterests[section.id];
+
+        return (
+          !!selectedThemeId &&
+          section.interests.some((interest) => interest.themeId === selectedThemeId)
+        );
+      }),
+    [sections, selectedInterests],
+  );
+
   const toggleInterest = useCallback(
     (sectionId: string, themeId: string | null) => {
       if (!themeId) {
@@ -95,7 +109,7 @@ export function useOnboardingInterests() {
   );
 
   const saveSelections = useCallback(async () => {
-    if (selectedThemeIds.length === 0) {
+    if (!hasCompletedAllSections || selectedThemeIds.length !== sections.length) {
       return null;
     }
 
@@ -116,7 +130,7 @@ export function useOnboardingInterests() {
     } finally {
       setSaving(false);
     }
-  }, [selectedThemeIds]);
+  }, [hasCompletedAllSections, sections.length, selectedThemeIds]);
 
   return {
     sections,
@@ -126,6 +140,7 @@ export function useOnboardingInterests() {
     selectedInterests,
     selectedCount,
     selectedThemeIds,
+    hasCompletedAllSections,
     retryLoadThemes: loadThemes,
     toggleInterest,
     saveSelections,
