@@ -162,7 +162,7 @@ export function AdminFilterDropdown<T extends string = string>({
         ? createPortal(
             <div
               ref={menuRef}
-              className="fixed z-[45] overflow-hidden rounded-2xl border border-border-default bg-surface-primary p-1.5 shadow-xl"
+              className="fixed z-[9999] overflow-hidden rounded-2xl border border-border-default bg-surface-primary p-1.5 shadow-xl"
               style={{ visibility: "hidden" }}
               role="listbox"
             >
