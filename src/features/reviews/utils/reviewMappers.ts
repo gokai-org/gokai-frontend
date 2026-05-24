@@ -145,7 +145,9 @@ function getReviewActionLabel(item: ReviewItem) {
 export function buildReviewItems(
   recommendations: ReviewRecommendation[],
 ): ReviewItem[] {
-  return recommendations.map((recommendation) => {
+  return recommendations
+    .filter((recommendation) => !recommendation.isTodayAnswered)
+    .map((recommendation) => {
     const meanings = recommendation.meanings ?? [];
     const readings = recommendation.readings ?? [];
     const type = mapReviewType(recommendation);
