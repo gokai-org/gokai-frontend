@@ -60,6 +60,7 @@ export interface ReviewRecommendation {
   entityId: string;
   nodeId?: string | null;
   exerciseType?: ReviewExerciseType | null;
+  isTodayAnswered?: boolean;
   completedQuizTypes?: ReviewExerciseType[];
   strategy: string;
   kanji?: string | null;
