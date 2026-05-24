@@ -26,12 +26,17 @@ export const REVIEW_STRATEGY_ORDER: ReviewStrategyKey[] = [
   "low_speaking_score",
 ];
 
-function buildReviewId(recommendation: ReviewRecommendation) {
-  return [
-    recommendation.lessonType,
-    recommendation.entityId,
-    recommendation.exerciseType ?? "default",
-  ].join(":");
+const REVIEW_EXERCISE_ORDER: ReviewExerciseType[] = [
+  "kanji",
+  "meaning",
+  "reading",
+  "writing",
+  "listening",
+  "speaking",
+];
+
+function buildReviewId(recommendation: Pick<ReviewRecommendation, "lessonType" | "entityId">) {
+  return [recommendation.lessonType, recommendation.entityId].join(":");
 }
 
 function mapReviewType(recommendation: ReviewRecommendation): ReviewItem["type"] {
@@ -130,6 +135,28 @@ export function getReviewExerciseLabel(
   }
 }
 
+function getGroupedReviewExerciseLabel(item: {
+  lessonType: ReviewRecommendation["lessonType"];
+  exerciseType?: ReviewExerciseType;
+  availableExerciseTypes?: ReviewExerciseType[];
+}) {
+  const exerciseTypes = item.availableExerciseTypes ?? [];
+
+  if (exerciseTypes.length <= 1) {
+    return getReviewExerciseLabel(item.lessonType, item.exerciseType);
+  }
+
+  if (item.lessonType === "grammar") {
+    return "Examen";
+  }
+
+  if (item.lessonType === "word") {
+    return `${exerciseTypes.length} ejercicios`;
+  }
+
+  return `${exerciseTypes.length} repasos`;
+}
+
 function getReviewActionLabel(item: ReviewItem) {
   if (item.lessonType === "grammar") {
     return "Abrir examen";
@@ -145,17 +172,46 @@ function getReviewActionLabel(item: ReviewItem) {
 export function buildReviewItems(
   recommendations: ReviewRecommendation[],
 ): ReviewItem[] {
-  return recommendations
+  const groupedRecommendations = recommendations
     .filter((recommendation) => !recommendation.isTodayAnswered)
-    .map((recommendation) => {
+    .reduce<Map<string, ReviewRecommendation & { availableExerciseTypes: ReviewExerciseType[] }>>(
+      (groups, recommendation) => {
+        const key = buildReviewId(recommendation);
+        const existing = groups.get(key);
+        const nextExerciseType = recommendation.exerciseType ?? undefined;
+
+        if (!existing) {
+          groups.set(key, {
+            ...recommendation,
+            availableExerciseTypes: nextExerciseType ? [nextExerciseType] : [],
+          });
+          return groups;
+        }
+
+        const availableExerciseTypes = existing.availableExerciseTypes.includes(nextExerciseType as ReviewExerciseType)
+          || !nextExerciseType
+          ? existing.availableExerciseTypes
+          : [...existing.availableExerciseTypes, nextExerciseType];
+
+        groups.set(key, {
+          ...existing,
+          availableExerciseTypes: availableExerciseTypes.sort(
+            (left, right) => REVIEW_EXERCISE_ORDER.indexOf(left) - REVIEW_EXERCISE_ORDER.indexOf(right),
+          ),
+          exerciseType: existing.exerciseType ?? recommendation.exerciseType,
+          isTodayAnswered: existing.isTodayAnswered && recommendation.isTodayAnswered,
+        });
+
+        return groups;
+      },
+      new Map(),
+    );
+
+  return Array.from(groupedRecommendations.values()).map((recommendation) => {
     const meanings = recommendation.meanings ?? [];
     const readings = recommendation.readings ?? [];
     const type = mapReviewType(recommendation);
     const strategyLabel = getReviewStrategyLabel(recommendation.strategy);
-    const exerciseLabel = getReviewExerciseLabel(
-      recommendation.lessonType,
-      recommendation.exerciseType,
-    );
     const primaryMeaning = getPrimaryMeaning(meanings);
     const primaryReading = getPrimaryReading(readings, recommendation.hiragana);
 
@@ -192,8 +248,8 @@ export function buildReviewItems(
       entityId: recommendation.entityId,
       nodeId: recommendation.nodeId ?? undefined,
       exerciseType: recommendation.exerciseType ?? undefined,
-      availableExerciseTypes: recommendation.completedQuizTypes?.length
-        ? recommendation.completedQuizTypes
+      availableExerciseTypes: recommendation.availableExerciseTypes.length > 0
+        ? recommendation.availableExerciseTypes
         : recommendation.exerciseType
           ? [recommendation.exerciseType]
           : undefined,
@@ -201,7 +257,11 @@ export function buildReviewItems(
       strategyLabel,
       title,
       description,
-      exerciseLabel,
+      exerciseLabel: getGroupedReviewExerciseLabel({
+        lessonType: recommendation.lessonType,
+        exerciseType: recommendation.exerciseType ?? undefined,
+        availableExerciseTypes: recommendation.availableExerciseTypes,
+      }),
       actionLabel: "",
       detail,
       symbol,

@@ -207,7 +207,11 @@ export function useReviewPageData() {
 
         const vocabularyItem = buildVocabularyReviewGraphItem(found);
         const vocabularyQuestion = buildVocabularyReviewQuestion(found);
-        const availableTypes = [...VOCABULARY_QUIZ_TYPES];
+        const availableTypes = (found.availableExerciseTypes?.length
+          ? found.availableExerciseTypes.filter(
+              (type): type is VocabularyAnswerType => VOCABULARY_QUIZ_TYPES.includes(type as VocabularyAnswerType),
+            )
+          : [...VOCABULARY_QUIZ_TYPES]);
         const initialType = availableTypes[0] ?? null;
 
         if (
