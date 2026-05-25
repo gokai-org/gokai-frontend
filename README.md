@@ -4,9 +4,9 @@ Frontend de **GOKAI**, una plataforma de e-learning de japonés gamificada y per
 
 ## Equipo de trabajo
 
-- Gustavo Christian Espinoza Cuevas, Desarrollador Frontend-UI/UX - 22310360.
-- Samuel Reveles Pedraza, Desarrollador Backend – 22310561.
-- Andrés Farfán Martínez, Desarrollador IA – 22310560.
+- Gustavo Christian Espinoza Cuevas, Desarrollador Frontend-UI/UX.
+- Samuel Reveles Pedraza, Desarrollador Backend.
+- Andrés Farfán Martínez, Desarrollador IA.
 
 ## Tech stack
 
@@ -14,7 +14,6 @@ Frontend de **GOKAI**, una plataforma de e-learning de japonés gamificada y per
 - React – Biblioteca principal de UI
 - TypeScript
 - Tailwind CSS – Estilos utilitarios
-- Chakra UI – Componentes accesibles
 - Framer Motion – Animaciones
 - React Flow – Grafo interactivo de lecciones
 - Recharts – Gráficas de estadísticas
