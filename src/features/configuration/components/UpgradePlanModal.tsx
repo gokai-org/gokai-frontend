@@ -163,7 +163,7 @@ export function UpgradePlanModal({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2, duration: 0.4 }}
                   >
-                    <span className="text-4xl font-extrabold">$229</span>
+                    <span className="text-4xl font-extrabold">$79</span>
                     <span className="text-sm text-white/60">MXN / mes</span>
                   </motion.div>
 

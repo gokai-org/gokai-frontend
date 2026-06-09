@@ -329,7 +329,7 @@ function CheckoutPageContent() {
                   animate={ready ? { opacity: 1, y: 0 } : {}}
                   transition={{ delay: 0.2, duration: 0.4 }}
                 >
-                  <span className="text-4xl font-extrabold">$229</span>
+                  <span className="text-4xl font-extrabold">$79</span>
                   <span className="text-sm text-white/60">MXN / mes</span>
                 </motion.div>
 
@@ -435,7 +435,7 @@ function CheckoutPageContent() {
                     Total hoy
                   </span>
                   <span className="text-lg font-extrabold text-content-primary">
-                    $229 MXN
+                    $79 MXN
                   </span>
                 </div>
 

@@ -67,7 +67,7 @@ export function MembershipPicker({
     },
     {
       title: "GOKAI+",
-      price: "$229 MXN",
+      price: "$79 MXN",
       description: "Desbloquea toda la experiencia premium de aprendizaje.",
       features: [
         "Acceso completo a lecciones y contenido",
