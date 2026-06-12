@@ -484,7 +484,7 @@ export default function SidebarOnly() {
         <div
           data-help-target="dashboard-sidebar"
           className={[
-            "hidden md:block fixed left-4 top-4 z-50 h-[calc(100dvh-32px)]",
+            "hidden md:block fixed left-4 top-4 z-[60] h-[calc(100dvh-32px)]",
             "transition-[filter,opacity] duration-300",
             sidebarBlurred ? "pointer-events-none opacity-60 blur-[2px] brightness-75" : "",
           ].join(" ")}
