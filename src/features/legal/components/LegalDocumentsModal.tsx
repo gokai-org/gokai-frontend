@@ -32,7 +32,7 @@ export function LegalDocumentsModal({
     <AnimatePresence initial={false} mode="wait">
       {open && (
         <motion.div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/38 p-2 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 px-0 pb-0 pt-6 sm:items-center sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -44,12 +44,12 @@ export function LegalDocumentsModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.995 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-5xl overflow-hidden rounded-[24px] border border-border-default/70 bg-surface-primary p-2 shadow-[var(--shadow-xl)] will-change-transform sm:p-4 md:p-5"
+            className="flex h-[calc(100dvh-0.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-t-[24px] border border-border-default/70 bg-surface-primary px-3 pb-3 pt-3 shadow-[var(--shadow-xl)] will-change-transform sm:h-[calc(100dvh-2rem)] sm:max-h-[960px] sm:rounded-[24px] sm:p-4 md:p-5"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="border-b border-border-subtle pb-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex flex-wrap gap-2">
+            <div className="shrink-0 border-b border-border-subtle pb-3 sm:pb-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   {documents.map((document) => {
                     const isActive = document.key === activeDocument;
 
@@ -59,7 +59,7 @@ export function LegalDocumentsModal({
                         type="button"
                         onClick={() => onSelectDocument(document.key)}
                         className={[
-                          "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
+                          "inline-flex shrink-0 items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
                           isActive
                             ? "border-accent bg-accent text-content-inverted shadow-sm"
                             : "border-border-default bg-surface-primary text-content-secondary hover:border-accent/35 hover:text-content-primary",
@@ -85,7 +85,7 @@ export function LegalDocumentsModal({
                 <button
                   type="button"
                   onClick={onClose}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-default bg-surface-primary text-content-secondary transition hover:border-accent/35 hover:text-content-primary focus:outline-none focus:ring-4 focus:ring-red-100"
+                  className="inline-flex h-10 w-10 shrink-0 self-end items-center justify-center rounded-full border border-border-default bg-surface-primary text-content-secondary transition hover:border-accent/35 hover:text-content-primary focus:outline-none focus:ring-4 focus:ring-red-100 sm:self-start"
                   aria-label="Cerrar modal legal"
                 >
                   <span className="text-lg leading-none">×</span>
@@ -98,7 +98,7 @@ export function LegalDocumentsModal({
               )}
             </div>
 
-            <div className="pt-3">{children}</div>
+            <div className="min-h-0 flex-1 pt-3 sm:pt-4">{children}</div>
           </motion.div>
         </motion.div>
       )}
