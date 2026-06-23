@@ -4,11 +4,13 @@ import { motion } from "framer-motion";
 import { fadeUpSoft } from "@/features/landing/lib/motionVariants";
 
 interface LandingFooterProps {
+  onOpenPrivacy: () => void;
   onOpenTerms: () => void;
   onOpenCredits: () => void;
 }
 
 export function LandingFooter({
+  onOpenPrivacy,
   onOpenTerms,
   onOpenCredits,
 }: LandingFooterProps) {
@@ -22,13 +24,20 @@ export function LandingFooter({
     >
       <div className="mx-auto flex max-w-6xl flex-col items-center gap-3 px-6 py-10 text-center text-sm text-content-secondary md:flex-row md:items-center md:justify-between md:text-left">
         <div className="flex flex-col items-center gap-1.5 md:items-start">
-          <p>© {new Date().getFullYear()} GOKAI — Aprende japonés con IA.</p>
+          <p>© {new Date().getFullYear()} GOKAI - Aprende japonés con IA.</p>
           <button
             type="button"
             onClick={onOpenTerms}
             className="text-xs font-semibold text-accent transition-colors hover:text-accent-hover"
           >
             Términos y Condiciones
+          </button>
+          <button
+            type="button"
+            onClick={onOpenPrivacy}
+            className="text-xs font-semibold text-accent transition-colors hover:text-accent-hover"
+          >
+            Política de Privacidad
           </button>
           <button
             type="button"

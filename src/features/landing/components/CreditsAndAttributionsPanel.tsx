@@ -4,8 +4,9 @@ import type { ReactNode } from "react";
 import { motion } from "framer-motion";
 
 type CreditsAndAttributionsPanelProps = {
-  onBack: () => void;
-  onAccept: () => void;
+  hideActions?: boolean;
+  onBack?: () => void;
+  onAccept?: () => void;
 };
 
 function CreditsSection({
@@ -41,14 +42,15 @@ function ResourceLink({ href, children }: { href: string; children: ReactNode })
 }
 
 export function CreditsAndAttributionsPanel({
+  hideActions = false,
   onBack,
   onAccept,
 }: CreditsAndAttributionsPanelProps) {
   return (
     <section
       id="landing-credits-panel"
-      role="dialog"
       aria-labelledby="credits-title"
+      {...(!hideActions ? { role: "dialog" as const } : {})}
       className="h-[calc(100dvh-1rem)] max-h-[calc(100dvh-1rem)] min-h-0 overflow-y-auto overscroll-contain pr-1 sm:h-auto sm:max-h-[78dvh] sm:min-h-[min(70dvh,760px)] md:pr-3"
     >
       <div className="border-b border-border-subtle pb-4">
@@ -475,24 +477,26 @@ export function CreditsAndAttributionsPanel({
         </CreditsSection>
       </div>
 
-      <div className="mt-4 flex flex-col-reverse gap-2.5 border-t border-border-subtle pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] sm:mt-5 sm:flex-row sm:justify-end sm:gap-3 sm:pt-5 sm:pb-0">
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm font-semibold text-content-secondary transition hover:border-accent/30 hover:text-content-primary focus:outline-none focus:ring-4 focus:ring-red-100"
-        >
-          Regresar
-        </button>
-        <motion.button
-          type="button"
-          onClick={onAccept}
-          whileHover={{ scale: 1.01 }}
-          whileTap={{ scale: 0.99 }}
-          className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-content-inverted shadow-sm transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-red-200"
-        >
-          Entendido
-        </motion.button>
-      </div>
+      {!hideActions && (
+        <div className="mt-4 flex flex-col-reverse gap-2.5 border-t border-border-subtle pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-3 sm:mt-5 sm:flex-row sm:justify-end sm:gap-3 sm:pb-0 sm:pt-5">
+          <button
+            type="button"
+            onClick={onBack}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl border border-border-default bg-surface-primary px-4 py-2.5 text-sm font-semibold text-content-secondary transition hover:border-accent/30 hover:text-content-primary focus:outline-none focus:ring-4 focus:ring-red-100"
+          >
+            Regresar
+          </button>
+          <motion.button
+            type="button"
+            onClick={onAccept}
+            whileHover={{ scale: 1.01 }}
+            whileTap={{ scale: 0.99 }}
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-content-inverted shadow-sm transition hover:bg-accent-hover focus:outline-none focus:ring-4 focus:ring-red-200"
+          >
+            Entendido
+          </motion.button>
+        </div>
+      )}
     </section>
   );
 }

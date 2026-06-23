@@ -14,6 +14,11 @@ import { TermsAndConditionsPanel } from "@/features/auth/components/forms/TermsA
 import { RegisterVerifyForm } from "@/features/auth/components/forms/RegisterVerifyForm";
 import { ForgotPasswordFlow } from "@/features/auth/components/forms/ForgotPasswordFlow";
 import { markFirstRunOnboardingPending } from "@/features/help/utils/firstRunOnboardingState";
+import {
+  LegalDocumentKey,
+  LegalDocumentsModal,
+} from "@/features/legal/components/LegalDocumentsModal";
+import { PrivacyPolicyPanel } from "@/features/legal/components/PrivacyPolicyPanel";
 
 const HERO_MESSAGES = [
   {
@@ -31,7 +36,29 @@ type MembershipIntent = "free" | "premium";
 type UserProfile = "admin" | "user";
 
 const TERMS_REQUIRED_MESSAGE =
-  "Debes aceptar los Términos y Condiciones para continuar.";
+  "Debes leer y aceptar los Términos y Condiciones y la Política de Privacidad para continuar.";
+const MINIMUM_REGISTRATION_AGE = 13;
+const LEGAL_MINOR_AGE = 18;
+
+function getAgeFromBirthdate(value: string) {
+  if (!value) return null;
+
+  const birthdate = new Date(`${value}T00:00:00`);
+  if (Number.isNaN(birthdate.getTime())) return null;
+
+  const today = new Date();
+  let age = today.getFullYear() - birthdate.getFullYear();
+  const monthDiff = today.getMonth() - birthdate.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < birthdate.getDate())
+  ) {
+    age -= 1;
+  }
+
+  return age;
+}
 
 function parseIntent(raw: string | null): MembershipIntent | null {
   if (raw === "free" || raw === "premium") return raw;
@@ -65,6 +92,12 @@ export default function LoginPage() {
 
   const [registerStep, setRegisterStep] = useState<RegisterStep>("form");
   const [registerPanel, setRegisterPanel] = useState<RegisterPanel>("form");
+  const [activeRegisterLegalDocument, setActiveRegisterLegalDocument] =
+    useState<Extract<LegalDocumentKey, "terms" | "privacy">>("terms");
+  const [registerLegalAcceptedState, setRegisterLegalAcceptedState] = useState({
+    privacy: false,
+    terms: false,
+  });
   const [regVerificationCode, setRegVerificationCode] = useState(
     Array(CODE_LEN).fill(""),
   );
@@ -79,7 +112,7 @@ export default function LoginPage() {
   const [birthdate, setBirthdate] = useState("");
   const [regPassword, setRegPassword] = useState("");
   const [regPassword2, setRegPassword2] = useState("");
-  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [guardianConsent, setGuardianConsent] = useState(false);
 
   const [remember, setRemember] = useState(false);
   const [showPass, setShowPass] = useState(false);
@@ -190,7 +223,13 @@ export default function LoginPage() {
 
     setRegisterStep("form");
     setRegisterPanel("form");
+    setActiveRegisterLegalDocument("terms");
     setRegVerificationCode(Array(CODE_LEN).fill(""));
+    setGuardianConsent(false);
+    setRegisterLegalAcceptedState({
+      privacy: false,
+      terms: false,
+    });
   }
 
   function startSwitch(next: Mode) {
@@ -256,7 +295,10 @@ export default function LoginPage() {
   async function handleRegisterSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!acceptedTerms) {
+    if (
+      !registerLegalAcceptedState.terms ||
+      !registerLegalAcceptedState.privacy
+    ) {
       toast.error(TERMS_REQUIRED_MESSAGE);
       return;
     }
@@ -271,6 +313,25 @@ export default function LoginPage() {
     }
     if (!birthdate) {
       toast.error("Selecciona tu fecha de nacimiento.");
+      return;
+    }
+
+    const age = getAgeFromBirthdate(birthdate);
+
+    if (age === null) {
+      toast.error("La fecha de nacimiento no es válida.");
+      return;
+    }
+
+    if (age < MINIMUM_REGISTRATION_AGE) {
+      toast.error("GOKAI no permite el registro de usuarios menores de 13 años.");
+      return;
+    }
+
+    if (age < LEGAL_MINOR_AGE && !guardianConsent) {
+      toast.error(
+        "Debes confirmar que cuentas con autorización de tu madre, padre o tutor legal.",
+      );
       return;
     }
 
@@ -485,10 +546,19 @@ export default function LoginPage() {
   }
 
   const hero = HERO_MESSAGES[heroIndex];
+  const registerAge = getAgeFromBirthdate(birthdate);
+  const isUnderMinimumAge =
+    registerAge !== null && registerAge < MINIMUM_REGISTRATION_AGE;
+  const requiresGuardianConsent =
+    registerAge !== null &&
+    registerAge >= MINIMUM_REGISTRATION_AGE &&
+    registerAge < LEGAL_MINOR_AGE;
   const isRegisterTermsOpen =
     mode === "register" &&
     registerStep === "form" &&
     registerPanel === "terms";
+  const hasAcceptedAllLegal =
+    registerLegalAcceptedState.terms && registerLegalAcceptedState.privacy;
 
   const slideOut =
     switchDir === "left"
@@ -501,167 +571,230 @@ export default function LoginPage() {
   ].join(" ");
 
   return (
-    <main
-      className={[
-        "relative bg-surface-secondary overflow-x-hidden",
-        isRegisterTermsOpen ? "h-dvh overflow-hidden" : "min-h-dvh",
-      ].join(" ")}
-    >
+    <main className="relative min-h-dvh overflow-x-hidden bg-surface-secondary">
       <LoginHistoryHandler />
       <AnimatedGraphBackground />
       <div className="absolute inset-0 bg-linear-to-b from-surface-primary/20 via-surface-primary/10 to-surface-primary/30" />
 
-      <AuthHero hero={hero} heroIndex={heroIndex} />
+      {!isRegisterTermsOpen && (
+        <>
+          <AuthHero hero={hero} heroIndex={heroIndex} />
 
-      <div
-        className={[
-          "relative z-10 flex w-full",
-          isRegisterTermsOpen
-            ? "h-dvh items-stretch overflow-hidden px-2 py-2 sm:items-center sm:px-4 sm:py-6 lg:pl-10 lg:pr-35 lg:pt-16 xl:pt-20"
-            : "min-h-dvh items-center px-6 py-10 lg:pl-10 lg:pr-35 lg:pt-16 xl:pt-20",
-        ].join(" ")}
-      >
-        <div className="w-full">
-          <section
-            className={[
-              "flex w-full justify-center lg:justify-end lg:self-center lg:mr-15 xl:mr-14",
-              isRegisterTermsOpen ? "h-full items-stretch sm:items-center" : "",
-            ].join(" ")}
-          >
-            <motion.div
-              layout
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{
-                duration: 0.5,
-                ease: "easeOut",
-                layout: { duration: 0.4, ease: "easeInOut" },
-              }}
-              className={[
-                "w-full rounded-2xl bg-surface-primary/95 shadow-xl ring-1 ring-border-subtle backdrop-blur overflow-hidden",
-                isRegisterTermsOpen
-                  ? "max-w-[calc(100vw-1rem)] p-3 sm:max-w-4xl sm:p-4 md:p-6 lg:p-7"
-                  : "max-w-sm p-6 md:max-w-md md:p-7 lg:max-w-lg",
-              ].join(" ")}
-            >
-              <AnimatePresence mode="wait">
+          <div className="relative z-10 flex min-h-dvh w-full items-center px-6 py-10 lg:pl-10 lg:pr-35 lg:pt-16 xl:pt-20">
+            <div className="w-full">
+              <section className="flex w-full justify-center lg:mr-15 lg:self-center lg:justify-end xl:mr-14">
                 <motion.div
-                  key={mode}
-                  initial={{ opacity: 0, x: switchDir === "left" ? 30 : -30 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: switchDir === "left" ? -30 : 30 }}
-                  transition={{ duration: 0.3, ease: "easeInOut" }}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  transition={{
+                    duration: 0.5,
+                    ease: "easeOut",
+                    layout: { duration: 0.4, ease: "easeInOut" },
+                  }}
+                  className="w-full max-w-sm overflow-hidden rounded-2xl bg-surface-primary/95 p-6 shadow-xl ring-1 ring-border-subtle backdrop-blur md:max-w-md md:p-7 lg:max-w-lg"
                 >
-                  {!isRegisterTermsOpen && (
-                    <AuthHeader
-                      mode={mode}
-                      registerStep={registerStep}
-                      intent={intent}
-                      regEmail={regEmail}
-                    />
-                  )}
-
-                  {mode === "login" && (
-                    <LoginForm
-                      email={email}
-                      password={password}
-                      remember={remember}
-                      showPass={showPass}
-                      loading={loading}
-                      onEmailChange={setEmail}
-                      onPasswordChange={setPassword}
-                      onRememberChange={setRemember}
-                      onToggleShowPass={() => setShowPass((s) => !s)}
-                      onForgotPassword={() => startSwitch("forgot-password")}
-                      onGoogleLogin={handleGoogleLogin}
-                      onGoToMembership={() =>
-                        router.replace("/auth/membership")
-                      }
-                      onSubmit={handleLoginSubmit}
-                    />
-                  )}
-
-                  {mode === "register" && (
+                  <AnimatePresence mode="wait">
                     <motion.div
-                      className={isRegisterTermsOpen ? "mt-0" : "mt-5"}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.1, duration: 0.3 }}
+                      key={mode}
+                      initial={{ opacity: 0, x: switchDir === "left" ? 30 : -30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: switchDir === "left" ? -30 : 30 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
                     >
-                      <AnimatePresence mode="wait" initial={false}>
-                        {registerStep === "form" && registerPanel === "form" && (
-                          <RegisterForm
-                            key="register-form-panel"
-                            firstName={firstName}
-                            lastName={lastName}
-                            regEmail={regEmail}
-                            birthdate={birthdate}
-                            regPassword={regPassword}
-                            regPassword2={regPassword2}
-                            fromGoogle={fromGoogle}
-                            showPass={showPass}
-                            showPass2={showPass2}
-                            acceptedTerms={acceptedTerms}
-                            loading={loading}
-                            onFirstNameChange={setFirstName}
-                            onLastNameChange={setLastName}
-                            onRegEmailChange={setRegEmail}
-                            onBirthdateChange={setBirthdate}
-                            onRegPasswordChange={setRegPassword}
-                            onRegPassword2Change={setRegPassword2}
-                            onAcceptedTermsChange={setAcceptedTerms}
-                            onOpenTerms={() => setRegisterPanel("terms")}
-                            onToggleShowPass={() => setShowPass((s) => !s)}
-                            onToggleShowPass2={() => setShowPass2((s) => !s)}
-                            onSubmit={handleRegisterSubmit}
-                          />
-                        )}
+                      <AuthHeader
+                        mode={mode}
+                        registerStep={registerStep}
+                        intent={intent}
+                        regEmail={regEmail}
+                      />
 
-                        {registerStep === "form" && registerPanel === "terms" && (
-                          <TermsAndConditionsPanel
-                            key="register-terms-panel"
-                            onBack={() => setRegisterPanel("form")}
-                            onAccept={() => {
-                              setAcceptedTerms(true);
-                              setRegisterPanel("form");
-                            }}
-                          />
-                        )}
+                      {mode === "login" && (
+                        <LoginForm
+                          email={email}
+                          password={password}
+                          remember={remember}
+                          showPass={showPass}
+                          loading={loading}
+                          onEmailChange={setEmail}
+                          onPasswordChange={setPassword}
+                          onRememberChange={setRemember}
+                          onToggleShowPass={() => setShowPass((s) => !s)}
+                          onForgotPassword={() => startSwitch("forgot-password")}
+                          onGoogleLogin={handleGoogleLogin}
+                          onGoToMembership={() =>
+                            router.replace("/auth/membership")
+                          }
+                          onSubmit={handleLoginSubmit}
+                        />
+                      )}
 
-                        {registerStep === "verify-email" && (
-                          <RegisterVerifyForm
-                            key="verify-email-panel"
-                            regEmail={regEmail}
-                            regVerificationCode={regVerificationCode}
-                            regCodeInputRefs={regCodeInputRefs}
-                            onRegCodeInput={handleRegCodeInput}
-                            onRegCodeKeyDown={handleRegCodeKeyDown}
-                            onSubmit={handleRegisterVerifyCode}
-                            onResend={handleResendRegisterCode}
-                            onBack={() => {
-                              setRegisterStep("form");
-                              setRegVerificationCode(Array(CODE_LEN).fill(""));
-                            }}
-                          />
-                        )}
-                      </AnimatePresence>
+                      {mode === "register" && (
+                        <motion.div
+                          className="mt-5"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.1, duration: 0.3 }}
+                        >
+                          <AnimatePresence mode="wait" initial={false}>
+                            {registerStep === "form" && registerPanel === "form" && (
+                              <RegisterForm
+                                key="register-form-panel"
+                                firstName={firstName}
+                                lastName={lastName}
+                                regEmail={regEmail}
+                                birthdate={birthdate}
+                                isUnderMinimumAge={isUnderMinimumAge}
+                                requiresGuardianConsent={requiresGuardianConsent}
+                                regPassword={regPassword}
+                                regPassword2={regPassword2}
+                                fromGoogle={fromGoogle}
+                                showPass={showPass}
+                                showPass2={showPass2}
+                                acceptedTerms={hasAcceptedAllLegal}
+                                legalAcceptanceState={registerLegalAcceptedState}
+                                guardianConsent={guardianConsent}
+                                loading={loading}
+                                onFirstNameChange={setFirstName}
+                                onLastNameChange={setLastName}
+                                onRegEmailChange={setRegEmail}
+                                onBirthdateChange={setBirthdate}
+                                onRegPasswordChange={setRegPassword}
+                                onRegPassword2Change={setRegPassword2}
+                                onGuardianConsentChange={setGuardianConsent}
+                                onOpenLegalDocument={(document) => {
+                                  if (document) {
+                                    setActiveRegisterLegalDocument(document);
+                                  }
+                                  setRegisterPanel("terms");
+                                }}
+                                onToggleShowPass={() => setShowPass((s) => !s)}
+                                onToggleShowPass2={() => setShowPass2((s) => !s)}
+                                onSubmit={handleRegisterSubmit}
+                              />
+                            )}
+
+                            {registerStep === "verify-email" && (
+                              <RegisterVerifyForm
+                                key="verify-email-panel"
+                                regEmail={regEmail}
+                                regVerificationCode={regVerificationCode}
+                                regCodeInputRefs={regCodeInputRefs}
+                                onRegCodeInput={handleRegCodeInput}
+                                onRegCodeKeyDown={handleRegCodeKeyDown}
+                                onSubmit={handleRegisterVerifyCode}
+                                onResend={handleResendRegisterCode}
+                                onBack={() => {
+                                  setRegisterStep("form");
+                                  setRegVerificationCode(Array(CODE_LEN).fill(""));
+                                }}
+                              />
+                            )}
+                          </AnimatePresence>
+                        </motion.div>
+                      )}
+
+                      {mode === "forgot-password" && (
+                        <ForgotPasswordFlow
+                          onSuccess={() => startSwitch("login")}
+                          onBack={() => startSwitch("login")}
+                        />
+                      )}
+
+                      <div className={contentClass} />
                     </motion.div>
-                  )}
-
-                  {mode === "forgot-password" && (
-                    <ForgotPasswordFlow
-                      onSuccess={() => startSwitch("login")}
-                      onBack={() => startSwitch("login")}
-                    />
-                  )}
-
-                  <div className={contentClass} />
+                  </AnimatePresence>
                 </motion.div>
-              </AnimatePresence>
-            </motion.div>
-          </section>
-        </div>
-      </div>
+              </section>
+            </div>
+          </div>
+        </>
+      )}
+
+      <LegalDocumentsModal
+        open={isRegisterTermsOpen}
+        activeDocument={activeRegisterLegalDocument}
+        documents={[
+          {
+            key: "terms",
+            label: "Términos y Condiciones",
+            accepted: registerLegalAcceptedState.terms,
+          },
+          {
+            key: "privacy",
+            label: "Política de Privacidad",
+            accepted: registerLegalAcceptedState.privacy,
+          },
+        ]}
+        onSelectDocument={(document) =>
+          setActiveRegisterLegalDocument(
+            document as Extract<LegalDocumentKey, "terms" | "privacy">,
+          )
+        }
+        onClose={() => setRegisterPanel("form")}
+        helperText={
+          hasAcceptedAllLegal
+            ? "Ambos documentos ya fueron aceptados. La casilla del registro quedó completada."
+            : "Puedes leer y aceptar Términos y Política de Privacidad en el orden que prefieras. La casilla del registro se completará cuando aceptes ambos documentos."
+        }
+      >
+        {activeRegisterLegalDocument === "terms" ? (
+          <TermsAndConditionsPanel
+            accepted={registerLegalAcceptedState.terms}
+            acceptLabel="Aceptar términos"
+            acceptedLabel="Términos aceptados"
+            requireScrollToAccept
+            onRequestPrivacy={() => setActiveRegisterLegalDocument("privacy")}
+            onBack={() => setRegisterPanel("form")}
+            onAccept={() => {
+              if (registerLegalAcceptedState.terms) return;
+
+              setRegisterLegalAcceptedState((current) =>
+                current.terms
+                  ? current
+                  : {
+                      ...current,
+                      terms: true,
+                    },
+              );
+
+              if (registerLegalAcceptedState.privacy) {
+                setRegisterPanel("form");
+                return;
+              }
+
+              setActiveRegisterLegalDocument("privacy");
+            }}
+          />
+        ) : (
+          <PrivacyPolicyPanel
+            accepted={registerLegalAcceptedState.privacy}
+            acceptLabel="Aceptar política"
+            acceptedLabel="Política aceptada"
+            requireScrollToAccept
+            onBack={() => setRegisterPanel("form")}
+            onAccept={() => {
+              if (registerLegalAcceptedState.privacy) return;
+
+              setRegisterLegalAcceptedState((current) =>
+                current.privacy
+                  ? current
+                  : {
+                      ...current,
+                      privacy: true,
+                    },
+              );
+
+              if (registerLegalAcceptedState.terms) {
+                setRegisterPanel("form");
+                return;
+              }
+
+              setActiveRegisterLegalDocument("terms");
+            }}
+          />
+        )}
+      </LegalDocumentsModal>
     </main>
   );
 }
