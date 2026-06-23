@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <main className="min-h-screen bg-surface-secondary px-4 py-6 text-content-primary sm:px-6 sm:py-10">
-      <div className="mx-auto max-w-5xl rounded-[28px] border border-border-default/70 bg-surface-primary/95 p-5 shadow-[var(--shadow-xl)] backdrop-blur md:p-8">
+      <div className="mx-auto flex max-w-5xl flex-col rounded-[28px] border border-border-default/70 bg-surface-primary/95 p-5 shadow-[var(--shadow-xl)] backdrop-blur md:p-8">
         <Link
           href="/"
           className="text-sm font-semibold text-accent transition hover:text-accent-hover"
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
           Volver al inicio
         </Link>
 
-        <div className="mt-4">
+        <div className="mt-4 h-[calc(100dvh-8.5rem)] min-h-[28rem] sm:h-[calc(100dvh-10rem)]">
           <PrivacyPolicyPanel hideActions />
         </div>
       </div>

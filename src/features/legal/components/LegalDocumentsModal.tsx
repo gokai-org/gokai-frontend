@@ -98,7 +98,9 @@ export function LegalDocumentsModal({
               )}
             </div>
 
-            <div className="min-h-0 flex-1 pt-3 sm:pt-4">{children}</div>
+            <div className="min-h-0 flex-1 overflow-hidden pt-3 sm:pt-4">
+              {children}
+            </div>
           </motion.div>
         </motion.div>
       )}
