@@ -32,7 +32,7 @@ export function LegalDocumentsModal({
     <AnimatePresence initial={false} mode="wait">
       {open && (
         <motion.div
-          className="fixed inset-0 z-[90] flex items-end justify-center bg-black/45 px-0 pb-0 pt-6 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[90] flex items-stretch justify-center bg-surface-primary px-0 py-0 sm:items-center sm:bg-black/45 sm:p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
@@ -44,12 +44,23 @@ export function LegalDocumentsModal({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.995 }}
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-            className="flex h-[calc(100dvh-0.5rem)] w-full max-w-5xl flex-col overflow-hidden rounded-t-[24px] border border-border-default/70 bg-surface-primary px-3 pb-3 pt-3 shadow-[var(--shadow-xl)] will-change-transform sm:h-[calc(100dvh-2rem)] sm:max-h-[960px] sm:rounded-[24px] sm:p-4 md:p-5"
+            className="flex h-dvh w-full max-w-5xl flex-col overflow-hidden rounded-none border-0 bg-surface-primary px-3 pb-3 pt-3 shadow-none will-change-transform sm:h-[calc(100dvh-2rem)] sm:max-h-[960px] sm:rounded-[24px] sm:border sm:border-border-default/70 sm:p-4 sm:shadow-[var(--shadow-xl)] md:p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="shrink-0 border-b border-border-subtle pb-3 sm:pb-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1 pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <div className="flex justify-end pb-3">
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-default bg-surface-primary text-content-secondary transition hover:border-accent/35 hover:text-content-primary focus:outline-none focus:ring-4 focus:ring-red-100"
+                  aria-label="Cerrar modal legal"
+                >
+                  <span className="text-lg leading-none">Ã—</span>
+                </button>
+              </div>
+
+              <div className="flex min-w-0 overflow-x-auto pb-1 pr-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <div className="flex min-w-max gap-2">
                   {documents.map((document) => {
                     const isActive = document.key === activeDocument;
 
@@ -82,15 +93,8 @@ export function LegalDocumentsModal({
                     );
                   })}
                 </div>
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="inline-flex h-10 w-10 shrink-0 self-end items-center justify-center rounded-full border border-border-default bg-surface-primary text-content-secondary transition hover:border-accent/35 hover:text-content-primary focus:outline-none focus:ring-4 focus:ring-red-100 sm:self-start"
-                  aria-label="Cerrar modal legal"
-                >
-                  <span className="text-lg leading-none">×</span>
-                </button>
               </div>
+
               {helperText && (
                 <p className="mt-3 text-xs leading-5 text-content-tertiary">
                   {helperText}
