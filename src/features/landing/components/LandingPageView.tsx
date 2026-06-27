@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import { SECTIONS } from "@/features/landing/data/landingData";
 import { TermsAndConditionsPanel } from "@/features/auth/components/forms/TermsAndConditionsPanel";
 import { CreditsAndAttributionsPanel } from "@/features/landing/components/CreditsAndAttributionsPanel";
+import {
+  LegalDocumentKey,
+  LegalDocumentsModal,
+} from "@/features/legal/components/LegalDocumentsModal";
+import { PrivacyPolicyPanel } from "@/features/legal/components/PrivacyPolicyPanel";
 import { useLandingPage } from "@/features/landing/hooks/useLandingPage";
 import { useLandingScrollTimeline } from "@/features/landing/hooks/useLandingScrollTimeline";
 import { scaleFade } from "@/features/landing/lib/motionVariants";
@@ -73,9 +78,9 @@ function SkillBlock({ section }: { section: (typeof SECTIONS)[number] }) {
 }
 
 export function LandingPageView() {
-  const [openLegalPanel, setOpenLegalPanel] = useState<
-    "terms" | "credits" | null
-  >(null);
+  const [openLegalPanel, setOpenLegalPanel] = useState(false);
+  const [activeLegalDocument, setActiveLegalDocument] =
+    useState<LegalDocumentKey>("terms");
 
   const {
     sectionIds,
@@ -301,44 +306,43 @@ export function LandingPageView() {
         </div>
 
         <LandingFooter
-          onOpenTerms={() => setOpenLegalPanel("terms")}
-          onOpenCredits={() => setOpenLegalPanel("credits")}
+          onOpenTerms={() => {
+            setActiveLegalDocument("terms");
+            setOpenLegalPanel(true);
+          }}
+          onOpenPrivacy={() => {
+            setActiveLegalDocument("privacy");
+            setOpenLegalPanel(true);
+          }}
+          onOpenCredits={() => {
+            setActiveLegalDocument("credits");
+            setOpenLegalPanel(true);
+          }}
         />
       </div>
 
-      <AnimatePresence initial={false} mode="wait">
-        {openLegalPanel && (
-          <motion.div
-            className="fixed inset-0 z-[90] flex items-end justify-center bg-black/38 p-2 sm:items-center sm:p-4"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
-            onClick={() => setOpenLegalPanel(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 10, scale: 0.995 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.995 }}
-              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className="w-full max-w-5xl overflow-hidden rounded-[24px] border border-border-default/70 bg-surface-primary p-2 shadow-[var(--shadow-xl)] will-change-transform sm:p-4 md:p-5"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {openLegalPanel === "terms" ? (
-                <TermsAndConditionsPanel
-                  onBack={() => setOpenLegalPanel(null)}
-                  onAccept={() => setOpenLegalPanel(null)}
-                />
-              ) : (
-                <CreditsAndAttributionsPanel
-                  onBack={() => setOpenLegalPanel(null)}
-                  onAccept={() => setOpenLegalPanel(null)}
-                />
-              )}
-            </motion.div>
-          </motion.div>
+      <LegalDocumentsModal
+        open={openLegalPanel}
+        activeDocument={activeLegalDocument}
+        documents={[
+          { key: "terms", label: "Términos y Condiciones" },
+          { key: "privacy", label: "Política de Privacidad" },
+          { key: "credits", label: "Créditos y atribuciones" },
+        ]}
+        onSelectDocument={setActiveLegalDocument}
+        onClose={() => setOpenLegalPanel(false)}
+      >
+        {activeLegalDocument === "terms" ? (
+          <TermsAndConditionsPanel
+            hideActions
+            onRequestPrivacy={() => setActiveLegalDocument("privacy")}
+          />
+        ) : activeLegalDocument === "privacy" ? (
+          <PrivacyPolicyPanel hideActions />
+        ) : (
+          <CreditsAndAttributionsPanel hideActions />
         )}
-      </AnimatePresence>
+      </LegalDocumentsModal>
     </main>
   );
 }

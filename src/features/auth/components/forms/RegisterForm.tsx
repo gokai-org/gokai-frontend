@@ -10,12 +10,19 @@ type Props = {
   lastName: string;
   regEmail: string;
   birthdate: string;
+  isUnderMinimumAge: boolean;
+  requiresGuardianConsent: boolean;
   regPassword: string;
   regPassword2: string;
   fromGoogle: boolean;
   showPass: boolean;
   showPass2: boolean;
   acceptedTerms: boolean;
+  legalAcceptanceState: {
+    privacy: boolean;
+    terms: boolean;
+  };
+  guardianConsent: boolean;
   loading: boolean;
   onFirstNameChange: (value: string) => void;
   onLastNameChange: (value: string) => void;
@@ -23,8 +30,8 @@ type Props = {
   onBirthdateChange: (value: string) => void;
   onRegPasswordChange: (value: string) => void;
   onRegPassword2Change: (value: string) => void;
-  onAcceptedTermsChange: (value: boolean) => void;
-  onOpenTerms: () => void;
+  onGuardianConsentChange: (value: boolean) => void;
+  onOpenLegalDocument: (document?: "terms" | "privacy") => void;
   onToggleShowPass: () => void;
   onToggleShowPass2: () => void;
   onSubmit: (e: React.FormEvent) => void;
@@ -35,12 +42,16 @@ export function RegisterForm({
   lastName,
   regEmail,
   birthdate,
+  isUnderMinimumAge,
+  requiresGuardianConsent,
   regPassword,
   regPassword2,
   fromGoogle,
   showPass,
   showPass2,
   acceptedTerms,
+  legalAcceptanceState,
+  guardianConsent,
   loading,
   onFirstNameChange,
   onLastNameChange,
@@ -48,8 +59,8 @@ export function RegisterForm({
   onBirthdateChange,
   onRegPasswordChange,
   onRegPassword2Change,
-  onAcceptedTermsChange,
-  onOpenTerms,
+  onGuardianConsentChange,
+  onOpenLegalDocument,
   onToggleShowPass,
   onToggleShowPass2,
   onSubmit,
@@ -108,7 +119,7 @@ export function RegisterForm({
             placeholder="correo@ejemplo.com"
             disabled={fromGoogle}
             className={`w-full rounded-lg border border-border-default bg-surface-primary px-3 py-2 text-sm text-content-primary outline-none transition ${
-              fromGoogle ? "opacity-80 cursor-not-allowed" : ""
+              fromGoogle ? "cursor-not-allowed opacity-80" : ""
             }`}
             required
             autoComplete="email"
@@ -126,8 +137,28 @@ export function RegisterForm({
             required
             maxDate={new Date()}
           />
+          {isUnderMinimumAge && (
+            <p className="mt-2 text-xs leading-5 text-amber-700">
+              GOKAI no permite el registro de usuarios menores de 13 años.
+            </p>
+          )}
         </div>
       </div>
+
+      {requiresGuardianConsent && (
+        <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50/80 px-3 py-3">
+          <Checkbox
+            id="register-guardian-consent"
+            checked={guardianConsent}
+            onChange={onGuardianConsentChange}
+            className="pt-0.5"
+          />
+          <p className="min-w-0 text-xs font-medium leading-5 text-amber-900">
+            Confirmo que cuento con autorización de mi madre, padre o tutor
+            legal para registrar y usar esta cuenta en GOKAI.
+          </p>
+        </div>
+      )}
 
       <PasswordField
         label="Contraseña"
@@ -153,25 +184,49 @@ export function RegisterForm({
         <Checkbox
           id="register-terms"
           checked={acceptedTerms}
-          onChange={onAcceptedTermsChange}
+          onChange={() => onOpenLegalDocument()}
           className="pt-0.5"
         />
 
-        <p
-          id="register-terms-description"
-          className="min-w-0 text-xs font-medium leading-5 text-content-secondary"
-        >
-          Acepto los{" "}
-          <button
-            type="button"
-            onClick={onOpenTerms}
-            className="font-semibold text-accent underline decoration-accent/40 underline-offset-3 transition hover:text-accent-hover focus:outline-none focus:ring-2 focus:ring-red-200 rounded-sm"
-            aria-haspopup="dialog"
-            aria-controls="register-terms-panel"
+        <div className="min-w-0 space-y-2">
+          <p
+            id="register-terms-description"
+            className="text-xs font-medium leading-5 text-content-secondary"
           >
-            Términos y Condiciones
-          </button>
-        </p>
+            Debes leer y aceptar por separado los{" "}
+            <button
+              type="button"
+              onClick={() => onOpenLegalDocument("terms")}
+              className={[
+                "rounded-sm font-semibold underline underline-offset-3 transition focus:outline-none focus:ring-2",
+                legalAcceptanceState.terms
+                  ? "text-emerald-700 decoration-emerald-300 hover:text-emerald-800 focus:ring-emerald-200"
+                  : "text-accent decoration-accent/40 hover:text-accent-hover focus:ring-red-200",
+              ].join(" ")}
+              aria-haspopup="dialog"
+              aria-controls="register-terms-panel"
+            >
+              Términos y Condiciones
+            </button>{" "}
+            y la{" "}
+            <button
+              type="button"
+              onClick={() => onOpenLegalDocument("privacy")}
+              className={[
+                "rounded-sm font-semibold underline underline-offset-3 transition focus:outline-none focus:ring-2",
+                legalAcceptanceState.privacy
+                  ? "text-emerald-700 decoration-emerald-300 hover:text-emerald-800 focus:ring-emerald-200"
+                  : "text-accent decoration-accent/40 hover:text-accent-hover focus:ring-red-200",
+              ].join(" ")}
+              aria-haspopup="dialog"
+              aria-controls="privacy-policy-panel"
+            >
+              Política de Privacidad
+            </button>
+            . La casilla solo se completará cuando aceptes ambos documentos
+            dentro del modal.
+          </p>
+        </div>
       </div>
 
       <motion.button
