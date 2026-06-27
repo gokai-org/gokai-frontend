@@ -55,7 +55,7 @@ export function LegalDocumentsModal({
                   className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-border-default bg-surface-primary text-content-secondary transition hover:border-accent/35 hover:text-content-primary focus:outline-none focus:ring-4 focus:ring-red-100"
                   aria-label="Cerrar modal legal"
                 >
-                  <span className="text-lg leading-none">Ã—</span>
+                  <span className="text-lg leading-none">X</span>
                 </button>
               </div>
 
