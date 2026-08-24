@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { apiConfig, appConfig, authConfig } from "@/shared/config";
 
+export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
+
 function normalizeProfile(value: unknown): "admin" | "user" | null {
   if (typeof value !== "string") return null;
 
   const normalized = value.trim().toLowerCase();
-  if (normalized === "admin" || normalized === "user") return normalized;
+
+  if (normalized === "admin" || normalized === "user") {
+    return normalized;
+  }
 
   return null;
 }
@@ -15,11 +21,68 @@ function getProfileFromToken(token: string): "admin" | "user" | null {
     const tokenParts = token.split(".");
     if (tokenParts.length !== 3) return null;
 
-    const payload = JSON.parse(Buffer.from(tokenParts[1], "base64").toString());
+    const payload = JSON.parse(
+      Buffer.from(tokenParts[1], "base64url").toString(),
+    );
+
     return normalizeProfile(payload?.profile ?? payload?.role);
   } catch {
     return null;
   }
+}
+
+function getPublicOrigin(request: NextRequest): string {
+  try {
+    const configuredUrl = new URL(authConfig.googleRedirectUri);
+    const isLocalhost =
+      configuredUrl.hostname === "localhost" ||
+      configuredUrl.hostname === "127.0.0.1";
+
+    if (!appConfig.isProduction || !isLocalhost) {
+      return configuredUrl.origin;
+    }
+  } catch {
+    // Intenta obtener el dominio desde los encabezados del proxy.
+  }
+
+  const forwardedHost =
+    request.headers.get("x-forwarded-host") ??
+    request.headers.get("host");
+
+  const forwardedProto =
+    request.headers.get("x-forwarded-proto") ??
+    (appConfig.isProduction ? "https" : "http");
+
+  if (forwardedHost) {
+    return `${forwardedProto}://${forwardedHost}`;
+  }
+
+  return request.nextUrl.origin;
+}
+
+function publicUrl(request: NextRequest, path: string): URL {
+  return new URL(path, `${getPublicOrigin(request)}/`);
+}
+
+function redirectTo(request: NextRequest, path: string): NextResponse {
+  const response = NextResponse.redirect(publicUrl(request, path));
+
+  response.headers.set(
+    "Cache-Control",
+    "private, no-store, no-cache, max-age=0",
+  );
+
+  return response;
+}
+
+function clearOAuthState(response: NextResponse): void {
+  response.cookies.set("gokai_oauth_state", "", {
+    httpOnly: true,
+    secure: appConfig.isProduction,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 0,
+  });
 }
 
 export async function GET(request: NextRequest) {
@@ -27,75 +90,119 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const error = searchParams.get("error");
   const state = searchParams.get("state");
+  const cookieState = request.cookies.get("gokai_oauth_state")?.value;
 
   if (error) {
     console.error("Google OAuth error:", error);
-    return NextResponse.redirect(
-      new URL("/auth/login?error=google_auth_failed", request.url),
+
+    const response = redirectTo(
+      request,
+      "/auth/login?error=google_auth_failed",
     );
+
+    clearOAuthState(response);
+    return response;
   }
 
-  const cookieState = request.cookies.get("gokai_oauth_state")?.value;
   if (!state || !cookieState || state !== cookieState) {
-    console.error("State inválido:", { state, cookieState });
-    return NextResponse.redirect(
-      new URL("/auth/login?error=invalid_state", request.url),
+    console.error("Estado OAuth inválido:", {
+      hasState: Boolean(state),
+      hasCookieState: Boolean(cookieState),
+      matches: Boolean(state && cookieState && state === cookieState),
+    });
+
+    const response = redirectTo(
+      request,
+      "/auth/login?error=invalid_state",
     );
+
+    clearOAuthState(response);
+    return response;
   }
 
   if (!code) {
-    return NextResponse.redirect(
-      new URL("/auth/login?error=no_code", request.url),
-    );
+    const response = redirectTo(request, "/auth/login?error=no_code");
+    clearOAuthState(response);
+    return response;
   }
 
   if (!authConfig.googleClientId || !authConfig.googleClientSecret) {
     console.error("Faltan GOOGLE_CLIENT_ID o GOOGLE_CLIENT_SECRET");
-    return NextResponse.redirect(
-      new URL("/auth/login?error=google_not_configured", request.url),
+
+    const response = redirectTo(
+      request,
+      "/auth/login?error=google_not_configured",
     );
+
+    clearOAuthState(response);
+    return response;
   }
 
   try {
-    const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        code,
-        client_id: authConfig.googleClientId,
-        client_secret: authConfig.googleClientSecret,
-        redirect_uri: authConfig.googleRedirectUri,
-        grant_type: "authorization_code",
-      }),
-    });
+    const tokenResponse = await fetch(
+      "https://oauth2.googleapis.com/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          code,
+          client_id: authConfig.googleClientId,
+          client_secret: authConfig.googleClientSecret,
+          redirect_uri: authConfig.googleRedirectUri,
+          grant_type: "authorization_code",
+        }),
+        cache: "no-store",
+      },
+    );
 
     const tokenRaw = await tokenResponse.text();
     let tokens: Record<string, unknown> = {};
 
     try {
       tokens = JSON.parse(tokenRaw) as Record<string, unknown>;
-    } catch {}
+    } catch {
+      tokens = {};
+    }
 
     if (!tokenResponse.ok) {
-      console.error("Token exchange failed:", tokenRaw);
-      return NextResponse.redirect(
-        new URL("/auth/login?error=token_exchange_failed", request.url),
+      console.error("Google token exchange failed:", tokenRaw);
+
+      const response = redirectTo(
+        request,
+        "/auth/login?error=token_exchange_failed",
       );
+
+      clearOAuthState(response);
+      return response;
     }
 
-    const idToken = tokens.id_token;
+    const idToken =
+      typeof tokens.id_token === "string" ? tokens.id_token : null;
+
     if (!idToken) {
-      console.error("No id_token:", tokens);
-      return NextResponse.redirect(
-        new URL("/auth/login?error=no_id_token", request.url),
+      console.error("Google no devolvió id_token");
+
+      const response = redirectTo(
+        request,
+        "/auth/login?error=no_id_token",
       );
+
+      clearOAuthState(response);
+      return response;
     }
 
-    const backendUrl = `${apiConfig.usersApiBase}${authConfig.googleAuthPath}`;
+    const backendUrl =
+      `${apiConfig.usersApiBase}${authConfig.googleAuthPath}`;
+
     const backendResponse = await fetch(backendUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ idToken }),
+      cache: "no-store",
     });
 
     const backendRaw = await backendResponse.text();
@@ -108,47 +215,82 @@ export async function GET(request: NextRequest) {
     }
 
     if (!backendResponse.ok) {
-      console.error("Backend failed:", backendResponse.status, backendData);
-      return NextResponse.redirect(
-        new URL(
-          `/auth/login?error=backend_failed&status=${backendResponse.status}`,
-          request.url,
-        ),
+      console.error(
+        "Google backend failed:",
+        backendResponse.status,
+        backendData,
       );
+
+      const response = redirectTo(
+        request,
+        `/auth/login?error=backend_failed&status=${backendResponse.status}`,
+      );
+
+      clearOAuthState(response);
+      return response;
     }
 
     if (!backendData.registered) {
-      const gd = (backendData.googleData ?? {}) as Record<string, unknown>;
-      const url = new URL("/auth/membership", request.url);
+      const googleData =
+        (backendData.googleData ?? {}) as Record<string, unknown>;
 
-      if (gd.email) url.searchParams.set("email", String(gd.email));
-      if (gd.givenName) url.searchParams.set("firstName", String(gd.givenName));
-      if (gd.familyName) {
-        url.searchParams.set("lastName", String(gd.familyName));
+      const membershipUrl = publicUrl(request, "/auth/membership");
+
+      if (googleData.email) {
+        membershipUrl.searchParams.set(
+          "email",
+          String(googleData.email),
+        );
       }
-      url.searchParams.set("google", "1");
 
-      return NextResponse.redirect(url);
+      if (googleData.givenName) {
+        membershipUrl.searchParams.set(
+          "firstName",
+          String(googleData.givenName),
+        );
+      }
+
+      if (googleData.familyName) {
+        membershipUrl.searchParams.set(
+          "lastName",
+          String(googleData.familyName),
+        );
+      }
+
+      membershipUrl.searchParams.set("google", "1");
+
+      const response = NextResponse.redirect(membershipUrl);
+      clearOAuthState(response);
+      return response;
     }
 
-    const token = backendData.token as string | undefined;
+    const token =
+      typeof backendData.token === "string"
+        ? backendData.token
+        : null;
+
     if (!token) {
-      return NextResponse.redirect(
-        new URL("/auth/login?error=no_token", request.url),
+      const response = redirectTo(
+        request,
+        "/auth/login?error=no_token",
       );
+
+      clearOAuthState(response);
+      return response;
     }
 
     const profile =
-      normalizeProfile(backendData.profile) ?? getProfileFromToken(token);
+      normalizeProfile(backendData.profile) ??
+      getProfileFromToken(token);
+
     const destination =
-      profile === "admin" ? "/admin/dashboard" : "/dashboard/graph";
+      profile === "admin"
+        ? "/admin/dashboard"
+        : "/dashboard/graph";
 
-    const response = NextResponse.redirect(new URL(destination, request.url));
+    const response = redirectTo(request, destination);
 
-    response.cookies.set("gokai_oauth_state", "", {
-      path: "/",
-      maxAge: 0,
-    });
+    clearOAuthState(response);
 
     response.cookies.set("gokai_token", token, {
       httpOnly: true,
@@ -166,16 +308,24 @@ export async function GET(request: NextRequest) {
       });
     } else {
       response.cookies.set("gokai_profile", "", {
+        httpOnly: true,
+        secure: appConfig.isProduction,
+        sameSite: "lax",
         path: "/",
         maxAge: 0,
       });
     }
 
     return response;
-  } catch (err) {
-    console.error("Unexpected OAuth callback error:", err);
-    return NextResponse.redirect(
-      new URL("/auth/login?error=unexpected_error", request.url),
+  } catch (error) {
+    console.error("Unexpected OAuth callback error:", error);
+
+    const response = redirectTo(
+      request,
+      "/auth/login?error=unexpected_error",
     );
+
+    clearOAuthState(response);
+    return response;
   }
 }

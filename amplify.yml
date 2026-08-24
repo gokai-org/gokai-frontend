@@ -1,0 +1,22 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - nvm use 20
+        - npm install --global pnpm@10.34.5
+        - pnpm install --frozen-lockfile --store-dir .pnpm-store
+    build:
+      commands:
+        - rm -f .env.production
+        - printenv | grep -E '^(GOKAI_|GOOGLE_|STRIPE_|SUBSCRIPTION_|NEXT_PUBLIC_)' >> .env.production
+        - pnpm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - .pnpm-store/**/*
+      - node_modules/.pnpm/**/*
+      - .next/cache/**/*

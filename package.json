@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --webpack",
+    "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint ."
@@ -16,7 +16,7 @@
     "axios": "^1.13.2",
     "framer-motion": "12.23.26",
     "lucide-react": "^0.563.0",
-    "next": "16.2.3",
+    "next": "15.5.23",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-is": "19.2.0",
@@ -24,6 +24,7 @@
     "recharts": "^3.5.1"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "3.3.6",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -31,14 +32,11 @@
     "@typescript-eslint/eslint-plugin": "^8.0.0",
     "@typescript-eslint/parser": "^8.0.0",
     "eslint": "^9.39.4",
-    "eslint-config-next": "16.2.3",
+    "eslint-config-next": "15.5.23",
     "knip": "^5.86.0",
     "prettier": "^3.8.1",
     "tailwindcss": "^4",
     "typescript": "^5.9.3"
   },
-  "overrides": {
-    "minimatch": "^10.2.1",
-    "glob": "^10.4.5"
-  }
+  "packageManager": "pnpm@10.34.5+sha512.a4ee05f2f73658255bd6a89859c065a45c28a57daefae2c893a168ee2b73168c37b91e83e57ea67654ad03f03031746430e8bce38e362e042605fb8abc80192e"
 }
